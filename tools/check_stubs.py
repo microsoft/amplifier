@@ -31,7 +31,7 @@ def read_pyproject_exclusions():
         pyright_excludes = config.get("tool", {}).get("pyright", {}).get("exclude", [])
 
         # Convert patterns to directory names for simple matching
-        # Handle patterns like "**/__pycache__", ".venv/**", "claude-web/**"
+        # Handle patterns like "**/__pycache__", ".venv/**"
         excludes = set()
         for pattern in pyright_excludes:
             # Strip glob patterns to get directory name
