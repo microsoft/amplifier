@@ -19,7 +19,6 @@ dependencies = [
     "networkx>=3.5",
     "numpy>=2.3.2",
     "plotly>=6.3.0",
-    "psycopg2-binary>=2.9.10",
     "pydantic-settings>=2.10.1",
     "python-dotenv>=1.1.1",
     "python-louvain>=0.16",
