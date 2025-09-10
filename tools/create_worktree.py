@@ -18,6 +18,32 @@ import sys
 from pathlib import Path
 
 
+def ensure_not_in_worktree():
+    """Ensure we're not running from within a worktree."""
+    try:
+        # Get the main git directory
+        result = subprocess.run(["git", "rev-parse", "--git-common-dir"], capture_output=True, text=True, check=True)
+        git_common_dir = Path(result.stdout.strip()).resolve()
+
+        # Get the current git directory
+        result = subprocess.run(["git", "rev-parse", "--git-dir"], capture_output=True, text=True, check=True)
+        git_dir = Path(result.stdout.strip()).resolve()
+
+        # If they differ, we're in a worktree
+        if git_common_dir != git_dir:
+            # Get the main repo path
+            main_repo = git_common_dir.parent
+            print("❌ Error: Cannot create worktrees from within a worktree.")
+            print("\nPlease run this command from the main repository:")
+            print(f"  cd {main_repo}")
+            print(f"  make worktree {sys.argv[1] if len(sys.argv) > 1 else '<branch-name>'}")
+            sys.exit(1)
+    except subprocess.CalledProcessError:
+        # Not in a git repository at all
+        print("❌ Error: Not in a git repository.")
+        sys.exit(1)
+
+
 def run_command(cmd, cwd=None, capture_output=False, env=None):
     """Run a command and handle errors gracefully."""
     try:
@@ -66,6 +92,9 @@ def setup_worktree_venv(worktree_path):
 
 
 def main():
+    # Ensure we're not running from within a worktree
+    ensure_not_in_worktree()
+
     # Get branch name from arguments
     if len(sys.argv) != 2:
         print("Usage: python tools/create_worktree.py <branch-name>")
