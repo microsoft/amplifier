@@ -40,7 +40,7 @@ help: ## Show this help message
 # Installation
 install: ## Install all dependencies
 	@echo "Installing workspace dependencies..."
-	uv sync --group dev --group claude-web
+	uv sync --group dev
 	@echo ""
 	@echo "Installing npm packages globally..."
 	@command -v pnpm >/dev/null 2>&1 || { echo "❌ pnpm required. Install: curl -fsSL https://get.pnpm.io/install.sh | sh -"; exit 1; }
@@ -385,18 +385,6 @@ triage: ## Run only the triage step of the pipeline. Usage: make triage query=".
 	fi
 	uv run python -m amplifier.synthesis.main --query "$(query)" --files "$(files)" --use-triage
 
-
-# Claude Web Interface
-.PHONY: claude-web
-
-claude-web: ## Start Claude Web interface 
-	@echo "Starting Claude Web..."
-	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-	@echo "Access at: http://localhost:8000"
-	@echo "Default login: username='test', password='test123'"
-	@echo "Press Ctrl+C to stop"
-	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-	@cd claude-web && python backend/app.py
 
 # Claude Trace Viewer
 .PHONY: trace-viewer

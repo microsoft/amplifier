@@ -92,7 +92,7 @@ make check
    - Unsets `VIRTUAL_ENV` when mismatch detected
 
 4. **`pyproject.toml`**:
-   - Added `exclude = ["claude-web/**"]` to pyright config
+   - Added exclude patterns to pyright config
    - Prevents type-checking errors from optional dependencies
 
 ## Benefits
@@ -120,7 +120,7 @@ Make sure you're using the updated Makefile. The fix requires:
 
 ### Pyright errors about missing imports
 
-These are from optional dependencies (like `claude-web`). The fix excludes these directories from pyright checking.
+These are from optional dependencies. The fix excludes these directories from pyright checking.
 
 ## Future Improvements
 
