@@ -13,6 +13,9 @@
   "files.eol": "\n",
   "files.trimTrailingWhitespace": true,
 
+  // === GIT/GITHUB CONFIGURATION ===
+  "githubPullRequests.defaultMergeMethod": "squash",
+
   // === PYTHON CONFIGURATION ===
   "python.analysis.ignore": ["output", "logs", "ai_context", "ai_working"],
   "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",

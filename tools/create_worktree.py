@@ -12,15 +12,42 @@ This will:
 4. Output instructions to navigate and activate the venv
 """
 
+import os
 import subprocess
 import sys
 from pathlib import Path
 
 
-def run_command(cmd, cwd=None, capture_output=False):
+def ensure_not_in_worktree():
+    """Ensure we're not running from within a worktree."""
+    try:
+        # Get the main git directory
+        result = subprocess.run(["git", "rev-parse", "--git-common-dir"], capture_output=True, text=True, check=True)
+        git_common_dir = Path(result.stdout.strip()).resolve()
+
+        # Get the current git directory
+        result = subprocess.run(["git", "rev-parse", "--git-dir"], capture_output=True, text=True, check=True)
+        git_dir = Path(result.stdout.strip()).resolve()
+
+        # If they differ, we're in a worktree
+        if git_common_dir != git_dir:
+            # Get the main repo path
+            main_repo = git_common_dir.parent
+            print("❌ Error: Cannot create worktrees from within a worktree.")
+            print("\nPlease run this command from the main repository:")
+            print(f"  cd {main_repo}")
+            print(f"  make worktree {sys.argv[1] if len(sys.argv) > 1 else '<branch-name>'}")
+            sys.exit(1)
+    except subprocess.CalledProcessError:
+        # Not in a git repository at all
+        print("❌ Error: Not in a git repository.")
+        sys.exit(1)
+
+
+def run_command(cmd, cwd=None, capture_output=False, env=None):
     """Run a command and handle errors gracefully."""
     try:
-        result = subprocess.run(cmd, cwd=cwd, capture_output=capture_output, text=True, check=True)
+        result = subprocess.run(cmd, cwd=cwd, capture_output=capture_output, text=True, check=True, env=env)
         return result
     except subprocess.CalledProcessError as e:
         if capture_output:
@@ -49,7 +76,13 @@ def setup_worktree_venv(worktree_path):
         # Use uv to create venv and sync dependencies
         run_command(["uv", "venv"], cwd=worktree_path)
         print("Installing dependencies...")
-        run_command(["uv", "sync", "--group", "dev"], cwd=worktree_path)
+
+        # Clean environment to avoid VIRTUAL_ENV warning from parent shell
+        env = os.environ.copy()
+        env.pop("VIRTUAL_ENV", None)  # Remove if exists
+
+        # Run with clean environment and reduced verbosity (--quiet suppresses package list)
+        run_command(["uv", "sync", "--group", "dev", "--quiet"], cwd=worktree_path, env=env)
         print("✅ Virtual environment created and dependencies installed!")
         return True
     except subprocess.CalledProcessError as e:
@@ -59,6 +92,9 @@ def setup_worktree_venv(worktree_path):
 
 
 def main():
+    # Ensure we're not running from within a worktree
+    ensure_not_in_worktree()
+
     # Get branch name from arguments
     if len(sys.argv) != 2:
         print("Usage: python tools/create_worktree.py <branch-name>")
