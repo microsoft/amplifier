@@ -54,7 +54,6 @@ dev = [
     "twine>=6.1.0",
 ]
 azure = ["azure-identity>=1.24.0"]
-slides-exports = ["playwright>=1.54.0"]
 claude-web = [
     "fastapi>=0.115.6",
     "uvicorn[standard]>=0.34.0",
