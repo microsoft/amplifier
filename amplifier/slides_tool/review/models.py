@@ -9,7 +9,9 @@ from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
+from pydantic import field_serializer
 
 
 class SlideIssue(BaseModel):
@@ -28,6 +30,8 @@ class SlideIssue(BaseModel):
 class ReviewResult(BaseModel):
     """Result of a presentation review analysis."""
 
+    model_config = ConfigDict()
+
     overall_score: float = Field(ge=0, le=10, description="Overall quality score (0-10)")
     issues: list[SlideIssue] = Field(default_factory=list, description="List of issues found")
     strengths: list[str] = Field(default_factory=list, description="Positive aspects of the presentation")
@@ -35,8 +39,10 @@ class ReviewResult(BaseModel):
     needs_revision: bool = Field(description="Whether the presentation needs revision")
     timestamp: datetime = Field(default_factory=datetime.now, description="When the review was conducted")
 
-    class Config:
-        json_encoders = {datetime: lambda v: v.isoformat()}
+    @field_serializer("timestamp")
+    def serialize_timestamp(self, timestamp: datetime, _info):
+        """Serialize datetime to ISO format."""
+        return timestamp.isoformat()
 
     def get_critical_issues(self) -> list[SlideIssue]:
         """Get only critical issues."""
@@ -92,6 +98,8 @@ class ReviewRequest(BaseModel):
 class RevisionIteration(BaseModel):
     """Represents one iteration of the revision process."""
 
+    model_config = ConfigDict()
+
     iteration: int = Field(description="Iteration number (1-based)")
     review_result: ReviewResult = Field(description="Review result for this iteration")
     revision_applied: bool = Field(description="Whether a revision was applied")
@@ -99,8 +107,10 @@ class RevisionIteration(BaseModel):
     improvement_delta: float | None = Field(None, description="Score improvement from previous iteration")
     timestamp: datetime = Field(default_factory=datetime.now, description="When this iteration was completed")
 
-    class Config:
-        json_encoders = {datetime: lambda v: v.isoformat()}
+    @field_serializer("timestamp")
+    def serialize_timestamp(self, timestamp: datetime, _info):
+        """Serialize datetime to ISO format."""
+        return timestamp.isoformat()
 
 
 class AutoImproveRequest(BaseModel):

@@ -10,7 +10,9 @@ from typing import Any
 from typing import Literal
 
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
+from pydantic import field_serializer
 
 
 class Slide(BaseModel):
@@ -28,6 +30,8 @@ class Slide(BaseModel):
 class Presentation(BaseModel):
     """Complete presentation data structure."""
 
+    model_config = ConfigDict()
+
     title: str = Field(description="Presentation title")
     subtitle: str | None = Field(None, description="Presentation subtitle")
     author: str | None = Field(None, description="Author name")
@@ -37,8 +41,10 @@ class Presentation(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
     version: int = Field(1, description="Version number for tracking revisions")
 
-    class Config:
-        json_encoders = {datetime: lambda v: v.isoformat()}
+    @field_serializer("date")
+    def serialize_date(self, date: datetime | None, _info):
+        """Serialize datetime to ISO format."""
+        return date.isoformat() if date else None
 
 
 class GenerationRequest(BaseModel):

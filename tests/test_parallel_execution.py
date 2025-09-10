@@ -136,12 +136,9 @@ def test_parallelism_detection():
 
     print("\n" + "=" * 50)
 
-    # Return test results
-    return {
-        "sequential_test": seq_analysis["pattern"] == "sequential",
-        "parallel_test": par_analysis["pattern"] == "parallel",
-        "should_fail_initially": seq_analysis["pattern"] == "sequential",
-    }
+    # Verify test results with assertions
+    assert seq_analysis["pattern"] == "sequential", "Sequential pattern should be detected as sequential"
+    assert par_analysis["pattern"] == "parallel", "Parallel pattern should be detected as parallel"
 
 
 def demonstrate_parallelizable_tasks():
@@ -189,14 +186,11 @@ def demonstrate_parallelizable_tasks():
 
 if __name__ == "__main__":
     # Run detection test
-    results = test_parallelism_detection()
+    test_parallelism_detection()
 
     # Show parallelizable examples
     demonstrate_parallelizable_tasks()
 
     # Summary
     print("\nTest Summary:")
-    if results["should_fail_initially"]:
-        print("✗ Test correctly shows SEQUENTIAL execution (needs parallel guidance)")
-    else:
-        print("✓ Test shows PARALLEL execution (guidance is working)")
+    print("✓ Tests completed - check output above for results")
