@@ -12,15 +12,16 @@ This will:
 4. Output instructions to navigate and activate the venv
 """
 
+import os
 import subprocess
 import sys
 from pathlib import Path
 
 
-def run_command(cmd, cwd=None, capture_output=False):
+def run_command(cmd, cwd=None, capture_output=False, env=None):
     """Run a command and handle errors gracefully."""
     try:
-        result = subprocess.run(cmd, cwd=cwd, capture_output=capture_output, text=True, check=True)
+        result = subprocess.run(cmd, cwd=cwd, capture_output=capture_output, text=True, check=True, env=env)
         return result
     except subprocess.CalledProcessError as e:
         if capture_output:
@@ -49,7 +50,13 @@ def setup_worktree_venv(worktree_path):
         # Use uv to create venv and sync dependencies
         run_command(["uv", "venv"], cwd=worktree_path)
         print("Installing dependencies...")
-        run_command(["uv", "sync", "--group", "dev"], cwd=worktree_path)
+
+        # Clean environment to avoid VIRTUAL_ENV warning from parent shell
+        env = os.environ.copy()
+        env.pop("VIRTUAL_ENV", None)  # Remove if exists
+
+        # Run with clean environment and reduced verbosity (--quiet suppresses package list)
+        run_command(["uv", "sync", "--group", "dev", "--quiet"], cwd=worktree_path, env=env)
         print("✅ Virtual environment created and dependencies installed!")
         return True
     except subprocess.CalledProcessError as e:
