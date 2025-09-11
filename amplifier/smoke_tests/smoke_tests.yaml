@@ -12,7 +12,7 @@ tests:
     validate:
       exit_code: 0
       output_contains:
-        - "Quick Start"
+        - "QUICK START"
         - "make install"
 
   - name: Code Quality Check
@@ -97,7 +97,12 @@ tests:
     timeout: 10
     validate:
       exit_code: 0
-      # Output varies but should not error
+      output_contains_any:
+        - "extraction_"
+        - "content_"
+        - "No events"
+        - "2025-"
+        - "2024-"
 
   - name: Knowledge Events Summary
     description: Summarize pipeline events
@@ -105,7 +110,11 @@ tests:
     timeout: 10
     validate:
       exit_code: 0
-      # Output varies but should not error
+      output_contains_any:
+        - "summary"
+        - "Summary"
+        - "No events"
+        - "events"
 
   # Graph commands
   - name: Graph Stats
@@ -141,7 +150,11 @@ tests:
     timeout: 10
     validate:
       exit_code: 0
-      # Output varies
+      output_contains_any:
+        - "predicates"
+        - "Top"
+        - "No predicates"
+        - "Graph"
 
   - name: Graph Export
     description: Export graph in default format
@@ -156,13 +169,17 @@ tests:
   - name: Triage Test
     description: Test triage with minimal input
     command: |
-      echo 'This is test content for smoke testing' > /tmp/smoke_test.txt && \
-      make triage query='summarize' files='/tmp/smoke_test.txt' 2>&1 | head -20; \
-      rm -f /tmp/smoke_test.txt
+      echo '# Test Document\n\nThis is test content for smoke testing the triage system.' > /tmp/smoke_test.md && \
+      make triage query='summarize' files='/tmp/smoke_test.md' 2>&1 | head -20; \
+      rm -f /tmp/smoke_test.md
     timeout: 30
     validate:
       exit_code: 0
-      # Just verify it runs
+      output_contains_any:
+        - "Processing"
+        - "Analyzing"
+        - "test content"
+        - "triage"
 
   # Utility commands
   - name: AI Context Files
@@ -180,7 +197,10 @@ tests:
     timeout: 5
     validate:
       exit_code: 0
-      # Output varies
+      output_contains_any:
+        - "amplifier-clean-up"
+        - "worktree"
+        - "/home/"
 
   # Development commands
   - name: Run Tests
@@ -189,7 +209,12 @@ tests:
     timeout: 30
     validate:
       exit_code: 0
-      # May pass or fail but should run
+      output_contains_any:
+        - "test session starts"
+        - "collected"
+        - "pytest"
+        - "PASSED"
+        - "FAILED"
 
   - name: Workspace Info
     description: Show workspace information
@@ -225,15 +250,7 @@ tests:
       output_contains:
         - "Core imports successful"
 
-  # Optional AI validation test
-  - name: AI Validation Example
-    description: Test AI validation (skipped if SDK unavailable)
-    command: echo "Test output with status OK and 3 items"
-    timeout: 5
-    validate:
-      exit_code: 0
-      ai_check: "Does the output mention 'status OK' and '3 items'? Answer YES or NO."
-    skip_if: "[ -z \"$(which claude 2>/dev/null)\" ]"
+  # Removed AI Validation Example - was trivial and not meaningful
 
   # Startup tests for heavy/interactive commands
   # These verify that processing starts and makes progress
