@@ -34,7 +34,9 @@ Or with options:
 4. Performs a `git diff` to understand what changes are being committed
 5. Analyzes the diff to determine if multiple distinct logical changes are present
 6. If multiple distinct changes are detected, suggests breaking the commit into multiple smaller commits
-7. For each commit (or the single commit if not split), creates a commit message using conventional commit format and considering the available conversation history for additional context as appropriate
+7. For each commit (or the single commit if not split), creates a commit message using conventional commit format and considering the available conversation history for additional context as appropriate, don't perform the commit yet, just generate the message and show it to the user for review
+8. Presents the generated commit message(s) to the user for review and editing
+9. Upon user confirmation, executes the `git commit` command with the finalized message(s)
 
 ## Best Practices for Commits
 
