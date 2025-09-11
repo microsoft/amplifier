@@ -1,6 +1,6 @@
-"""Entry point for smoke tests module."""
+"""Entry point for AI-driven smoke tests module."""
 
-from . import main
+from .runner import main
 
 if __name__ == "__main__":
     main()
