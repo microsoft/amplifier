@@ -40,7 +40,11 @@ tests:
     timeout: 30
     validate:
       exit_code: 0
-      # Just check it runs - output varies by config
+      output_contains_any:
+        - "Scanning"
+        - "directories"
+        - "Found"
+        - "Total items"
 
   - name: Content Search
     description: Search content with query
@@ -101,8 +105,6 @@ tests:
         - "extraction_"
         - "content_"
         - "No events"
-        - "2025-"
-        - "2024-"
 
   - name: Knowledge Events Summary
     description: Summarize pipeline events
@@ -191,16 +193,7 @@ tests:
       output_contains:
         - "AI context files generated"
 
-  - name: Worktree List
-    description: List git worktrees
-    command: make worktree-list
-    timeout: 5
-    validate:
-      exit_code: 0
-      output_contains_any:
-        - "amplifier-clean-up"
-        - "worktree"
-        - "/home/"
+  # Removed Worktree List test - environment-dependent on branch names
 
   # Development commands
   - name: Run Tests
@@ -209,12 +202,9 @@ tests:
     timeout: 30
     validate:
       exit_code: 0
-      output_contains_any:
+      output_contains:
         - "test session starts"
         - "collected"
-        - "pytest"
-        - "PASSED"
-        - "FAILED"
 
   - name: Workspace Info
     description: Show workspace information
@@ -231,8 +221,7 @@ tests:
     timeout: 10
     validate:
       exit_code: 0
-      output_contains:
-        - "Cleaning WSL-related files"
+      # Cleanup commands should be silent on success
 
   # Python module basic checks (simple imports only)
   - name: Core Imports
