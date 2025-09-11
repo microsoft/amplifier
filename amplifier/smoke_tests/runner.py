@@ -4,6 +4,7 @@ AI-Driven Smoke Test Runner
 Simple test runner that uses AI for all evaluation.
 """
 
+import asyncio
 import subprocess
 import sys
 import time
@@ -57,7 +58,7 @@ class AITestRunner:
         except Exception as e:
             return -1, str(e)
 
-    def run_test(self, test: dict) -> bool:
+    async def run_test(self, test: dict) -> bool:
         """Run a single test."""
         name = test.get("name", "Unnamed")
         command = test.get("command", "")
@@ -75,9 +76,9 @@ class AITestRunner:
 
         print(f"  Duration: {duration:.1f}s | Exit: {exit_code}")
 
-        # Evaluate with AI
+        # Evaluate with AI (async)
         print(f"  {BOLD}AI Evaluation:{RESET}", end=" ")
-        passed, reasoning = self.evaluator.evaluate(command, output, success_criteria, timeout=config.ai_timeout)
+        passed, reasoning = await self.evaluator.evaluate(command, output, success_criteria, timeout=config.ai_timeout)
 
         if passed:
             print(f"{GREEN}✓ PASS{RESET}")
@@ -98,7 +99,7 @@ class AITestRunner:
 
         return passed
 
-    def run_all(self) -> int:
+    async def run_all(self) -> int:
         """Run all tests and return exit code."""
         print(f"\n{BOLD}=== AI-Driven Smoke Tests ==={RESET}")
 
@@ -110,17 +111,12 @@ class AITestRunner:
         tests = self.load_tests()
         print(f"Loaded {len(tests)} tests")
 
-        # Check AI availability
-        if not self.evaluator.available:
-            print(f"{YELLOW}Warning: AI evaluation unavailable{RESET}")
-            if not config.skip_on_ai_unavailable:
-                print("Set SMOKE_TEST_SKIP_ON_AI_UNAVAILABLE=true to skip tests")
-                return 1
+        # Note: We don't check AI availability here since it's handled in the evaluator
 
         # Run tests
         start_time = time.time()
         for test in tests:
-            self.run_test(test)
+            await self.run_test(test)
 
         # Cleanup
         print("\nCleaning up test environment...")
@@ -145,16 +141,21 @@ class AITestRunner:
         return 1
 
 
-def main():
-    """Main entry point."""
+async def async_main():
+    """Async main entry point."""
     test_file = Path(__file__).parent / "tests.yaml"
     if not test_file.exists():
         print(f"{RED}Error: {test_file} not found{RESET}")
         sys.exit(1)
 
     runner = AITestRunner(test_file)
-    exit_code = runner.run_all()
+    exit_code = await runner.run_all()
     sys.exit(exit_code)
+
+
+def main():
+    """Main entry point."""
+    asyncio.run(async_main())
 
 
 if __name__ == "__main__":
