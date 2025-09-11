@@ -21,8 +21,8 @@ class ModelConfig(BaseSettings):
 
     # Model categories with sensible defaults
     amplifier_model_fast: str = "claude-3-5-haiku-20241022"
-    amplifier_model_default: str = "claude-3-5-sonnet-20241022"
-    amplifier_model_thinking: str = "claude-3-opus-20240229"
+    amplifier_model_default: str = "claude-sonnet-4-20250514"
+    amplifier_model_thinking: str = "claude-opus-4-1-20250805"
 
     def get_model(self, category: str = "default") -> str:
         """Get model by category name.
