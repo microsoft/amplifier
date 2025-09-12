@@ -45,13 +45,7 @@ def cli():
     default=False,
     help="Skip articles with partial failures instead of retrying them (default: retry partials)",
 )
-@click.option(
-    "--retry-partial/--no-retry-partial",
-    default=None,
-    hidden=True,  # Hide deprecated option
-    help="[DEPRECATED] Use --skip-partial-failures instead",
-)
-def sync(max_items: int | None, resilient: bool, skip_partial_failures: bool, retry_partial: bool | None):
+def sync(max_items: int | None, resilient: bool, skip_partial_failures: bool):
     """
     Sync and extract knowledge from content files.
 
@@ -64,17 +58,8 @@ def sync(max_items: int | None, resilient: bool, skip_partial_failures: bool, re
     By default, retries articles with partial failures. Use --skip-partial-failures
     to process only new articles.
     """
-    # Handle deprecated flag with warning
-    retry_partial_mode = True  # Default is now to retry partials
-
-    if retry_partial is not None:
-        # User used deprecated flag
-        logger.warning("⚠️  The --retry-partial flag is deprecated. Use --skip-partial-failures instead.")
-        logger.warning("    Default behavior now retries partial failures automatically.")
-        retry_partial_mode = retry_partial
-
-    if skip_partial_failures:
-        retry_partial_mode = False
+    # By default, retry partial failures unless skip flag is set
+    retry_partial_mode = not skip_partial_failures
 
     if resilient:
         asyncio.run(_sync_content_resilient(max_items, retry_partial_mode))
@@ -240,10 +225,10 @@ async def _sync_content_resilient(max_items: int | None, retry_partial: bool = F
     """Sync content with resilient partial failure handling."""
     from amplifier.content_loader import ContentLoader
 
-    from .resilient_miner import ResilientKnowledgeMiner
+    from .article_processor import ArticleProcessor
 
     # Initialize components
-    miner = ResilientKnowledgeMiner()
+    miner = ArticleProcessor()
     loader = ContentLoader()
     emitter = EventEmitter()
 
@@ -325,7 +310,6 @@ async def _sync_content_resilient(max_items: int | None, retry_partial: bool = F
             # Update counters based on status
             if status.is_complete:
                 processed += 1
-                logger.info("  ✓ Complete: all processors succeeded")
             else:
                 # Check if we got partial results
                 successful_processors = [
@@ -333,13 +317,8 @@ async def _sync_content_resilient(max_items: int | None, retry_partial: bool = F
                 ]
                 if successful_processors:
                     partial += 1
-                    failed_processors = [
-                        name for name, result in status.processor_results.items() if result.status == "failed"
-                    ]
-                    logger.warning(f"  ⚠ Partial: {', '.join(failed_processors)} failed")
                 else:
                     failed += 1
-                    logger.error("  ✗ Failed: all processors failed")
 
             # Emit appropriate event
             emitter.emit(

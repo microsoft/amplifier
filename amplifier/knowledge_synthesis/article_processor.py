@@ -152,7 +152,7 @@ class ProcessingStatusStore:
 # ============================================================================
 
 
-class ResilientKnowledgeMiner:
+class ArticleProcessor:
     """Failure-resilient knowledge mining with partial result handling."""
 
     def __init__(
