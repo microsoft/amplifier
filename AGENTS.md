@@ -49,6 +49,20 @@ When building batch processing systems, always save progress after every item pr
 
 The bottleneck is always the processing (LLM APIs, network calls), never disk I/O.
 
+## Partial Failure Handling Pattern
+
+This should not be the default approach, but should be used when appropriate. When building systems for processing large batches with multiple sub-processors where it is more important for as much progress as possible to be made while unattended is more important than complete success, implement graceful degradation:
+
+- **Continue on failure**: Don't stop the entire batch when individual processors fail
+- **Save partial results**: Store whatever succeeded - better than nothing
+- **Track failure reasons**: Distinguish between "legitimately empty" and "extraction failed"
+- **Support selective retry**: Re-run only failed processors, not entire items
+- **Report comprehensively**: Show success rates per processor and items needing attention
+
+This approach maximizes value from long-running batch processes. A 4-hour unattented run that completes
+with partial results is better than one that fails early with nothing to show. Users can then
+fix issues and retry only what failed.
+
 ## Decision Tracking System
 
 Significant architectural and implementation decisions are documented in `ai_working/decisions/`. This preserves context across AI sessions and prevents uninformed reversals of past choices.

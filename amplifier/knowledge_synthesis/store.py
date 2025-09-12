@@ -29,6 +29,13 @@ class KnowledgeStore:
         # Track processed sources in memory for fast lookups
         self._processed_sources: set[str] | None = None
 
+        # Track error statistics
+        self.error_stats = {
+            "parse_errors": 0,
+            "failed_extractions": 0,
+            "successful_extractions": 0,
+        }
+
     def save(self, extraction: dict[str, Any]) -> None:
         """
         Append extraction to JSON Lines file.
@@ -43,6 +50,17 @@ class KnowledgeStore:
         if "source_id" not in extraction:
             logger.warning("Extraction missing source_id - skipping save")
             return
+
+        # Track success/failure
+        if extraction.get("success") is False:
+            self.error_stats["failed_extractions"] += 1
+            logger.warning(
+                f"Saving failed extraction for {extraction.get('source_id')}: "
+                f"error_type={extraction.get('error_type')}, "
+                f"detail={extraction.get('error_detail', '')[:100]}"
+            )
+        else:
+            self.error_stats["successful_extractions"] += 1
 
         # Don't save empty extractions
         if not any(
@@ -87,6 +105,7 @@ class KnowledgeStore:
                     extraction = json.loads(line)
                     extractions.append(extraction)
                 except json.JSONDecodeError as e:
+                    self.error_stats["parse_errors"] += 1
                     logger.warning(f"Invalid JSON on line {line_num}: {e}")
                     continue
 
@@ -124,6 +143,7 @@ class KnowledgeStore:
                     if source_id := extraction.get("source_id"):
                         self._processed_sources.add(source_id)
                 except json.JSONDecodeError:
+                    self.error_stats["parse_errors"] += 1
                     continue
 
     def get_by_source(self, source_id: str) -> dict[str, Any] | None:
@@ -146,6 +166,7 @@ class KnowledgeStore:
                     if extraction.get("source_id") == source_id:
                         return extraction
                 except json.JSONDecodeError:
+                    self.error_stats["parse_errors"] += 1
                     continue
 
         return None
@@ -167,4 +188,23 @@ class KnowledgeStore:
         if self.path.exists():
             self.path.unlink()
         self._processed_sources = None
+        self.error_stats = {
+            "parse_errors": 0,
+            "failed_extractions": 0,
+            "successful_extractions": 0,
+        }
         logger.info("Cleared all knowledge extractions")
+
+    def get_error_summary(self) -> str:
+        """Get a summary of error statistics."""
+        total = self.error_stats["successful_extractions"] + self.error_stats["failed_extractions"]
+        if total == 0:
+            return "No extractions processed yet"
+
+        success_rate = (self.error_stats["successful_extractions"] / total) * 100 if total > 0 else 0
+        return (
+            f"Success rate: {success_rate:.1f}% "
+            f"({self.error_stats['successful_extractions']}/{total} successful, "
+            f"{self.error_stats['failed_extractions']} failed, "
+            f"{self.error_stats['parse_errors']} parse errors)"
+        )
