@@ -17,7 +17,8 @@ __pycache__
 .ruff_cache
 .cache
 *.egg-info
-bin
+# bin directory for build artifacts (but allow our global command)
+# bin
 obj
 dist
 build
