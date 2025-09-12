@@ -68,8 +68,8 @@ tests:
     timeout: 15
 
   - name: Graph Export
-    command: make knowledge-graph-export FORMAT=json
-    success_criteria: Exports the knowledge graph in JSON format or indicates successful export
+    command: make knowledge-graph-export FORMAT=gexf
+    success_criteria: Exports the knowledge graph in GEXF format or indicates successful export
     timeout: 20
 
   # Utility Commands

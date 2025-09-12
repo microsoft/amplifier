@@ -100,13 +100,11 @@ class GraphBuilder:
 
                     # Update timestamp metadata
                     if timestamp:
-                        existing_timestamps = self.graph.nodes[canonical].get("timestamps", [])
-                        if timestamp not in existing_timestamps:
-                            existing_timestamps.append(timestamp)
-                            self.graph.nodes[canonical]["timestamps"] = existing_timestamps
-                            # Track earliest and latest occurrence
-                            self.graph.nodes[canonical]["first_seen"] = min(existing_timestamps)
-                            self.graph.nodes[canonical]["last_seen"] = max(existing_timestamps)
+                        # Store as occurrence_times to avoid GEXF treating it as temporal data
+                        existing_times = self.graph.nodes[canonical].get("occurrence_times", [])
+                        if timestamp not in existing_times:
+                            existing_times.append(timestamp)
+                            self.graph.nodes[canonical]["occurrence_times"] = existing_times
 
                     # Update perspective tags
                     if perspective:
@@ -122,9 +120,8 @@ class GraphBuilder:
                     }
                     # Add timestamp metadata if available
                     if timestamp:
-                        node_attrs["timestamps"] = [timestamp]
-                        node_attrs["first_seen"] = timestamp
-                        node_attrs["last_seen"] = timestamp
+                        # Store as occurrence_times to avoid GEXF treating it as temporal data
+                        node_attrs["occurrence_times"] = [timestamp]
 
                     # Add perspective metadata if available
                     if perspective:
@@ -138,7 +135,8 @@ class GraphBuilder:
                 # Add source relationship with timestamp and perspective
                 edge_attrs = {"relation": "mentions", "weight": 1.0}
                 if timestamp:
-                    edge_attrs["timestamp"] = timestamp
+                    # Store timestamp as string to avoid GEXF export issues
+                    edge_attrs["timestamp_value"] = str(timestamp)
                 if perspective:
                     edge_attrs["perspective"] = perspective
                 self.graph.add_edge(source_id, canonical, **edge_attrs)
@@ -169,7 +167,8 @@ class GraphBuilder:
                 # Add relationship edge with timestamp and perspective
                 edge_attrs = {"predicate": predicate, "confidence": confidence, "source": source_id}
                 if timestamp:
-                    edge_attrs["timestamp"] = timestamp
+                    # Store timestamp as string to avoid GEXF export issues
+                    edge_attrs["timestamp_value"] = str(timestamp)
                 if perspective:
                     edge_attrs["perspective"] = perspective
                 self.graph.add_edge(subject, obj, **edge_attrs)
@@ -187,7 +186,8 @@ class GraphBuilder:
                         # Add weak co-occurrence edge with timestamp and perspective
                         edge_attrs = {"relation": "co-occurs", "weight": 0.3, "source": source_id}
                         if timestamp:
-                            edge_attrs["timestamp"] = timestamp
+                            # Store timestamp as string to avoid GEXF export issues
+                            edge_attrs["timestamp_value"] = str(timestamp)
                         if perspective:
                             edge_attrs["perspective"] = perspective
                         self.graph.add_edge(c1, c2, **edge_attrs)
@@ -258,12 +258,41 @@ class GraphBuilder:
 
     def export_gexf(self, output_path: Path):
         """Export graph to GEXF format for Gephi visualization."""
-        nx.write_gexf(self.graph, output_path)
+        # Create a copy of the graph with converted attributes for GEXF compatibility
+        export_graph = self.graph.copy()
+
+        # Convert problematic node attributes
+        for _node, attrs in export_graph.nodes(data=True):
+            # Convert lists of floats to comma-separated strings
+            if "occurrence_times" in attrs:
+                times = attrs["occurrence_times"]
+                if isinstance(times, list):
+                    attrs["occurrence_times"] = ",".join(str(t) for t in times)
+
+            # Convert any other list attributes that might contain floats
+            for key, value in list(attrs.items()):
+                if isinstance(value, list) and value and isinstance(value[0], int | float):
+                    attrs[key] = ",".join(str(v) for v in value)
+
+        nx.write_gexf(export_graph, output_path)
         logger.info(f"Exported graph to {output_path}")
 
     def export_graphml(self, output_path: Path):
         """Export graph to GraphML format."""
-        nx.write_graphml(self.graph, output_path)
+        # Create a copy of the graph with converted attributes for GraphML compatibility
+        export_graph = self.graph.copy()
+
+        # Convert problematic node attributes
+        for _node, attrs in export_graph.nodes(data=True):
+            # Convert lists to comma-separated strings for GraphML
+            for key, value in list(attrs.items()):
+                if isinstance(value, list):
+                    if value and isinstance(value[0], int | float):
+                        attrs[key] = ",".join(str(v) for v in value)
+                    else:
+                        attrs[key] = ",".join(str(v) for v in value)
+
+        nx.write_graphml(export_graph, output_path)
         logger.info(f"Exported graph to {output_path}")
 
     def get_summary(self) -> dict:

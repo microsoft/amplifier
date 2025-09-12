@@ -1,0 +1,134 @@
+<?xml version='1.0' encoding='utf-8'?>
+<gexf xmlns="http://www.gexf.net/1.2draft" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.gexf.net/1.2draft http://www.gexf.net/1.2draft/gexf.xsd" version="1.2">
+  <meta lastmodifieddate="2025-09-11">
+    <creator>NetworkX 3.5</creator>
+  </meta>
+  <graph defaultedgetype="directed" mode="static" name="">
+    <attributes mode="static" class="edge">
+      <attribute id="5" title="relation" type="string" />
+      <attribute id="6" title="source" type="string" />
+      <attribute id="7" title="timestamp_value" type="string" />
+      <attribute id="8" title="networkx_key" type="long" />
+      <attribute id="9" title="predicate" type="string" />
+      <attribute id="10" title="confidence" type="double" />
+    </attributes>
+    <attributes mode="static" class="node">
+      <attribute id="0" title="description" type="string" />
+      <attribute id="1" title="importance" type="double" />
+      <attribute id="2" title="type" type="string" />
+      <attribute id="3" title="occurrence_times" type="string" />
+      <attribute id="4" title="degree_centrality" type="double" />
+    </attributes>
+    <nodes>
+      <node id="Testing" label="Testing">
+        <attvalues>
+          <attvalue for="0" value="The process of validating software functionality" />
+          <attvalue for="1" value="0.5" />
+          <attvalue for="2" value="concept" />
+          <attvalue for="3" value="1757653848.2852252" />
+          <attvalue for="4" value="0.6000000000000001" />
+        </attvalues>
+      </node>
+      <node id="test_article_001" label="test_article_001">
+        <attvalues>
+          <attvalue for="4" value="0.6000000000000001" />
+        </attvalues>
+      </node>
+      <node id="Smoke Testing" label="Smoke Testing">
+        <attvalues>
+          <attvalue for="0" value="Basic tests to ensure core functionality works" />
+          <attvalue for="1" value="0.5" />
+          <attvalue for="2" value="concept" />
+          <attvalue for="3" value="1757653848.2852252" />
+          <attvalue for="4" value="0.8" />
+        </attvalues>
+      </node>
+      <node id="Amplifier" label="Amplifier">
+        <attvalues>
+          <attvalue for="0" value="A knowledge synthesis and amplification system" />
+          <attvalue for="1" value="0.5" />
+          <attvalue for="2" value="concept" />
+          <attvalue for="3" value="1757653848.2852252" />
+          <attvalue for="4" value="0.8" />
+        </attvalues>
+      </node>
+      <node id="Core Functionality" label="Core Functionality">
+        <attvalues>
+          <attvalue for="2" value="entity" />
+          <attvalue for="4" value="0.2" />
+        </attvalues>
+      </node>
+      <node id="Knowledge Synthesis" label="Knowledge Synthesis">
+        <attvalues>
+          <attvalue for="2" value="entity" />
+          <attvalue for="4" value="0.2" />
+        </attvalues>
+      </node>
+    </nodes>
+    <edges>
+      <edge source="Testing" target="Smoke Testing" id="0" weight="0.3">
+        <attvalues>
+          <attvalue for="5" value="co-occurs" />
+          <attvalue for="6" value="test_article_001" />
+          <attvalue for="7" value="1757653848.2852252" />
+          <attvalue for="8" value="0" />
+        </attvalues>
+      </edge>
+      <edge source="Testing" target="Amplifier" id="1" weight="0.3">
+        <attvalues>
+          <attvalue for="5" value="co-occurs" />
+          <attvalue for="6" value="test_article_001" />
+          <attvalue for="7" value="1757653848.2852252" />
+          <attvalue for="8" value="0" />
+        </attvalues>
+      </edge>
+      <edge source="test_article_001" target="Testing" id="2" weight="1.0">
+        <attvalues>
+          <attvalue for="5" value="mentions" />
+          <attvalue for="7" value="1757653848.2852252" />
+          <attvalue for="8" value="0" />
+        </attvalues>
+      </edge>
+      <edge source="test_article_001" target="Smoke Testing" id="3" weight="1.0">
+        <attvalues>
+          <attvalue for="5" value="mentions" />
+          <attvalue for="7" value="1757653848.2852252" />
+          <attvalue for="8" value="0" />
+        </attvalues>
+      </edge>
+      <edge source="test_article_001" target="Amplifier" id="4" weight="1.0">
+        <attvalues>
+          <attvalue for="5" value="mentions" />
+          <attvalue for="7" value="1757653848.2852252" />
+          <attvalue for="8" value="0" />
+        </attvalues>
+      </edge>
+      <edge source="Smoke Testing" target="Core Functionality" id="5">
+        <attvalues>
+          <attvalue for="9" value="validates" />
+          <attvalue for="10" value="0.5" />
+          <attvalue for="6" value="test_article_001" />
+          <attvalue for="7" value="1757653848.2852252" />
+          <attvalue for="8" value="0" />
+        </attvalues>
+      </edge>
+      <edge source="Smoke Testing" target="Amplifier" id="6" weight="0.3">
+        <attvalues>
+          <attvalue for="5" value="co-occurs" />
+          <attvalue for="6" value="test_article_001" />
+          <attvalue for="7" value="1757653848.2852252" />
+          <attvalue for="8" value="0" />
+        </attvalues>
+      </edge>
+      <edge source="Amplifier" target="Knowledge Synthesis" id="7">
+        <attvalues>
+          <attvalue for="9" value="uses" />
+          <attvalue for="10" value="0.5" />
+          <attvalue for="6" value="test_article_001" />
+          <attvalue for="7" value="1757653848.2852252" />
+          <attvalue for="8" value="0" />
+        </attvalues>
+      </edge>
+    </edges>
+  </graph>
+</gexf>
