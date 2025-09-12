@@ -55,5 +55,8 @@ ai_working/tmp
 # Default data directory
 .data/
 
+# .claude-trace Logs
+.claude-trace
+
 # Smoke test runtime logs
 .smoke_test_data/data
