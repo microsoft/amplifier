@@ -13,7 +13,6 @@
       ".data",
       ".vscode",
       ".claude",
-      ".claude-trace",
       ".ai",
       "~/amplifier"
     ]

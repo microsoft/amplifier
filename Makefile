@@ -101,9 +101,6 @@ help: ## Show ALL available commands
 	@echo "AI CONTEXT:"
 	@echo "  make ai-context-files  Build AI context documentation"
 	@echo ""
-	@echo "DEBUGGING:"
-	@echo "  make trace-viewer    Start Claude trace viewer (port 8090)"
-	@echo ""
 	@echo "UTILITIES:"
 	@echo "  make clean           Clean build artifacts"
 	@echo "  make clean-wsl-files Clean WSL-related files"
@@ -122,7 +119,7 @@ install: ## Install all dependencies
 	@# Ensure pnpm global directory exists and is configured (handles non-interactive shells)
 	@PNPM_HOME=$$(pnpm bin -g 2>/dev/null || echo "$$HOME/.local/share/pnpm"); \
 	mkdir -p "$$PNPM_HOME" 2>/dev/null || true; \
-	PATH="$$PNPM_HOME:$$PATH" pnpm add -g @anthropic-ai/claude-code@latest @mariozechner/claude-trace@latest || { \
+	PATH="$$PNPM_HOME:$$PATH" pnpm add -g @anthropic-ai/claude-code@latest || { \
 		echo "❌ Failed to install global packages. Trying pnpm setup..."; \
 		pnpm setup >/dev/null 2>&1 || true; \
 		echo "❌ Could not configure pnpm global directory automatically."; \
@@ -398,17 +395,6 @@ triage: ## Run only the triage step of the pipeline. Usage: make triage query=".
 	uv run python -m amplifier.synthesis.main --query "$(query)" --files "$(files)" --use-triage
 
 
-# Claude Trace Viewer
-.PHONY: trace-viewer
-
-trace-viewer: ## Start Claude trace viewer for .claude-trace files
-	@echo "Starting Claude Trace Viewer..."
-	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-	@echo "Access at: http://localhost:8090"
-	@echo "Reading from: .claude-trace/"
-	@echo "Press Ctrl+C to stop"
-	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-	@python -m trace_viewer --port 8090
 
 # AI Context
 ai-context-files: ## Build AI context files
