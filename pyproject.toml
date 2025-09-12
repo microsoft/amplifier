@@ -15,6 +15,7 @@ dependencies = [
     "pyvis>=0.3.2",
     "rapidfuzz>=3.13.0",
     "requests>=2.32.4",
+    "tiktoken>=0.11.0",
     "tqdm>=4.67.1",
 ]
 

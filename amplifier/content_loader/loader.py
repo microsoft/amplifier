@@ -131,8 +131,16 @@ class ContentLoader:
         Yields ContentItem objects for each successfully loaded file.
         Skips files that cannot be loaded and logs warnings.
         """
+        import sys
+
+        total_files_found = 0
+        total_files_loaded = 0
+
         for content_dir in self.content_dirs:
             logger.info(f"Scanning directory: {content_dir}")
+
+            # First, count total files to scan for better progress indication
+            dir_files_found = 0
 
             # Walk directory tree
             for file_path in content_dir.rglob("*"):
@@ -142,9 +150,25 @@ class ContentLoader:
                 if file_path.suffix.lower() not in self.SUPPORTED_EXTENSIONS:
                     continue
 
+                dir_files_found += 1
+                total_files_found += 1
+
+                # Update progress during scanning
+                if dir_files_found % 10 == 0:  # Update every 10 files
+                    sys.stdout.write(f"\rScanning: {total_files_found} files found...")
+                    sys.stdout.flush()
+
                 item = self._load_file(file_path)
                 if item:
+                    total_files_loaded += 1
                     yield item
+
+            # Clear the progress line
+            if dir_files_found > 0:
+                sys.stdout.write(
+                    f"\rScanned {content_dir}: {dir_files_found} files found, {total_files_loaded} loaded\n"
+                )
+                sys.stdout.flush()
 
     def search(self, query: str, case_sensitive: bool = False) -> Iterator[ContentItem]:
         """Search for content containing the query string.

@@ -220,12 +220,9 @@ Respond with ONLY the category name, nothing else."""
         logger.info(f"Starting extraction for: {title} (source: {source}, type: {document_type})")
         start_time = time.time()
 
-        # Truncate only if extremely long (to avoid token limits)
+        # Note: Token-based truncation is handled by the caller (resilient_miner.py)
+        # We accept the text as-is since it's already been truncated to token limits
         config = get_config()
-        max_chars = config.knowledge_mining_max_chars  # Support ~8000 word articles
-        if len(text) > max_chars:
-            text = text[:max_chars] + "\n\n[Content truncated]"
-            logger.info(f"Truncated text from {len(text)} to {max_chars} characters")
 
         try:
             # Build document-type-specific prompt

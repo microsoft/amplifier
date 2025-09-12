@@ -152,7 +152,7 @@ class UnifiedKnowledgeExtractor:
                     )
                 )
 
-            logger.info(f"Extracted {len(relationships)} relationships")
+            logger.debug(f"Extracted {len(relationships)} relationships")
             return relationships
         except Exception as e:
             logger.error(f"SPO extraction failed: {e}")
