@@ -90,8 +90,19 @@ fi
 
 # Parse arguments
 PROJECT_DIR="${1:-$(pwd)}"
-shift || true  # Remove first argument, ignore error if no args
-CLAUDE_ARGS="$@"
+
+# Check if first arg is a Claude flag (starts with --)
+if [[ "$1" == --* ]] && [[ "$1" != "--help" ]] && [[ "$1" != "-h" ]] && [[ "$1" != "--version" ]]; then
+    # First argument is a Claude option, use current directory
+    PROJECT_DIR="$(pwd)"
+    CLAUDE_ARGS="$@"
+else
+    # First argument might be a directory
+    if [[ -n "$1" ]]; then
+        shift || true  # Remove first argument, ignore error if no args
+    fi
+    CLAUDE_ARGS="$@"
+fi
 
 # Validate project directory
 if [[ ! -d "$PROJECT_DIR" ]]; then
