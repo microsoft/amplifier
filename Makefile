@@ -21,6 +21,7 @@ default: ## Show essential commands
 	@echo ""
 	@echo "Quick Start:"
 	@echo "  make install         Install all dependencies"
+	@echo "  make install-global  Install global 'amplifier' command"
 	@echo ""
 	@echo "Knowledge Base:"
 	@echo "  make knowledge-update        Full pipeline: extract & synthesize"
@@ -51,6 +52,7 @@ help: ## Show ALL available commands
 	@echo ""
 	@echo "QUICK START:"
 	@echo "  make install         Install all dependencies"
+	@echo "  make install-global  Install global 'amplifier' command"
 	@echo ""
 	@echo "KNOWLEDGE BASE:"
 	@echo "  make knowledge-update        Full pipeline: extract & synthesize"
@@ -135,12 +137,76 @@ install: ## Install all dependencies
 	@echo ""
 	@echo "✅ All dependencies installed!"
 	@echo ""
+	@echo "💡 For global access to Amplifier from any directory:"
+	@echo "   make install-global"
+	@echo ""
 	@if [ -n "$$VIRTUAL_ENV" ]; then \
 		echo "✓ Virtual environment already active"; \
 	elif [ -f .venv/bin/activate ]; then \
 		echo "→ Run this command: source .venv/bin/activate"; \
 	else \
 		echo "✗ No virtual environment found. Run 'make install' first."; \
+	fi
+
+# Global installation
+install-global: ## Install global 'amplifier' command for system-wide access
+	@echo "Installing global Amplifier command..."
+	@if [ ! -f .venv/bin/activate ]; then \
+		echo "❌ Please run 'make install' first to create the virtual environment"; \
+		exit 1; \
+	fi
+	@mkdir -p ~/bin
+	@cp bin/amplifier ~/bin/amplifier
+	@chmod +x ~/bin/amplifier
+	@echo "✅ Global 'amplifier' command installed to ~/bin/amplifier"
+	@echo ""
+	@if echo "$$PATH" | grep -q "$$HOME/bin"; then \
+		echo "✓ ~/bin is already in your PATH"; \
+	else \
+		echo "💡 Add ~/bin to your PATH for global access:"; \
+		if [ -n "$$ZSH_VERSION" ] || [ "$$SHELL" = "/bin/zsh" ] || [ -f ~/.zshrc ]; then \
+			echo '   echo "export PATH="\$$HOME/bin:\$$PATH"" >> ~/.zshrc'; \
+			echo "   source ~/.zshrc"; \
+		else \
+			echo '   echo "export PATH="\$$HOME/bin:\$$PATH"" >> ~/.bashrc'; \
+			echo "   source ~/.bashrc"; \
+		fi; \
+	fi
+	@echo ""
+	@echo "Usage: amplifier [project-dir] [claude-options]"
+	@echo "Example: amplifier ~/my-project --model sonnet"
+
+install-global-system: ## Install global 'amplifier' command system-wide (requires sudo)
+	@echo "Installing system-wide Amplifier command..."
+	@if [ ! -f .venv/bin/activate ]; then \
+		echo "❌ Please run 'make install' first to create the virtual environment"; \
+		exit 1; \
+	fi
+	@echo "This will install to /usr/local/bin and requires sudo privileges."
+	@read -p "Continue? [y/N] " -n 1 -r; echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		sudo cp bin/amplifier /usr/local/bin/amplifier; \
+		sudo chmod +x /usr/local/bin/amplifier; \
+		echo "✅ Global 'amplifier' command installed to /usr/local/bin/amplifier"; \
+	else \
+		echo "Installation cancelled."; \
+	fi
+
+uninstall-global: ## Remove global 'amplifier' command
+	@echo "Removing global Amplifier command..."
+	@if [ -f ~/bin/amplifier ]; then \
+		rm ~/bin/amplifier; \
+		echo "✅ Removed ~/bin/amplifier"; \
+	else \
+		echo "✓ ~/bin/amplifier not found"; \
+	fi
+	@if [ -f /usr/local/bin/amplifier ]; then \
+		echo "System-wide installation found at /usr/local/bin/amplifier"; \
+		read -p "Remove it? (requires sudo) [y/N] " -n 1 -r; echo; \
+		if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+			sudo rm /usr/local/bin/amplifier; \
+			echo "✅ Removed /usr/local/bin/amplifier"; \
+		fi; \
 	fi
 
 # Code quality

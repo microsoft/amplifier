@@ -83,6 +83,18 @@ Before starting, you'll need:
    .venv\Scripts\activate     # Windows
    ```
 
+5. **Install global access** (Optional but recommended):
+   ```bash
+   make install-global
+   ```
+   
+   This installs the `amplifier` command globally, letting you use Amplifier on any project from anywhere:
+   
+   ```bash
+   cd ~/my-other-project
+   amplifier  # Starts Claude with Amplifier agents for this project
+   ```
+
 ## 📖 How to Use Amplifier
 
 ### Basic Usage
@@ -94,28 +106,104 @@ cd amplifier
 claude  # Everything is pre-configured and ready
 ```
 
-### Using with Your Own Projects
+### Global Usage: Amplifier on Any Project 🌍
 
-Want Amplifier's power on your own code? Easy:
+**The power of Amplifier is no longer confined to the Amplifier directory.** Use all 20+ specialized agents, knowledge extraction, and automation tools on any codebase, anywhere on your system.
 
-1. **Start Claude with both directories**:
+#### Method 1: Global Command (Recommended)
 
-   ```bash
-   claude --add-dir /path/to/your/project
-   ```
+After running `make install-global`, use Amplifier from any directory:
 
-2. **Tell Claude where to work** (paste as first message):
+```bash
+# Work on any project
+cd ~/my-web-app
+amplifier
 
-   ```
-   I'm working in /path/to/your/project which doesn't have Amplifier files.
-   Please cd to that directory and work there.
-   Do NOT update any issues or PRs in the Amplifier repo.
-   ```
+# Or specify a different project
+amplifier ~/dev/my-python-api
 
-3. **Use Amplifier's agents on your code**:
-   - "Use the zen-architect agent to design my application's caching layer"
-   - "Deploy bug-hunter to find why my login system is failing"
-   - "Have security-guardian review my API implementation for vulnerabilities"
+# Pass Claude options
+amplifier ~/my-project --model sonnet
+amplifier ~/my-app --print "Fix the authentication bug"
+```
+
+#### Method 2: From Amplifier Directory
+
+If you prefer not to install globally:
+
+```bash
+cd ~/dev/amplifier
+./amplifier-anywhere.sh ~/path/to/your/project
+
+# Or with Claude options
+./amplifier-anywhere.sh ~/my-app --model sonnet
+```
+
+#### Method 3: Manual Setup
+
+For maximum control:
+
+```bash
+cd ~/dev/amplifier
+source .venv/bin/activate
+claude --add-dir /path/to/your/project
+```
+
+#### Usage Template
+
+**Important**: When Claude starts, always begin with this message template:
+
+```
+I'm working in [YOUR_PROJECT_PATH] which doesn't have Amplifier files.
+Please cd to that directory and work there.
+Do NOT update any issues or PRs in the Amplifier repo.
+
+Use [AGENT_NAME] to [TASK_DESCRIPTION].
+```
+
+**Examples**:
+- `"Use zen-architect to design my application's caching layer"`
+- `"Deploy bug-hunter to find why my login system is failing"`
+- `"Have security-guardian review my API implementation for vulnerabilities"`
+- `"Use modular-builder to implement the user profile feature"`
+
+#### Global Benefits
+
+✅ **All 20+ specialized agents** work on your projects  
+✅ **Shared knowledge base** - insights from one project help others  
+✅ **Same powerful automation** - quality checks, parallel development  
+✅ **Project isolation** - changes only affect your target project  
+✅ **Works anywhere** - no need to copy files or modify your projects
+
+#### Troubleshooting Global Access
+
+**Command not found: `amplifier`**
+```bash
+# Check if ~/bin is in PATH
+echo $PATH | grep $HOME/bin
+
+# Add to PATH if missing
+echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc  # or ~/.bashrc
+source ~/.zshrc
+```
+
+**Cannot find Amplifier installation**
+```bash
+# The global command looks for Amplifier in these locations:
+# - ~/dev/amplifier (most common)
+# - ~/amplifier
+# - ~/repos/amplifier  
+# - ~/code/amplifier
+
+# Create a symlink if needed
+ln -s /path/to/your/amplifier ~/dev/amplifier
+```
+
+**Get help anytime**
+```bash
+amplifier --help     # Show usage help
+amplifier --version  # Show version info
+```
 
 ### Parallel Development
 

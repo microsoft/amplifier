@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# Global Amplifier Command
+# This is the version installed to ~/bin or /usr/local/bin
+
+# Auto-detect Amplifier directory from common locations
+AMPLIFIER_DIRS=(
+    "$HOME/dev/amplifier"
+    "$HOME/amplifier" 
+    "$HOME/repos/amplifier"
+    "$HOME/code/amplifier"
+    "/opt/amplifier"
+)
+
+AMPLIFIER_DIR=""
+for dir in "${AMPLIFIER_DIRS[@]}"; do
+    if [[ -d "$dir" && -f "$dir/.venv/bin/activate" ]]; then
+        AMPLIFIER_DIR="$dir"
+        break
+    fi
+done
+
+if [[ -z "$AMPLIFIER_DIR" ]]; then
+    echo "❌ Cannot find Amplifier installation"
+    echo "   Searched locations:"
+    for dir in "${AMPLIFIER_DIRS[@]}"; do
+        echo "   - $dir"
+    done
+    echo ""
+    echo "   Please ensure Amplifier is cloned and installed in one of these locations."
+    echo "   Or create a symlink: ln -s /path/to/your/amplifier ~/dev/amplifier"
+    exit 1
+fi
+
+# Execute the main script
+exec "$AMPLIFIER_DIR/amplifier-anywhere.sh" "$@"
