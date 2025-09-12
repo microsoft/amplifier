@@ -39,7 +39,19 @@ def cli():
     default=True,
     help="Use resilient mining with partial failure handling (default: True)",
 )
-def sync(max_items: int | None, resilient: bool):
+@click.option(
+    "--skip-partial-failures",
+    is_flag=True,
+    default=False,
+    help="Skip articles with partial failures instead of retrying them (default: retry partials)",
+)
+@click.option(
+    "--retry-partial/--no-retry-partial",
+    default=None,
+    hidden=True,  # Hide deprecated option
+    help="[DEPRECATED] Use --skip-partial-failures instead",
+)
+def sync(max_items: int | None, resilient: bool, skip_partial_failures: bool, retry_partial: bool | None):
     """
     Sync and extract knowledge from content files.
 
@@ -48,9 +60,24 @@ def sync(max_items: int | None, resilient: bool):
 
     With --resilient (default), uses partial failure handling to continue
     processing even when individual processors fail.
+
+    By default, retries articles with partial failures. Use --skip-partial-failures
+    to process only new articles.
     """
+    # Handle deprecated flag with warning
+    retry_partial_mode = True  # Default is now to retry partials
+
+    if retry_partial is not None:
+        # User used deprecated flag
+        logger.warning("⚠️  The --retry-partial flag is deprecated. Use --skip-partial-failures instead.")
+        logger.warning("    Default behavior now retries partial failures automatically.")
+        retry_partial_mode = retry_partial
+
+    if skip_partial_failures:
+        retry_partial_mode = False
+
     if resilient:
-        asyncio.run(_sync_content_resilient(max_items))
+        asyncio.run(_sync_content_resilient(max_items, retry_partial_mode))
     else:
         asyncio.run(_sync_content(max_items))
 
@@ -209,7 +236,7 @@ async def _sync_content(max_items: int | None):
     )
 
 
-async def _sync_content_resilient(max_items: int | None):
+async def _sync_content_resilient(max_items: int | None, retry_partial: bool = False):
     """Sync content with resilient partial failure handling."""
     from amplifier.content_loader import ContentLoader
 
@@ -230,7 +257,34 @@ async def _sync_content_resilient(max_items: int | None):
         return
 
     logger.info(f"Found {len(content_items)} content files")
-    logger.info("Processing articles...")
+
+    # Pre-scan to count existing status
+    already_complete = 0
+    already_partial = 0
+    to_process = 0
+
+    for item in content_items:
+        existing_status = miner.status_store.load_status(item.content_id)
+        if existing_status:
+            if existing_status.is_complete:
+                already_complete += 1
+            else:
+                already_partial += 1
+                if retry_partial:
+                    to_process += 1
+        else:
+            to_process += 1
+
+    # Show summary
+    logger.info("\nProcessing Summary:")
+    logger.info(f"  Already complete: {already_complete}")
+    logger.info(f"  Partial results: {already_partial}")
+    logger.info(f"  To process: {to_process}")
+    if retry_partial and already_partial > 0:
+        logger.info(f"  ✓ Including {already_partial} articles with partial failures (default behavior)")
+    elif not retry_partial and already_partial > 0:
+        logger.info(f"  ⚠ Skipping {already_partial} articles with partial failures (--skip-partial-failures)")
+    logger.info("")
 
     # Process with resilient miner
     processed = 0
@@ -244,8 +298,26 @@ async def _sync_content_resilient(max_items: int | None):
         if max_items and processed >= max_items:
             break
 
-        # Process article with resilient handling
+        # Check if already processed
+        existing_status = miner.status_store.load_status(item.content_id)
+        if existing_status:
+            if existing_status.is_complete:
+                logger.info(f"✓ Already complete: {item.title}")
+                processed += 1
+                continue
+            if not retry_partial:
+                # Has partial results but skip-partial-failures flag is set
+                successful_count = sum(
+                    1 for r in existing_status.processor_results.values() if r.status in ["success", "empty"]
+                )
+                if successful_count > 0:
+                    logger.info(
+                        f"⚠ Skipping partial (--skip-partial-failures): {item.title} ({successful_count}/4 processors succeeded)"
+                    )
+                    partial += 1
+                    continue
 
+        # Process article with resilient handling
         try:
             # Process with resilient miner (directly pass ContentItem)
             status = await miner.process_article_with_logging(item, current=idx + 1, total=len(content_items))

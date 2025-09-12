@@ -107,13 +107,30 @@ class ExtractionLogger:
         elapsed_str = f"{elapsed:.1f}s" if elapsed else ""
         print(f"  ├─ {phase_name}: Done ({summary}, {elapsed_str})")
 
-    def complete_article(self) -> None:
-        """Complete processing of the current article."""
+    def complete_article(self, status=None) -> None:
+        """Complete processing of the current article.
+
+        Args:
+            status: Optional ArticleProcessingStatus to show failure details
+        """
         if self.article_start_time:
             total_elapsed = time.time() - self.article_start_time
-            print(f"  └─ Complete ({total_elapsed:.1f}s total)")
+            base_msg = f"  └─ Complete ({total_elapsed:.1f}s total)"
         else:
-            print("  └─ Complete")
+            base_msg = "  └─ Complete"
+
+        # Add partial failure warning if status provided
+        if status and hasattr(status, "processor_results"):
+            failed_processors = [name for name, result in status.processor_results.items() if result.status == "failed"]
+            if failed_processors:
+                print(base_msg)
+                print(f"     ⚠ Partial: {', '.join(failed_processors)} failed")
+            else:
+                # All processors succeeded
+                print(base_msg)
+                print("     ✓ Complete: all processors succeeded")
+        else:
+            print(base_msg)
 
     def log_summary(self, concepts_count: int, relations_count: int) -> None:
         """Log a summary after completing an article.

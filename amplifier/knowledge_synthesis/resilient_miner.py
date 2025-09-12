@@ -329,20 +329,16 @@ class ResilientKnowledgeMiner:
                 # Use focused extractors for better quality
                 import threading
 
-                # Show initial extraction status
-                sys.stdout.write(
-                    "├─ Running 4 extractors in parallel (concepts, relationships, insights, patterns)...\n"
-                )
-                sys.stdout.flush()
-
                 # Track extraction start time
                 extraction_start = time.time()
 
+                # Thread safety for output
+                output_lock = threading.Lock()
+
                 # Create a simple progress indicator thread
                 stop_progress = threading.Event()
-                progress_line = [""]
                 completed_extractors = []
-                extractor_names = ["concepts", "relationships", "insights", "patterns"]
+                extractor_results = {}  # Store results with timing and counts
 
                 def show_progress():
                     """Show a simple animated progress indicator with extractor status"""
@@ -351,45 +347,42 @@ class ResilientKnowledgeMiner:
                     last_update = time.time()
                     prev_len = 0  # Track previous message length
 
+                    # Initial message
+                    with output_lock:
+                        message = "├─ Running 4 extractors in parallel (concepts, relationships, insights, patterns)..."
+                        sys.stdout.write(message)
+                        sys.stdout.flush()
+                        prev_len = len(message)
+
                     while not stop_progress.is_set():
                         current_time = time.time()
                         elapsed = current_time - extraction_start
 
                         # Update spinner every 0.3 seconds
                         if current_time - last_update >= 0.3:
-                            # Build status of extractors
-                            active_extractors = [e for e in extractor_names if e not in completed_extractors]
+                            with output_lock:
+                                # Only update if we're still running
+                                if len(completed_extractors) < 4:
+                                    message = f"├─ {spinner[spinner_idx]} Running 4 extractors in parallel (concepts, relationships, insights, patterns)... ({elapsed:.0f}s)"
 
-                            if active_extractors:
-                                status = f"Extracting: {', '.join(active_extractors)}"
-                            else:
-                                status = "Finalizing results"
+                                    # Clear the line first
+                                    clear_len = max(prev_len, len(message))
+                                    sys.stdout.write("\r" + " " * clear_len + "\r")
 
-                            # Add completed count if any
-                            if completed_extractors:
-                                status += f" (✓ {len(completed_extractors)}/4 complete)"
+                                    # Now write the new message
+                                    sys.stdout.write(message)
+                                    sys.stdout.flush()
 
-                            message = f"├─ {spinner[spinner_idx]} {status} ({elapsed:.0f}s)"
-
-                            # Clear the line first using the max of previous and current message length
-                            # This ensures we clear any leftover characters from longer messages
-                            clear_len = max(prev_len, len(message))
-                            sys.stdout.write("\r" + " " * clear_len + "\r")
-
-                            # Now write the new message
-                            sys.stdout.write(message)
-                            sys.stdout.flush()
-
-                            prev_len = len(message)
-                            progress_line[0] = message  # Store without \r for length calculation
-                            spinner_idx = (spinner_idx + 1) % len(spinner)
-                            last_update = current_time
+                                    prev_len = len(message)
+                                    spinner_idx = (spinner_idx + 1) % len(spinner)
+                                    last_update = current_time
 
                         stop_progress.wait(0.1)  # Check every 100ms
 
                     # Clear the progress line when done
-                    sys.stdout.write("\r" + " " * prev_len + "\r")
-                    sys.stdout.flush()
+                    with output_lock:
+                        sys.stdout.write("\r" + " " * prev_len + "\r")
+                        sys.stdout.flush()
 
                 # Start progress indicator in background
                 progress_thread = threading.Thread(target=show_progress, daemon=True)
@@ -446,12 +439,23 @@ class ResilientKnowledgeMiner:
                                     if name not in completed_extractors:
                                         results[name] = result
                                         completed_extractors.append(name)
-                                        # Log individual completion
-                                        elapsed = time.time() - extraction_start
-                                        # Clear current line and show completion
-                                        sys.stdout.write("\r" + " " * 100 + "\r")  # Clear line
-                                        sys.stdout.write(f"├─ ✓ {name} completed ({elapsed:.1f}s)\n")
-                                        sys.stdout.flush()
+
+                                        # Store result details
+                                        extractor_results[name] = {
+                                            "count": len(result.data) if result.data else 0,
+                                            "time": time.time() - extraction_start,
+                                            "success": True,
+                                        }
+
+                                        # Log individual completion with output lock
+                                        with output_lock:
+                                            elapsed = time.time() - extraction_start
+                                            count = len(result.data) if result.data else 0
+                                            # Clear current line and show completion
+                                            sys.stdout.write("\r" + " " * 120 + "\r")  # Clear line
+                                            sys.stdout.write(f"├─ ✓ {name} completed ({count} found, {elapsed:.1f}s)\n")
+                                            sys.stdout.flush()
+
                                         del task_to_name[task]  # Remove from mapping
                                         break
                         except Exception as e:
@@ -465,11 +469,29 @@ class ResilientKnowledgeMiner:
                                             extraction_type=name, data=[], extraction_time=0.0, error=str(e)
                                         )
                                         completed_extractors.append(name)
-                                        # Log failure
-                                        elapsed = time.time() - extraction_start
-                                        sys.stdout.write("\r" + " " * 100 + "\r")  # Clear line
-                                        sys.stdout.write(f"├─ ✗ {name} failed ({elapsed:.1f}s)\n")
-                                        sys.stdout.flush()
+
+                                        # Store failure details
+                                        extractor_results[name] = {
+                                            "count": 0,
+                                            "time": time.time() - extraction_start,
+                                            "success": False,
+                                            "error": str(e),
+                                        }
+
+                                        # Log failure with output lock
+                                        with output_lock:
+                                            elapsed = time.time() - extraction_start
+                                            # Clear current line and show failure
+                                            sys.stdout.write("\r" + " " * 120 + "\r")  # Clear line
+                                            sys.stdout.write(f"├─ ✗ {name} failed ({elapsed:.1f}s)\n")
+                                            # Show error details indented
+                                            error_str = str(e)
+                                            # Truncate very long error messages
+                                            if len(error_str) > 100:
+                                                error_str = error_str[:97] + "..."
+                                            sys.stdout.write(f"│  └─ {error_str}\n")
+                                            sys.stdout.flush()
+
                                         del task_to_name[task]  # Remove from mapping
                                         break
 
@@ -481,23 +503,21 @@ class ResilientKnowledgeMiner:
                 stop_progress.set()
                 progress_thread.join(timeout=0.5)  # Wait briefly for thread to clean up
 
-                # Process and display results for each extractor
+                # Don't show inner completion - let extraction_logger handle it
+
+                # Process results and update status (without redundant output)
                 # Process concepts
                 concept_result = extraction_results.get("concepts")
                 if concept_result and not concept_result.error:
                     concepts = concept_result.data
                     concept_count = len(concepts)
                     extraction_data["concepts"] = concepts
-                    sys.stdout.write(
-                        f"├─ Concepts: Done ({concept_count} found, {concept_result.extraction_time:.1f}s)\n"
-                    )
                     status.processor_results["concepts"] = ProcessorResult(
                         processor_name="concepts",
                         status="success" if concepts else "empty",
                         extracted_count=concept_count,
                     )
                 else:
-                    sys.stdout.write("├─ Concepts: Failed\n")
                     status.processor_results["concepts"] = ProcessorResult(
                         processor_name="concepts",
                         status="failed",
@@ -510,16 +530,12 @@ class ResilientKnowledgeMiner:
                     relationships = relationship_result.data
                     relation_count = len(relationships)
                     extraction_data["relationships"] = relationships
-                    sys.stdout.write(
-                        f"├─ Relationships: Done ({relation_count} found, {relationship_result.extraction_time:.1f}s)\n"
-                    )
                     status.processor_results["relationships"] = ProcessorResult(
                         processor_name="relationships",
                         status="success" if relationships else "empty",
                         extracted_count=relation_count,
                     )
                 else:
-                    sys.stdout.write("├─ Relationships: Failed\n")
                     status.processor_results["relationships"] = ProcessorResult(
                         processor_name="relationships",
                         status="failed",
@@ -532,16 +548,12 @@ class ResilientKnowledgeMiner:
                     insights = insight_result.data
                     insight_count = len(insights)
                     extraction_data["insights"] = insights
-                    sys.stdout.write(
-                        f"├─ Insights: Done ({insight_count} found, {insight_result.extraction_time:.1f}s)\n"
-                    )
                     status.processor_results["insights"] = ProcessorResult(
                         processor_name="insights",
                         status="success" if insights else "empty",
                         extracted_count=insight_count,
                     )
                 else:
-                    sys.stdout.write("├─ Insights: Failed\n")
                     status.processor_results["insights"] = ProcessorResult(
                         processor_name="insights",
                         status="failed",
@@ -554,23 +566,19 @@ class ResilientKnowledgeMiner:
                     patterns = pattern_result.data
                     pattern_count = len(patterns)
                     extraction_data["patterns"] = patterns
-                    sys.stdout.write(
-                        f"└─ Patterns: Done ({pattern_count} found, {pattern_result.extraction_time:.1f}s)\n"
-                    )
                     status.processor_results["patterns"] = ProcessorResult(
                         processor_name="patterns",
                         status="success" if patterns else "empty",
                         extracted_count=pattern_count,
                     )
                 else:
-                    sys.stdout.write("└─ Patterns: Failed\n")
                     status.processor_results["patterns"] = ProcessorResult(
                         processor_name="patterns",
                         status="failed",
                         error_message=pattern_result.error if pattern_result else "Unknown error",
                     )
 
-                sys.stdout.flush()
+                # Check if all processors succeeded
                 status.is_complete = all(r.status in ["success", "empty"] for r in status.processor_results.values())
 
             elif self.extractor:
@@ -654,8 +662,8 @@ class ResilientKnowledgeMiner:
         # Update statistics
         self._update_stats(status)
 
-        # Log completion
-        self.extraction_logger.complete_article()
+        # Log completion with status for partial failure reporting
+        self.extraction_logger.complete_article(status)
 
         return status
 

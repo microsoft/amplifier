@@ -428,7 +428,7 @@ Return ONLY valid JSON, no other text."""
         except Exception as e:
             elapsed = time.time() - start_time
             error_msg = f"Pattern extraction failed: {str(e) or 'Unknown error occurred'}"
-            logger.error(f"Pattern extraction failed after {elapsed:.1f}s: {e}")
+            # Don't log here - let the caller handle error display
             return FocusedExtractionResult(
                 extraction_type="patterns", data=[], extraction_time=elapsed, error=error_msg
             )
