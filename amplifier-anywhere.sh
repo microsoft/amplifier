@@ -88,13 +88,14 @@ if [[ ! -f "$AMPLIFIER_DIR/.venv/bin/activate" ]]; then
     exit 1
 fi
 
-# Parse arguments
-PROJECT_DIR="${1:-$(pwd)}"
+# Parse arguments - use ORIGINAL_PWD if set (from global wrapper), otherwise current pwd
+DEFAULT_DIR="${ORIGINAL_PWD:-$(pwd)}"
+PROJECT_DIR="${1:-$DEFAULT_DIR}"
 
 # Check if first arg is a Claude flag (starts with --)
 if [[ "$1" == --* ]] && [[ "$1" != "--help" ]] && [[ "$1" != "-h" ]] && [[ "$1" != "--version" ]]; then
-    # First argument is a Claude option, use current directory
-    PROJECT_DIR="$(pwd)"
+    # First argument is a Claude option, use default directory
+    PROJECT_DIR="$DEFAULT_DIR"
     CLAUDE_ARGS="$@"
 else
     # First argument might be a directory

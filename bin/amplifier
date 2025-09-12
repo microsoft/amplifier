@@ -32,5 +32,8 @@ if [[ -z "$AMPLIFIER_DIR" ]]; then
     exit 1
 fi
 
-# Execute the main script
-exec "$AMPLIFIER_DIR/amplifier-anywhere.sh" "$@"
+# Save original working directory
+ORIGINAL_PWD="$(pwd)"
+
+# Execute the main script, passing the original working directory as an env variable
+ORIGINAL_PWD="$ORIGINAL_PWD" exec "$AMPLIFIER_DIR/amplifier-anywhere.sh" "$@"
