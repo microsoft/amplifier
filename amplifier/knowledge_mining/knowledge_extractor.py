@@ -103,7 +103,7 @@ class KnowledgeExtractor:
                 + "\n"
             )
 
-        logger.info("Claude Code SDK verified and ready")
+        logger.debug("Claude Code SDK verified and ready")
 
     def classify_document(self, text: str, title: str = "") -> str:
         """Classify document type using Claude Code SDK - REQUIRED
@@ -182,7 +182,7 @@ Respond with ONLY the category name, nothing else."""
                     valid_types = config.get_valid_document_types()
 
                     if doc_type in valid_types:
-                        logger.info(f"Document classified as: {doc_type}")
+                        logger.debug(f"Document classified as: {doc_type}")
                         return doc_type
                     logger.warning(f"Invalid classification '{doc_type}', defaulting to 'general'")
                     return "general"

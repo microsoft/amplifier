@@ -39,7 +39,7 @@ class FocusedExtractionResult:
 class ConceptExtractor:
     """Focused extractor for concepts only"""
 
-    async def extract(self, text: str, title: str = "") -> FocusedExtractionResult:
+    async def extract(self, text: str, title: str = "", document_type: str = "general") -> FocusedExtractionResult:
         """Extract ONLY concepts from text"""
         if not CLAUDE_SDK_AVAILABLE:
             return FocusedExtractionResult(
@@ -135,7 +135,7 @@ Return ONLY valid JSON, no other text."""
 class RelationshipExtractor:
     """Focused extractor for relationships only"""
 
-    async def extract(self, text: str, title: str = "") -> FocusedExtractionResult:
+    async def extract(self, text: str, title: str = "", document_type: str = "general") -> FocusedExtractionResult:
         """Extract ONLY relationships from text"""
         if not CLAUDE_SDK_AVAILABLE:
             return FocusedExtractionResult(
@@ -237,7 +237,7 @@ Return ONLY valid JSON, no other text."""
 class InsightExtractor:
     """Focused extractor for insights only"""
 
-    async def extract(self, text: str, title: str = "") -> FocusedExtractionResult:
+    async def extract(self, text: str, title: str = "", document_type: str = "general") -> FocusedExtractionResult:
         """Extract ONLY insights from text"""
         if not CLAUDE_SDK_AVAILABLE:
             return FocusedExtractionResult(
@@ -337,7 +337,7 @@ Return ONLY valid JSON, no other text."""
 class PatternExtractor:
     """Focused extractor for code patterns only"""
 
-    async def extract(self, text: str, title: str = "") -> FocusedExtractionResult:
+    async def extract(self, text: str, title: str = "", document_type: str = "general") -> FocusedExtractionResult:
         """Extract ONLY code patterns from text"""
         if not CLAUDE_SDK_AVAILABLE:
             return FocusedExtractionResult(
@@ -444,17 +444,19 @@ class FocusedKnowledgeExtractor:
         self.insight_extractor = InsightExtractor()
         self.pattern_extractor = PatternExtractor()
 
-    async def extract_all(self, text: str, title: str = "") -> dict[str, FocusedExtractionResult]:
+    async def extract_all(
+        self, text: str, title: str = "", document_type: str = "general"
+    ) -> dict[str, FocusedExtractionResult]:
         """Run all focused extractors in parallel
 
         Returns dict with keys: concepts, relationships, insights, patterns
         """
         # Run all extractors in parallel for efficiency
         tasks = [
-            self.concept_extractor.extract(text, title),
-            self.relationship_extractor.extract(text, title),
-            self.insight_extractor.extract(text, title),
-            self.pattern_extractor.extract(text, title),
+            self.concept_extractor.extract(text, title, document_type),
+            self.relationship_extractor.extract(text, title, document_type),
+            self.insight_extractor.extract(text, title, document_type),
+            self.pattern_extractor.extract(text, title, document_type),
         ]
 
         results = await asyncio.gather(*tasks, return_exceptions=True)

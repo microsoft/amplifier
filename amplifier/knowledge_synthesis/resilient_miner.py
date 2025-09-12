@@ -8,18 +8,22 @@ Contract: Process articles with graceful degradation and partial result saving
 import asyncio
 import json
 import logging
+import sys
 import time
 from dataclasses import asdict
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 from typing import Any
 
 from amplifier.config.paths import paths
 from amplifier.content_loader import ContentItem
-from amplifier.knowledge_integration import UnifiedKnowledgeExtractor
 from amplifier.utils.logging_utils import ExtractionLogger
 from amplifier.utils.token_utils import truncate_to_tokens
+
+if TYPE_CHECKING:
+    from amplifier.knowledge_integration import UnifiedKnowledgeExtractor
 
 logger = logging.getLogger(__name__)
 
@@ -153,7 +157,7 @@ class ResilientKnowledgeMiner:
 
     def __init__(
         self,
-        extractor: UnifiedKnowledgeExtractor | None = None,
+        extractor: "UnifiedKnowledgeExtractor | None" = None,
         status_store: ProcessingStatusStore | None = None,
         use_focused_extractors: bool = True,
     ):
@@ -192,6 +196,56 @@ class ResilientKnowledgeMiner:
             "total_patterns": 0,
         }
 
+    async def _classify_document(self, text: str, title: str = "") -> str:
+        """Classify document type using Claude Code SDK.
+
+        Args:
+            text: Document text (first 1500 chars used)
+            title: Document title for context
+
+        Returns:
+            Document type string (e.g., "article", "api_docs", "tutorial", etc.)
+        """
+        # Try to get classifier from appropriate source
+        classifier = None
+
+        # First try unified extractor's concept extractor
+        if (
+            self.extractor
+            and hasattr(self.extractor, "concept_extractor")
+            and hasattr(self.extractor.concept_extractor, "_classify_document_async")
+        ):
+            classifier = self.extractor.concept_extractor._classify_document_async
+
+        # If not available from unified, try to create our own
+        if not classifier:
+            try:
+                from amplifier.knowledge_mining.knowledge_extractor import KnowledgeExtractor
+
+                temp_extractor = KnowledgeExtractor()
+                if hasattr(temp_extractor, "_classify_document_async"):
+                    classifier = temp_extractor._classify_document_async
+            except Exception as e:
+                logger.warning(f"Could not initialize classifier: {e}")
+
+        # Attempt classification
+        if classifier:
+            try:
+                # Call the async classifier directly (no nested event loops)
+                document_type = await asyncio.wait_for(
+                    classifier(text, title),
+                    timeout=30.0,  # 30 second timeout
+                )
+                return document_type
+            except TimeoutError:
+                logger.warning("Document classification timed out, using 'general'")
+            except Exception as e:
+                logger.warning(f"Document classification failed: {e}, using 'general'")
+        else:
+            logger.debug("No classifier available, using 'general'")
+
+        return "general"  # Default fallback
+
     async def process_article_with_logging(
         self, article: ContentItem, current: int, total: int
     ) -> ArticleProcessingStatus:
@@ -212,6 +266,48 @@ class ResilientKnowledgeMiner:
         truncated_content, original_tokens, final_tokens = truncate_to_tokens(article.content)
         self.extraction_logger.log_truncation(original_tokens, final_tokens)
 
+        # Classify document type using Claude Code SDK (fast model)
+        import threading
+
+        # Set up for animated classification progress
+        classification_done = threading.Event()
+        document_type = "general"  # Default fallback
+
+        def show_classification_progress():
+            """Show animated progress for classification"""
+            spinner = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+            spinner_idx = 0
+            start_time = time.time()
+
+            while not classification_done.is_set():
+                elapsed = time.time() - start_time
+                message = f"├─ {spinner[spinner_idx]} Classifying document type ({elapsed:.1f}s)"
+                sys.stdout.write("\r" + message)
+                sys.stdout.flush()
+                spinner_idx = (spinner_idx + 1) % len(spinner)
+                time.sleep(0.1)
+
+            # Clear the line when done
+            sys.stdout.write("\r" + " " * 80 + "\r")
+            sys.stdout.flush()
+
+        # Start progress indicator
+        progress_thread = threading.Thread(target=show_classification_progress, daemon=True)
+        progress_thread.start()
+
+        # Perform classification
+        try:
+            document_type = await self._classify_document(truncated_content, article.title)
+        finally:
+            # Stop progress indicator
+            classification_done.set()
+            progress_thread.join(timeout=0.5)
+
+        # Show final result
+        sys.stdout.write(f"├─ Document type: {document_type}\n")
+        sys.stdout.flush()
+        logger.debug(f"Document classified as: {document_type}")
+
         # Load existing status or create new
         status = self.status_store.load_status(article.content_id)
         if status is None:
@@ -231,7 +327,6 @@ class ResilientKnowledgeMiner:
         try:
             if self.use_focused_extractors and self.focused_extractor:
                 # Use focused extractors for better quality
-                import sys
                 import threading
 
                 # Show initial extraction status
@@ -311,16 +406,24 @@ class ResilientKnowledgeMiner:
                     # Start all extractors in parallel
                     tasks = {
                         "concepts": asyncio.create_task(
-                            self.focused_extractor.concept_extractor.extract(truncated_content, article.title)
+                            self.focused_extractor.concept_extractor.extract(
+                                truncated_content, article.title, document_type
+                            )
                         ),
                         "relationships": asyncio.create_task(
-                            self.focused_extractor.relationship_extractor.extract(truncated_content, article.title)
+                            self.focused_extractor.relationship_extractor.extract(
+                                truncated_content, article.title, document_type
+                            )
                         ),
                         "insights": asyncio.create_task(
-                            self.focused_extractor.insight_extractor.extract(truncated_content, article.title)
+                            self.focused_extractor.insight_extractor.extract(
+                                truncated_content, article.title, document_type
+                            )
                         ),
                         "patterns": asyncio.create_task(
-                            self.focused_extractor.pattern_extractor.extract(truncated_content, article.title)
+                            self.focused_extractor.pattern_extractor.extract(
+                                truncated_content, article.title, document_type
+                            )
                         ),
                     }
 
@@ -477,7 +580,10 @@ class ResilientKnowledgeMiner:
 
                 async with asyncio.timeout(120):  # 120 seconds per DISCOVERIES.md
                     extraction = await self.extractor.extract_from_text(
-                        text=truncated_content, title=article.title, source=article.content_id
+                        text=truncated_content,
+                        title=article.title,
+                        source=article.content_id,
+                        document_type=document_type,
                     )
 
                 phase_elapsed = time.time() - phase_start
