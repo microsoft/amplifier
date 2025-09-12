@@ -42,9 +42,14 @@ class SmokeTestConfig(BaseSettings):
         # Create test data directory
         self.test_data_dir.mkdir(exist_ok=True)
 
-        # Create sample data files
+        # Create data subdirectory for amplifier data
+        data_dir = self.test_data_dir / "data"
+        data_dir.mkdir(exist_ok=True)
+
+        # Only create sample data files if they don't exist
         sample_article = self.test_data_dir / "test_article.md"
-        sample_article.write_text("""# Test Article
+        if not sample_article.exists():
+            sample_article.write_text("""# Test Article
 
 This is a test article for smoke testing.
 
@@ -58,7 +63,8 @@ This is the conclusion of the test article.
 """)
 
         sample_code = self.test_data_dir / "test_code.py"
-        sample_code.write_text("""# Test Python file
+        if not sample_code.exists():
+            sample_code.write_text("""# Test Python file
 def hello_world():
     \"\"\"Sample function for testing.\"\"\"
     return "Hello, World!"
@@ -69,10 +75,19 @@ if __name__ == "__main__":
 
     def cleanup_test_environment(self) -> None:
         """Clean up test environment after tests."""
+        # Don't delete the test data directory - we want to preserve test data
+        # Clean up any temporary files created during tests
         import shutil
 
-        if self.test_data_dir.exists():
-            shutil.rmtree(self.test_data_dir)
+        # Clean up any __pycache__ directories that might have been created
+        for cache_dir in self.test_data_dir.rglob("__pycache__"):
+            if cache_dir.is_dir():
+                shutil.rmtree(cache_dir)
+
+        # Clean up any .pyc files
+        for pyc_file in self.test_data_dir.rglob("*.pyc"):
+            if pyc_file.is_file():
+                pyc_file.unlink()
 
     def get_test_env(self) -> dict:
         """Get environment variables for test execution."""
@@ -81,6 +96,16 @@ if __name__ == "__main__":
         env["AMPLIFIER_DATA_DIR"] = str(self.test_data_dir / "data")
         env["AMPLIFIER_CONTENT_DIRS"] = str(self.test_data_dir)
         env["PYTHONPATH"] = str(Path.cwd())
+
+        # Set model to use fast model for testing
+        env["AMPLIFIER_MODEL_CATEGORY"] = "fast"
+
+        # Ensure test data directory is absolute
+        env["SMOKE_TEST_TEST_DATA_DIR"] = str(self.test_data_dir.absolute())
+
+        # Skip AI evaluation if SDK not available
+        env["SMOKE_TEST_SKIP_ON_AI_UNAVAILABLE"] = "true"
+
         return env
 
 
