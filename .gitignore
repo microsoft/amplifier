@@ -57,3 +57,6 @@ ai_working/tmp
 
 # Default data directory
 .data/
+
+# Smoke test runtime logs
+.smoke_test_data/data

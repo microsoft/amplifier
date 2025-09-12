@@ -1,4 +1,0 @@
-{"event": "sync_started", "stage": "sync", "timestamp": 1757653748.2853909, "data": {"total": 1, "max": null}}
-{"event": "extraction_started", "stage": "extract", "source_id": "test_article_001", "timestamp": 1757653758.2853932, "data": {"title": "Test Article"}}
-{"event": "extraction_succeeded", "stage": "extract", "source_id": "test_article_001", "timestamp": 1757653768.2853947, "data": {"title": "Test Article", "concepts": 3, "relationships": 2, "insights": 2}}
-{"event": "sync_finished", "stage": "sync", "timestamp": 1757653778.2853963, "data": {"processed": 1, "skipped": 0, "total": 1}}
