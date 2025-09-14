@@ -1,0 +1,164 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    name: Lint and Type Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      
+      - name: Install dependencies
+        run: |
+          uv sync --all-extras --dev
+      
+      - name: Run checks
+        run: |
+          make check
+      
+      - name: Upload stub violations if any
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stub-violations
+          path: |
+            **/*.py
+          retention-days: 7
+
+  smoke-test:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      
+      - name: Install dependencies
+        run: |
+          uv sync --all-extras --dev
+      
+      - name: Install Node.js (for Claude CLI)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install Claude CLI
+        run: |
+          npm install -g @anthropic-ai/claude-code
+      
+      - name: Run smoke tests
+        run: |
+          make smoke-test
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-results
+          path: |
+            .data/events/events.jsonl
+            .data/smoke_tests/
+          retention-days: 7
+
+  minimal-benchmark:
+    name: Minimal Benchmark
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for comparisons
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      
+      - name: Install dependencies
+        run: |
+          uv sync --all-extras --dev
+      
+      - name: Run minimal benchmark
+        run: |
+          # Create minimal benchmark if it exists
+          if [ -f "benchmarks/minimal.py" ]; then
+            uv run python benchmarks/minimal.py > benchmark_results.txt
+          else
+            echo "No benchmarks configured yet" > benchmark_results.txt
+          fi
+      
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const results = fs.readFileSync('benchmark_results.txt', 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Benchmark Results\n\`\`\`\n${results}\n\`\`\``
+            });
+
+  test-cli:
+    name: Test CLI Installation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+      
+      - name: Install package
+        run: |
+          uv pip install -e .
+      
+      - name: Test CLI
+        run: |
+          amplifier --version
+          amplifier doctor
+          amplifier --help
