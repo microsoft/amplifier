@@ -169,15 +169,23 @@ if [[ -z "$EXTERNAL_PROJECT_MODE" ]]; then
 fi
 
 # Start Claude with both directories
-cd "$AMPLIFIER_DIR"
+# Change to the PROJECT_DIR so Claude starts in the correct location
+cd "$PROJECT_DIR"
 
 # If in external mode, use --append-system-prompt to inform Claude
 if [[ -n "$EXTERNAL_PROJECT_MODE" ]]; then
     # Create the system prompt message
-    EXTERNAL_MODE_PROMPT="EXTERNAL PROJECT MODE - AUTO-CONFIGURED: You are working on a project at: $PROJECT_DIR. Please cd to that directory immediately. DO NOT update any issues, PRs, or code in the Amplifier repository. All your work should be in the user's project directory. This mode was automatically detected."
+    EXTERNAL_MODE_PROMPT="EXTERNAL PROJECT MODE - AUTO-CONFIGURED: You are working on a project at: $PROJECT_DIR. This is your working directory. DO NOT update any issues, PRs, or code in the Amplifier repository. All your work should be in this project directory. This mode was automatically detected."
     
     # Pass the additional system prompt to Claude
-    exec claude --add-dir "$PROJECT_DIR" --append-system-prompt "$EXTERNAL_MODE_PROMPT" $CLAUDE_ARGS
+    # Also add the Amplifier dir so Claude can access agents and tools
+    exec claude --add-dir "$AMPLIFIER_DIR" --append-system-prompt "$EXTERNAL_MODE_PROMPT" $CLAUDE_ARGS
 else
-    exec claude --add-dir "$PROJECT_DIR" $CLAUDE_ARGS
+    # Not in external mode, working on Amplifier itself
+    # Still start in PROJECT_DIR but add Amplifier if different
+    if [[ "$PROJECT_DIR" != "$AMPLIFIER_DIR" ]]; then
+        exec claude --add-dir "$AMPLIFIER_DIR" $CLAUDE_ARGS
+    else
+        exec claude $CLAUDE_ARGS
+    fi
 fi
