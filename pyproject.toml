@@ -21,6 +21,12 @@ dependencies = [
 [project.scripts]
 amplifier = "amplifier.cli:cli"
 
+[tool.setuptools]
+packages = ["amplifier"]
+
+[tool.uv]
+package = true
+
 [tool.uv.workspace]
 # Add all projects in the workspace
 members = []

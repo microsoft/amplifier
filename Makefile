@@ -112,7 +112,7 @@ help: ## Show ALL available commands
 	@echo ""
 
 # Installation
-install: ## Install all dependencies
+install: ## Install all dependencies and global commands
 	@echo "Installing workspace dependencies..."
 	uv sync --group dev
 	@echo ""
@@ -134,10 +134,10 @@ install: ## Install all dependencies
 		exit 1; \
 	}
 	@echo ""
-	@echo "✅ All dependencies installed!"
+	@echo "Installing global Amplifier commands..."
+	@$(MAKE) install-global
 	@echo ""
-	@echo "💡 For global access to Amplifier from any directory:"
-	@echo "   make install-global"
+	@echo "✅ All dependencies and global commands installed!"
 	@echo ""
 	@if [ -n "$$VIRTUAL_ENV" ]; then \
 		echo "✓ Virtual environment already active"; \
@@ -155,25 +155,35 @@ install-global: ## Install global 'amplifier' command for system-wide access
 		exit 1; \
 	fi
 	@mkdir -p ~/bin
-	@cp bin/amplifier ~/bin/amplifier
+	@echo "Installing Python CLI..."
+	@if [ ! -f .venv/bin/amplifier ]; then \
+		echo "  Installing package..."; \
+		uv pip install -e . > /dev/null 2>&1; \
+	fi
+	@if [ -f .venv/bin/amplifier ]; then \
+		ln -sf "$(PWD)/.venv/bin/amplifier" ~/bin/amplifier-cli; \
+		echo "✅ Python CLI installed"; \
+	else \
+		echo "❌ Failed to install Python CLI"; \
+		exit 1; \
+	fi
+	@echo "Installing unified wrapper..."
+	@chmod +x bin/amplifier-unified
+	@cp bin/amplifier-unified ~/bin/amplifier
 	@chmod +x ~/bin/amplifier
-	@echo "✅ Global 'amplifier' command installed to ~/bin/amplifier"
+	@echo "✅ Global 'amplifier' command installed"
 	@echo ""
 	@if echo "$$PATH" | grep -q "$$HOME/bin"; then \
 		echo "✓ ~/bin is already in your PATH"; \
 	else \
-		echo "💡 Add ~/bin to your PATH for global access:"; \
-		if [ -n "$$ZSH_VERSION" ] || [ "$$SHELL" = "/bin/zsh" ] || [ -f ~/.zshrc ]; then \
-			echo '   echo "export PATH="\$$HOME/bin:\$$PATH"" >> ~/.zshrc'; \
-			echo "   source ~/.zshrc"; \
-		else \
-			echo '   echo "export PATH="\$$HOME/bin:\$$PATH"" >> ~/.bashrc'; \
-			echo "   source ~/.bashrc"; \
-		fi; \
+		echo "⚠️  Add ~/bin to your PATH. Add this line to your shell config:"; \
+		echo '   export PATH="$$HOME/bin:$$PATH"'; \
 	fi
 	@echo ""
-	@echo "Usage: amplifier [project-dir] [claude-options]"
-	@echo "Example: amplifier ~/my-project --model sonnet"
+	@echo "Usage:"
+	@echo "  amplifier doctor           # Run diagnostics"
+	@echo "  amplifier ~/project        # Start Claude Code in a project"
+	@echo "  amplifier --version        # Show version"
 
 install-global-system: ## Install global 'amplifier' command system-wide (requires sudo)
 	@echo "Installing system-wide Amplifier command..."
@@ -237,6 +247,12 @@ smoke-test: ## Run quick smoke tests to verify basic functionality
 	@echo "Running smoke tests..."
 	@PYTHONPATH=. python -m amplifier.smoke_tests
 	@echo "Smoke tests complete!"
+
+validate: ## Validate Amplifier installation and features (quick)
+	@python validate_installation.py
+
+validate-full: ## Validate Amplifier with full smoke tests (takes 2-3 minutes)
+	@python validate_installation.py --full
 
 # Git worktree management
 worktree: ## Create a git worktree with .data copy. Usage: make worktree feature-name

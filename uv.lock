@@ -10,7 +10,7 @@ resolution-markers = [
 [[package]]
 name = "amplifier-toolkit"
 version = "0.2.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "claude-code-sdk" },
     { name = "click" },

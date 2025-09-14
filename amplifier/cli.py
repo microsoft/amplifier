@@ -120,79 +120,126 @@ def doctor() -> None:
 
     import shutil
     import subprocess
+    from enum import Enum
     from pathlib import Path
+
+    class CheckStatus(Enum):
+        REQUIRED = "required"
+        OPTIONAL = "optional"
 
     checks = []
 
-    # Check Python version
+    # Check Python version (REQUIRED)
     py_version = sys.version_info
     if py_version >= (3, 11):
-        checks.append(("Python 3.11+", True, f"{py_version.major}.{py_version.minor}.{py_version.micro}"))
+        checks.append(
+            ("Python 3.11+", True, f"{py_version.major}.{py_version.minor}.{py_version.micro}", CheckStatus.REQUIRED)
+        )
     else:
         checks.append(
-            ("Python 3.11+", False, f"{py_version.major}.{py_version.minor}.{py_version.micro} (upgrade required)")
+            (
+                "Python 3.11+",
+                False,
+                f"{py_version.major}.{py_version.minor}.{py_version.micro} (upgrade required)",
+                CheckStatus.REQUIRED,
+            )
         )
 
-    # Check Claude CLI
+    # Check Claude CLI (REQUIRED for knowledge extraction)
     claude_path = shutil.which("claude")
     if claude_path:
-        checks.append(("Claude CLI", True, claude_path))
+        checks.append(("Claude CLI", True, claude_path, CheckStatus.REQUIRED))
     else:
-        checks.append(("Claude CLI", False, "Not found (install with: npm install -g @anthropic-ai/claude-code)"))
+        checks.append(
+            (
+                "Claude CLI",
+                False,
+                "Not found (install with: npm install -g @anthropic-ai/claude-code)",
+                CheckStatus.REQUIRED,
+            )
+        )
 
-    # Check Node/npm
+    # Check Node/npm (REQUIRED for Claude CLI)
     npm_path = shutil.which("npm")
     if npm_path:
         try:
             result = subprocess.run(["npm", "--version"], capture_output=True, text=True, timeout=2)
-            checks.append(("npm", True, f"v{result.stdout.strip()}"))
+            checks.append(("npm", True, f"v{result.stdout.strip()}", CheckStatus.REQUIRED))
         except (subprocess.TimeoutExpired, subprocess.SubprocessError):
-            checks.append(("npm", False, "Found but couldn't get version"))
+            checks.append(("npm", False, "Found but couldn't get version", CheckStatus.REQUIRED))
     else:
-        checks.append(("npm", False, "Not found"))
+        checks.append(("npm", False, "Not found (needed for Claude CLI)", CheckStatus.REQUIRED))
 
-    # Check environment variables
+    # Check environment variables (OPTIONAL)
     import os
 
     amplifier_home = os.environ.get("AMPLIFIER_HOME")
     if amplifier_home:
-        checks.append(("AMPLIFIER_HOME", True, amplifier_home))
+        checks.append(("AMPLIFIER_HOME", True, amplifier_home, CheckStatus.OPTIONAL))
     else:
-        checks.append(("AMPLIFIER_HOME", False, "Not set (using default)"))
+        checks.append(("AMPLIFIER_HOME", None, "Not set (using default location)", CheckStatus.OPTIONAL))
 
-    # Check data directory
+    # Check data directory (OPTIONAL - will be created)
     data_dir = Path(".data")
     if data_dir.exists() and data_dir.is_dir():
-        checks.append(("Data directory", True, str(data_dir.absolute())))
+        checks.append(("Data directory", True, str(data_dir.absolute()), CheckStatus.OPTIONAL))
     else:
-        checks.append(("Data directory", False, "Not found (will be created on first run)"))
+        checks.append(("Data directory", None, "Not found (will be created on first run)", CheckStatus.OPTIONAL))
 
-    # Check config file
+    # Check config file (OPTIONAL)
     config_file = Path("amplifier.config.json")
     if config_file.exists():
-        checks.append(("Config file", True, str(config_file.absolute())))
+        checks.append(("Config file", True, str(config_file.absolute()), CheckStatus.OPTIONAL))
     else:
-        checks.append(("Config file", False, "Using defaults"))
+        checks.append(("Config file", None, "Not found (using defaults)", CheckStatus.OPTIONAL))
 
     # Display results
-    all_good = True
-    for name, status, details in checks:
+    critical_failures = False
+
+    click.echo(click.style("Required Components:", bold=True))
+    for name, status, details, check_type in checks:
+        if check_type != CheckStatus.REQUIRED:
+            continue
+
         if status:
             icon = click.style("✓", fg="green")
             status_text = click.style("OK", fg="green")
         else:
             icon = click.style("✗", fg="red")
             status_text = click.style("FAIL", fg="red")
-            all_good = False
+            critical_failures = True
 
-        click.echo(f"{icon} {name:20} [{status_text}] {details}")
+        click.echo(f"  {icon} {name:20} [{status_text}] {details}")
 
     click.echo()
-    if all_good:
-        click.echo(click.style("Environment is healthy!", fg="green"))
-    else:
-        click.echo(click.style("Some issues found. Please fix the items marked with ✗", fg="yellow"))
+    click.echo(click.style("Optional Components:", bold=True))
+    for name, status, details, check_type in checks:
+        if check_type != CheckStatus.OPTIONAL:
+            continue
+
+        if status is True:
+            icon = click.style("✓", fg="green")
+            status_text = click.style("OK", fg="green")
+        elif status is False:
+            icon = click.style("✗", fg="yellow")
+            status_text = click.style("WARN", fg="yellow")
+        else:  # None means optional and not configured
+            icon = click.style("◯", fg="cyan")
+            status_text = click.style("INFO", fg="cyan")
+
+        click.echo(f"  {icon} {name:20} [{status_text}] {details}")
+
+    click.echo()
+    if critical_failures:
+        click.echo(
+            click.style(
+                "❌ Critical issues found! Please fix the required components marked with ✗", fg="red", bold=True
+            )
+        )
         sys.exit(1)
+    else:
+        click.echo(click.style("✅ All required components are healthy!", fg="green", bold=True))
+        click.echo(click.style("   Optional components marked with ◯ can be configured if needed.", fg="cyan"))
 
 
 @cli.group()

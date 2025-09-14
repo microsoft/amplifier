@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# Smart Amplifier Command
+# Intelligently routes between Python CLI and bash script based on context
+
+# Check if first argument looks like a CLI subcommand
+if [[ $# -eq 0 ]] || [[ "$1" == "doctor" ]] || [[ "$1" == "smoke" ]] || [[ "$1" == "events" ]] || \
+   [[ "$1" == "graph" ]] || [[ "$1" == "self-update" ]] || [[ "$1" == "run" ]] || \
+   [[ "$1" == "extract" ]] || [[ "$1" == "synthesize" ]] || [[ "$1" == "triage" ]] || \
+   [[ "$1" == "--version" ]] || [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
+    
+    # Use Python CLI for these commands
+    # First try to find the amplifier Python CLI
+    if command -v amplifier-cli >/dev/null 2>&1; then
+        exec amplifier-cli "$@"
+    elif [[ -f "$HOME/dev/amplifier/.venv/bin/amplifier" ]]; then
+        exec "$HOME/dev/amplifier/.venv/bin/amplifier" "$@"
+    else
+        echo "❌ Amplifier CLI not found. Please run 'make install' in the Amplifier directory."
+        exit 1
+    fi
+else
+    # For directory arguments or Claude options, use the bash script
+    # This handles cases like: amplifier ~/project --model sonnet
+    
+    # Auto-detect Amplifier directory from common locations
+    AMPLIFIER_DIRS=(
+        "$HOME/dev/amplifier"
+        "$HOME/amplifier" 
+        "$HOME/repos/amplifier"
+        "$HOME/code/amplifier"
+        "/opt/amplifier"
+    )
+    
+    AMPLIFIER_DIR=""
+    for dir in "${AMPLIFIER_DIRS[@]}"; do
+        if [[ -d "$dir" && -f "$dir/.venv/bin/activate" ]]; then
+            AMPLIFIER_DIR="$dir"
+            break
+        fi
+    done
+    
+    if [[ -z "$AMPLIFIER_DIR" ]]; then
+        echo "❌ Cannot find Amplifier installation"
+        echo "   Searched locations:"
+        for dir in "${AMPLIFIER_DIRS[@]}"; do
+            echo "   - $dir"
+        done
+        echo ""
+        echo "   Please ensure Amplifier is cloned and installed in one of these locations."
+        echo "   Or create a symlink: ln -s /path/to/your/amplifier ~/dev/amplifier"
+        exit 1
+    fi
+    
+    # Save original working directory
+    ORIGINAL_PWD="$(pwd)"
+    
+    # Execute the main script, passing the original working directory as an env variable
+    ORIGINAL_PWD="$ORIGINAL_PWD" exec "$AMPLIFIER_DIR/amplifier-anywhere.sh" "$@"
+fi

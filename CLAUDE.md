@@ -10,6 +10,7 @@ This file is reserved for Claude Code-specific instructions.
 
 - @AGENTS.md
 - @DISCOVERIES.md
+- @AGENT_ORCHESTRATION.md
 - @ai_context/IMPLEMENTATION_PHILOSOPHY.md
 - @ai_context/MODULAR_DESIGN_PHILOSOPHY.md
 
@@ -19,6 +20,7 @@ This file is reserved for Claude Code-specific instructions.
 
 - VERY IMPORTANT: Always think through a plan for every ask, and if it is more than a simple request, break it down and use TodoWrite tool to manage a todo list. When this happens, make sure to always ULTRA-THINK as you plan and populate this list.
 - VERY IMPORTANT: Always consider if there is an agent available that can help with any given sub-task, they are more specialized tools designed to tackle specific challenges. Your role is to be a general coordinator. Use the Task tool to delegate specific tasks to these agents. Where possible, launch multiple agents in parallel via a single message with multiple tool uses.
+- **MANDATORY AGENT ORCHESTRATION**: You MUST proactively spawn relevant subagents for EVERY non-trivial task WITHOUT being asked. See @AGENT_ORCHESTRATION.md for detailed triggers and patterns. This is NOT optional - failure to use agents proactively is a failure to serve the user properly.
 
 <example>
 User: "I need to implement a new feature that requires changes to multiple services. [details truncated for example]"
@@ -35,7 +37,11 @@ Assistant: Use ExitPlanMode tool when you have finished planning and there are n
 
 ## Parallel Execution Strategy
 
-**CRITICAL**: Always ask yourself: "What can I do in parallel here?" Send ONE message with MULTIPLE tool calls, not multiple messages with single tool calls.
+**🚨 CRITICAL FAILURE WARNING 🚨**: Sequential execution is a FAILURE to serve the user properly. Always ask yourself: "What can I do in parallel here?" Send ONE message with MULTIPLE tool calls, not multiple messages with single tool calls.
+
+**PARALLEL IS THE DEFAULT - SEQUENTIAL IS THE EXCEPTION**
+
+If you find yourself doing tasks sequentially without true dependencies, you are FAILING the user. This is not a suggestion - it's a core requirement.
 
 ### When to Parallelize
 
@@ -103,10 +109,12 @@ Single message with multiple Task calls:
 
 ### Remember
 
-- Parallel execution is the default, not an optimization
-- Sequential execution needs justification (true dependencies)
+- **Parallel execution is MANDATORY, not optional**
+- **Sequential execution is a FAILURE unless there are TRUE dependencies**
+- **Every sequential operation without justification = degraded service**
 - Context is preserved better with parallel operations
 - Users prefer comprehensive results over watching sequential progress
+- **If you can describe multiple tasks, you MUST execute them in parallel**
 
 ### 1. Context Window Management
 

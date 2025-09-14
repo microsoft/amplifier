@@ -1,10 +1,10 @@
 # Performance Comparison: Main vs Feature Branch
 
-## Test Date: 2025-09-14
+## Test Date: 2025-01-21
 
 ## Executive Summary
 
-The `feature/amplifier-cli-unified` branch introduces an **ArtifactCache** system that dramatically improves performance for repeated knowledge extraction operations. Our tests show a **1,179x speedup** for cached operations, reducing processing time from 6.03 seconds to 0.01 seconds for cached content.
+The `feature/amplifier-cli-unified` branch introduces an **ArtifactCache** system that dramatically improves performance for repeated knowledge extraction operations. Our empirical tests show a **1,455x speedup** for cached operations, reducing processing time from 6.01 seconds to 0.004 seconds for cached content.
 
 ## Branch Comparison
 
@@ -35,16 +35,16 @@ Processing: Microsoft Open Source Code of Conduct
 Total time: 53.2 seconds
 ```
 
-#### Feature Branch - Cache Performance Test
+#### Feature Branch - Cache Performance Test (Empirical Results)
 ```
 First Run (No Cache):
-- 3 documents processed: 6.03s total
-- Average per document: 2.01s
+- 3 documents processed: 6.01s total
+- Average per document: 2.00s
 
 Second Run (With Cache):
-- 3 documents processed: 0.01s total  
-- Average per document: 0.003s
-- Speedup: 1,179x
+- 3 documents processed: 0.004s total  
+- Average per document: 0.001s
+- Speedup: 1,455x
 - Cache efficiency: 99.9%
 ```
 
