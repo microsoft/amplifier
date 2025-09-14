@@ -14,7 +14,7 @@
       ".vscode",
       ".claude",
       ".ai",
-      "~/amplifier"
+      "~/dev/amplifier"
     ]
   },
   "enableAllProjectMcpServers": false,
