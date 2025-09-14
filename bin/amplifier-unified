@@ -2,33 +2,64 @@
 
 # Unified Amplifier Command
 # Routes between Python CLI and bash script based on arguments
+# 
+# Usage:
+#   amplifier [PATH]           - Start Claude Code in PATH (defaults to current directory)
+#   amplifier run [PATH]       - Run Amplifier in PATH (defaults to current directory)
+#   amplifier <command>        - Execute other Amplifier commands
+#   amplifier --help           - Show help
 
-# Check if first argument is a directory path (starts with . or / or ~)
-if [[ "$1" =~ ^[./~] ]] || [[ -d "$1" ]]; then
-    # This is a directory path, use the bash script
-    AMPLIFIER_DIR="$HOME/dev/amplifier"
+AMPLIFIER_DIR="$HOME/dev/amplifier"
+
+# Helper function to check if amplifier-anywhere.sh exists
+check_bash_script() {
     if [[ ! -f "$AMPLIFIER_DIR/amplifier-anywhere.sh" ]]; then
         echo "❌ amplifier-anywhere.sh not found in $AMPLIFIER_DIR"
         exit 1
     fi
-    ORIGINAL_PWD="$(pwd)"
-    ORIGINAL_PWD="$ORIGINAL_PWD" exec "$AMPLIFIER_DIR/amplifier-anywhere.sh" "$@"
-# If no arguments or recognized CLI command, use Python CLI
-elif [[ $# -eq 0 ]] || [[ "$1" =~ ^(doctor|smoke|events|graph|self-update|run|extract|synthesize|triage|--version|--help|-h)$ ]]; then
-    # Use the Python CLI from its installed location
-    if [[ -f "$HOME/dev/amplifier/.venv/bin/amplifier" ]]; then
-        exec "$HOME/dev/amplifier/.venv/bin/amplifier" "$@"
-    else
+}
+
+# Helper function to check if Python CLI exists
+check_python_cli() {
+    if [[ ! -f "$HOME/dev/amplifier/.venv/bin/amplifier" ]]; then
         echo "❌ Amplifier CLI not found. Please run 'make install' in the Amplifier directory."
         exit 1
     fi
+}
+
+# Special handling for 'run' command - can optionally take a path
+if [[ "$1" == "run" ]]; then
+    if [[ $# -eq 1 ]]; then
+        # No path provided, use current directory
+        check_python_cli
+        exec "$HOME/dev/amplifier/.venv/bin/amplifier" run .
+    elif [[ "$2" =~ ^[./~] ]] || [[ -d "$2" ]]; then
+        # Path provided as second argument
+        check_python_cli
+        exec "$HOME/dev/amplifier/.venv/bin/amplifier" "$@"
+    else
+        # Other arguments to run command
+        check_python_cli
+        exec "$HOME/dev/amplifier/.venv/bin/amplifier" "$@"
+    fi
+# No arguments - default to starting Claude Code in current directory
+elif [[ $# -eq 0 ]]; then
+    check_bash_script
+    ORIGINAL_PWD="$(pwd)"
+    ORIGINAL_PWD="$ORIGINAL_PWD" exec "$AMPLIFIER_DIR/amplifier-anywhere.sh" .
+# Check if first argument is a directory path (starts with . or / or ~)
+elif [[ "$1" =~ ^[./~] ]] || [[ -d "$1" ]]; then
+    # This is a directory path, use the bash script to start Claude Code
+    check_bash_script
+    ORIGINAL_PWD="$(pwd)"
+    ORIGINAL_PWD="$ORIGINAL_PWD" exec "$AMPLIFIER_DIR/amplifier-anywhere.sh" "$@"
+# Recognized CLI commands
+elif [[ "$1" =~ ^(doctor|smoke|events|graph|self-update|extract|synthesize|triage|--version|--help|-h)$ ]]; then
+    check_python_cli
+    exec "$HOME/dev/amplifier/.venv/bin/amplifier" "$@"
 else
     # For any other arguments, default to bash script (for Claude options)
-    AMPLIFIER_DIR="$HOME/dev/amplifier"
-    if [[ ! -f "$AMPLIFIER_DIR/amplifier-anywhere.sh" ]]; then
-        echo "❌ amplifier-anywhere.sh not found in $AMPLIFIER_DIR"
-        exit 1
-    fi
+    check_bash_script
     ORIGINAL_PWD="$(pwd)"
     ORIGINAL_PWD="$ORIGINAL_PWD" exec "$AMPLIFIER_DIR/amplifier-anywhere.sh" "$@"
 fi
