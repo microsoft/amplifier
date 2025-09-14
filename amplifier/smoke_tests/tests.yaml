@@ -1,0 +1,131 @@
+# AI-Driven Smoke Tests
+# Simple command + success criteria format
+# AI evaluates if the command meets the criteria
+
+tests:
+  # Core Commands
+  - name: Help Command
+    command: make help
+    success_criteria: The help output shows available make commands including install, check, and other core targets
+    timeout: 5
+
+  - name: Code Quality Check
+    command: make check
+    success_criteria: All code quality checks (formatting, linting, type checking) pass without errors
+    timeout: 60
+
+  - name: Test Suite
+    command: make test
+    success_criteria: The pytest test suite runs and collects tests successfully
+    timeout: 30
+
+  # Content Management
+  - name: Content Status
+    command: make content-status
+    success_criteria: Shows content statistics or status information
+    timeout: 10
+
+  - name: Content Scan
+    command: make content-scan
+    success_criteria: Scans directories and reports found content items or directories
+    timeout: 15
+
+  - name: Content Search
+    command: make content-search q="test"
+    success_criteria: Performs a search for "test" and shows search results or indicates the search was executed
+    timeout: 10
+
+  # Knowledge Base
+  - name: Knowledge Statistics
+    command: make knowledge-stats
+    success_criteria: Displays knowledge base statistics or summary information
+    timeout: 10
+
+  - name: Knowledge Search
+    command: make knowledge-search Q="test"
+    success_criteria: Searches the knowledge base for "test" and shows results or search execution
+    timeout: 15
+
+  - name: Knowledge Query
+    command: make knowledge-query Q="what is amplifier"
+    success_criteria: Queries the knowledge base and provides a response or shows query execution
+    timeout: 20
+
+  - name: Knowledge Events
+    command: make knowledge-events N=5
+    success_criteria: Shows recent pipeline events or indicates no events are available
+    timeout: 10
+
+  # Knowledge Graph
+  - name: Graph Statistics
+    command: make knowledge-graph-stats
+    success_criteria: Shows knowledge graph statistics like node/edge counts or indicates the graph status
+    timeout: 15
+
+  - name: Graph Search
+    command: make knowledge-graph-search Q="test"
+    success_criteria: Searches the knowledge graph for "test" and shows results or search execution
+    timeout: 15
+
+  - name: Graph Export
+    command: make knowledge-graph-export FORMAT=gexf
+    success_criteria: Exports the knowledge graph in GEXF format or indicates successful export
+    timeout: 20
+
+  # Utility Commands
+  - name: Workspace Info
+    command: make workspace-info
+    success_criteria: Shows workspace information including paths or configuration details
+    timeout: 5
+
+  - name: AI Context Generation
+    command: make ai-context-files
+    success_criteria: Generates AI context files successfully or reports the files were created
+    timeout: 30
+
+  # Python Module Verification
+  - name: Core Imports
+    command: |
+      python -c "
+      import amplifier
+      from amplifier.config.paths import paths
+      from amplifier.config.models import models
+      print('Core modules imported successfully')
+      "
+    success_criteria: Python imports work without errors and prints success message
+    timeout: 5
+
+  # Test Data Processing
+  - name: Process Test Article
+    command: |
+      echo '# Test Article\n\nThis is test content.' > /tmp/test.md && \
+      python -c "
+      from pathlib import Path
+      content = Path('/tmp/test.md').read_text()
+      print(f'Loaded {len(content)} characters')
+      " && \
+      rm /tmp/test.md
+    success_criteria: Creates, reads, and deletes a test file successfully
+    timeout: 5
+
+  # Memory System Check (if enabled)
+  - name: Memory System Status
+    command: |
+      python -c "
+      import os
+      enabled = os.getenv('MEMORY_SYSTEM_ENABLED', 'false').lower() in ['true', '1', 'yes']
+      print(f'Memory system: {\"enabled\" if enabled else \"disabled\"}')
+      "
+    success_criteria: Reports whether the memory system is enabled or disabled
+    timeout: 5
+
+  # Configuration Check
+  - name: Model Configuration
+    command: |
+      python -c "
+      from amplifier.config.models import models
+      print(f'Fast model: {models.amplifier_model_fast}')
+      print(f'Default model: {models.amplifier_model_default}')
+      "
+    success_criteria: Shows the configured model names for fast and default categories
+    timeout: 5

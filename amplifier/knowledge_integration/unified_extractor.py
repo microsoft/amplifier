@@ -45,7 +45,9 @@ class UnifiedKnowledgeExtractor:
         self.spo_extractor = KnowledgeSynthesizer()
         logger.info("SPO extraction enabled via KnowledgeSynthesizer")
 
-    async def extract_from_text(self, text: str, title: str = "", source: str = "") -> UnifiedExtraction:
+    async def extract_from_text(
+        self, text: str, title: str = "", source: str = "", document_type: str = "general"
+    ) -> UnifiedExtraction:
         """
         Extract both concepts and relationships from text.
 
@@ -55,6 +57,7 @@ class UnifiedKnowledgeExtractor:
             text: The text to extract from
             title: Title of the document
             source: Source identifier
+            document_type: Type of document (article, api_docs, code, conversation, tutorial, etc.)
 
         Returns:
             UnifiedExtraction containing both concepts and relationships
@@ -64,12 +67,12 @@ class UnifiedKnowledgeExtractor:
         # Run extractors
         if self.spo_extractor:
             # Run both extractors in parallel
-            concept_task = self._extract_concepts(text, title, source)
+            concept_task = self._extract_concepts(text, title, source, document_type)
             spo_task = self._extract_spo(text)
             results = await asyncio.gather(concept_task, spo_task, return_exceptions=True)
         else:
             # Only run concept extraction
-            concept_result = await self._extract_concepts(text, title, source)
+            concept_result = await self._extract_concepts(text, title, source, document_type)
             results = [concept_result, []]
 
         # Process concept results
@@ -103,7 +106,9 @@ class UnifiedKnowledgeExtractor:
 
         return extraction
 
-    async def _extract_concepts(self, text: str, title: str, source: str = "") -> dict[str, Any]:
+    async def _extract_concepts(
+        self, text: str, title: str, source: str = "", document_type: str = "general"
+    ) -> dict[str, Any]:
         """
         Extract concepts using the knowledge mining system.
 
@@ -114,7 +119,7 @@ class UnifiedKnowledgeExtractor:
             text,  # No need to limit - extractor handles chunking internally
             title,
             source,  # Pass through the source parameter
-            "general",  # document_type parameter
+            document_type,  # Use the actual document_type parameter
         )
 
         # Convert Extraction dataclass to dict
@@ -152,7 +157,7 @@ class UnifiedKnowledgeExtractor:
                     )
                 )
 
-            logger.info(f"Extracted {len(relationships)} relationships")
+            logger.debug(f"Extracted {len(relationships)} relationships")
             return relationships
         except Exception as e:
             logger.error(f"SPO extraction failed: {e}")

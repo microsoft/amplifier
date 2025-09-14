@@ -8,6 +8,8 @@ import json
 import logging
 from typing import Any
 
+from amplifier.utils.token_utils import truncate_to_tokens
+
 # Import TimeoutError from asyncio for proper exception handling
 TimeoutError = asyncio.TimeoutError
 
@@ -44,11 +46,13 @@ class KnowledgeSynthesizer:
             Dict with concepts, relationships, insights, and patterns
         """
         if not text:
-            return self._empty_extraction(source_id)
+            return self._empty_extraction(source_id, error_type="empty_input", error_detail="No text provided")
 
         if not CLAUDE_SDK_AVAILABLE:
             logger.warning("Claude Code SDK not available - returning empty extraction")
-            return self._empty_extraction(source_id)
+            return self._empty_extraction(
+                source_id, error_type="sdk_unavailable", error_detail="Claude Code SDK not installed or not available"
+            )
 
         prompt = self._build_prompt(text, title)
         response = ""  # Initialize to avoid unbound variable errors
@@ -59,7 +63,9 @@ class KnowledgeSynthesizer:
                 response = await self._call_claude(prompt)
                 if not response:
                     logger.warning("Empty response from Claude Code SDK")
-                    return self._empty_extraction(source_id)
+                    return self._empty_extraction(
+                        source_id, error_type="empty_response", error_detail="Claude SDK returned empty response"
+                    )
 
                 # Clean and parse response
                 cleaned = self._clean_response(response)
@@ -68,27 +74,36 @@ class KnowledgeSynthesizer:
                 # Add metadata
                 extraction["source_id"] = source_id
                 extraction["title"] = title
+                extraction["success"] = True
+                extraction["error_type"] = None
+                extraction["error_detail"] = None
                 self.extraction_count += 1
 
                 return extraction
 
         except TimeoutError:
-            logger.error("Claude Code SDK timeout - likely running outside Claude Code environment")
-            return self._empty_extraction(source_id)
+            error_msg = "Claude Code SDK timeout after 120s - likely running outside Claude Code environment"
+            logger.error(error_msg)
+            return self._empty_extraction(source_id, error_type="timeout", error_detail=error_msg)
         except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse extraction: {e}")
+            error_msg = f"Failed to parse JSON: {str(e)}"
+            logger.error(error_msg)
             logger.debug(f"Response was: {response[:500] if response else 'empty'}")
-            return self._empty_extraction(source_id)
+            return self._empty_extraction(source_id, error_type="parse_error", error_detail=error_msg)
         except Exception as e:
-            logger.error(f"Extraction failed: {e}")
-            return self._empty_extraction(source_id)
+            error_msg = f"Unexpected error: {type(e).__name__}: {str(e)}"
+            logger.error(f"Extraction failed: {error_msg}")
+            return self._empty_extraction(source_id, error_type="unexpected_error", error_detail=error_msg)
 
     def _build_prompt(self, text: str, title: str) -> str:
         """Build extraction prompt."""
-        # Limit text to ~50K tokens (roughly 37K words) to leave room for response
-        max_chars = 150000
-        if len(text) > max_chars:
-            text = text[:max_chars] + "\n\n[Text truncated...]"
+        # Use token-based truncation (80K tokens as per spec)
+        truncated_text, original_tokens, final_tokens = truncate_to_tokens(text, max_tokens=80000)
+        if original_tokens > final_tokens:
+            logger.debug(f"Text truncated from {original_tokens:,} to {final_tokens:,} tokens")
+            text = truncated_text + "\n\n[Text truncated...]"
+        else:
+            text = truncated_text
 
         prompt = f"""Extract structured knowledge from this text.
 
@@ -174,8 +189,8 @@ Text to analyze:
 
         return cleaned.strip()
 
-    def _empty_extraction(self, source_id: str) -> dict[str, Any]:
-        """Return empty extraction structure."""
+    def _empty_extraction(self, source_id: str, error_type: str = "unknown", error_detail: str = "") -> dict[str, Any]:
+        """Return empty extraction structure with error details."""
         return {
             "source_id": source_id,
             "concepts": [],
@@ -183,4 +198,7 @@ Text to analyze:
             "insights": [],
             "patterns": [],
             "error": "Extraction not available",
+            "error_type": error_type,
+            "error_detail": error_detail,
+            "success": False,
         }

@@ -1,1 +1,1 @@
-"""Test package for Amplifier Slides Tool."""
+"""Test package for Amplifier."""
