@@ -11,6 +11,47 @@
 
 AMPLIFIER_DIR="$HOME/dev/amplifier"
 
+# Function to detect if we're in the Amplifier project directory
+is_amplifier_project() {
+    local dir="$1"
+    
+    # Check for key Amplifier project markers
+    if [[ -f "$dir/AGENTS.md" && -f "$dir/CLAUDE.md" && -f "$dir/amplifier-anywhere.sh" && -d "$dir/amplifier" ]]; then
+        return 0  # true - this is the Amplifier project
+    fi
+    
+    # Also check if the canonical path matches
+    local canonical_dir="$(cd "$dir" 2>/dev/null && pwd)"
+    local canonical_amplifier="$(cd "$AMPLIFIER_DIR" 2>/dev/null && pwd)"
+    if [[ "$canonical_dir" == "$canonical_amplifier" ]]; then
+        return 0  # true - this is the Amplifier project
+    fi
+    
+    return 1  # false - not the Amplifier project
+}
+
+# Function to determine if we need external project mode
+needs_external_mode() {
+    local target_dir="$1"
+    
+    # If no directory specified, check current directory
+    if [[ -z "$target_dir" ]]; then
+        target_dir="$(pwd)"
+    fi
+    
+    # Resolve the target directory to absolute path
+    if [[ -d "$target_dir" ]]; then
+        target_dir="$(cd "$target_dir" && pwd)"
+    fi
+    
+    # Check if this is NOT the Amplifier project
+    if ! is_amplifier_project "$target_dir"; then
+        return 0  # true - needs external mode
+    fi
+    
+    return 1  # false - this is Amplifier project, no external mode needed
+}
+
 # Helper function to check if amplifier-anywhere.sh exists
 check_bash_script() {
     if [[ ! -f "$AMPLIFIER_DIR/amplifier-anywhere.sh" ]]; then
@@ -46,13 +87,31 @@ if [[ "$1" == "run" ]]; then
 elif [[ $# -eq 0 ]]; then
     check_bash_script
     ORIGINAL_PWD="$(pwd)"
-    ORIGINAL_PWD="$ORIGINAL_PWD" exec "$AMPLIFIER_DIR/amplifier-anywhere.sh" .
+    
+    # Auto-detect if we're in a non-Amplifier project
+    if needs_external_mode "$(pwd)"; then
+        # Automatically use external project mode
+        echo "🔍 Detected non-Amplifier project - using external mode"
+        EXTERNAL_PROJECT_MODE=1 ORIGINAL_PWD="$ORIGINAL_PWD" exec "$AMPLIFIER_DIR/amplifier-anywhere.sh" .
+    else
+        # In Amplifier project - normal mode
+        ORIGINAL_PWD="$ORIGINAL_PWD" exec "$AMPLIFIER_DIR/amplifier-anywhere.sh" .
+    fi
 # Check if first argument is a directory path (starts with . or / or ~)
 elif [[ "$1" =~ ^[./~] ]] || [[ -d "$1" ]]; then
     # This is a directory path, use the bash script to start Claude Code
     check_bash_script
     ORIGINAL_PWD="$(pwd)"
-    ORIGINAL_PWD="$ORIGINAL_PWD" exec "$AMPLIFIER_DIR/amplifier-anywhere.sh" "$@"
+    
+    # Auto-detect if target is a non-Amplifier project
+    if needs_external_mode "$1"; then
+        # Automatically use external project mode
+        echo "🔍 Detected non-Amplifier project - using external mode"
+        EXTERNAL_PROJECT_MODE=1 ORIGINAL_PWD="$ORIGINAL_PWD" exec "$AMPLIFIER_DIR/amplifier-anywhere.sh" "$@"
+    else
+        # Target is Amplifier project - normal mode
+        ORIGINAL_PWD="$ORIGINAL_PWD" exec "$AMPLIFIER_DIR/amplifier-anywhere.sh" "$@"
+    fi
 # Recognized CLI commands
 elif [[ "$1" =~ ^(doctor|smoke|events|graph|self-update|extract|synthesize|triage|--version|--help|-h)$ ]]; then
     check_python_cli
@@ -61,5 +120,13 @@ else
     # For any other arguments, default to bash script (for Claude options)
     check_bash_script
     ORIGINAL_PWD="$(pwd)"
-    ORIGINAL_PWD="$ORIGINAL_PWD" exec "$AMPLIFIER_DIR/amplifier-anywhere.sh" "$@"
+    
+    # Auto-detect mode even for Claude flags
+    if needs_external_mode "$(pwd)"; then
+        # Automatically use external project mode
+        echo "🔍 Detected non-Amplifier project - using external mode"
+        EXTERNAL_PROJECT_MODE=1 ORIGINAL_PWD="$ORIGINAL_PWD" exec "$AMPLIFIER_DIR/amplifier-anywhere.sh" "$@"
+    else
+        ORIGINAL_PWD="$ORIGINAL_PWD" exec "$AMPLIFIER_DIR/amplifier-anywhere.sh" "$@"
+    fi
 fi

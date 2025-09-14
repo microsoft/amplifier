@@ -114,8 +114,25 @@ fi
 # Convert to absolute path
 PROJECT_DIR="$(cd "$PROJECT_DIR" && pwd)"
 
-echo "🚀 Starting Amplifier for project: $PROJECT_DIR"
-echo "📁 Amplifier location: $AMPLIFIER_DIR"
+# Check if we're in external project mode (auto-detected by wrapper)
+if [[ -n "$EXTERNAL_PROJECT_MODE" ]]; then
+    echo "🚀 Starting Amplifier in EXTERNAL PROJECT MODE"
+    echo "📁 Working directory: $PROJECT_DIR"
+    echo "🔧 Amplifier location: $AMPLIFIER_DIR"
+    echo ""
+    echo "⚠️  AUTO-DETECTED: You're working outside the Amplifier project"
+    echo "   Claude will automatically:"
+    echo "   • Work in your project directory ($PROJECT_DIR)"
+    echo "   • NOT update any Amplifier repo issues or PRs"
+    echo "   • Use Amplifier's agents and tools in your project"
+    echo ""
+    # Set a flag that can be passed to Claude
+    export AMPLIFIER_EXTERNAL_MODE=1
+    export AMPLIFIER_WORKING_DIR="$PROJECT_DIR"
+else
+    echo "🚀 Starting Amplifier for project: $PROJECT_DIR"
+    echo "📁 Amplifier location: $AMPLIFIER_DIR"
+fi
 
 # Set up pnpm paths
 export PNPM_HOME="$HOME/.local/share/pnpm"
@@ -141,12 +158,41 @@ echo "🐍 Python: $(which python)"
 echo "🤖 Claude: $(which claude)"
 echo "📂 Project: $PROJECT_DIR"
 echo ""
-echo "💡 First message template:"
-echo "   I'm working in $PROJECT_DIR which doesn't have Amplifier files."
-echo "   Please cd to that directory and work there."
-echo "   Do NOT update any issues or PRs in the Amplifier repo."
-echo ""
+
+# Only show the template message if not in external mode (since it's automatic now)
+if [[ -z "$EXTERNAL_PROJECT_MODE" ]]; then
+    echo "💡 First message template (if working outside Amplifier):"
+    echo "   I'm working in $PROJECT_DIR which doesn't have Amplifier files."
+    echo "   Please cd to that directory and work there."
+    echo "   Do NOT update any issues or PRs in the Amplifier repo."
+    echo ""
+fi
 
 # Start Claude with both directories
 cd "$AMPLIFIER_DIR"
-exec claude --add-dir "$PROJECT_DIR" $CLAUDE_ARGS
+
+# If in external mode, create an initial context file to inform Claude
+if [[ -n "$EXTERNAL_PROJECT_MODE" ]]; then
+    # Create a temporary file with instructions
+    CONTEXT_FILE="$AMPLIFIER_DIR/.claude-trace/external_mode_context.md"
+    cat > "$CONTEXT_FILE" << EOF
+# EXTERNAL PROJECT MODE - AUTO-CONFIGURED
+
+You are running in EXTERNAL PROJECT MODE. This means:
+
+1. **Working Directory**: You are working on a project at: $PROJECT_DIR
+2. **Change to that directory**: Please \`cd "$PROJECT_DIR"\` immediately
+3. **DO NOT modify Amplifier**: Do NOT update any issues, PRs, or code in the Amplifier repository
+4. **Focus on user's project**: All your work should be in the user's project directory
+
+This mode was automatically detected because the user is working outside the Amplifier project.
+The user did not have to specify this - it was detected automatically for convenience.
+
+Please acknowledge this mode and change to the working directory now.
+EOF
+    
+    # Pass the context file to Claude using --file flag
+    exec claude --add-dir "$PROJECT_DIR" --file "$CONTEXT_FILE" $CLAUDE_ARGS
+else
+    exec claude --add-dir "$PROJECT_DIR" $CLAUDE_ARGS
+fi
