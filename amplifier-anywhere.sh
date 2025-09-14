@@ -171,28 +171,13 @@ fi
 # Start Claude with both directories
 cd "$AMPLIFIER_DIR"
 
-# If in external mode, create an initial context file to inform Claude
+# If in external mode, use --append-system-prompt to inform Claude
 if [[ -n "$EXTERNAL_PROJECT_MODE" ]]; then
-    # Create a temporary file with instructions
-    CONTEXT_FILE="$AMPLIFIER_DIR/.claude-trace/external_mode_context.md"
-    cat > "$CONTEXT_FILE" << EOF
-# EXTERNAL PROJECT MODE - AUTO-CONFIGURED
-
-You are running in EXTERNAL PROJECT MODE. This means:
-
-1. **Working Directory**: You are working on a project at: $PROJECT_DIR
-2. **Change to that directory**: Please \`cd "$PROJECT_DIR"\` immediately
-3. **DO NOT modify Amplifier**: Do NOT update any issues, PRs, or code in the Amplifier repository
-4. **Focus on user's project**: All your work should be in the user's project directory
-
-This mode was automatically detected because the user is working outside the Amplifier project.
-The user did not have to specify this - it was detected automatically for convenience.
-
-Please acknowledge this mode and change to the working directory now.
-EOF
+    # Create the system prompt message
+    EXTERNAL_MODE_PROMPT="EXTERNAL PROJECT MODE - AUTO-CONFIGURED: You are working on a project at: $PROJECT_DIR. Please cd to that directory immediately. DO NOT update any issues, PRs, or code in the Amplifier repository. All your work should be in the user's project directory. This mode was automatically detected."
     
-    # Pass the context file to Claude using --file flag
-    exec claude --add-dir "$PROJECT_DIR" --file "$CONTEXT_FILE" $CLAUDE_ARGS
+    # Pass the additional system prompt to Claude
+    exec claude --add-dir "$PROJECT_DIR" --append-system-prompt "$EXTERNAL_MODE_PROMPT" $CLAUDE_ARGS
 else
     exec claude --add-dir "$PROJECT_DIR" $CLAUDE_ARGS
 fi
