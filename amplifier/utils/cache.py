@@ -54,7 +54,7 @@ class ArtifactCache:
     def get_artifact_path(self, stage: str, fingerprint: str) -> Path:
         """Get the filesystem path for an artifact."""
         stage_dir = self.cache_dir / stage
-        stage_dir.mkdir(exist_ok=True)
+        stage_dir.mkdir(parents=True, exist_ok=True)
         return stage_dir / f"{fingerprint}.json"
 
     def exists(self, stage: str, fingerprint: str) -> bool:
