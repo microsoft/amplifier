@@ -53,8 +53,11 @@ ai_working/tmp
 **/*sec.endpointdlp
 **/*:sec.endpointdlp
 
-# Claude debugging logs
-.claude-trace
-
 # Default data directory
 .data/
+
+# .claude-trace Logs
+.claude-trace
+
+# Smoke test runtime logs
+.smoke_test_data/data

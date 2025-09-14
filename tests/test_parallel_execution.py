@@ -76,6 +76,8 @@ class ParallelExecutionTester:
 
     def simulate_multi_file_analysis(self, parallel: bool = False) -> list[TaskExecution]:
         """Simulate analyzing multiple files - a clearly parallelizable task."""
+        from datetime import timedelta
+
         files = ["auth.py", "database.py", "api.py"]
         executions = []
 
@@ -85,7 +87,8 @@ class ParallelExecutionTester:
             # Simulate parallel execution - all start nearly simultaneously
             for i, file in enumerate(files):
                 exec_start = start
-                exec_end = start.replace(microsecond=start.microsecond + 100000 + i * 10000)
+                # Use timedelta to properly handle time addition
+                exec_end = start + timedelta(microseconds=100000 + i * 10000)
                 executions.append(
                     TaskExecution(
                         task_name=f"Analyze {file}", start_time=exec_start, end_time=exec_end, agent_type="bug-hunter"
@@ -96,7 +99,8 @@ class ParallelExecutionTester:
             current_time = start
             for file in files:
                 exec_start = current_time
-                exec_end = current_time.replace(microsecond=current_time.microsecond + 100000)
+                # Use timedelta to properly handle time addition
+                exec_end = current_time + timedelta(microseconds=100000)
                 executions.append(
                     TaskExecution(
                         task_name=f"Analyze {file}", start_time=exec_start, end_time=exec_end, agent_type="bug-hunter"

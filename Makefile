@@ -32,6 +32,7 @@ default: ## Show essential commands
 	@echo "Development:"
 	@echo "  make check          Format, lint, and type-check all code"
 	@echo "  make test           Run all tests"
+	@echo "  make smoke-test     Run quick smoke tests (< 2 minutes)"
 	@echo "  make worktree NAME   Create git worktree with .data copy"
 	@echo "  make worktree-list   List all git worktrees"
 	@echo "  make worktree-rm NAME  Remove worktree and delete branch"
@@ -89,6 +90,7 @@ help: ## Show ALL available commands
 	@echo "DEVELOPMENT:"
 	@echo "  make check           Format, lint, and type-check code"
 	@echo "  make test            Run all tests (alias: pytest)"
+	@echo "  make smoke-test      Run quick smoke tests (< 2 minutes)"
 	@echo "  make worktree NAME   Create git worktree with .data copy"
 	@echo "  make worktree-list   List all git worktrees"
 	@echo "  make worktree-rm NAME  Remove worktree and delete branch"
@@ -100,9 +102,6 @@ help: ## Show ALL available commands
 	@echo ""
 	@echo "AI CONTEXT:"
 	@echo "  make ai-context-files  Build AI context documentation"
-	@echo ""
-	@echo "DEBUGGING:"
-	@echo "  make trace-viewer    Start Claude trace viewer (port 8090)"
 	@echo ""
 	@echo "UTILITIES:"
 	@echo "  make clean           Clean build artifacts"
@@ -122,7 +121,7 @@ install: ## Install all dependencies
 	@# Ensure pnpm global directory exists and is configured (handles non-interactive shells)
 	@PNPM_HOME=$$(pnpm bin -g 2>/dev/null || echo "$$HOME/.local/share/pnpm"); \
 	mkdir -p "$$PNPM_HOME" 2>/dev/null || true; \
-	PATH="$$PNPM_HOME:$$PATH" pnpm add -g @anthropic-ai/claude-code@latest @mariozechner/claude-trace@latest || { \
+	PATH="$$PNPM_HOME:$$PATH" pnpm add -g @anthropic-ai/claude-code@latest || { \
 		echo "❌ Failed to install global packages. Trying pnpm setup..."; \
 		pnpm setup >/dev/null 2>&1 || true; \
 		echo "❌ Could not configure pnpm global directory automatically."; \
@@ -234,6 +233,11 @@ test: ## Run all tests
 	@echo "Running tests..."
 	uv run pytest
 
+smoke-test: ## Run quick smoke tests to verify basic functionality
+	@echo "Running smoke tests..."
+	@PYTHONPATH=. python -m amplifier.smoke_tests
+	@echo "Smoke tests complete!"
+
 # Git worktree management
 worktree: ## Create a git worktree with .data copy. Usage: make worktree feature-name
 	@if [ -z "$(filter-out $@,$(MAKECMDGOALS))" ]; then \
@@ -295,7 +299,7 @@ knowledge-sync: ## Extract knowledge from all content files
 knowledge-sync-batch: ## Extract knowledge from next N articles. Usage: make knowledge-sync-batch N=5
 	@n="$${N:-5}"; \
 	echo "Processing next $$n articles..."; \
-	uv run python -m amplifier.knowledge_synthesis.cli sync --max-articles $$n
+	uv run python -m amplifier.knowledge_synthesis.cli sync --max-items $$n
 
 knowledge-search: ## Search extracted knowledge. Usage: make knowledge-search Q="AI agents"
 	@if [ -z "$(Q)" ]; then \
@@ -457,17 +461,6 @@ triage: ## Run only the triage step of the pipeline. Usage: make triage query=".
 	uv run python -m amplifier.synthesis.main --query "$(query)" --files "$(files)" --use-triage
 
 
-# Claude Trace Viewer
-.PHONY: trace-viewer
-
-trace-viewer: ## Start Claude trace viewer for .claude-trace files
-	@echo "Starting Claude Trace Viewer..."
-	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-	@echo "Access at: http://localhost:8090"
-	@echo "Reading from: .claude-trace/"
-	@echo "Press Ctrl+C to stop"
-	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-	@python -m trace_viewer --port 8090
 
 # AI Context
 ai-context-files: ## Build AI context files

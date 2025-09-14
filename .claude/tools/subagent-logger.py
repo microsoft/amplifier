@@ -17,13 +17,9 @@ except ImportError:
 
 def ensure_log_directory() -> Path:
     """Ensure the log directory exists and return its path."""
-    if paths is not None:
-        # Use centralized path configuration
-        log_dir = paths.data_dir / "subagent-logs"
-    else:
-        # Fall back to legacy .data directory
-        project_root = Path(os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd()))
-        log_dir = project_root / ".data" / "subagent-logs"
+    # Use .claude/logs directory for consistency with other Claude Code hooks
+    project_root = Path(os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd()))
+    log_dir = project_root / ".claude" / "logs" / "subagent-logs"
 
     log_dir.mkdir(parents=True, exist_ok=True)
     return log_dir

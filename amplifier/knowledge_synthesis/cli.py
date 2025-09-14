@@ -34,14 +34,37 @@ def cli():
     type=int,
     help="Maximum number of content items to process (default: all)",
 )
-def sync(max_items: int | None):
+@click.option(
+    "--resilient/--no-resilient",
+    default=True,
+    help="Use resilient mining with partial failure handling (default: True)",
+)
+@click.option(
+    "--skip-partial-failures",
+    is_flag=True,
+    default=False,
+    help="Skip articles with partial failures instead of retrying them (default: retry partials)",
+)
+def sync(max_items: int | None, resilient: bool, skip_partial_failures: bool):
     """
     Sync and extract knowledge from content files.
 
     Scans all configured content directories for content files and extracts
     concepts, relationships, insights, and patterns.
+
+    With --resilient (default), uses partial failure handling to continue
+    processing even when individual processors fail.
+
+    By default, retries articles with partial failures. Use --skip-partial-failures
+    to process only new articles.
     """
-    asyncio.run(_sync_content(max_items))
+    # By default, retry partial failures unless skip flag is set
+    retry_partial_mode = not skip_partial_failures
+
+    if resilient:
+        asyncio.run(_sync_content_resilient(max_items, retry_partial_mode))
+    else:
+        asyncio.run(_sync_content(max_items))
 
 
 async def _sync_content(max_items: int | None):
@@ -186,11 +209,199 @@ async def _sync_content(max_items: int | None):
     logger.info(f"Processed: {processed} items")
     logger.info(f"Skipped (already done): {skipped}")
     logger.info(f"Total extractions: {store.count()}")
+
+    # Show error summary
+    error_summary = store.get_error_summary()
+    logger.info(f"Extraction quality: {error_summary}")
+
     emitter.emit(
         "sync_finished",
         stage="sync",
         data={"processed": processed, "skipped": skipped, "total": len(content_items)},
     )
+
+
+async def _sync_content_resilient(max_items: int | None, retry_partial: bool = False):
+    """Sync content with resilient partial failure handling."""
+    from amplifier.content_loader import ContentLoader
+
+    from .article_processor import ArticleProcessor
+
+    # Initialize components
+    miner = ArticleProcessor()
+    loader = ContentLoader()
+    emitter = EventEmitter()
+
+    # Load all content items
+    content_items = list(loader.load_all())
+
+    if not content_items:
+        logger.info("No content files found in configured directories.")
+        logger.info("Check AMPLIFIER_CONTENT_DIRS environment variable.")
+        emitter.emit("sync_finished", stage="init", data={"processed": 0, "skipped": 0, "reason": "no_content"})
+        return
+
+    logger.info(f"Found {len(content_items)} content files")
+
+    # Pre-scan to count existing status
+    already_complete = 0
+    already_partial = 0
+    to_process = 0
+
+    for item in content_items:
+        existing_status = miner.status_store.load_status(item.content_id)
+        if existing_status:
+            if existing_status.is_complete:
+                already_complete += 1
+            else:
+                already_partial += 1
+                if retry_partial:
+                    to_process += 1
+        else:
+            to_process += 1
+
+    # Show summary
+    logger.info("\nProcessing Summary:")
+    logger.info(f"  Already complete: {already_complete}")
+    logger.info(f"  Partial results: {already_partial}")
+    logger.info(f"  To process: {to_process}")
+    if retry_partial and already_partial > 0:
+        logger.info(f"  ✓ Including {already_partial} articles with partial failures (default behavior)")
+    elif not retry_partial and already_partial > 0:
+        logger.info(f"  ⚠ Skipping {already_partial} articles with partial failures (--skip-partial-failures)")
+    logger.info("")
+
+    # Process with resilient miner
+    processed = 0
+    failed = 0
+    partial = 0
+
+    emitter.emit("sync_started", stage="sync", data={"total": len(content_items), "max": max_items})
+
+    for idx, item in enumerate(content_items):
+        # Check max items limit
+        if max_items and processed >= max_items:
+            break
+
+        # Check if already processed
+        existing_status = miner.status_store.load_status(item.content_id)
+        if existing_status:
+            if existing_status.is_complete:
+                logger.info(f"✓ Already complete: {item.title}")
+                processed += 1
+                continue
+            if not retry_partial:
+                # Has partial results but skip-partial-failures flag is set
+                successful_count = sum(
+                    1 for r in existing_status.processor_results.values() if r.status in ["success", "empty"]
+                )
+                if successful_count > 0:
+                    logger.info(
+                        f"⚠ Skipping partial (--skip-partial-failures): {item.title} ({successful_count}/4 processors succeeded)"
+                    )
+                    partial += 1
+                    continue
+
+        # Process article with resilient handling
+        try:
+            # Process with resilient miner (directly pass ContentItem)
+            status = await miner.process_article_with_logging(item, current=idx + 1, total=len(content_items))
+
+            # Update counters based on status
+            if status.is_complete:
+                processed += 1
+            else:
+                # Check if we got partial results
+                successful_processors = [
+                    name for name, result in status.processor_results.items() if result.status in ["success", "empty"]
+                ]
+                if successful_processors:
+                    partial += 1
+                else:
+                    failed += 1
+
+            # Emit appropriate event
+            emitter.emit(
+                "extraction_completed",
+                stage="extract",
+                source_id=item.content_id,
+                data={
+                    "title": item.title,
+                    "complete": status.is_complete,
+                    "processors": {name: result.status for name, result in status.processor_results.items()},
+                },
+            )
+
+        except KeyboardInterrupt:
+            logger.info("\n⚠ Interrupted - saving progress...")
+            break
+        except Exception as e:
+            logger.error(f"  ✗ Unexpected error: {e}")
+            failed += 1
+            emitter.emit(
+                "extraction_failed",
+                stage="extract",
+                source_id=item.content_id,
+                data={"title": item.title, "error": str(e)},
+            )
+
+    # Generate and display comprehensive report
+    logger.info(f"\n{'=' * 60}")
+    logger.info("PROCESSING COMPLETE - SUMMARY REPORT")
+    logger.info(f"{'=' * 60}")
+
+    # Get report from miner
+    report_data = miner.get_processing_report()
+
+    # Display summary from report
+    if report_data:
+        summary_data = report_data.get("summary", {})
+        logger.info("\nProcessing Summary:")
+        logger.info(f"  Total Articles: {summary_data.get('total_articles', 0)}")
+        logger.info(f"  Complete: {summary_data.get('complete', 0)}")
+        logger.info(f"  Partial: {summary_data.get('partial', 0)}")
+        logger.info(f"  Failed: {summary_data.get('failed', 0)}")
+        logger.info(f"  Needs Retry: {summary_data.get('needs_retry', 0)}")
+
+        # Show extraction stats
+        extraction_stats = report_data.get("extraction_stats", {})
+        if extraction_stats:
+            logger.info("\nExtraction Statistics:")
+            logger.info(f"  Total Concepts: {extraction_stats.get('total_concepts', 0)}")
+            logger.info(f"  Total Relationships: {extraction_stats.get('total_relationships', 0)}")
+            logger.info(f"  Total Insights: {extraction_stats.get('total_insights', 0)}")
+            logger.info(f"  Total Patterns: {extraction_stats.get('total_patterns', 0)}")
+
+    # Basic stats
+    logger.info("\nOverall Statistics:")
+    logger.info(f"  Complete: {processed} articles (all processors succeeded)")
+    logger.info(f"  Partial: {partial} articles (some processors failed)")
+    logger.info(f"  Failed: {failed} articles (all processors failed)")
+    logger.info(f"  Total processed: {processed + partial + failed}")
+
+    # Emit completion event
+    emitter.emit(
+        "sync_finished",
+        stage="sync",
+        data={
+            "processed": processed,
+            "partial": partial,
+            "failed": failed,
+            "total": len(content_items),
+        },
+    )
+
+    # Suggest next actions if there were failures
+    if partial > 0 or failed > 0:
+        logger.info(f"\n{'=' * 60}")
+        logger.info("NEXT ACTIONS:")
+        logger.info(f"{'=' * 60}")
+        logger.info("1. Review the failures above to identify systematic issues")
+        logger.info("2. Fix any configuration or service problems")
+        logger.info("3. Run retry command to process only failed components:")
+        logger.info("   python -m amplifier.knowledge_synthesis.cli_resilient retry")
+        logger.info("4. Generate detailed report:")
+        logger.info("   python -m amplifier.knowledge_synthesis.cli_resilient report")
 
 
 @cli.command()

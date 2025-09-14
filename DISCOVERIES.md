@@ -464,6 +464,66 @@ The SDK invocation chain:
 - Avoid nested asyncio event loops - call async methods directly
 - Never use `run_in_executor` with methods that create their own event loops
 
+## Silent Failures in Knowledge Extraction Pipeline (2025-01-21)
+
+### Issue
+
+Knowledge extraction pipeline had multiple silent failure points where processing would fail but appear successful:
+- Empty extractions from timeouts were indistinguishable from legitimate "no data found" cases
+- Failed sub-processors (relationships, insights) resulted in saving zero results that looked valid
+- Items with failures couldn't be re-processed because they appeared "complete"
+- No visibility into partial failures or success rates
+
+### Root Cause
+
+1. **Design flaw**: Empty extractions weren't saved, creating infinite retry loops
+2. **No failure state**: System only tracked "processed" or "not processed", no "failed" state
+3. **Binary completion**: Partial successes were treated same as full failures
+4. **Silent degradation**: Timeouts and errors returned empty but valid-looking results
+
+### Solution
+
+Implemented resilient knowledge mining system (`resilient_miner.py`) with:
+
+1. **Per-processor tracking**: Track success/failure for each sub-processor independently
+2. **Partial result saving**: Save what succeeded even when some processors fail
+3. **Status persistence**: JSON files track processing state per article
+4. **Selective retry**: Re-run only failed processors, not entire articles
+5. **Comprehensive reporting**: Show success rates and items needing attention
+
+```python
+# New pattern for graceful degradation
+class ResilientKnowledgeMiner:
+    async def process_article(self, article):
+        status = load_or_create_status(article.id)
+        
+        for processor in ["concepts", "relationships", "insights"]:
+            if already_succeeded(status, processor):
+                continue
+                
+            result = await run_with_timeout(processor, article)
+            status.processor_results[processor] = result
+            save_status(status)  # Save after EACH processor
+            
+        return status
+```
+
+### Key Learnings
+
+1. **Partial results have value** - Better to save 80% of extractions than lose everything
+2. **Distinguish failure types** - "No data" vs "extraction failed" need different handling
+3. **Incremental saves critical** - Save after each sub-processor to preserve progress
+4. **Transparent reporting essential** - Users need to know what failed and why
+5. **Graceful degradation philosophy** - 4-hour batch completing with partial results beats early failure
+
+### Prevention
+
+- Design batch systems with partial failure handling from the start
+- Always distinguish between "empty results" and "processing failed"
+- Implement per-component status tracking for complex pipelines
+- Provide comprehensive error reporting at end of long runs
+- Allow selective retry of only failed components
+
 ## Claude Code SDK Async Integration Issues (2025-01-21) 
 
 ### Issue
