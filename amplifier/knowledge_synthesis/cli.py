@@ -78,8 +78,8 @@ async def _sync_content(max_items: int | None):
     emitter = EventEmitter()
     loader = ContentLoader()
 
-    # Load all content items
-    content_items = list(loader.load_all())
+    # Load all content items (quiet mode to suppress progress output)
+    content_items = list(loader.load_all(quiet=True))
 
     if not content_items:
         logger.info("No content files found in configured directories.")
@@ -232,8 +232,8 @@ async def _sync_content_resilient(max_items: int | None, retry_partial: bool = F
     loader = ContentLoader()
     emitter = EventEmitter()
 
-    # Load all content items
-    content_items = list(loader.load_all())
+    # Load all content items (quiet mode to suppress progress output)
+    content_items = list(loader.load_all(quiet=True))
 
     if not content_items:
         logger.info("No content files found in configured directories.")

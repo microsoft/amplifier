@@ -253,15 +253,12 @@ knowledge-export: ## Export all knowledge as JSON or text. Usage: make knowledge
 	uv run python -m amplifier.knowledge_synthesis.cli export --format $$format
 
 # Knowledge Pipeline Commands
-knowledge-update: ## Full pipeline: scan content + extract knowledge + synthesize patterns
+knowledge-update: ## Full pipeline: extract knowledge + synthesize patterns
 	@echo "🚀 Running full knowledge pipeline..."
-	@echo "Step 1: Scanning content directories..."
-	@$(MAKE) --no-print-directory content-scan
-	@echo ""
-	@echo "Step 3: Extracting knowledge..."
+	@echo "Step 1: Extracting knowledge..."
 	@$(MAKE) --no-print-directory knowledge-sync
 	@echo ""
-	@echo "Step 4: Synthesizing patterns..."
+	@echo "Step 2: Synthesizing patterns..."
 	@$(MAKE) --no-print-directory knowledge-synthesize
 	@echo ""
 	@echo "✅ Knowledge pipeline complete!"
