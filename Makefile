@@ -393,6 +393,19 @@ triage: ## Run only the triage step of the pipeline. Usage: make triage query=".
 
 
 
+# Tool Builder
+tool-builder: ## Build new Amplifier CLI tools with AI assistance. Usage: make tool-builder ARGS="create tool-name 'description'"
+	@if [ -z "$(ARGS)" ]; then \
+		echo "Usage: make tool-builder ARGS=\"create tool-name 'description'\""; \
+		echo "       make tool-builder ARGS=\"resume session-id\""; \
+		echo "       make tool-builder ARGS=\"list-sessions\""; \
+		exit 1; \
+	fi
+	@bash -c "uv run python -m amplifier.tools.tool_builder.cli $(ARGS)"
+
+tool-builder-help: ## Show Tool Builder help
+	@uv run python -m amplifier.tools.tool_builder.cli --help
+
 # AI Context
 ai-context-files: ## Build AI context files
 	@echo "Building AI context files..."
@@ -414,3 +427,12 @@ workspace-info: ## Show workspace information
 	$(call list_projects)
 	@echo ""
 
+
+# Generated tools
+
+
+
+
+# Generated tool: content-synthesizer-v2
+content-synthesizer-v2: ## Run the Content Synthesizer V2 tool
+	@cd ~/.amplifier/generated_tools/content-synthesizer-v2 && python cli.py $(ARGS)
