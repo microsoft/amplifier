@@ -1,0 +1,131 @@
+# Module Contract - The stable external interface ("studs")
+# This defines what other modules can rely on when connecting to this module
+
+module:
+  name: "idea_synthesizer.summarizer"
+  version: "1.0.0"
+  purpose: "Generate concise, insightful summaries of markdown documents using AI"
+
+interface:
+  inputs:
+    - name: file_path
+      type: "Path | str"
+      required: true
+      validation: "Must be existing .md file, max 100KB"
+      description: "Path to markdown file to summarize"
+
+    - name: options
+      type: "SummaryOptions"
+      required: false
+      validation: "Valid SummaryOptions object"
+      description: "Configuration for summary generation"
+      schema:
+        max_tokens: "int = 500"
+        focus: "Optional[str] = None"
+        style: "Literal['concise', 'detailed', 'technical'] = 'concise'"
+        extract_concepts: "bool = True"
+
+    - name: checkpoint_key
+      type: "Optional[str]"
+      required: false
+      validation: "Alphanumeric with underscores, max 100 chars"
+      description: "Key for storing/retrieving checkpoint state"
+
+  outputs:
+    - name: summary
+      type: "Summary"
+      guarantees: "Non-empty summary with valid metadata"
+      description: "Generated summary with metadata"
+      schema:
+        text: "str  # 100-500 tokens of summary"
+        source_file: "Path  # Absolute path to source"
+        key_concepts: "List[str]  # 3-10 extracted concepts"
+        timestamp: "datetime  # When summary was generated"
+        word_count: "int  # Word count of original document"
+        confidence: "float  # 0.0-1.0 confidence score"
+
+  errors:
+    - code: "FILE_NOT_FOUND"
+      condition: "Input file doesn't exist or isn't accessible"
+      message_template: "Cannot read file: {file_path}"
+      recovery: "Verify file exists and has read permissions"
+
+    - code: "FILE_TOO_LARGE"
+      condition: "File exceeds 100KB size limit"
+      message_template: "File {file_path} exceeds 100KB limit: {size}KB"
+      recovery: "Split file or increase limit in options"
+
+    - code: "INVALID_MARKDOWN"
+      condition: "File contains malformed markdown that can't be parsed"
+      message_template: "Invalid markdown in {file_path}: {error}"
+      recovery: "Fix markdown syntax errors"
+
+    - code: "AI_SERVICE_ERROR"
+      condition: "Claude SDK timeout or API error"
+      message_template: "AI service error: {error}"
+      recovery: "Retry with exponential backoff or check API status"
+
+    - code: "EXTRACTION_FAILED"
+      condition: "Could not extract meaningful summary"
+      message_template: "Failed to extract summary from {file_path}"
+      recovery: "Check if file has substantive content"
+
+dependencies:
+  requires:
+    - module: "claude_client"
+      version: "^1.0.0"
+      usage: "AI-powered text summarization"
+
+    - module: "state_manager"
+      version: "^1.0.0"
+      usage: "Optional checkpointing for resume capability"
+
+  provides:
+    - service: "document_summarization"
+      protocol: "function_call"
+
+constraints:
+  performance:
+    - metric: "latency_p50"
+      target: "< 5s per file"
+      critical: false
+
+    - metric: "latency_p99"
+      target: "< 30s per file"
+      critical: true
+
+    - metric: "success_rate"
+      target: "> 95%"
+      critical: true
+
+  environment:
+    - name: "CLAUDE_API_KEY"
+      value: "Required for Claude SDK"
+
+    - name: "SUMMARIZER_CACHE_DIR"
+      value: "Optional, defaults to temp/summaries"
+
+public_api:
+  - signature: "async def summarize(file_path: Path, options: Optional[SummaryOptions] = None, checkpoint_key: Optional[str] = None) -> Summary"
+    async: true
+    description: "Generate AI summary of markdown file"
+    example: |
+      summary = await summarizer.summarize(
+        file_path=Path("docs/design.md"),
+        options=SummaryOptions(
+          max_tokens=300,
+          focus="architecture decisions",
+          extract_concepts=True
+        )
+      )
+      print(f"Summary: {summary.text}")
+      print(f"Key concepts: {', '.join(summary.key_concepts)}")
+
+  - signature: "async def batch_summarize(file_paths: List[Path], options: Optional[SummaryOptions] = None, parallel: bool = False) -> List[Summary]"
+    async: true
+    description: "Summarize multiple files with progress tracking"
+    example: |
+      summaries = await summarizer.batch_summarize(
+        file_paths=[Path(f) for f in files],
+        parallel=True  # Process up to 3 files concurrently
+      )

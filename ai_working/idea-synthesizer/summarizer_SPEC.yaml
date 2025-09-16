@@ -1,0 +1,203 @@
+# Implementation Specification - Internal requirements for AI generation
+# This guides HOW to build the module without dictating exact implementation
+
+implementation:
+  module: "idea_synthesizer.summarizer"
+
+  behaviors:
+    - scenario: "When given a valid markdown file"
+      action: "Extract content, generate summary via Claude, extract concepts"
+      priority: "critical"
+
+    - scenario: "When file exceeds token limits"
+      action: "Intelligently truncate or chunk, focusing on introduction and conclusion"
+      priority: "high"
+
+    - scenario: "When checkpoint_key provided and summary exists"
+      action: "Return cached summary immediately without reprocessing"
+      priority: "high"
+
+    - scenario: "When Claude SDK times out (>120s)"
+      action: "Retry once with exponential backoff, then fail gracefully"
+      priority: "critical"
+
+    - scenario: "When markdown contains code blocks"
+      action: "Include code purpose in summary but not full code listings"
+      priority: "normal"
+
+    - scenario: "When focus parameter provided"
+      action: "Bias summary toward the specified aspect while maintaining completeness"
+      priority: "normal"
+
+    - scenario: "When extracting concepts"
+      action: "Identify 3-10 most significant themes, technologies, or ideas"
+      priority: "high"
+
+    - scenario: "When file is mostly code with little text"
+      action: "Summarize code structure and purpose rather than content"
+      priority: "normal"
+
+  algorithms:
+    - operation: "content_extraction"
+      approach: "Use markdown parser to extract text, preserve headers for structure"
+      rationale: "Headers provide semantic structure crucial for summarization"
+
+    - operation: "token_estimation"
+      approach: "Rough estimate: 1 token per 4 characters"
+      rationale: "Prevents API limits, allows pre-truncation if needed"
+
+    - operation: "concept_extraction"
+      approach: "Use structured output from Claude to ensure consistent format"
+      rationale: "Structured extraction more reliable than parsing free text"
+
+    - operation: "confidence_scoring"
+      approach: "Base on response completeness and concept clarity"
+      rationale: "Helps downstream modules assess summary quality"
+
+  data_flow:
+    - step: "1"
+      description: "Check for existing checkpoint"
+      transforms: "checkpoint_key → cached summary (if exists)"
+
+    - step: "2"
+      description: "Read and validate markdown file"
+      transforms: "file_path → raw text content"
+
+    - step: "3"
+      description: "Parse markdown structure"
+      transforms: "raw text → structured document (headers, paragraphs, code blocks)"
+
+    - step: "4"
+      description: "Prepare prompt for Claude"
+      transforms: "structured doc + options → formatted prompt with instructions"
+
+    - step: "5"
+      description: "Call Claude SDK with timeout"
+      transforms: "prompt → AI response (JSON with summary and concepts)"
+
+    - step: "6"
+      description: "Parse and validate response"
+      transforms: "AI response → Summary object with all metadata"
+
+    - step: "7"
+      description: "Save checkpoint if requested"
+      transforms: "Summary + checkpoint_key → persistent cache"
+
+  state_management:
+    scope: "local"
+    persistence: "file"
+    concurrency: "Use file locks for checkpoint access"
+    cache_strategy:
+      location: "temp/summaries/{checkpoint_key}.json"
+      ttl: "7 days"
+      cleanup: "Remove old entries on startup"
+
+  integration_points:
+    - external_system: "claude_client"
+      interaction_pattern: "async"
+      error_handling: "Catch timeouts and API errors, retry once"
+      timeout: "120 seconds per DISCOVERIES.md requirement"
+
+    - external_system: "state_manager"
+      interaction_pattern: "sync"
+      error_handling: "Continue without caching if unavailable"
+
+    - external_system: "filesystem"
+      interaction_pattern: "sync"
+      error_handling: "Fail fast with clear error messages"
+
+  claude_prompting:
+    system_prompt: |
+      You are an expert document summarizer. Generate concise, insightful
+      summaries that capture the essence of technical documents.
+      Focus on main ideas, key decisions, and important concepts.
+      Preserve technical accuracy while improving clarity.
+
+    user_prompt_template: |
+      Summarize this markdown document{focus_clause}:
+
+      ```markdown
+      {document_content}
+      ```
+
+      Provide response as JSON:
+      {{
+        "summary": "Your {style} summary here (max {max_tokens} tokens)",
+        "key_concepts": ["concept1", "concept2", ...],  # 3-10 items
+        "confidence": 0.95  # Your confidence in this summary
+      }}
+
+    focus_clause: " focusing on {focus}" if focus else ""
+
+  test_requirements:
+    - category: "unit"
+      coverage: "File validation and parsing logic"
+      examples:
+        - input: "non_existent.md"
+          expected: "FILE_NOT_FOUND error"
+        - input: "huge_file.md (200KB)"
+          expected: "FILE_TOO_LARGE error"
+
+    - category: "integration"
+      coverage: "Claude SDK interaction"
+      examples:
+        - input: "sample.md with technical content"
+          expected: "Summary with technical concepts extracted"
+        - input: "code_heavy.md with minimal text"
+          expected: "Summary focusing on code structure"
+
+    - category: "edge_case"
+      coverage: "Timeout and retry behavior"
+      examples:
+        - input: "Complex file causing slow response"
+          expected: "Successful after retry or graceful timeout error"
+
+    - category: "checkpoint"
+      coverage: "Resume capability"
+      examples:
+        - input: "Same file with same checkpoint_key"
+          expected: "Returns cached result without API call"
+
+  non_functional:
+    security:
+      - requirement: "Never log or store API keys"
+        implementation_hint: "Use environment variables only"
+
+      - requirement: "Sanitize file paths in errors"
+        implementation_hint: "Use relative paths in user-facing messages"
+
+      - requirement: "Validate markdown doesn't contain malicious content"
+        implementation_hint: "Basic check for script tags or suspicious patterns"
+
+    observability:
+      - aspect: "logging"
+        detail_level: "Info: file processed, Error: failures, Debug: prompts"
+
+      - aspect: "metrics"
+        detail_level: "Count successes/failures, measure latency, track cache hits"
+
+      - aspect: "tracing"
+        detail_level: "Optional OpenTelemetry spans for performance analysis"
+
+    error_recovery:
+      - scenario: "Claude API rate limit"
+        strategy: "Exponential backoff with jitter"
+
+      - scenario: "Corrupt checkpoint file"
+        strategy: "Delete and regenerate"
+
+      - scenario: "Markdown parsing failure"
+        strategy: "Fall back to plain text extraction"
+
+  restrictions:
+    - description: "Don't store full document content in checkpoints"
+      reason: "Minimize storage and potential privacy issues"
+
+    - description: "Don't make multiple API calls for single file"
+      reason: "Minimize costs and latency"
+
+    - description: "Don't modify input files"
+      reason: "Module should be read-only for documents"
+
+    - description: "Don't hardcode prompt templates"
+      reason: "Keep prompts configurable for future optimization"
