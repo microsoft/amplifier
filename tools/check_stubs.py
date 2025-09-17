@@ -79,6 +79,23 @@ def is_legitimate_pattern(filepath, line_num, line):
     if filepath.name == "__init__.py" and "pass" in line:
         return True
 
+    # Exception classes with pass are legitimate (standard Python pattern)
+    if "pass" in line and line.strip() == "pass":
+        try:
+            with open(filepath, encoding="utf-8") as f:
+                lines = f.readlines()
+                # Check if this pass is inside an exception class definition
+                for i in range(max(0, line_num - 5), line_num):
+                    if i < len(lines):
+                        # Check for exception class definition
+                        if re.search(r"class\s+\w+.*\(.*Exception.*\)", lines[i]):
+                            return True
+                        # Also check for Error classes (common pattern)
+                        if re.search(r"class\s+\w*Error\s*\(", lines[i]):
+                            return True
+        except Exception:
+            pass
+
     # Abstract methods with NotImplementedError are legitimate
     if "NotImplementedError" in line:
         try:
