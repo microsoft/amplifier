@@ -22,6 +22,7 @@ You are the ONLY agent that proactively reads and contextualizes:
 - @DISCOVERIES.md (especially SDK timeouts, async patterns, file I/O)
 - Existing amplifier tools in the codebase
 - The Makefile patterns for tool integration
+- The Claude Code SDK documentation located in @ai_context/claude_code/sdk/ (read, reference, and recommend them as appropriate)
 
 Other agents won't access these unless explicitly directed. You bridge this knowledge gap.
 
