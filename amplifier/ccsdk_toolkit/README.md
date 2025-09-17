@@ -195,6 +195,31 @@ templates = builder.list_templates()
 
 ## Example CLI Tools
 
+### Idea Synthesis Tool
+
+A multi-stage pipeline tool that demonstrates the "code for structure, AI for intelligence" pattern:
+
+```bash
+# Synthesize ideas from markdown documentation
+python -m amplifier.ccsdk_toolkit.tools.idea_synthesis ai_context/
+
+# Process with limits and custom output
+python -m amplifier.ccsdk_toolkit.tools.idea_synthesis docs/ --limit 5 --output results/
+
+# Resume interrupted synthesis
+python -m amplifier.ccsdk_toolkit.tools.idea_synthesis docs/ --resume session-id
+
+# Export as JSON for programmatic use
+python -m amplifier.ccsdk_toolkit.tools.idea_synthesis docs/ --json-output
+```
+
+**Features:**
+- 4-stage pipeline: Read → Summarize → Synthesize → Expand
+- Incremental saves after each item processed
+- Full resume capability at any stage
+- Markdown and JSON output formats
+- Demonstrates hybrid code/AI architecture
+
 ### Code Complexity Analyzer
 
 A complete example tool included with the toolkit:
