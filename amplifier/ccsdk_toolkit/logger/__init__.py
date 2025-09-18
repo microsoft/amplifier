@@ -58,6 +58,7 @@ class ToolkitLogger:
         format: LogFormat = LogFormat.PLAIN,
         output_file: Path | None = None,
         stream: TextIO | None = None,
+        enable_notifications: bool = False,
     ):
         self.name = name
         self.level = level
@@ -66,6 +67,7 @@ class ToolkitLogger:
         self.stream = stream or sys.stdout
         self.session_id: str | None = None
         self.turn_number = 0
+        self.enable_notifications = enable_notifications
 
         # Configure base logger
         self.logger = logging.getLogger(name)
@@ -208,12 +210,57 @@ class ToolkitLogger:
             status=status,
         )
 
+    def stage_start(self, stage_name: str, message: str | None = None) -> None:
+        """Mark the start of a processing stage"""
+        if message:
+            self.info(f"Starting stage: {stage_name} - {message}", stage=stage_name)
+        else:
+            self.info(f"Starting stage: {stage_name}", stage=stage_name)
+
+    def stage_complete(self, stage_name: str, message: str, **kwargs: Any) -> None:
+        """Mark stage completion (no longer sends notifications)"""
+        # Log the completion
+        context = {"stage": stage_name, **kwargs}
+        self.info(f"Stage complete: {stage_name} - {message}", **context)
+
+        # No longer send progress notifications - only final completion
+
+    def task_complete(self, message: str, duration: float | None = None, success: bool = True) -> None:
+        """Mark task completion and send final notification"""
+        # Log the completion
+        context: dict[str, Any] = {"success": success}
+        if duration:
+            context["duration_seconds"] = round(duration, 2)
+
+        if success:
+            self.info(f"Task complete: {message}", **context)
+        else:
+            self.error(f"Task failed: {message}", error=None, **context)
+
+        # Send notification if enabled
+        if self.enable_notifications:
+            try:
+                import os
+
+                from amplifier.utils.notifications import send_notification
+
+                send_notification(
+                    title="Amplifier",
+                    message=message,
+                    cwd=os.getcwd(),
+                )
+            except ImportError:
+                self.debug("Notifications not available - amplifier.utils.notifications not found")
+            except Exception as e:
+                self.debug(f"Failed to send notification: {e}")
+
 
 def create_logger(
     name: str | None = None,
     level: Union[str, LogLevel] = LogLevel.INFO,
     format: Union[str, LogFormat] = LogFormat.PLAIN,
     output_file: Path | None = None,
+    enable_notifications: bool = False,
 ) -> ToolkitLogger:
     """
     Create a configured logger instance.
@@ -237,6 +284,7 @@ def create_logger(
         level=level,
         format=format,
         output_file=output_file,
+        enable_notifications=enable_notifications,
     )
 
 

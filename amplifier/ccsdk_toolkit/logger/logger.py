@@ -18,6 +18,7 @@ class ToolkitLogger:
     - File logging support
     - Debug mode with verbose output
     - Parent process log aggregation
+    - Optional desktop notifications for stage/task completion
     """
 
     def __init__(
@@ -26,6 +27,7 @@ class ToolkitLogger:
         output_file: Path | None = None,
         debug: bool = False,
         source: str | None = None,
+        enable_notifications: bool = False,
     ):
         """Initialize logger.
 
@@ -34,12 +36,14 @@ class ToolkitLogger:
             output_file: Optional file to write logs to
             debug: Enable debug logging
             source: Default source identifier
+            enable_notifications: Enable desktop notifications for stage/task completion
         """
         self.output_format = output_format
         self.output_file = output_file
         self.debug_mode = debug  # Renamed to avoid conflict with debug method
         self.source = source
         self.min_level = LogLevel.DEBUG if debug else LogLevel.INFO
+        self.enable_notifications = enable_notifications
 
     def log(self, level: LogLevel, message: str, metadata: dict[str, Any] | None = None, source: str | None = None):
         """Log a message.
@@ -126,4 +130,67 @@ class ToolkitLogger:
             output_file=self.output_file,
             debug=self.debug_mode,
             source=f"{self.source}.{source}" if self.source else source,
+            enable_notifications=self.enable_notifications,
         )
+
+    def stage_start(self, stage_name: str, message: str | None = None):
+        """Mark the start of a processing stage.
+
+        Args:
+            stage_name: Name of the stage
+            message: Optional message to log
+        """
+        if message:
+            self.info(f"Starting stage: {stage_name} - {message}", stage=stage_name)
+        else:
+            self.info(f"Starting stage: {stage_name}", stage=stage_name)
+
+    def stage_complete(self, stage_name: str, message: str, **kwargs):
+        """Mark stage completion (no longer sends notifications).
+
+        Args:
+            stage_name: Name of the completed stage
+            message: Completion message
+            **kwargs: Additional metadata to include
+        """
+        # Log the completion
+        metadata = {"stage": stage_name, **kwargs}
+        self.info(f"Stage complete: {stage_name} - {message}", **metadata)
+
+        # No longer send progress notifications - only final completion
+
+    def task_complete(self, message: str, duration: float | None = None, success: bool = True):
+        """Mark task completion and send final notification.
+
+        Args:
+            message: Completion message
+            duration: Total task duration in seconds (ignored for notifications)
+            success: Whether the task completed successfully
+        """
+        # Log the completion
+        metadata: dict[str, Any] = {"success": success}
+        if duration:
+            metadata["duration_seconds"] = round(duration, 2)
+
+        if success:
+            self.info(f"Task complete: {message}", **metadata)
+        else:
+            self.error(f"Task failed: {message}", **metadata)
+
+        # Send notification if enabled
+        if self.enable_notifications:
+            try:
+                # Lazy import to avoid dependency when not needed
+                import os
+
+                from amplifier.utils.notifications import send_notification
+
+                send_notification(
+                    title="Amplifier",
+                    message=message,
+                    cwd=os.getcwd(),
+                )
+            except ImportError:
+                self.debug("Notifications not available - amplifier.utils.notifications not found")
+            except Exception as e:
+                self.debug(f"Failed to send notification: {e}")
