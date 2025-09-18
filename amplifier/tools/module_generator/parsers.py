@@ -11,12 +11,46 @@ class ModuleContract:
     raw: str
     purpose: str | None = None
 
+    def to_dict(self) -> dict:
+        """Convert to dictionary for JSON serialization."""
+        return {
+            "name": self.name,
+            "raw": self.raw,
+            "purpose": self.purpose,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> ModuleContract:
+        """Create from dictionary."""
+        return cls(
+            name=data["name"],
+            raw=data["raw"],
+            purpose=data.get("purpose"),
+        )
+
 
 @dataclass
 class ModuleImplSpec:
     name: str
     raw: str
     overview: str | None = None
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary for JSON serialization."""
+        return {
+            "name": self.name,
+            "raw": self.raw,
+            "overview": self.overview,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> ModuleImplSpec:
+        """Create from dictionary."""
+        return cls(
+            name=data["name"],
+            raw=data["raw"],
+            overview=data.get("overview"),
+        )
 
 
 _H1_RE = re.compile(r"^#\s*(.+)$", re.M)

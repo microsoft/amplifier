@@ -1,25 +1,19 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+import logging
 from pathlib import Path
 
+from .context import GenContext
+from .enhanced_sdk_client import generate_from_specs_enhanced
 from .parsers import derive_module_name_from_path
 from .parsers import parse_contract
 from .parsers import parse_impl_spec
+from .pipeline_orchestrator import PipelineOrchestrator
 from .sdk_client import generate_from_specs
 from .sdk_client import generate_with_continuation
 from .sdk_client import plan_from_specs
 
-
-@dataclass
-class GenContext:
-    repo_root: Path
-    tool_dir: Path
-    contract_path: Path
-    spec_path: Path
-    module_name: str
-    target_rel: str  # e.g., "amplifier/idea_synthesizer"
-    force: bool = False
+logger = logging.getLogger(__name__)
 
 
 def find_repo_root(start: Path | None = None) -> Path:
@@ -54,6 +48,19 @@ def build_context(contract_path: Path, spec_path: Path, module_name: str | None,
 
 
 async def plan_phase(ctx: GenContext) -> tuple[str, str | None]:
+    """Run planning phase using the pipeline orchestrator."""
+    orchestrator = PipelineOrchestrator(ctx)
+    state = await orchestrator.run_pipeline(resume_from_checkpoint=False)
+
+    # Extract plan from state
+    plan_result = state.stage_results.get("plan")
+    if plan_result and plan_result.success:
+        return plan_result.output, state.session_id
+    return "", None
+
+
+async def plan_phase_legacy(ctx: GenContext) -> tuple[str, str | None]:
+    """Legacy planning without pipeline orchestrator."""
     contract = parse_contract(ctx.contract_path)
     impl = parse_impl_spec(ctx.spec_path, expected_name=contract.name)
     if impl.name != contract.name:
@@ -71,7 +78,24 @@ async def plan_phase(ctx: GenContext) -> tuple[str, str | None]:
     return plan_text, session_id
 
 
-async def generate_phase(ctx: GenContext, use_continuation: bool = True) -> str:
+async def generate_phase_with_pipeline(ctx: GenContext) -> str:
+    """Run full generation pipeline with checkpoints and evaluation."""
+    orchestrator = PipelineOrchestrator(ctx)
+    state = await orchestrator.run_pipeline(resume_from_checkpoint=True)
+
+    # Check if generation succeeded
+    gen_result = state.stage_results.get("generate")
+    if gen_result and gen_result.success:
+        return ctx.target_rel
+
+    # Check if we at least got to generation stage
+    if state.current_stage.value in ["generate", "verify_contract", "test", "complete"]:
+        return ctx.target_rel
+
+    raise RuntimeError(f"Pipeline failed at stage: {state.current_stage.value}")
+
+
+async def generate_phase(ctx: GenContext, use_continuation: bool = True, use_enhanced: bool = False) -> str:
     contract = parse_contract(ctx.contract_path)
     impl = parse_impl_spec(ctx.spec_path, expected_name=contract.name)
     target_dir = ctx.repo_root / ctx.target_rel
@@ -88,8 +112,20 @@ async def generate_phase(ctx: GenContext, use_continuation: bool = True) -> str:
     target_dir.parent.mkdir(parents=True, exist_ok=True)
     print(f"\n🛠️  Generating module into: {ctx.target_rel}\n")
 
+    # Use enhanced generation if requested
+    if use_enhanced:
+        session_id, cost, ms = await generate_from_specs_enhanced(
+            contract_text=contract.raw,
+            impl_text=impl.raw,
+            module_name=ctx.module_name,
+            module_dir_rel=ctx.target_rel,
+            cwd=str(ctx.repo_root),
+            add_dirs=[str(ctx.repo_root / "ai_context"), str(ctx.repo_root / "amplifier")],
+            settings=None,
+            max_attempts=3,
+        )
     # Use continuation function by default for more reliable generation
-    if use_continuation:
+    elif use_continuation:
         session_id, cost, ms = await generate_with_continuation(
             contract_text=contract.raw,
             impl_text=impl.raw,

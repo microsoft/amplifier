@@ -98,6 +98,9 @@ help: ## Show ALL available commands
 	@echo "  make synthesize query=\"...\" files=\"...\"  Run synthesis"
 	@echo "  make triage query=\"...\" files=\"...\"  Run triage only"
 	@echo ""
+	@echo "MODULE GENERATION:"
+	@echo "  make module-generate MODULE=<name>  Generate module from contract"
+	@echo ""
 	@echo "AI CONTEXT:"
 	@echo "  make ai-context-files  Build AI context documentation"
 	@echo ""
@@ -391,7 +394,25 @@ triage: ## Run only the triage step of the pipeline. Usage: make triage query=".
 	fi
 	uv run python -m amplifier.synthesis.main --query "$(query)" --files "$(files)" --use-triage
 
-
+# Module Generation
+module-generate: ## Generate a module from contract and spec files. Usage: make module-generate MODULE=<name>
+	@if [ -z "$(MODULE)" ]; then \
+		echo "Error: Please provide MODULE name. Usage: make module-generate MODULE=<name>"; \
+		exit 1; \
+	fi
+	@if [ ! -f "ai_working/$(MODULE)/$(shell echo $(MODULE) | tr '[:lower:]' '[:upper:]').contract.md" ]; then \
+		echo "Error: Contract file not found: ai_working/$(MODULE)/$(shell echo $(MODULE) | tr '[:lower:]' '[:upper:]').contract.md"; \
+		exit 1; \
+	fi
+	@if [ ! -f "ai_working/$(MODULE)/$(shell echo $(MODULE) | tr '[:lower:]' '[:upper:]').impl_spec.md" ]; then \
+		echo "Error: Implementation spec not found: ai_working/$(MODULE)/$(shell echo $(MODULE) | tr '[:lower:]' '[:upper:]').impl_spec.md"; \
+		exit 1; \
+	fi
+	@echo "Generating module: $(MODULE)"
+	uv run python -m amplifier.tools.module_generator generate \
+		"ai_working/$(MODULE)/$(shell echo $(MODULE) | tr '[:lower:]' '[:upper:]').contract.md" \
+		"ai_working/$(MODULE)/$(shell echo $(MODULE) | tr '[:lower:]' '[:upper:]').impl_spec.md" \
+		--module-name $(MODULE)
 
 # AI Context
 ai-context-files: ## Build AI context files
