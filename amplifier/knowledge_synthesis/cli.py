@@ -6,12 +6,14 @@ Simple, direct commands for extracting knowledge from content files.
 import asyncio
 import json
 import logging
+import os
 from typing import Any
 
 import click
 
 from amplifier.config.paths import paths
 from amplifier.knowledge_integration import UnifiedKnowledgeExtractor
+from amplifier.utils.notifications import send_notification
 
 from .events import EventEmitter
 from .store import KnowledgeStore
@@ -45,7 +47,13 @@ def cli():
     default=False,
     help="Skip articles with partial failures instead of retrying them (default: retry partials)",
 )
-def sync(max_items: int | None, resilient: bool, skip_partial_failures: bool):
+@click.option(
+    "--notify",
+    is_flag=True,
+    default=False,
+    help="Send desktop notifications on completion",
+)
+def sync(max_items: int | None, resilient: bool, skip_partial_failures: bool, notify: bool):
     """
     Sync and extract knowledge from content files.
 
@@ -61,13 +69,30 @@ def sync(max_items: int | None, resilient: bool, skip_partial_failures: bool):
     # By default, retry partial failures unless skip flag is set
     retry_partial_mode = not skip_partial_failures
 
-    if resilient:
-        asyncio.run(_sync_content_resilient(max_items, retry_partial_mode))
-    else:
-        asyncio.run(_sync_content(max_items))
+    try:
+        if resilient:
+            asyncio.run(_sync_content_resilient(max_items, retry_partial_mode, notify))
+        else:
+            asyncio.run(_sync_content(max_items, notify))
+    except KeyboardInterrupt:
+        if notify:
+            send_notification(
+                title="Amplifier",
+                message="Knowledge sync interrupted by user",
+                cwd=os.getcwd(),
+            )
+        raise
+    except Exception as e:
+        if notify:
+            send_notification(
+                title="Amplifier",
+                message=f"Knowledge sync failed: {str(e)[:100]}",
+                cwd=os.getcwd(),
+            )
+        raise
 
 
-async def _sync_content(max_items: int | None):
+async def _sync_content(max_items: int | None, notify: bool = False):
     """Sync and extract knowledge from content files."""
     # Import the new content loader
     from amplifier.content_loader import ContentLoader
@@ -190,6 +215,12 @@ async def _sync_content(max_items: int | None):
 
         except KeyboardInterrupt:
             logger.info("\n⚠ Interrupted - saving progress...")
+            if notify:
+                send_notification(
+                    title="Amplifier",
+                    message=f"Sync interrupted. Processed {processed} items",
+                    cwd=os.getcwd(),
+                )
             break
         except Exception as e:
             logger.error(f"\n{'=' * 60}")
@@ -220,8 +251,16 @@ async def _sync_content(max_items: int | None):
         data={"processed": processed, "skipped": skipped, "total": len(content_items)},
     )
 
+    # Send completion notification
+    if notify:
+        send_notification(
+            title="Amplifier",
+            message=f"Knowledge sync complete: {processed} items processed, {skipped} skipped",
+            cwd=os.getcwd(),
+        )
 
-async def _sync_content_resilient(max_items: int | None, retry_partial: bool = False):
+
+async def _sync_content_resilient(max_items: int | None, retry_partial: bool = False, notify: bool = False):
     """Sync content with resilient partial failure handling."""
     from amplifier.content_loader import ContentLoader
 
@@ -334,6 +373,12 @@ async def _sync_content_resilient(max_items: int | None, retry_partial: bool = F
 
         except KeyboardInterrupt:
             logger.info("\n⚠ Interrupted - saving progress...")
+            if notify:
+                send_notification(
+                    title="Amplifier",
+                    message=f"Sync interrupted. Processed {processed}, partial {partial}, failed {failed}",
+                    cwd=os.getcwd(),
+                )
             break
         except Exception as e:
             logger.error(f"  ✗ Unexpected error: {e}")
@@ -402,6 +447,23 @@ async def _sync_content_resilient(max_items: int | None, retry_partial: bool = F
         logger.info("   python -m amplifier.knowledge_synthesis.cli_resilient retry")
         logger.info("4. Generate detailed report:")
         logger.info("   python -m amplifier.knowledge_synthesis.cli_resilient report")
+
+    # Send completion notification with results
+    if notify:
+        if partial > 0 or failed > 0:
+            # Had some failures - user action needed
+            send_notification(
+                title="Amplifier",
+                message=f"Action needed: {processed} complete, {partial} partial, {failed} failed",
+                cwd=os.getcwd(),
+            )
+        else:
+            # All successful
+            send_notification(
+                title="Amplifier",
+                message=f"Knowledge sync complete: {processed} articles successfully processed",
+                cwd=os.getcwd(),
+            )
 
 
 @cli.command()
@@ -582,7 +644,13 @@ def events_summary(scope: str) -> None:
 
 @cli.command()
 @click.argument("query", required=True)
-def search(query: str):
+@click.option(
+    "--notify",
+    is_flag=True,
+    default=False,
+    help="Send desktop notifications on completion",
+)
+def search(query: str, notify: bool):
     """
     Search extracted knowledge.
 
@@ -652,6 +720,21 @@ def search(query: str):
 
     if len(matches) > 20:
         logger.info(f"... and {len(matches) - 20} more matches")
+
+    # Send notification for search results
+    if notify:
+        if matches:
+            send_notification(
+                title="Amplifier",
+                message=f"Found {len(matches)} matches for '{query}'",
+                cwd=os.getcwd(),
+            )
+        else:
+            send_notification(
+                title="Amplifier",
+                message=f"No matches found for '{query}'",
+                cwd=os.getcwd(),
+            )
 
 
 @cli.command()
@@ -726,7 +809,13 @@ def export(format: str):
 
 
 @cli.command()
-def synthesize():
+@click.option(
+    "--notify",
+    is_flag=True,
+    default=False,
+    help="Send desktop notifications on completion",
+)
+def synthesize(notify: bool):
     """
     Run cross-article synthesis to find patterns and tensions.
 
@@ -745,14 +834,42 @@ def synthesize():
         logger.info("No extractions found. Run 'sync' command first.")
         return
 
-    # Run synthesis
-    engine = SynthesisEngine(extractions_path)
-    results = engine.run_synthesis()
+    try:
+        # Run synthesis
+        engine = SynthesisEngine(extractions_path)
+        results = engine.run_synthesis()
 
-    # Print summary
-    engine.print_summary(results)
+        # Print summary
+        engine.print_summary(results)
 
-    logger.info(f"\nFull results saved to: {engine.synthesis_path}")
+        logger.info(f"\nFull results saved to: {engine.synthesis_path}")
+
+        # Send completion notification
+        if notify:
+            entity_count = len(results.get("entity_resolutions", []))
+            tension_count = len(results.get("contradictions", []))
+            insight_count = len(results.get("emergent_insights", []))
+            send_notification(
+                title="Amplifier",
+                message=f"Synthesis complete: {entity_count} entities, {tension_count} tensions, {insight_count} insights",
+                cwd=os.getcwd(),
+            )
+    except KeyboardInterrupt:
+        if notify:
+            send_notification(
+                title="Amplifier",
+                message="Synthesis interrupted by user",
+                cwd=os.getcwd(),
+            )
+        raise
+    except Exception as e:
+        if notify:
+            send_notification(
+                title="Amplifier",
+                message=f"Synthesis failed: {str(e)[:100]}",
+                cwd=os.getcwd(),
+            )
+        raise
 
 
 if __name__ == "__main__":

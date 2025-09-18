@@ -226,14 +226,18 @@ content-status: ## Show content statistics
 	uv run python -m amplifier.content_loader status
 
 # Knowledge Synthesis (Simplified)
-knowledge-sync: ## Extract knowledge from all content files
-	@echo "Syncing and extracting knowledge from content files..."
-	uv run python -m amplifier.knowledge_synthesis.cli sync
+knowledge-sync: ## Extract knowledge from all content files [NOTIFY=true]
+	@notify_flag=""; \
+	if [ "$$NOTIFY" = "true" ]; then notify_flag="--notify"; fi; \
+	echo "Syncing and extracting knowledge from content files..."; \
+	uv run python -m amplifier.knowledge_synthesis.cli sync $$notify_flag
 
-knowledge-sync-batch: ## Extract knowledge from next N articles. Usage: make knowledge-sync-batch N=5
+knowledge-sync-batch: ## Extract knowledge from next N articles. Usage: make knowledge-sync-batch N=5 [NOTIFY=true]
 	@n="$${N:-5}"; \
+	notify_flag=""; \
+	if [ "$$NOTIFY" = "true" ]; then notify_flag="--notify"; fi; \
 	echo "Processing next $$n articles..."; \
-	uv run python -m amplifier.knowledge_synthesis.cli sync --max-items $$n
+	uv run python -m amplifier.knowledge_synthesis.cli sync --max-items $$n $$notify_flag
 
 knowledge-search: ## Search extracted knowledge. Usage: make knowledge-search Q="AI agents"
 	@if [ -z "$(Q)" ]; then \
@@ -253,20 +257,24 @@ knowledge-export: ## Export all knowledge as JSON or text. Usage: make knowledge
 	uv run python -m amplifier.knowledge_synthesis.cli export --format $$format
 
 # Knowledge Pipeline Commands
-knowledge-update: ## Full pipeline: extract knowledge + synthesize patterns
-	@echo "🚀 Running full knowledge pipeline..."
-	@echo "Step 1: Extracting knowledge..."
-	@$(MAKE) --no-print-directory knowledge-sync
-	@echo ""
-	@echo "Step 2: Synthesizing patterns..."
-	@$(MAKE) --no-print-directory knowledge-synthesize
-	@echo ""
-	@echo "✅ Knowledge pipeline complete!"
+knowledge-update: ## Full pipeline: extract knowledge + synthesize patterns [NOTIFY=true]
+	@notify_flag=""; \
+	if [ "$$NOTIFY" = "true" ]; then notify_flag="--notify"; fi; \
+	echo "🚀 Running full knowledge pipeline..."; \
+	echo "Step 1: Extracting knowledge..."; \
+	uv run python -m amplifier.knowledge_synthesis.cli sync $$notify_flag; \
+	echo ""; \
+	echo "Step 2: Synthesizing patterns..."; \
+	uv run python -m amplifier.knowledge_synthesis.run_synthesis $$notify_flag; \
+	echo ""; \
+	echo "✅ Knowledge pipeline complete!"
 
-knowledge-synthesize: ## Find patterns across all extracted knowledge
-	@echo "🔍 Synthesizing patterns from knowledge base..."
-	@uv run python -m amplifier.knowledge_synthesis.run_synthesis
-	@echo "✅ Synthesis complete! Results saved to knowledge base"
+knowledge-synthesize: ## Find patterns across all extracted knowledge [NOTIFY=true]
+	@notify_flag=""; \
+	if [ "$$NOTIFY" = "true" ]; then notify_flag="--notify"; fi; \
+	echo "🔍 Synthesizing patterns from knowledge base..."; \
+	uv run python -m amplifier.knowledge_synthesis.run_synthesis $$notify_flag; \
+	echo "✅ Synthesis complete! Results saved to knowledge base"
 
 knowledge-query: ## Query the knowledge base. Usage: make knowledge-query Q="your question"
 	@if [ -z "$(Q)" ]; then \
