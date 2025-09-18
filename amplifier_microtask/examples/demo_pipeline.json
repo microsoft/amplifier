@@ -1,0 +1,33 @@
+{
+  "name": "AI Writing Assistant Demo",
+  "description": "Demonstrates real AI operations through a writing pipeline",
+  "tasks": [
+    {
+      "id": "brainstorm",
+      "prompt": "Generate 3 creative title options for a blog post about: {topic}. Just list the titles, one per line.",
+      "context_keys": ["topic"],
+      "save_key": "titles",
+      "required": true,
+      "timeout": 120
+    },
+    {
+      "id": "select_best",
+      "prompt": "From these title options, select the most engaging one and explain why in one sentence:\n{titles}",
+      "context_keys": ["titles"],
+      "save_key": "selected_title",
+      "required": true,
+      "timeout": 120
+    },
+    {
+      "id": "create_outline",
+      "prompt": "Create a brief 3-point outline for a blog post with this title: {selected_title}",
+      "context_keys": ["selected_title"],
+      "save_key": "outline",
+      "required": true,
+      "timeout": 120
+    }
+  ],
+  "initial_data": {
+    "topic": "how AI is changing software development"
+  }
+}

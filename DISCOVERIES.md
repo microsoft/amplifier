@@ -576,3 +576,74 @@ result = await extractor.extract_from_text(content, title=article.title)
 - When integrating async SDKs, ensure the entire call chain is async
 - Test async operations with proper error handling to surface the real issues
 - Don't assume timeout errors mean the SDK can't find the CLI
+
+## Microtask Pipeline SDK Progress Visibility (2025-01-17)
+
+### Issue
+
+Amplifier microtask pipeline had three critical problems:
+1. Claude SDK operations take 2-5+ minutes legitimately but appeared hung with no progress indication
+2. No validation that generated tools met original requirements  
+3. Philosophy context not passed to generation stages
+
+### Root Cause
+
+1. **Progress**: SDK operates as black box with no intermediate feedback
+2. **Validation**: Pipeline treated stages independently without requirements tracking
+3. **Context**: Prompts didn't include amplifier philosophy principles
+
+### Solution
+
+Implemented comprehensive improvements:
+
+1. **Progress Monitoring** (`amplifier_microtask/progress_monitor.py`):
+```python
+# File-based heartbeat pattern
+class ProgressMonitor:
+    def __init__(self, task_id: str, stage_name: str):
+        self.progress_file = Path(f".progress_{task_id}.txt")
+    
+    async def monitor_heartbeat(self, check_interval: int = 30):
+        # Monitor file for updates, warn if no progress for 2 minutes
+```
+
+2. **Validation Framework** (`amplifier_microtask/validation.py`):
+```python
+class RequirementsValidator:
+    def extract_requirements(self, desc: str) -> Dict[str, str]
+    def validate_stage(self, stage_name: str, output: Any) -> ValidationResult
+```
+
+3. **Philosophy Context Injection** (`amplifier_microtask/context.py`):
+```python
+PHILOSOPHY_CONTEXT = """
+Follow amplifier principles:
+- Ruthless simplicity  
+- Code for structure, AI for intelligence
+- Modular design (bricks & studs)
+- Zero placeholder/stub code
+"""
+```
+
+4. **Adaptive Timeouts** (`amplifier_microtask/stages.py`):
+```python
+def calculate_task_timeout(base_timeout: int, task_type: str, context: dict) -> int:
+    # Scale timeout based on complexity
+    # Integration tests: 600s, Design: 300s, Requirements: 180s
+```
+
+### Key Learnings
+
+1. **Progress visibility is critical** for long-running operations
+2. **File-based heartbeats** are simple and effective
+3. **Validation should be non-blocking** - warn but don't stop
+4. **Context injection** ensures consistent philosophy application
+5. **Adaptive timeouts** prevent premature failures
+
+### Prevention
+
+- Always add progress monitoring for operations >30 seconds
+- Include validation framework from the start
+- Pass philosophy context to all AI interactions
+- Use complexity scoring for timeout calculation
+- Test with both simple and complex inputs

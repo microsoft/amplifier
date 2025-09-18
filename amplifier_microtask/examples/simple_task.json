@@ -1,0 +1,25 @@
+{
+  "name": "Simple Analysis Pipeline",
+  "description": "A simple two-step pipeline demonstrating microtask execution",
+  "tasks": [
+    {
+      "id": "analyze",
+      "prompt": "Analyze this text and extract the three most important points: {input_text}",
+      "context_keys": ["input_text"],
+      "save_key": "analysis",
+      "required": true,
+      "timeout": 120
+    },
+    {
+      "id": "summarize",
+      "prompt": "Create a concise 2-sentence summary of this analysis: {analysis}",
+      "context_keys": ["analysis"],
+      "save_key": "summary",
+      "required": true,
+      "timeout": 120
+    }
+  ],
+  "initial_data": {
+    "input_text": "The Amplifier pattern combines code for structure with AI for intelligence. By breaking work into focused microtasks, we can achieve reliable execution while preserving progress. This approach enables recovery from any interruption and supports parallel experimentation."
+  }
+}

@@ -1,0 +1,34 @@
+[project]
+name = "amplifier-microtask"
+version = "0.1.0"
+description = "Microtask-driven AI operations with the Amplifier pattern"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "click>=8.1.0",
+    "pydantic>=2.0.0",
+    "claude-code-sdk>=0.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "ruff>=0.1.0",
+    "pyright>=1.1.0",
+]
+
+[project.scripts]
+amplifier = "amplifier_microtask.cli:cli"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.pyright]
+pythonVersion = "3.10"
+typeCheckingMode = "standard"
