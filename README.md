@@ -208,6 +208,28 @@ Instead of one generalist AI, you get 20+ specialists:
    make knowledge-graph-viz  # See how ideas connect
    ```
 
+### Modular Builder (Lite)
+
+A one-command workflow to go from an idea to a module (**Contract & Spec → Plan → Generate → Review**) inside the Amplifier Claude Code environment.
+
+- **Run inside a Claude Code session:**
+  ```
+  /modular-build Build a module that reads markdown summaries, synthesizes net-new ideas with provenance, and expands them into plans. mode: auto level: moderate
+  ```
+- **Docs:** see `docs/MODULAR_BUILDER_LITE.md` for the detailed flow and guardrails.
+- **Artifacts:** planning goes to `ai_working/<module>/…` (contract/spec/plan/review); code & tests to `amplifier/<module>/…`.
+- **Isolation & discipline:** workers read only this module’s **contract/spec** plus dependency **contracts**. The spec’s **Output Files** are the single source of truth for what gets written. Every contract **Conformance Criterion** maps to tests. 〔Authoring Guide〕
+
+#### Modes
+
+- `auto` (default): runs autonomously if confidence ≥ 0.75; otherwise falls back to `assist`.
+- `assist`: asks ≤ 5 crisp questions to resolve ambiguity, then proceeds.
+- `dry-run`: plan/validate only (no code writes).
+
+#### Continue later
+
+Re‑run `/modular-build` with a follow‑up ask; it resumes from `ai_working/<module>/session.json`.
+
 ### Development Commands
 
 ```bash
