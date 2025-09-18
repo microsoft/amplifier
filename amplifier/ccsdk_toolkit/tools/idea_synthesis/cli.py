@@ -36,6 +36,12 @@ from .stages import SynthesizerStage
 from .utils import read_json_with_retry
 from .utils import write_json_with_retry
 
+# Import notification helper if available
+try:
+    from amplifier.utils.notifications import send_notification
+except ImportError:
+    send_notification = None
+
 
 @click.command()
 @click.argument("directory", type=click.Path(exists=True, path_type=Path))
@@ -46,6 +52,7 @@ from .utils import write_json_with_retry
 @click.option("--output", type=click.Path(path_type=Path), help="Output directory for results")
 @click.option("--json-output", is_flag=True, help="Output results as JSON")
 @click.option("--verbose", is_flag=True, help="Enable verbose output")
+@click.option("--notify", is_flag=True, help="Enable desktop notifications on completion")
 def main(
     directory: Path,
     pattern: str,
@@ -55,6 +62,7 @@ def main(
     output: Path | None,
     json_output: bool,
     verbose: bool,
+    notify: bool,
 ):
     """
     Synthesize ideas from AI context documentation.
@@ -83,6 +91,7 @@ def main(
             output_dir=output,
             json_output=json_output,
             verbose=verbose,
+            notify=notify,
         )
     )
 
@@ -96,9 +105,16 @@ async def run_synthesis(
     output_dir: Path | None,
     json_output: bool,
     verbose: bool,
+    notify: bool,
 ):
     """Main synthesis pipeline."""
     console = Console()
+    start_time = asyncio.get_event_loop().time()
+
+    # Create logger with notification support
+    from amplifier.ccsdk_toolkit.logger.logger import ToolkitLogger
+
+    logger = ToolkitLogger(output_format="text", enable_notifications=notify, source="idea-synthesis")
 
     # Setup output directory
     if not output_dir:
@@ -124,6 +140,7 @@ async def run_synthesis(
     try:
         # Stage 1: Read files
         console.print("\n[bold cyan]Stage 1: Reading Files[/bold cyan]")
+        logger.stage_start("Reader")
 
         # Count total files first
         total_files = reader.count_files(directory, pattern, recursive)
@@ -138,22 +155,29 @@ async def run_synthesis(
         )
 
         console.print(f"[green]✓ Loaded {len(source_files)} files[/green]")
+        logger.stage_complete("Reader", f"Loaded {len(source_files)} files")
 
         # Stage 2: Summarize files
         console.print("\n[bold cyan]Stage 2: Summarizing Files[/bold cyan]")
+        logger.stage_start("Summarizer")
         summaries = await summarizer.summarize_files(source_files, state)
         console.print(f"[green]✓ Created {len(summaries)} new summaries[/green]")
         console.print(f"[green]✓ Total summaries: {len(state.summaries)}[/green]")
+        logger.stage_complete("Summarizer", f"Created {len(summaries)} summaries", total=len(state.summaries))
 
         # Stage 3: Synthesize themes
         console.print("\n[bold cyan]Stage 3: Synthesizing Themes[/bold cyan]")
+        logger.stage_start("Synthesizer")
         themes = await synthesizer.synthesize_themes(state.summaries, state)
         console.print(f"[green]✓ Identified {len(themes)} themes[/green]")
+        logger.stage_complete("Synthesizer", f"Identified {len(themes)} themes")
 
         # Stage 4: Expand ideas
         console.print("\n[bold cyan]Stage 4: Expanding Ideas[/bold cyan]")
+        logger.stage_start("Expander")
         expanded = await expander.expand_ideas(themes, state.summaries, source_files, state)
         console.print(f"[green]✓ Expanded {len(expanded)} ideas[/green]")
+        logger.stage_complete("Expander", f"Expanded {len(expanded)} ideas")
 
         # Generate output
         console.print("\n[bold cyan]Generating Output[/bold cyan]")
@@ -173,9 +197,16 @@ async def run_synthesis(
 
         console.print(f"\n[bold green]✨ Synthesis complete! Session: {state.session_id}[/bold green]")
 
+        # Send final completion notification
+        total_time = asyncio.get_event_loop().time() - start_time
+        logger.task_complete(
+            f"Idea synthesis complete: {state.processed_files} files processed", duration=total_time, success=True
+        )
+
     except KeyboardInterrupt:
         console.print("\n[yellow]⚠ Interrupted! Progress has been saved.[/yellow]")
         console.print(f"[yellow]Resume with: --resume {state.session_id}[/yellow]")
+        logger.task_complete("Idea synthesis interrupted", success=False)
     except Exception as e:
         console.print(f"\n[red]✗ Error: {e}[/red]")
         if verbose:
@@ -183,6 +214,7 @@ async def run_synthesis(
 
             console.print(traceback.format_exc())
         console.print(f"[yellow]Resume with: --resume {state.session_id}[/yellow]")
+        logger.task_complete(f"Idea synthesis failed: {str(e)}", success=False)
         sys.exit(1)
 
 

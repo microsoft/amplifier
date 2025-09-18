@@ -6,7 +6,7 @@ class CliTemplate:
 
     @staticmethod
     def basic_tool() -> str:
-        """Basic CLI tool template.
+        """Basic CLI tool template with notification support.
 
         Returns:
             Python code template for a basic CLI tool
@@ -15,7 +15,7 @@ class CliTemplate:
 """
 {name} - {description}
 
-A Claude Code SDK powered CLI tool.
+A Claude Code SDK powered CLI tool with optional desktop notification support.
 """
 import asyncio
 import click
@@ -28,9 +28,10 @@ from amplifier.ccsdk_toolkit.logger import ToolkitLogger
 @click.argument("input", type=click.Path(exists=True))
 @click.option("--output", "-o", type=click.Path(), help="Output file")
 @click.option("--debug", is_flag=True, help="Enable debug logging")
-def main(input: str, output: str, debug: bool):
+@click.option("--notify", is_flag=True, help="Enable desktop notifications")
+def main(input: str, output: str, debug: bool, notify: bool):
     """{description}"""
-    logger = ToolkitLogger(debug=debug)
+    logger = ToolkitLogger(debug=debug, enable_notifications=notify)
     logger.info("Starting {name}", input=input)
 
     # Run async function
@@ -68,7 +69,7 @@ if __name__ == "__main__":
 
     @staticmethod
     def analyzer_tool() -> str:
-        """Code analyzer template.
+        """Code analyzer template with notification support.
 
         Returns:
             Template for a code analysis tool
@@ -77,7 +78,7 @@ if __name__ == "__main__":
 """
 {name} - Code Analysis Tool
 
-Analyzes code using Claude Code SDK.
+Analyzes code using Claude Code SDK with optional desktop notification support.
 """
 import asyncio
 import click
@@ -93,9 +94,10 @@ from amplifier.ccsdk_toolkit.logger import ToolkitLogger
 @click.option("--output-format", "-f", type=click.Choice(["json", "text"]), default="text")
 @click.option("--config", "-c", type=click.Path(exists=True), help="Configuration file")
 @click.option("--debug", is_flag=True, help="Enable debug logging")
-def main(paths: tuple, output_format: str, config: str, debug: bool):
+@click.option("--notify", is_flag=True, help="Enable desktop notifications")
+def main(paths: tuple, output_format: str, config: str, debug: bool, notify: bool):
     """Analyze code files with Claude."""
-    logger = ToolkitLogger(output_format="json" if debug else "text", debug=debug)
+    logger = ToolkitLogger(output_format="json" if debug else "text", debug=debug, enable_notifications=notify)
 
     # Load configuration
     analysis_config = load_config(config) if config else {}

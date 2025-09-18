@@ -39,6 +39,7 @@ from amplifier.ccsdk_toolkit import create_logger
 @click.option("--resume", help="Resume previous session by ID")
 @click.option("--agent", help="Path to custom agent definition")
 @click.option("--limit", type=int, help="Process only N files (works with --resume to process next N)")
+@click.option("--notify", is_flag=True, help="Enable desktop notifications for completion")
 def main(
     target: str,
     pattern: str,
@@ -49,6 +50,7 @@ def main(
     resume: str | None,
     agent: str | None,
     limit: int | None,
+    notify: bool,
 ):
     """
     Analyze code complexity using Claude Code SDK.
@@ -69,6 +71,7 @@ def main(
             resume,
             agent,
             limit,
+            notify,
         )
     )
 
@@ -83,8 +86,13 @@ async def analyze_complexity(
     resume_id: str | None,
     agent_path: str | None,
     limit: int | None,
+    notify: bool,
 ):
     """Main analysis function"""
+    import time
+
+    start_time = time.time()
+
     # Set up logging
     log_format = LogFormat.JSON if output_json else LogFormat.RICH
     logger = create_logger(
@@ -92,6 +100,7 @@ async def analyze_complexity(
         level=LogLevel.DEBUG if verbose else LogLevel.INFO,
         format=log_format,
         output_file=Path(f"{output_path}.log") if output_path else None,
+        enable_notifications=notify,
     )
 
     # Create session manager for persistence
@@ -183,6 +192,10 @@ Provide specific recommendations for simplification.""",
 
     logger.info(f"Analyzing {len(files_to_analyze)} files (total: {session_state.context['total_files']})")
 
+    # Start notification for analysis begin
+    if notify:
+        logger.stage_start("Analysis", f"Starting analysis of {len(files_to_analyze)} files")
+
     # Configure session
     options = SessionOptions(
         system_prompt=agent_def.system_prompt,
@@ -264,16 +277,30 @@ Focus on actionable improvements following ruthless simplicity principles."""
 
     except Exception as e:
         logger.error("Analysis failed", error=e)
+        # Send failure notification
+        if notify:
+            logger.task_complete(
+                f"Code complexity analysis failed: {str(e)}", duration=time.time() - start_time, success=False
+            )
         raise click.ClickException(str(e))
+
+    # Calculate total duration
+    total_duration = time.time() - start_time
 
     # Log session summary
     logger.log_session_end(
         session_id=session_state.metadata.session_id,
-        duration_ms=0,  # Would calculate from timestamps
+        duration_ms=int(total_duration * 1000),
         total_cost=0.0,  # Would track from responses
         turns_completed=len(files_to_analyze),
         status="completed",
     )
+
+    # Send completion notification
+    if notify:
+        logger.task_complete(
+            f"Code complexity analysis complete: {len(results)} files analyzed", duration=total_duration, success=True
+        )
 
     # Output results
     if output_json:
