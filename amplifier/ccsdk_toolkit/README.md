@@ -10,7 +10,7 @@ A comprehensive Python toolkit for building CLI tools and applications with the 
 - **📊 Structured Logging** - JSON, plaintext, or rich console output with full tracking
 - **🛠️ CLI Builder** - Generate new CLI tools from templates in seconds
 - **🔄 Re-entrant Sessions** - Continue previous conversations seamlessly
-- **⏱️ Smart Timeouts** - Proven 120-second default with configurable overrides
+- **🌊 Natural Completion** - Operations run to completion without artificial time limits
 - **🎯 Agent Support** - Load and use specialized agents from files or inline
 
 ## Installation
@@ -39,7 +39,7 @@ async def main():
     options = SessionOptions(
         system_prompt="You are a helpful code assistant",
         max_turns=1,
-        timeout_seconds=120  # Default proven timeout
+        # Operations run to natural completion
     )
 
     async with ClaudeSession(options) as session:
@@ -61,7 +61,6 @@ from amplifier.ccsdk_toolkit import query_with_retry
 response = await query_with_retry(
     prompt="Analyze this code",
     max_retries=3,
-    timeout_seconds=120
 )
 ```
 
@@ -160,7 +159,7 @@ logger = create_logger(
 
 # Log at different levels
 logger.info("Starting process", task="analysis")
-logger.error("Failed", error=Exception("timeout"))
+logger.error("Failed", error=Exception("operation failed"))
 
 # Track queries
 logger.log_query(prompt="Analyze code", response="...")
@@ -445,13 +444,13 @@ except Exception as e:
 
 ## Known Issues & Solutions
 
-### Timeout Issues
+### Long-Running Operations
 
-The toolkit uses a proven 120-second timeout by default based on extensive testing:
+The toolkit trusts operations to complete naturally. Use streaming for visibility:
 
 ```python
-# Override if needed for very long operations
-options = SessionOptions(timeout_seconds=300)
+# Enable streaming to see progress
+options = SessionOptions(stream_output=True)
 ```
 
 ### Claude CLI Not Found

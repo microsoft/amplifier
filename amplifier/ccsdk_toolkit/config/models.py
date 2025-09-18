@@ -106,7 +106,7 @@ class AgentConfig(BaseModel):
     disallowed_tools: list[str] = Field(default_factory=list)
     context_files: list[str] = Field(default_factory=list)
     mcp_servers: list[MCPServerConfig] = Field(default_factory=list)
-    max_turns: int = Field(default=1, gt=0, le=100)
+    max_turns: int = Field(default=1, gt=0)  # No upper limit for complex operations
 
     @field_validator("system_prompt")
     @classmethod
@@ -159,7 +159,7 @@ class AgentDefinition(BaseModel):
     system_prompt: str
     tool_permissions: ToolPermissions = Field(default_factory=ToolPermissions)
     context_files: list[Path] = Field(default_factory=list)
-    max_turns: int = Field(default=1, gt=0, le=100)
+    max_turns: int = Field(default=1, gt=0)  # No upper limit for complex operations
     metadata: dict[str, str] = Field(default_factory=dict)
 
     @classmethod
@@ -248,14 +248,12 @@ class ToolkitConfig(BaseModel):
         agents: List of agent definitions
         environment: Environment configuration
         default_agent: Name of default agent to use
-        timeout_seconds: Global timeout for operations
         retry_attempts: Global retry attempts
     """
 
     agents: list[AgentDefinition] = Field(default_factory=list)
     environment: EnvironmentConfig = Field(default_factory=EnvironmentConfig)
     default_agent: str | None = Field(default=None)
-    timeout_seconds: int = Field(default=120, gt=0, le=600)
     retry_attempts: int = Field(default=3, gt=0, le=10)
 
     def get_agent(self, name: str) -> AgentDefinition | None:

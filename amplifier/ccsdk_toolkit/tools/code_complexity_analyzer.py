@@ -200,7 +200,6 @@ Provide specific recommendations for simplification.""",
     options = SessionOptions(
         system_prompt=agent_def.system_prompt,
         max_turns=3,
-        timeout_seconds=180,
     )
 
     # Add to session history

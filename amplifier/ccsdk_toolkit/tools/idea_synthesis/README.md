@@ -138,10 +138,10 @@ idea_synthesis/
 - Handles OneDrive/Dropbox delays
 - Clear warnings about cloud sync issues
 
-### 120-Second Timeout
-- Optimal timeout for Claude SDK operations
-- Prevents indefinite hanging
-- Works inside and outside Claude Code environment
+### Natural Completion
+- Operations run to completion without time limits
+- Streaming provides visibility into progress
+- Trust through transparency philosophy
 
 ## Requirements
 

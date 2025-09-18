@@ -31,7 +31,7 @@ async def basic_session_example():
 
     try:
         # Create session with options
-        options = SessionOptions(system_prompt="You are a helpful code assistant", max_turns=1, timeout_seconds=30)
+        options = SessionOptions(system_prompt="You are a helpful code assistant", max_turns=1)
 
         async with ClaudeSession(options) as session:
             response = await session.query("Write a Python hello world function")
@@ -109,7 +109,7 @@ def logging_example():
     logger.debug("Debug message", component="test")
     logger.info("Processing started", items=100)
     logger.warning("Low memory", available_mb=500)
-    logger.error("Failed to process", error=TimeoutError("Operation timed out"))
+    logger.error("Failed to process", error=Exception("Operation failed"))
 
     # Stream progress
     logger.stream_progress("Analyzing main.py", progress=0.5)

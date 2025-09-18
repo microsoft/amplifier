@@ -4,6 +4,7 @@ import asyncio
 import os
 import shutil
 from pathlib import Path
+from typing import Any
 
 from .models import SessionOptions
 from .models import SessionResponse
@@ -23,7 +24,6 @@ class ClaudeSession:
     This provides a robust wrapper around the claude_code_sdk with:
     - Prerequisite checking for the claude CLI
     - Automatic retry with exponential backoff
-    - Clean timeout handling
     - Graceful degradation when SDK unavailable
     """
 
@@ -87,11 +87,12 @@ class ClaudeSession:
         if self.client:
             await self.client.__aexit__(exc_type, exc_val, exc_tb)
 
-    async def query(self, prompt: str) -> SessionResponse:
+    async def query(self, prompt: str, stream: bool | None = None) -> SessionResponse:
         """Send a query to Claude with automatic retry.
 
         Args:
             prompt: The prompt to send to Claude
+            stream: Override the session's stream_output setting
 
         Returns:
             SessionResponse with the result or error
@@ -104,28 +105,54 @@ class ClaudeSession:
 
         for attempt in range(self.options.retry_attempts):
             try:
-                # Query with timeout
-                async with asyncio.timeout(self.options.timeout_seconds):
-                    await self.client.query(prompt)
+                # Execute query directly
+                assert self.client is not None  # Type guard for pyright
+                await self.client.query(prompt)
 
-                    # Collect response
-                    response_text = ""
-                    async for message in self.client.receive_response():
-                        if hasattr(message, "content"):
-                            content = getattr(message, "content", [])
-                            if isinstance(content, list):
-                                for block in content:
-                                    if hasattr(block, "text"):
-                                        response_text += getattr(block, "text", "")
+                # Collect response with streaming support
+                response_text = ""
+                metadata: dict[str, Any] = {"attempt": attempt + 1}
 
-                    if response_text:
-                        return SessionResponse(content=response_text, metadata={"attempt": attempt + 1})
+                async for message in self.client.receive_response():
+                    if hasattr(message, "content"):
+                        content = getattr(message, "content", [])
+                        if isinstance(content, list):
+                            for block in content:
+                                if hasattr(block, "text"):
+                                    text = getattr(block, "text", "")
+                                    if text:
+                                        response_text += text
 
-                    # Empty response, retry
-                    last_error = "Received empty response from SDK"
+                                        # Stream output if enabled
+                                        should_stream = stream if stream is not None else self.options.stream_output
+                                        if should_stream:
+                                            print(text, end="", flush=True)
 
-            except TimeoutError:
-                last_error = f"SDK timeout after {self.options.timeout_seconds} seconds"
+                                        # Call progress callback if provided
+                                        if self.options.progress_callback:
+                                            self.options.progress_callback(text)
+
+                    # Collect metadata from ResultMessage if available
+                    if hasattr(message, "__class__") and message.__class__.__name__ == "ResultMessage":
+                        if hasattr(message, "session_id"):
+                            metadata["session_id"] = getattr(message, "session_id", None)
+                        if hasattr(message, "total_cost_usd"):
+                            metadata["total_cost_usd"] = getattr(message, "total_cost_usd", 0.0)
+                        if hasattr(message, "duration_ms"):
+                            metadata["duration_ms"] = getattr(message, "duration_ms", 0)
+
+                # Add newline after streaming if enabled
+                should_stream = stream if stream is not None else self.options.stream_output
+                if should_stream and response_text:
+                    print()  # Final newline after streaming
+
+                if response_text:
+                    return SessionResponse(content=response_text, metadata=metadata)
+
+                # Empty response, will retry
+                raise ValueError("Received empty response from SDK")
+            except ValueError as e:
+                last_error = str(e)
             except Exception as e:
                 last_error = str(e)
 

@@ -97,7 +97,6 @@ class CliBuilder:
                     options = SessionOptions(
                         system_prompt="{{ system_prompt }}",
                         max_turns=max_turns,
-                        timeout_seconds=120,
                     )
 
                     try:
@@ -201,7 +200,6 @@ class CliBuilder:
                     options = SessionOptions(
                         system_prompt=agent.system_prompt,
                         max_turns=3,
-                        timeout_seconds=180,
                     )
 
                     results = []

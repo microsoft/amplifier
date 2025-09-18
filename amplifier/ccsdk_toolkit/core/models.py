@@ -1,5 +1,6 @@
 """Data models for CCSDK Core module."""
 
+from collections.abc import Callable
 from typing import Any
 
 from pydantic import BaseModel
@@ -11,26 +12,32 @@ class SessionOptions(BaseModel):
 
     Attributes:
         system_prompt: System prompt for the session
-        max_turns: Maximum conversation turns (default: 1)
-        timeout_seconds: Timeout for SDK operations (default: 120)
+        max_turns: Maximum conversation turns (default: unlimited)
         retry_attempts: Number of retry attempts on failure (default: 3)
         retry_delay: Initial retry delay in seconds (default: 1.0)
+        stream_output: Enable real-time streaming output (default: False)
+        progress_callback: Optional callback for progress updates
     """
 
     system_prompt: str = Field(default="You are a helpful assistant")
-    max_turns: int = Field(default=1, gt=0, le=100)
-    timeout_seconds: int = Field(default=120, gt=0, le=600)
+    max_turns: int = Field(default=1, gt=0)
     retry_attempts: int = Field(default=3, gt=0, le=10)
     retry_delay: float = Field(default=1.0, gt=0, le=10.0)
+    stream_output: bool = Field(default=False, description="Enable real-time streaming output")
+    progress_callback: Callable[[str], None] | None = Field(
+        default=None,
+        description="Optional callback for progress updates",
+        exclude=True,  # Exclude from serialization since callables can't be serialized
+    )
 
     class Config:
         json_schema_extra = {
             "example": {
                 "system_prompt": "You are a code review assistant",
                 "max_turns": 1,
-                "timeout_seconds": 120,
                 "retry_attempts": 3,
                 "retry_delay": 1.0,
+                "stream_output": False,  # Streaming disabled by default
             }
         }
 

@@ -56,10 +56,10 @@ Break ambitious AI tasks into tiny, focused operations. If a single prompt tries
 Use Python/JavaScript for control flow, not complex AI prompts. Code handles loops, conditions, and coordination.
 
 ### 3. Save Incrementally
-Every successful microtask should persist its results. Never lose progress to timeouts.
+Every successful microtask should persist its results. Never lose progress to interruptions.
 
 ### 4. Embrace Partial Success
-80% extraction beats 0% from timeout. Design systems that gracefully handle incomplete results.
+80% extraction beats 0% from failures. Design systems that gracefully handle incomplete results.
 
 ### 5. Parallelize When Possible
 AI operations without dependencies can run concurrently. Use `asyncio.gather()` liberally.
@@ -306,7 +306,7 @@ async def process_batch(items, max_concurrent=5):
 # Save after each step, track what succeeded
 for processor in ["concepts", "relationships", "insights"]:
     if not already_processed(doc, processor):
-        result = await extract_with_timeout(doc, processor)
+        result = await extract_with_streaming(doc, processor)
         save_result(doc, processor, result)
 ```
 
@@ -369,7 +369,7 @@ for step in workflow:
 # Graceful degradation
 try:
     result = await ai_powered_extraction(doc)
-except TimeoutError:
+except Exception:
     result = await simple_regex_extraction(doc)  # Fallback
     result["degraded"] = True
 ```
