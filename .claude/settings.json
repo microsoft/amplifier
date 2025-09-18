@@ -68,7 +68,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/tools/make-check.sh"
+            "command": "$CLAUDE_PROJECT_DIR/.claude/tools/on_code_change_hook.sh"
           }
         ]
       },
@@ -87,7 +87,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/tools/notify.sh"
+            "command": "$CLAUDE_PROJECT_DIR/.claude/tools/on_notification_hook.py"
           }
         ]
       }
