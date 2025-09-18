@@ -576,3 +576,81 @@ result = await extractor.extract_from_text(content, title=article.title)
 - When integrating async SDKs, ensure the entire call chain is async
 - Test async operations with proper error handling to surface the real issues
 - Don't assume timeout errors mean the SDK can't find the CLI
+
+## Module Generator SDK JSON Parsing with Retry (2025-09-16)
+
+### Issue
+
+Module generator's SDK client was failing with "Failed to parse JSON from SDK response: Expecting value: line 1 column 1 (char 0)" errors. The Claude Code SDK sometimes returned non-JSON responses or empty strings when expecting JSON.
+
+### Root Cause
+
+The Claude Code SDK doesn't always return the expected format:
+1. Sometimes returns explanatory text instead of JSON ("I'll analyze this...")
+2. May return empty responses intermittently
+3. No retry mechanism to handle transient failures
+4. No feedback loop to help SDK self-correct
+
+### Solution
+
+Implemented a robust retry mechanism with exponential backoff and error feedback:
+
+```python
+async def _query_sdk_with_retry(
+    self,
+    system_prompt: str,
+    user_prompt: str,
+    permission_mode: str,
+    expect_json: bool = False,
+) -> str:
+    """Query SDK with retry logic for handling empty responses and parse errors."""
+
+    for attempt in range(self.max_retries):
+        try:
+            response = await self._query_sdk(system_prompt, retry_prompt, permission_mode)
+
+            # Validate response
+            if not response or response.strip() == "":
+                raise ValueError("SDK returned empty response")
+
+            # If expecting JSON, validate it parses
+            if expect_json:
+                try:
+                    self._parse_json_response(response)
+                except ValueError as e:
+                    if attempt < self.max_retries - 1:
+                        # Include error in retry prompt
+                        retry_prompt = (
+                            f"{user_prompt}\n\n"
+                            f"Previous attempt failed with error: {str(e)}\n"
+                            f"Please ensure you return ONLY valid JSON."
+                        )
+                        continue
+                    raise
+
+            return response
+
+        except (ValueError, asyncio.TimeoutError) as e:
+            if attempt < self.max_retries - 1:
+                wait_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s
+                await asyncio.sleep(wait_time)
+                # Add error context for next attempt
+            else:
+                raise
+```
+
+### Key Learnings
+
+1. **SDK output is unpredictable** - Even with clear prompts for JSON, may return narrative text
+2. **Retry with feedback helps** - Including the parse error in retry prompt helps SDK self-correct
+3. **Debug logging is crucial** - Log what SDK actually returns to understand failures
+4. **Exponential backoff prevents overload** - 1s, 2s, 4s delays between retries
+5. **Validate early** - Check for empty responses before attempting to parse
+
+### Prevention
+
+- Always implement retry logic for SDK operations
+- Include error feedback in retry attempts
+- Add comprehensive debug logging
+- Validate response format before processing
+- Handle both empty and malformed responses gracefully

@@ -414,3 +414,23 @@ workspace-info: ## Show workspace information
 	$(call list_projects)
 	@echo ""
 
+
+# Module Generator
+generate-module: ## Generate a module from contract and implementation specs. Usage: make generate-module contract=<file> impl=<file> [options="--plan-only"]
+	@if [ -z "$(contract)" ] || [ -z "$(impl)" ]; then \
+		echo "Error: Both contract and impl files required"; \
+		echo "Usage: make generate-module contract=<contract.md> impl=<implementation.md> [options=\"--plan-only\"]"; \
+		exit 1; \
+	fi
+	uv run python -m amplifier.tools.module_generator generate "$(contract)" "$(impl)" $(options)
+
+generate-module-plan: ## Plan module generation (dry run). Usage: make generate-module-plan contract=<file> impl=<file>
+	@make generate-module contract="$(contract)" impl="$(impl)" options="--plan-only"
+
+parse-spec: ## Parse and display a specification file. Usage: make parse-spec spec=<file.md>
+	@if [ -z "$(spec)" ]; then \
+		echo "Error: spec file required"; \
+		echo "Usage: make parse-spec spec=<file.md>"; \
+		exit 1; \
+	fi
+	uv run python -m amplifier.tools.module_generator parse "$(spec)"
