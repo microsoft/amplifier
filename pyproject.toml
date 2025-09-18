@@ -20,7 +20,9 @@ dependencies = [
 
 [tool.uv.workspace]
 # Add all projects in the workspace
-members = []
+members = [
+    "ai_working/module-generator",
+]
 
 [tool.uv.sources]
 # Example: my-project = { workspace = true }

@@ -127,7 +127,7 @@ implementation:
         "confidence": 0.95  # Your confidence in this summary
       }}
 
-    focus_clause: " focusing on {focus}" if focus else ""
+    # focus_clause: " focusing on {focus}" if focus else ""
 
   test_requirements:
     - category: "unit"
