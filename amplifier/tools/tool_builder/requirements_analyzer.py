@@ -284,6 +284,31 @@ Focus on what's needed to build a working tool."""
                 if steps:
                     requirements["workflow_steps"] = steps
 
+            # Add metacognitive analysis for input type detection
+            from .metacognitive_analyzer import MetacognitiveAnalyzer
+
+            meta_analyzer = MetacognitiveAnalyzer()
+            input_analysis = meta_analyzer.analyze_input_type(original_description)
+
+            # Enhance requirements based on analysis
+            if input_analysis["primary_type"] == "directory":
+                requirements["cli_type"] = "directory_processor"
+                requirements["batch_processing"] = input_analysis["is_batch"]
+                requirements["file_pattern"] = input_analysis.get("file_pattern", "*.txt")
+                requirements["file_limit"] = input_analysis.get("count_limit", 5)
+                # Update inputs to reflect directory processing
+                if not requirements.get("inputs"):
+                    requirements["inputs"] = []
+                requirements["inputs"].insert(
+                    0, f"source_directory: Path to directory containing {input_analysis.get('file_pattern', 'files')}"
+                )
+            elif input_analysis["primary_type"] == "file":
+                requirements["cli_type"] = "file_processor"
+                if not requirements.get("inputs"):
+                    requirements["inputs"] = ["input_file: Path to single file"]
+            else:
+                requirements["cli_type"] = "text_processor"
+
             return requirements
 
         except json.JSONDecodeError as e:
@@ -294,7 +319,13 @@ Focus on what's needed to build a working tool."""
             # Preserve the original description in core_functionality
             core_functionality = original_description if original_description else "Tool functionality to be determined"
 
-            return {
+            # Add metacognitive analysis even on parse error
+            from .metacognitive_analyzer import MetacognitiveAnalyzer
+
+            meta_analyzer = MetacognitiveAnalyzer()
+            input_analysis = meta_analyzer.analyze_input_type(original_description)
+
+            base_requirements = {
                 "core_functionality": core_functionality,
                 "inputs": self._extract_inputs_outputs(original_description, "input"),
                 "outputs": self._extract_inputs_outputs(original_description, "output"),
@@ -310,6 +341,25 @@ Focus on what's needed to build a working tool."""
                 "parse_error": str(e),
                 "raw_response": response[:500],  # Keep first 500 chars for debugging
             }
+
+            # Enhance with metacognitive analysis
+            if input_analysis["primary_type"] == "directory":
+                base_requirements["cli_type"] = "directory_processor"
+                base_requirements["batch_processing"] = input_analysis["is_batch"]
+                base_requirements["file_pattern"] = input_analysis.get("file_pattern", "*.txt")
+                base_requirements["file_limit"] = input_analysis.get("count_limit", 5)
+                if not base_requirements["inputs"]:
+                    base_requirements["inputs"] = [
+                        f"source_directory: Path to directory containing {input_analysis.get('file_pattern', 'files')}"
+                    ]
+            elif input_analysis["primary_type"] == "file":
+                base_requirements["cli_type"] = "file_processor"
+                if not base_requirements["inputs"]:
+                    base_requirements["inputs"] = ["input_file: Path to single file"]
+            else:
+                base_requirements["cli_type"] = "text_processor"
+
+            return base_requirements
 
     def _extract_inputs_outputs(self, description: str, io_type: str) -> list[str]:
         """Extract likely inputs or outputs from description.

@@ -213,6 +213,10 @@ EXEMPLAR PATTERN TO USE ({pattern_type}):
 
 IMPORTANT: Use the exemplar pattern above as a reference for implementing AI integration.
 Adapt it to the specific requirements but maintain the Claude Code SDK usage pattern."""
+
+        # Generate CLI-specific instructions based on cli_type
+        cli_instructions = self._get_cli_instructions(requirements)
+
         return f"""Generate code for this Amplifier tool module:
 
 Tool: {tool_name}
@@ -228,7 +232,9 @@ Context from Requirements:
 - Functionality: {requirements.get("core_functionality", "Process data")}
 - Inputs: {json.dumps(requirements.get("inputs", []))}
 - Outputs: {json.dumps(requirements.get("outputs", []))}
+- CLI Type: {requirements.get("cli_type", "text_processor")}
 {exemplar_section}
+{cli_instructions}
 IMPORTANT:
 1. Generate COMPLETE, WORKING code - no stubs or placeholders
 2. If AI integration is needed, USE Claude Code SDK following the exemplar pattern
@@ -307,6 +313,123 @@ Generate the complete module implementation as valid JSON only."""
         except Exception as e:
             # Other error - fail loudly
             raise MicrotaskError(f"Module generation failed: {str(e)}")
+
+    def _get_cli_instructions(self, requirements: dict[str, Any]) -> str:
+        """Generate CLI-specific instructions based on cli_type."""
+        cli_type = requirements.get("cli_type", "text_processor")
+
+        if cli_type == "directory_processor":
+            file_pattern = requirements.get("file_pattern", "*.txt")
+            file_limit = requirements.get("file_limit", 5)
+            batch_processing = requirements.get("batch_processing", False)
+
+            return f"""
+CLI STRUCTURE (Directory Processor):
+The main.py file should have this CLI structure:
+
+```python
+import click
+from pathlib import Path
+
+@click.command()
+@click.argument('source_dir', type=click.Path(exists=True, file_okay=False, dir_okay=True))
+@click.option('--output-dir', '-o', default='./output', help='Output directory for results')
+@click.option('--max-files', '-m', default={file_limit}, type=int, help='Maximum number of files to process')
+@click.option('--pattern', '-p', default='{file_pattern}', help='File pattern to match (glob)')
+def run(source_dir: str, output_dir: str, max_files: int, pattern: str):
+    '''Process files from source directory matching the pattern.'''
+    source_path = Path(source_dir)
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    # Find matching files
+    files = list(source_path.glob(pattern))[:max_files]
+
+    # Process each file
+    for file_path in files:
+        # Process file logic here
+        result = process_file(file_path)  # Implementation goes here
+```
+
+The tool should:
+1. Accept a source directory as input
+2. Find files matching the pattern (default: {file_pattern})
+3. Process up to {file_limit} files (configurable via --max-files)
+4. Save results to the output directory
+{"5. Support batch processing of multiple files" if batch_processing else ""}
+"""
+
+        if cli_type == "file_processor":
+            return """
+CLI STRUCTURE (File Processor):
+The main.py file should have this CLI structure:
+
+```python
+import click
+from pathlib import Path
+
+@click.command()
+@click.argument('input_file', type=click.Path(exists=True, file_okay=True, dir_okay=False))
+@click.option('--output', '-o', help='Output file path (optional)')
+def run(input_file: str, output: str = None):
+    '''Process a single input file.'''
+    input_path = Path(input_file)
+
+    # Read and process the file
+    with open(input_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    # Process content logic here
+    result = process_content(content)
+
+    # Output handling
+    if output:
+        output_path = Path(output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(result)
+    else:
+        click.echo(result)
+```
+
+The tool should:
+1. Accept a single file path as input
+2. Process the file contents
+3. Either save to an output file or print to stdout
+"""
+
+        # text_processor (default)
+        return """
+CLI STRUCTURE (Text Processor):
+The main.py file should have this CLI structure:
+
+```python
+import click
+
+@click.command()
+@click.argument('text')
+@click.option('--output', '-o', help='Output file path (optional)')
+def run(text: str, output: str = None):
+    '''Process text input directly.'''
+    # Process text logic here
+    result = process_text(text)
+
+    # Output handling
+    if output:
+        from pathlib import Path
+        output_path = Path(output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(result)
+    else:
+        click.echo(result)
+```
+
+The tool should:
+1. Accept text as a command-line argument
+2. Process the text
+3. Either save to an output file or print to stdout
+"""
 
     def _needs_ai_integration(self, requirements: dict[str, Any]) -> bool:
         """Determine if this tool requires AI integration."""

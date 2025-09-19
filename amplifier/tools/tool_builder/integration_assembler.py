@@ -93,6 +93,133 @@ class IntegrationAssembler:
     ) -> Path:
         """Create the main CLI entry point."""
 
+        # Check if this is a directory processor
+        cli_type = architecture.get("cli_type", "file_processor")
+
+        if cli_type == "directory_processor":
+            # Generate directory-based CLI
+            return await self._create_directory_cli(tool_name, architecture, output_dir)
+        # Generate file-based CLI (default)
+        return await self._create_file_cli(tool_name, architecture, output_dir)
+
+    async def _create_directory_cli(
+        self,
+        tool_name: str,
+        architecture: dict[str, Any],
+        output_dir: Path,
+    ) -> Path:
+        """Create a CLI that processes directories."""
+
+        cli_content = f'''#!/usr/bin/env python3
+"""CLI entry point for {tool_name} tool.
+
+This module processes directories of content.
+"""
+
+import sys
+import asyncio
+from pathlib import Path
+
+# Add the parent directory to path for direct execution
+if __name__ == "__main__":
+    sys.path.insert(0, str(Path(__file__).parent))
+
+import click
+
+# Dynamic import of core module's exported function
+try:
+    from . import core
+    # Find the main callable
+    if hasattr(core, '__all__') and core.__all__:
+        func_name = core.__all__[0]
+        core_process = getattr(core, func_name)
+    else:
+        for name in ['process', 'process_directory', 'process_content', 'main', 'run']:
+            if hasattr(core, name):
+                core_process = getattr(core, name)
+                break
+        else:
+            for attr_name in dir(core):
+                if not attr_name.startswith('_'):
+                    attr = getattr(core, attr_name)
+                    if callable(attr):
+                        core_process = attr
+                        break
+            else:
+                raise ImportError("No callable function found in core module")
+except ImportError:
+    import core
+    if hasattr(core, '__all__') and core.__all__:
+        func_name = core.__all__[0]
+        core_process = getattr(core, func_name)
+    else:
+        for name in ['process', 'process_directory', 'process_content', 'main', 'run']:
+            if hasattr(core, name):
+                core_process = getattr(core, name)
+                break
+        else:
+            for attr_name in dir(core):
+                if not attr_name.startswith('_'):
+                    attr = getattr(core, attr_name)
+                    if callable(attr):
+                        core_process = attr
+                        break
+            else:
+                raise ImportError("No callable function found in core module")
+
+
+@click.group()
+def cli():
+    """{tool_name.replace("_", " ").title()} - Amplifier CLI Tool
+
+    {architecture.get("entry_point", "Tool for processing directories")}
+    """
+
+
+@cli.command(name='run')
+@click.argument('source_dir', type=click.Path(exists=True, file_okay=False, dir_okay=True))
+@click.argument('output_dir', type=click.Path())
+@click.option('--max-files', '-m', default=5, help='Maximum number of files to process')
+def run(source_dir: str, output_dir: str, max_files: int) -> None:
+    """Process a directory of content."""
+    import asyncio
+    import inspect
+
+    click.echo(f"Processing directory {{source_dir}}...")
+    click.echo(f"Output will be written to {{output_dir}}")
+    click.echo(f"Processing up to {{max_files}} files")
+
+    # Handle different function signatures
+    if inspect.iscoroutinefunction(core_process):
+        result = asyncio.run(core_process(source_dir, output_dir, max_files))
+    else:
+        result = core_process(source_dir, output_dir, max_files)
+
+    if isinstance(result, dict):
+        click.echo("\nProcessing complete!")
+        for key, value in result.items():
+            click.echo(f"{{key}}: {{value}}")
+    else:
+        click.echo(result)
+
+
+if __name__ == "__main__":
+    cli()
+'''
+
+        cli_file = output_dir / "cli.py"
+        cli_file.write_text(cli_content)
+        cli_file.chmod(0o755)
+        return cli_file
+
+    async def _create_file_cli(
+        self,
+        tool_name: str,
+        architecture: dict[str, Any],
+        output_dir: Path,
+    ) -> Path:
+        """Create the original file-based CLI."""
+
         cli_content = f'''#!/usr/bin/env python3
 """CLI entry point for {tool_name} tool.
 

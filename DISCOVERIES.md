@@ -576,3 +576,44 @@ result = await extractor.extract_from_text(content, title=article.title)
 - When integrating async SDKs, ensure the entire call chain is async
 - Test async operations with proper error handling to surface the real issues
 - Don't assume timeout errors mean the SDK can't find the CLI
+
+## AI Code Generation Bias - Directory vs File Processing (2025-01-18)
+
+### Issue
+
+Tool-builder consistently generates file-based CLI tools even when users explicitly request directory processing with phrases like "source dir" and "process files from directory".
+
+### Root Cause
+
+AI models have strong training biases toward common patterns. File-based CLIs are vastly more common in training data than directory processors. This creates a "gravitational pull" that explicit instructions struggle to override.
+
+The issue manifests in two places:
+1. **CLI Generation**: Initially generated wrong interface (fixed by updating pipeline)
+2. **Core Module Generation**: Still generates file-processing logic even with correct CLI
+
+### Solution
+
+**Partial Fix Applied**:
+- Added `MetacognitiveAnalyzer` to detect directory vs file processing needs
+- Fixed `architecture_designer.py` to preserve `cli_type` through pipeline
+- Fixed `integration_assembler.py` to generate correct CLI based on type
+- Result: CLI now correctly accepts directories
+
+**Complete Solution Options**:
+1. **Post-process transformation**: Let AI generate file-based code, then transform
+2. **Template-based generation**: Use fixed templates for directory processing
+3. **Accept the limitation**: Document that AI generates file tools by default
+
+### Key Learnings
+
+1. **The Metacognitive Illusion**: Perfect requirement analysis doesn't guarantee correct generation
+2. **The Default Gravity Well**: AI reverts to most-trained patterns despite instructions
+3. **Instructions are suggestions, not commands**: When instructions conflict with training, training usually wins
+4. **Two-phase generation works better**: Generate with defaults, then transform to requirements
+
+### Prevention
+
+- Don't fight AI's natural biases with complex prompt engineering
+- Design systems that work WITH model limitations, not against them
+- Use transformation layers to convert AI output to desired format
+- Accept that AI code generation is "deterministic theater" - it replays training patterns

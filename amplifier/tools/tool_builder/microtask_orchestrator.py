@@ -332,6 +332,7 @@ class MicrotaskOrchestrator:
         result = await self.quality_checker.check(
             tool_name=session.tool_name,
             output_dir=output_dir,
+            requirements=session.requirements,
         )
         return result
 

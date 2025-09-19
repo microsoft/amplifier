@@ -75,7 +75,13 @@ class ArchitectureDesigner:
         except Exception as e:
             raise MicrotaskError(f"Architecture design failed: {str(e)}")
 
-        return self._parse_architecture(response)
+        parsed_architecture = self._parse_architecture(response)
+
+        # Preserve CLI type from requirements if present
+        if "cli_type" in requirements:
+            parsed_architecture["cli_type"] = requirements["cli_type"]
+
+        return parsed_architecture
 
     def _get_system_prompt(self) -> str:
         """Get the system prompt for architecture design."""
