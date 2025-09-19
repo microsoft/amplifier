@@ -4,9 +4,7 @@
 
 This document captures the work done on creating a self-extracting installer for Amplifier that bundles the entire codebase into a single distributable shell script. The installer was designed to make it easy for non-developers to get Amplifier running without dealing with GitHub, manual dependency installation, or complex setup procedures.
 
-## Project Timeline
-
-**Date: January 2025**
+## Project Overview
 
 ### Phase 1: Initial Installer Creation
 - Created a self-extracting installer that bundles the entire codebase
