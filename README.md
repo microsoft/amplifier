@@ -34,6 +34,20 @@ Before starting, you'll need:
 
 ### Installation
 
+#### Option 1: Self-Extracting Installer (Easiest)
+
+If someone has shared the self-extracting installer with you:
+
+```bash
+# Just run the installer - it handles everything
+bash install_amplifier.sh
+```
+
+This single file contains everything needed and will automatically set up your entire environment.
+See [INSTALLER.md](INSTALLER.md) for details.
+
+#### Option 2: From GitHub
+
 1. **Clone the repository**:
 
    ```bash

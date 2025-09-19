@@ -39,6 +39,10 @@ next-steps.md
 output
 logs
 
+# Installer build artifacts
+install_amplifier.sh
+build/installer/
+
 # Test files
 .coverage
 
