@@ -167,6 +167,13 @@ test: ## Run all tests
 	@echo "Running tests..."
 	uv run pytest
 
+generate-module: ## Generate a module using the module generator CLI
+	@if [ -z "$(CONTRACT)" ] || [ -z "$(SPEC)" ]; then \
+		echo "Error: CONTRACT and SPEC variables are required."; \
+		exit 1; \
+	fi
+	@uv run python -m amplifier.module_generator $(CONTRACT) $(SPEC) $(if $(PLAN_ONLY),--plan-only,) $(if $(FORCE),--force,) $(if $(YES),--yes,)
+
 smoke-test: ## Run quick smoke tests to verify basic functionality
 	@echo "Running smoke tests..."
 	@PYTHONPATH=. python -m amplifier.smoke_tests

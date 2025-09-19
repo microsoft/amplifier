@@ -57,3 +57,6 @@ exclude = [
 typeCheckingMode = "basic"
 reportMissingImports = false
 pythonVersion = "3.11"
+
+[project.scripts]
+module-generator = "amplifier.module_generator.cli:cli"
