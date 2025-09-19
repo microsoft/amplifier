@@ -238,3 +238,4 @@ For issues or questions about the installer, please check:
 ## License
 
 The installer and Amplifier codebase are distributed under the project's license terms.
+

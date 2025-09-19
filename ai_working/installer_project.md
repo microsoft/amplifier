@@ -6,12 +6,12 @@ This document captures the work done on creating a self-extracting installer for
 
 ## Project Timeline
 
-**Date: January 19, 2025**
+**Date: January 2025**
 
 ### Phase 1: Initial Installer Creation
 - Created a self-extracting installer that bundles the entire codebase
 - Implemented as a shell script with embedded tar.gz archive
-- Default installation to `~/amplifier`
+- Default installation to `./amplifier` (current directory)
 - Automatic installation of all prerequisites
 - Achieved ~612KB compressed size
 
