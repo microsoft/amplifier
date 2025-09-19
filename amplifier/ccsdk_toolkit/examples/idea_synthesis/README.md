@@ -36,35 +36,35 @@ npm install -g @anthropic-ai/claude-code
 
 Process all markdown files in a directory:
 ```bash
-python -m amplifier.ccsdk_toolkit.tools.idea_synthesis ai_context/
+python -m amplifier.ccsdk_toolkit.examples.idea_synthesis ai_context/
 ```
 
 ### Process with Limit
 
 Process only the first 5 files:
 ```bash
-python -m amplifier.ccsdk_toolkit.tools.idea_synthesis ai_context/ --limit 5
+python -m amplifier.ccsdk_toolkit.examples.idea_synthesis ai_context/ --limit 5
 ```
 
 ### Save Results
 
 Specify output directory:
 ```bash
-python -m amplifier.ccsdk_toolkit.tools.idea_synthesis ai_context/ --output results/
+python -m amplifier.ccsdk_toolkit.examples.idea_synthesis ai_context/ --output results/
 ```
 
 ### Resume Interrupted Session
 
 If processing was interrupted, resume with the session ID:
 ```bash
-python -m amplifier.ccsdk_toolkit.tools.idea_synthesis ai_context/ --resume abc123
+python -m amplifier.ccsdk_toolkit.examples.idea_synthesis ai_context/ --resume abc123
 ```
 
 ### JSON Output
 
 Get results in JSON format:
 ```bash
-python -m amplifier.ccsdk_toolkit.tools.idea_synthesis ai_context/ --json-output
+python -m amplifier.ccsdk_toolkit.examples.idea_synthesis ai_context/ --json-output
 ```
 
 ## Options

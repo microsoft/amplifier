@@ -73,13 +73,13 @@ def main(
     Examples:
 
         # Process all markdown files in ai_context directory
-        python -m amplifier.ccsdk_toolkit.tools.idea_synthesis ai_context/
+        python -m amplifier.ccsdk_toolkit.examples.idea_synthesis ai_context/
 
         # Process with limit and save results
-        python -m amplifier.ccsdk_toolkit.tools.idea_synthesis ai_context/ --limit 5 --output results/
+        python -m amplifier.ccsdk_toolkit.examples.idea_synthesis ai_context/ --limit 5 --output results/
 
         # Resume a previous session
-        python -m amplifier.ccsdk_toolkit.tools.idea_synthesis ai_context/ --resume abc123
+        python -m amplifier.ccsdk_toolkit.examples.idea_synthesis ai_context/ --resume abc123
     """
     asyncio.run(
         run_synthesis(

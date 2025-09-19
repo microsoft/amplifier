@@ -82,7 +82,7 @@ async def run_streaming_synthesis():
     print("\n\n3. Using enhanced query helper with streaming:")
     print("-" * 40)
 
-    from amplifier.ccsdk_toolkit.tools.idea_synthesis.utils import query_claude_streaming
+    from amplifier.ccsdk_toolkit.examples.idea_synthesis.utils import query_claude_streaming
 
     print("Streaming synthesis:")
     result = await query_claude_streaming(
