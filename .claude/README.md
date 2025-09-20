@@ -31,6 +31,7 @@ The `commands/` directory contains markdown files that define custom workflows:
 - Each `.md` file becomes a slash command in Claude Code
 - Commands can orchestrate complex multi-step processes
 - They encode best practices and methodologies
+- Key commands include `/transcripts` for restoring conversation history after compaction
 
 ### Automation Tools
 
@@ -39,6 +40,8 @@ The `tools/` directory contains scripts that integrate with Claude Code:
 - `notify.sh` - Cross-platform desktop notifications
 - `make-check.sh` - Intelligent quality check runner
 - `subagent-logger.py` - Logs interactions with sub-agents
+- `hook_precompact.py` - Exports conversation transcripts before compaction
+- `transcript_manager.py` - CLI tool for managing conversation transcripts
 - Triggered by hooks defined in `settings.json`
 
 ### Configuration
@@ -59,6 +62,8 @@ The `tools/` directory contains scripts that integrate with Claude Code:
 4. Notification hook triggers `notify.sh`
 5. You get desktop notification of results
 6. If sub-agents were used, `subagent-logger.py` logs their interactions to `.data/subagents-logs`
+7. Before conversation compaction, PreCompact hook triggers `hook_precompact.py`
+8. Full transcript is exported to `.data/transcripts/` preserving your entire conversation
 
 ### Command Execution
 
