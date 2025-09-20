@@ -2,9 +2,11 @@
 """
 Claude Code PreCompact hook - exports full conversation transcript before compaction.
 Saves transcript to .data/transcripts/ for later retrieval via @mention.
+Includes duplicate detection to avoid re-embedding already-loaded transcripts.
 """
 
 import json
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -98,9 +100,55 @@ def format_message(msg: dict) -> str:
     return "\n".join(output_lines) + "\n"
 
 
+def extract_loaded_session_ids(entries: list) -> set[str]:
+    """
+    Extract session IDs of transcripts that were already loaded into this conversation.
+    This prevents duplicate embedding of the same transcripts.
+
+    Args:
+        entries: List of (entry_type, message) tuples from the conversation
+
+    Returns:
+        Set of session IDs that have been loaded
+    """
+    loaded_sessions = set()
+
+    for entry_type, msg in entries:
+        if entry_type == "assistant" and isinstance(msg.get("content"), str | list):
+            content = msg.get("content", "")
+
+            # Convert list content to string for searching
+            if isinstance(content, list):
+                text_parts = []
+                for item in content:
+                    if isinstance(item, dict) and item.get("type") == "text":
+                        text_parts.append(item.get("text", ""))
+                content = "\n".join(text_parts)
+
+            # Look for patterns indicating a transcript was loaded
+            # Pattern 1: "CONVERSATION SEGMENT" headers with session IDs
+            session_pattern = r"Session ID:\s*([a-f0-9-]+)"
+            for match in re.finditer(session_pattern, content):
+                session_id = match.group(1)
+                if len(session_id) > 20:  # Valid session IDs are UUID-like
+                    loaded_sessions.add(session_id)
+                    logger.info(f"Found previously loaded session: {session_id[:8]}...")
+
+            # Pattern 2: File references to transcript files
+            file_pattern = r"compact_\d+_\d+_([a-f0-9-]+)\.txt"
+            for match in re.finditer(file_pattern, content):
+                session_id = match.group(1)
+                if len(session_id) > 20:
+                    loaded_sessions.add(session_id)
+                    logger.info(f"Found referenced transcript file for session: {session_id[:8]}...")
+
+    return loaded_sessions
+
+
 def export_transcript(transcript_path: str, trigger: str, session_id: str, custom_instructions: str = "") -> str:
     """
     Export the conversation transcript to a text file.
+    Includes duplicate detection to avoid re-embedding already-loaded transcripts.
 
     Args:
         transcript_path: Path to the JSONL transcript file
@@ -117,9 +165,9 @@ def export_transcript(transcript_path: str, trigger: str, session_id: str, custo
         storage_dir.mkdir(parents=True, exist_ok=True)
         logger.info(f"Storage directory: {storage_dir}")
 
-        # Generate filename with timestamp and trigger type
+        # Generate filename with timestamp and session ID
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_filename = f"compact_{timestamp}_{trigger}.txt"
+        output_filename = f"compact_{timestamp}_{session_id}.txt"
         output_path = storage_dir / output_filename
 
         # Read the JSONL transcript
@@ -171,6 +219,12 @@ def export_transcript(transcript_path: str, trigger: str, session_id: str, custo
 
         logger.info(f"Extracted {len(entries)} total entries from conversation")
 
+        # Check for already-loaded transcripts to avoid duplication
+        loaded_sessions = extract_loaded_session_ids(entries)
+        if loaded_sessions:
+            logger.info(f"Detected {len(loaded_sessions)} previously loaded transcript(s)")
+            logger.info("These will be marked in the export to avoid re-embedding")
+
         # Write formatted transcript to text file
         with open(output_path, "w", encoding="utf-8") as f:
             # Write header
@@ -182,14 +236,43 @@ def export_transcript(transcript_path: str, trigger: str, session_id: str, custo
             if custom_instructions:
                 f.write(f"Custom Instructions: {custom_instructions}\n")
             f.write(f"Total Entries: {len(entries)}\n")
+
+            # Note if there are already-loaded transcripts
+            if loaded_sessions:
+                f.write(f"Previously Loaded Sessions: {len(loaded_sessions)}\n")
+                for loaded_id in sorted(loaded_sessions):
+                    f.write(f"  - {loaded_id}\n")
+                f.write("Note: Content from these sessions may appear embedded in the conversation.\n")
+
             f.write("=" * 80 + "\n\n")
 
             # Write all entries with proper formatting
             message_num = 0
+            in_loaded_transcript = False
+
             for entry_type, msg in entries:
+                content_str = ""
+                if isinstance(msg.get("content"), str):
+                    content_str = msg.get("content", "")
+                elif isinstance(msg.get("content"), list):
+                    # Extract text from structured content
+                    for item in msg.get("content", []):
+                        if isinstance(item, dict) and item.get("type") == "text":
+                            content_str += item.get("text", "")
+
+                # Check if we're entering or leaving a loaded transcript section
+                if "CONVERSATION SEGMENT" in content_str or "CLAUDE CODE CONVERSATION TRANSCRIPT" in content_str:
+                    in_loaded_transcript = True
+                    f.write("\n--- [BEGIN EMBEDDED TRANSCRIPT] ---\n")
+                elif in_loaded_transcript and "END OF TRANSCRIPT" in content_str:
+                    in_loaded_transcript = False
+                    f.write("--- [END EMBEDDED TRANSCRIPT] ---\n\n")
+
+                # Write the message with appropriate formatting
                 if entry_type in ["user", "assistant"]:
                     message_num += 1
-                    f.write(f"\n--- Message {message_num} ({entry_type}) ---\n")
+                    marker = " [FROM EMBEDDED TRANSCRIPT]" if in_loaded_transcript else ""
+                    f.write(f"\n--- Message {message_num} ({entry_type}){marker} ---\n")
                     f.write(format_message(msg))
                 elif entry_type == "system":
                     f.write("\n--- System Event ---\n")
