@@ -26,6 +26,9 @@ import click
 from rich.console import Console
 from rich.panel import Panel
 
+from amplifier.ccsdk_toolkit.defensive import read_json_with_retry
+from amplifier.ccsdk_toolkit.defensive import write_json_with_retry
+
 from .models import CrossCuttingTheme
 from .models import FileSummary
 from .models import SynthesisState
@@ -33,8 +36,6 @@ from .stages import ExpanderStage
 from .stages import ReaderStage
 from .stages import SummarizerStage
 from .stages import SynthesizerStage
-from .utils import read_json_with_retry
-from .utils import write_json_with_retry
 
 # Import notification helper if available
 try:

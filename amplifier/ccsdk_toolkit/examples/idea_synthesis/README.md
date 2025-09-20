@@ -18,6 +18,7 @@ The Idea Synthesis tool processes your AI context documentation (or any markdown
   3. **Synthesizer**: Identifies themes across all summaries
   4. **Expander**: Expands themes with context and action items
 
+- **Defensive LLM Handling**: Uses CCSDK defensive utilities for robust JSON parsing
 - **Incremental Processing**: Saves progress after every item
 - **Resume Support**: Continue interrupted sessions with `--resume`
 - **Cloud-Sync Resilient**: Handles OneDrive/Dropbox file I/O issues

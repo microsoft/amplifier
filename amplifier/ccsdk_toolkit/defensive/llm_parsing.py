@@ -12,7 +12,9 @@ from typing import Union
 logger = logging.getLogger(__name__)
 
 
-def parse_llm_json(response: str) -> Union[dict, list] | None:
+def parse_llm_json(
+    response: str, default: Union[dict, list, None] = None, verbose: bool = False
+) -> Union[dict, list, None]:
     """
     Extract JSON from any LLM response format.
 
@@ -22,21 +24,30 @@ def parse_llm_json(response: str) -> Union[dict, list] | None:
     - JSON with text preambles
     - Common formatting issues
 
-    Returns None on failure (doesn't raise exceptions).
+    Returns default value on failure (doesn't raise exceptions).
 
     Args:
         response: Raw LLM response text
+        default: Value to return if parsing fails (default: None)
+        verbose: If True, log debugging output for failed parsing attempts
 
     Returns:
-        Parsed JSON as dict/list, or None if parsing fails
+        Parsed JSON as dict/list, or default if parsing fails
     """
     if not response or not isinstance(response, str):
-        return None
+        if verbose:
+            logger.debug(f"Empty or invalid response type: {type(response)}")
+        return default
 
     # Try 1: Direct JSON parsing
     try:
-        return json.loads(response)
-    except (json.JSONDecodeError, TypeError):
+        result = json.loads(response)
+        if verbose:
+            logger.debug("Successfully parsed JSON directly")
+        return result
+    except (json.JSONDecodeError, TypeError) as e:
+        if verbose:
+            logger.debug(f"Direct JSON parsing failed: {e}")
         pass
 
     # Try 2: Extract from markdown code blocks
@@ -47,8 +58,13 @@ def parse_llm_json(response: str) -> Union[dict, list] | None:
         matches = re.findall(pattern, response, re.DOTALL | re.IGNORECASE)
         for match in matches:
             try:
-                return json.loads(match)
-            except (json.JSONDecodeError, TypeError):
+                result = json.loads(match)
+                if verbose:
+                    logger.debug("Successfully extracted JSON from markdown block")
+                return result
+            except (json.JSONDecodeError, TypeError) as e:
+                if verbose:
+                    logger.debug(f"Failed to parse markdown-extracted JSON: {e}")
                 continue
 
     # Try 3: Find JSON-like structures in text
@@ -67,8 +83,12 @@ def parse_llm_json(response: str) -> Union[dict, list] | None:
                 result = json.loads(match)
                 # Prefer arrays over single objects for typical AI responses
                 if isinstance(result, dict | list):
+                    if verbose:
+                        logger.debug("Successfully extracted JSON structure from text")
                     return result
-            except (json.JSONDecodeError, TypeError):
+            except (json.JSONDecodeError, TypeError) as e:
+                if verbose:
+                    logger.debug(f"Failed to parse JSON structure: {e}")
                 continue
 
     # Try 4: Extract after common preambles
@@ -83,8 +103,13 @@ def parse_llm_json(response: str) -> Union[dict, list] | None:
         cleaned = re.sub(pattern, "", response, flags=re.IGNORECASE | re.DOTALL)
         if cleaned != response:  # Something was removed
             try:
-                return json.loads(cleaned)
-            except (json.JSONDecodeError, TypeError):
+                result = json.loads(cleaned)
+                if verbose:
+                    logger.debug("Successfully parsed JSON after removing preamble")
+                return result
+            except (json.JSONDecodeError, TypeError) as e:
+                if verbose:
+                    logger.debug(f"Failed after preamble removal: {e}")
                 continue
 
     # Try 5: Fix common JSON formatting issues
@@ -102,10 +127,16 @@ def parse_llm_json(response: str) -> Union[dict, list] | None:
 
     if cleaned != response:
         try:
-            return json.loads(cleaned)
-        except (json.JSONDecodeError, TypeError):
+            result = json.loads(cleaned)
+            if verbose:
+                logger.debug("Successfully parsed JSON after fixing formatting issues")
+            return result
+        except (json.JSONDecodeError, TypeError) as e:
+            if verbose:
+                logger.debug(f"Failed after formatting fixes: {e}")
             pass
 
     # All attempts failed
-    logger.debug(f"Failed to parse JSON from response (first 500 chars): {response[:500]}")
-    return None
+    if verbose:
+        logger.debug(f"All JSON parsing attempts failed. Response (first 500 chars): {response[:500]}")
+    return default

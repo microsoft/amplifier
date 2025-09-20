@@ -1,11 +1,15 @@
-"""Claude SDK helper with streaming, no-timeout, and progress tracking capabilities."""
+"""Claude SDK helper with streaming, no-timeout, and progress tracking capabilities.
 
-import json
+This example showcases best practices using the CCSDK defensive utilities for
+robust LLM response handling.
+"""
+
 from collections.abc import Callable
 from typing import Any
 
 from amplifier.ccsdk_toolkit import ClaudeSession
 from amplifier.ccsdk_toolkit import SessionOptions
+from amplifier.ccsdk_toolkit.defensive import parse_llm_json
 
 
 async def query_claude_with_timeout(
@@ -58,34 +62,9 @@ async def query_claude_with_timeout(
             print(f"[Claude Query] Metadata: {response.metadata}")
 
         if parse_json:
-            # Strip markdown code blocks if present
-            content = response.content.strip()
-            if content.startswith("```json"):
-                content = content[7:]
-            elif content.startswith("```"):
-                content = content[3:]
-
-            if content.endswith("```"):
-                content = content[:-3]
-
-            content = content.strip()
-
-            try:
-                return json.loads(content)
-            except json.JSONDecodeError as e:
-                # Try to extract JSON from content if it's mixed with other text
-                import re
-
-                json_match = re.search(r"\[.*?\]", content, re.DOTALL)
-                if json_match:
-                    try:
-                        return json.loads(json_match.group())
-                    except json.JSONDecodeError:
-                        pass
-                # Return empty list for synthesizer to handle gracefully
-                if verbose:
-                    print(f"Warning: Failed to parse JSON response: {e}")
-                return []
+            # Use defensive parsing with graceful fallback
+            # This handles markdown blocks, mixed text, and various JSON formats automatically
+            return parse_llm_json(response.content, default=[], verbose=verbose)
 
         return response
 
