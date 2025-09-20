@@ -200,16 +200,16 @@ A multi-stage pipeline tool that demonstrates the "code for structure, AI for in
 
 ```bash
 # Synthesize ideas from markdown documentation
-python -m amplifier.ccsdk_toolkit.tools.idea_synthesis ai_context/
+python -m amplifier.ccsdk_toolkit.examples.idea_synthesis ai_context/
 
 # Process with limits and custom output
-python -m amplifier.ccsdk_toolkit.tools.idea_synthesis docs/ --limit 5 --output results/
+python -m amplifier.ccsdk_toolkit.examples.idea_synthesis docs/ --limit 5 --output results/
 
 # Resume interrupted synthesis
-python -m amplifier.ccsdk_toolkit.tools.idea_synthesis docs/ --resume session-id
+python -m amplifier.ccsdk_toolkit.examples.idea_synthesis docs/ --resume session-id
 
 # Export as JSON for programmatic use
-python -m amplifier.ccsdk_toolkit.tools.idea_synthesis docs/ --json-output
+python -m amplifier.ccsdk_toolkit.examples.idea_synthesis docs/ --json-output
 ```
 
 **Features:**
@@ -231,25 +231,25 @@ which claude  # Should return a path
 cd /path/to/amplifier-ccsdk-sdk
 
 # Analyze a single file
-python amplifier/ccsdk_toolkit/tools/code_complexity_analyzer.py main.py
+python amplifier/ccsdk_toolkit/examples/code_complexity_analyzer.py main.py
 
 # Analyze directory recursively
-python amplifier/ccsdk_toolkit/tools/code_complexity_analyzer.py src/ --recursive --pattern "*.py"
+python amplifier/ccsdk_toolkit/examples/code_complexity_analyzer.py src/ --recursive --pattern "*.py"
 
 # Output as JSON
-python amplifier/ccsdk_toolkit/tools/code_complexity_analyzer.py src/ --json --output results.json
+python amplifier/ccsdk_toolkit/examples/code_complexity_analyzer.py src/ --json --output results.json
 
 # Resume previous session
-python amplifier/ccsdk_toolkit/tools/code_complexity_analyzer.py src/ --resume session-id
+python amplifier/ccsdk_toolkit/examples/code_complexity_analyzer.py src/ --resume session-id
 
 # Example analyzing the toolkit itself
-python amplifier/ccsdk_toolkit/tools/code_complexity_analyzer.py amplifier/ccsdk_toolkit/core/__init__.py
+python amplifier/ccsdk_toolkit/examples/code_complexity_analyzer.py amplifier/ccsdk_toolkit/core/__init__.py
 
 # Process large codebases in manageable chunks
-python amplifier/ccsdk_toolkit/tools/code_complexity_analyzer.py src/ --recursive --pattern "*.py" --limit 5
+python amplifier/ccsdk_toolkit/examples/code_complexity_analyzer.py src/ --recursive --pattern "*.py" --limit 5
 
 # Process next batch of files using resume
-python amplifier/ccsdk_toolkit/tools/code_complexity_analyzer.py src/ --recursive --pattern "*.py" --limit 5 --resume session-id
+python amplifier/ccsdk_toolkit/examples/code_complexity_analyzer.py src/ --recursive --pattern "*.py" --limit 5 --resume session-id
 ```
 
 **Note:** The CLI tool can be run directly thanks to automatic sys.path adjustment when run as a script. If importing it as a module, ensure the project root is in your Python path.
@@ -390,7 +390,7 @@ amplifier/ccsdk_toolkit/
 ├── sessions/       # Session persistence (state brick)
 ├── logger/         # Structured logging (monitoring brick)
 ├── cli/            # CLI tool builder (generation brick)
-└── tools/          # Example CLI tools (implementation examples)
+└── examples/       # Example CLI tools (implementation examples)
 ```
 
 Each module is:

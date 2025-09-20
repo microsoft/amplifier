@@ -27,8 +27,8 @@ You are the ONLY agent that proactively reads and contextualizes:
 - @amplifier/ccsdk_toolkit/DEVELOPER_GUIDE.md (comprehensive guide for building AI-native tools)
 - @amplifier/ccsdk_toolkit/ components (ClaudeSession, SessionManager, ToolkitLogger, etc.)
 - Existing amplifier tools and example implementations:
-  - @amplifier/ccsdk_toolkit/tools/code_complexity_analyzer.py (batch processing pattern)
-  - @amplifier/ccsdk_toolkit/tools/idea_synthesis/ (multi-stage pipeline pattern)
+  - @amplifier/ccsdk_toolkit/examples/code_complexity_analyzer.py (batch processing pattern)
+  - @amplifier/ccsdk_toolkit/examples/idea_synthesis/ (multi-stage pipeline pattern)
 - The Makefile patterns for tool integration
 - The Claude Code SDK documentation located in @ai_context/claude_code/sdk/ (read, reference, and recommend them as appropriate)
 
@@ -245,7 +245,7 @@ async with ClaudeSession(options) as session:
 
 ```python
 # Use toolkit's proven utilities
-from amplifier.ccsdk_toolkit.tools.idea_synthesis.utils.file_io import (
+from amplifier.ccsdk_toolkit.examples.idea_synthesis.utils.file_io import (
     write_json_with_retry,
     read_json_with_retry
 )
@@ -342,8 +342,8 @@ The calling agent ONLY sees your output. Structure it clearly:
 - amplifier/ccsdk_toolkit/DEVELOPER_GUIDE.md - Complete guide
 - amplifier/ccsdk_toolkit/core/ - Core SDK wrapper components
 - amplifier/ccsdk_toolkit/sessions/ - Persistence patterns
-- amplifier/ccsdk_toolkit/tools/code_complexity_analyzer.py - Batch example
-- amplifier/ccsdk_toolkit/tools/idea_synthesis/ - Pipeline example
+- amplifier/ccsdk_toolkit/examples/code_complexity_analyzer.py - Batch example
+- amplifier/ccsdk_toolkit/examples/idea_synthesis/ - Pipeline example
 
 🚨 KNOWLEDGE TO ALWAYS PROVIDE
 

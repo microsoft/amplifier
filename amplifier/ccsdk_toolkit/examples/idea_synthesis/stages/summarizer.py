@@ -9,11 +9,12 @@ from rich.progress import SpinnerColumn
 from rich.progress import TaskProgressColumn
 from rich.progress import TextColumn
 
+from amplifier.ccsdk_toolkit.defensive import write_json_with_retry
+
 from ..models import FileSummary
 from ..models import SourceFile
 from ..models import SynthesisState
 from ..utils import query_claude_with_timeout
-from ..utils import write_json_with_retry
 
 
 class SummarizerStage:

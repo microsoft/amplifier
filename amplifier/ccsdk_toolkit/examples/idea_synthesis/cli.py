@@ -26,6 +26,9 @@ import click
 from rich.console import Console
 from rich.panel import Panel
 
+from amplifier.ccsdk_toolkit.defensive import read_json_with_retry
+from amplifier.ccsdk_toolkit.defensive import write_json_with_retry
+
 from .models import CrossCuttingTheme
 from .models import FileSummary
 from .models import SynthesisState
@@ -33,8 +36,6 @@ from .stages import ExpanderStage
 from .stages import ReaderStage
 from .stages import SummarizerStage
 from .stages import SynthesizerStage
-from .utils import read_json_with_retry
-from .utils import write_json_with_retry
 
 # Import notification helper if available
 try:
@@ -73,13 +74,13 @@ def main(
     Examples:
 
         # Process all markdown files in ai_context directory
-        python -m amplifier.ccsdk_toolkit.tools.idea_synthesis ai_context/
+        python -m amplifier.ccsdk_toolkit.examples.idea_synthesis ai_context/
 
         # Process with limit and save results
-        python -m amplifier.ccsdk_toolkit.tools.idea_synthesis ai_context/ --limit 5 --output results/
+        python -m amplifier.ccsdk_toolkit.examples.idea_synthesis ai_context/ --limit 5 --output results/
 
         # Resume a previous session
-        python -m amplifier.ccsdk_toolkit.tools.idea_synthesis ai_context/ --resume abc123
+        python -m amplifier.ccsdk_toolkit.examples.idea_synthesis ai_context/ --resume abc123
     """
     asyncio.run(
         run_synthesis(

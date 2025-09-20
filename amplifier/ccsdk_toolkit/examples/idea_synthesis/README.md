@@ -18,6 +18,7 @@ The Idea Synthesis tool processes your AI context documentation (or any markdown
   3. **Synthesizer**: Identifies themes across all summaries
   4. **Expander**: Expands themes with context and action items
 
+- **Defensive LLM Handling**: Uses CCSDK defensive utilities for robust JSON parsing
 - **Incremental Processing**: Saves progress after every item
 - **Resume Support**: Continue interrupted sessions with `--resume`
 - **Cloud-Sync Resilient**: Handles OneDrive/Dropbox file I/O issues
@@ -36,35 +37,35 @@ npm install -g @anthropic-ai/claude-code
 
 Process all markdown files in a directory:
 ```bash
-python -m amplifier.ccsdk_toolkit.tools.idea_synthesis ai_context/
+python -m amplifier.ccsdk_toolkit.examples.idea_synthesis ai_context/
 ```
 
 ### Process with Limit
 
 Process only the first 5 files:
 ```bash
-python -m amplifier.ccsdk_toolkit.tools.idea_synthesis ai_context/ --limit 5
+python -m amplifier.ccsdk_toolkit.examples.idea_synthesis ai_context/ --limit 5
 ```
 
 ### Save Results
 
 Specify output directory:
 ```bash
-python -m amplifier.ccsdk_toolkit.tools.idea_synthesis ai_context/ --output results/
+python -m amplifier.ccsdk_toolkit.examples.idea_synthesis ai_context/ --output results/
 ```
 
 ### Resume Interrupted Session
 
 If processing was interrupted, resume with the session ID:
 ```bash
-python -m amplifier.ccsdk_toolkit.tools.idea_synthesis ai_context/ --resume abc123
+python -m amplifier.ccsdk_toolkit.examples.idea_synthesis ai_context/ --resume abc123
 ```
 
 ### JSON Output
 
 Get results in JSON format:
 ```bash
-python -m amplifier.ccsdk_toolkit.tools.idea_synthesis ai_context/ --json-output
+python -m amplifier.ccsdk_toolkit.examples.idea_synthesis ai_context/ --json-output
 ```
 
 ## Options
