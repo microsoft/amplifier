@@ -8,6 +8,7 @@ Contract: Process articles with graceful degradation and partial result saving
 import asyncio
 import json
 import logging
+import os
 import sys
 import time
 from dataclasses import asdict
@@ -20,6 +21,7 @@ from typing import Any
 from amplifier.config.paths import paths
 from amplifier.content_loader import ContentItem
 from amplifier.utils.logging_utils import ExtractionLogger
+from amplifier.utils.notifications import send_notification
 from amplifier.utils.token_utils import truncate_to_tokens
 
 if TYPE_CHECKING:
@@ -774,12 +776,15 @@ class ArticleProcessor:
             "needs_retry": [{"id": s.article_id, "title": s.title} for s in needs_retry[:10]],  # First 10
         }
 
-    async def process_batch_with_retry(self, articles: list[ContentItem], retry_failed: bool = True) -> dict[str, Any]:
+    async def process_batch_with_retry(
+        self, articles: list[ContentItem], retry_failed: bool = True, notify: bool = False
+    ) -> dict[str, Any]:
         """Process a batch of articles with optional retry for failed items.
 
         Args:
             articles: List of articles to process
             retry_failed: Whether to retry failed processors
+            notify: Whether to send notifications
 
         Returns:
             Processing report
@@ -787,16 +792,62 @@ class ArticleProcessor:
         total = len(articles)
         logger.info(f"Processing batch of {total} articles")
 
-        for idx, article in enumerate(articles, 1):
-            # Check if already processed
-            existing_status = self.status_store.load_status(article.content_id)
+        try:
+            for idx, article in enumerate(articles, 1):
+                # Check if already processed
+                existing_status = self.status_store.load_status(article.content_id)
 
-            if existing_status and existing_status.is_complete and not retry_failed:
-                logger.info(f"Skipping already complete: {article.title}")
-                continue
+                if existing_status and existing_status.is_complete and not retry_failed:
+                    logger.info(f"Skipping already complete: {article.title}")
+                    continue
 
-            # Process or reprocess
-            await self.process_article_with_logging(article, idx, total)
+                # Process or reprocess
+                await self.process_article_with_logging(article, idx, total)
 
-        # Return final report
-        return self.get_processing_report()
+        except KeyboardInterrupt:
+            if notify:
+                report = self.get_processing_report()
+                summary = report.get("summary", {})
+                send_notification(
+                    title="Amplifier",
+                    message=f"Batch processing interrupted. Processed {summary.get('complete', 0)}/{total} articles",
+                    cwd=os.getcwd(),
+                )
+            raise
+        except Exception as e:
+            if notify:
+                send_notification(
+                    title="Amplifier",
+                    message=f"Batch processing failed: {str(e)[:100]}",
+                    cwd=os.getcwd(),
+                )
+            raise
+
+        # Get final report
+        report = self.get_processing_report()
+
+        # Send completion notification
+        if notify:
+            summary = report.get("summary", {})
+            stats = report.get("extraction_stats", {})
+
+            complete = summary.get("complete", 0)
+            partial = summary.get("partial", 0)
+            failed = summary.get("failed", 0)
+
+            if failed > 0 or partial > 0:
+                send_notification(
+                    title="Amplifier",
+                    message=f"Batch complete with issues: {complete} complete, {partial} partial, {failed} failed",
+                    cwd=os.getcwd(),
+                )
+            else:
+                concepts = stats.get("total_concepts", 0)
+                relationships = stats.get("total_relationships", 0)
+                send_notification(
+                    title="Amplifier",
+                    message=f"Processed {complete} articles. Extracted {concepts} concepts, {relationships} relationships",
+                    cwd=os.getcwd(),
+                )
+
+        return report
