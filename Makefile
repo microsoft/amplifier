@@ -391,7 +391,24 @@ triage: ## Run only the triage step of the pipeline. Usage: make triage query=".
 	fi
 	uv run python -m amplifier.synthesis.main --query "$(query)" --files "$(files)" --use-triage
 
+# Module Generation
+module-gen: ## Generate module from spec files. Usage: make module-gen CONTRACT=path/to/contract.md IMPL=path/to/impl.md FLAGS="--yes"
+	@if [ -z "$(CONTRACT)" ] || [ -z "$(IMPL)" ]; then \
+		echo "Error: Please provide CONTRACT and IMPL spec files."; \
+		echo "Usage: make module-gen CONTRACT=path/to/contract.md IMPL=path/to/impl_spec.md FLAGS=\"--yes\""; \
+		exit 1; \
+	fi
+	@echo "Generating module from specifications..."
+	uv run python -m amplifier.tools.module_generator "$(CONTRACT)" "$(IMPL)" $(FLAGS)
 
+module-plan: ## Plan module generation (dry run). Usage: make module-plan CONTRACT=path/to/contract.md IMPL=path/to/impl.md
+	@if [ -z "$(CONTRACT)" ] || [ -z "$(IMPL)" ]; then \
+		echo "Error: Please provide CONTRACT and IMPL spec files."; \
+		echo "Usage: make module-plan CONTRACT=path/to/contract.md IMPL=path/to/impl_spec.md"; \
+		exit 1; \
+	fi
+	@echo "Planning module generation (dry run)..."
+	uv run python -m amplifier.tools.module_generator "$(CONTRACT)" "$(IMPL)" --plan-only
 
 # AI Context
 ai-context-files: ## Build AI context files
