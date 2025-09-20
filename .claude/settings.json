@@ -91,6 +91,18 @@
           }
         ]
       }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/tools/hook_precompact.py",
+            "timeout": 30000
+          }
+        ]
+      }
     ]
   }
 }
