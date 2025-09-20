@@ -1,22 +1,43 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "workspace"
+name = "amplifier"
 version = "0.1.0"
-description = "Workspace project"
+description = "Amplifier supercharges AI coding assistants with discovered patterns, specialized expertise, and powerful automation"
 requires-python = ">=3.11"
 dependencies = [
     "claude-code-sdk>=0.0.20",
     "click>=8.2.1",
+    "gitpython>=3.1.45",
+    "httpx>=0.27.0",
     "langchain>=0.2.1",
     "langchain-openai>=0.3.28",
     "networkx>=3.5",
+    "pydantic>=2.0.0",
     "pydantic-settings>=2.10.1",
     "python-dotenv>=1.1.1",
     "pyvis>=0.3.2",
+    "pyyaml>=6.0",
     "rapidfuzz>=3.13.0",
     "requests>=2.32.4",
+    "rich>=13.0.0",
     "tiktoken>=0.11.0",
     "tqdm>=4.67.1",
 ]
+
+[project.scripts]
+amplifier = "amplifier.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["amplifier", "amplifier.*"]
+
+# Package data removed - using files directly from repo to prevent drift
+
+[tool.uv]
+package = true
 
 [tool.uv.workspace]
 # Add all projects in the workspace
@@ -52,7 +73,7 @@ exclude = [
     "build/**",
     "dist/**",
     ".data/**",
-    "ai_working/**"
+    "ai_working/**",
 ]
 typeCheckingMode = "basic"
 reportMissingImports = false
