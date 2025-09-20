@@ -17,6 +17,7 @@ We've taken our learnings about what works in AI-assisted development and packag
 - **Pre-loaded Context**: Proven patterns and philosophies built into the environment
 - **Parallel Worktree System**: Build and test multiple solutions simultaneously
 - **Knowledge Extraction System**: Transform your documentation into queryable, connected knowledge
+- **Conversation Transcripts**: Never lose context - automatic export before compaction, instant restoration
 - **Automation Tools**: Quality checks and patterns enforced automatically
 
 ## 🚀 Step-by-Step Setup
@@ -207,6 +208,33 @@ Instead of one generalist AI, you get 20+ specialists:
    make knowledge-query Q="authentication patterns"
    make knowledge-graph-viz  # See how ideas connect
    ```
+
+### Conversation Transcripts
+
+**Never lose context again.** Amplifier automatically exports your entire conversation before compaction, preserving all the details that would otherwise be lost. When Claude Code compacts your conversation to stay within token limits, you can instantly restore the full history.
+
+**Automatic Export**: A PreCompact hook captures your conversation before any compaction event:
+- Saves complete transcript with all content types (messages, tool usage, thinking blocks)
+- Timestamps and organizes transcripts in `.data/transcripts/`
+- Works for both manual (`/compact`) and auto-compact events
+
+**Easy Restoration**: Use the `/transcripts` command in Claude Code to restore your full conversation:
+```
+/transcripts  # Restores entire conversation history
+```
+
+The transcript system helps you:
+- **Continue complex work** after compaction without losing details
+- **Review past decisions** with full context
+- **Search through conversations** to find specific discussions
+- **Export conversations** for sharing or documentation
+
+**Transcript Commands** (via Makefile):
+```bash
+make transcript-list            # List available transcripts
+make transcript-search TERM="auth"  # Search past conversations
+make transcript-restore         # Restore full lineage (for CLI use)
+```
 
 ### Modular Builder (Lite)
 
