@@ -7,33 +7,40 @@ A modular memory system built following the "bricks and studs" philosophy. Each 
 The system consists of four independent modules that work together:
 
 ### 1. Memory Storage (`memory/`)
-**Purpose**: Persist and retrieve memories with JSON storage  
-**Contract**: Add, search, and retrieve memories  
+
+**Purpose**: Persist and retrieve memories with JSON storage
+**Contract**: Add, search, and retrieve memories
 **Key Features**:
+
 - Simple JSON file storage in `.data/memory.json`
 - Pydantic models for data validation
 - Access count tracking
 
 ### 2. Memory Extraction (`extraction/`)
-**Purpose**: Extract memories from conversations using AI  
-**Contract**: Text → List of categorized memories  
+
+**Purpose**: Extract memories from conversations using AI
+**Contract**: Text → List of categorized memories
 **Key Features**:
-- Claude Code SDK integration with 120-second timeout
-- Fallback pattern matching when SDK unavailable
+
+- Claude Code SDK integration for AI extraction
 - Categories: learning, decision, issue_solved, preference, pattern
 
 ### 3. Semantic Search (`search/`)
-**Purpose**: Search memories by semantic similarity  
-**Contract**: Query + Memories → Scored results  
+
+**Purpose**: Search memories by semantic similarity
+**Contract**: Query + Memories → Scored results
 **Key Features**:
+
 - Sentence transformer embeddings (all-MiniLM-L6-v2)
 - Fallback keyword search
 - Relevance scoring
 
 ### 4. Claim Validation (`validation/`)
-**Purpose**: Validate claims against stored memories  
-**Contract**: Claims + Memories → Validation results  
+
+**Purpose**: Validate claims against stored memories
+**Contract**: Claims + Memories → Validation results
 **Key Features**:
+
 - Contradiction detection
 - Support verification
 - Confidence scoring
@@ -61,7 +68,7 @@ async def main():
     extractor = MemoryExtractor()
     searcher = MemorySearcher()
     validator = ClaimValidator()
-    
+
     # Store a memory
     memory = Memory(
         content="User prefers dark mode",
@@ -69,15 +76,15 @@ async def main():
         metadata={"source": "settings"}
     )
     stored = store.add_memory(memory)
-    
+
     # Extract memories from conversation
     text = "I learned the API limit is 100/min"
     memories = await extractor.extract_memories(text)
-    
+
     # Search memories
     all_memories = store.get_all()
     results = searcher.search("API limits", all_memories)
-    
+
     # Validate claims
     claim = "User prefers light mode"
     validation = validator.validate_text(claim, all_memories)
