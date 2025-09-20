@@ -43,6 +43,9 @@ default: ## Show essential commands
 	@echo "  make clean          Clean build artifacts"
 	@echo "  make help           Show ALL available commands"
 	@echo ""
+	@echo "Amplifier CLI:"
+	@echo "  make amp-tool-create NAME=foo DESC=\"...\" [TEMPLATE=ideas|summarize]"
+	@echo "  make amp-tool-install NAME=foo"
 
 help: ## Show ALL available commands
 	@echo ""
@@ -105,6 +108,10 @@ help: ## Show ALL available commands
 	@echo "  make clean           Clean build artifacts"
 	@echo "  make clean-wsl-files Clean WSL-related files"
 	@echo "  make workspace-info  Show workspace information"
+	@echo ""
+	@echo "AMPLIFIER CLI SHORTCUTS:"
+	@echo "  make amp-tool-create NAME=\"...\" DESC=\"...\" TEMPLATE=ideas|summarize"
+	@echo "  make amp-tool-install NAME=\"...\""
 	@echo ""
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo ""
@@ -414,3 +421,18 @@ workspace-info: ## Show workspace information
 	$(call list_projects)
 	@echo ""
 
+# Amplifier CLI wrappers
+.PHONY: amp-tool-create amp-tool-install
+
+amp-tool-create: ## Create a standalone tool. Usage: make amp-tool-create NAME=foo DESC="..." [TEMPLATE=ideas|summarize]
+	@if [ -z "$(NAME)" ] || [ -z "$(DESC)" ]; then \
+		echo "Error: Provide NAME and DESC. Optional TEMPLATE=ideas|summarize"; exit 1; \
+	fi; \
+	T_OPT=""; if [ -n "$(TEMPLATE)" ]; then T_OPT="--template $(TEMPLATE)"; fi; \
+	amp tool create $(NAME) --desc "$(DESC)" $$T_OPT
+
+amp-tool-install: ## Install a generated tool. Usage: make amp-tool-install NAME=foo
+	@if [ -z "$(NAME)" ]; then \
+		echo "Error: Provide NAME=toolname"; exit 1; \
+	fi; \
+	amp tool install $(NAME)

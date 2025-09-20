@@ -1,0 +1,29 @@
+{
+  "insights": [
+    {
+      "title": "Emergence Over Control",
+      "rationale": "A consistent pattern emerges where complexity is allowed to arise naturally from simple, well-defined components rather than being imposed. This appears in both architectural decisions (modular blocks) and runtime behavior (knowledge extraction resilience). The pattern manifests in preferring small, focused tasks that fit in a single context window and allowing larger systems to emerge from their composition.",
+      "sources": ["MODULAR_DESIGN_PHILOSOPHY.md", "IMPLEMENTATION_PHILOSOPHY.md", "DISCOVERIES.md:resilient_miner.py"]
+    },
+    {
+      "title": "Timeout-Driven Architecture",
+      "rationale": "The discoveries reveal a critical pattern around timeout handling that shapes system architecture. The 120-second timeout emerged as a universal 'sweet spot' for LLM operations, leading to a fundamental architectural principle where operations are designed to complete within this window or fail gracefully. This influences module size, task granularity, and error handling strategies.",
+      "sources": ["DISCOVERIES.md:Claude Code SDK Integration", "DISCOVERIES.md:SPO Extraction Timeout Issue"]
+    },
+    {
+      "title": "Regenerative Resilience",
+      "rationale": "Instead of patching or fixing, the system prefers regeneration - rebuilding components entirely from their specifications. This pattern appears in both the modular design philosophy and practical implementation, where failures lead to regeneration rather than repair. The pattern extends to knowledge extraction, where partial failures trigger selective regeneration of failed components.",
+      "sources": ["MODULAR_DESIGN_PHILOSOPHY.md", "DISCOVERIES.md:Silent Failures in Knowledge Extraction Pipeline"]
+    },
+    {
+      "title": "Context-Sized Modularity",
+      "rationale": "A recurring pattern shows modules being sized to fit within AI context windows, influencing both code organization and runtime behavior. This manifests in chunk sizes for processing (10,000 words), timeout windows (120 seconds), and module specifications that can be fully understood in a single prompt.",
+      "sources": ["DISCOVERIES.md:Unnecessary Text Chunking in SPO Extraction", "MODULAR_DESIGN_PHILOSOPHY.md"]
+    },
+    {
+      "title": "Parallel Composition Model",
+      "rationale": "The system consistently leverages parallel execution, from knowledge extraction to code generation. This pattern appears in both tooling (parallel CLI operations) and architecture (parallel variant testing). The approach treats parallelism as the default mode rather than an optimization.",
+      "sources": ["MODULAR_DESIGN_PHILOSOPHY.md", "CLAUDE.md:Parallel Execution Strategy"]
+    }
+  ]
+}

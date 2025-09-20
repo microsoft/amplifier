@@ -1,0 +1,1 @@
+"""Recipe registry for microtasks."""

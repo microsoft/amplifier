@@ -18,9 +18,22 @@ dependencies = [
     "tqdm>=4.67.1",
 ]
 
+[project.scripts]
+amp = "amplifier.microtasks.cli:main"
+
 [tool.uv.workspace]
 # Add all projects in the workspace
 members = []
+
+[tool.uv]
+package = true
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["amplifier*"]
 
 [tool.uv.sources]
 # Example: my-project = { workspace = true }
@@ -52,7 +65,7 @@ exclude = [
     "build/**",
     "dist/**",
     ".data/**",
-    "ai_working/**"
+    "ai_working/**",
 ]
 typeCheckingMode = "basic"
 reportMissingImports = false
