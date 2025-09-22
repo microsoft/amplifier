@@ -76,6 +76,64 @@ High-priority file operations requiring retry protection:
 - Consider data directory location when setting up projects (prefer local over cloud-synced)
 - Test file operations with cloud sync scenarios during development
 
+## Tool Generation Pattern Failures (2025-01-23)
+
+### Issue
+
+Generated CLI tools consistently fail with predictable patterns:
+
+- Non-recursive file discovery (using `*.md` instead of `**/*.md`)
+- No minimum input validation (synthesis with 1 file when 2+ needed)
+- Silent failures without user feedback
+- Poor visibility into what's being processed
+
+### Root Cause
+
+- **Missing standard patterns**: No enforced template for common requirements
+- **Agent guidance confusion**: Documentation references `examples/` as primary location
+- **Philosophy violations**: Generated code adds complexity instead of embracing simplicity
+
+### Solutions
+
+**Standard tool patterns** (enforced in all generated tools):
+
+```python
+# Recursive file discovery
+files = list(Path(dir).glob("**/*.md"))  # NOT "*.md"
+
+# Minimum input validation
+if len(files) < required_min:
+    logger.error(f"Need at least {required_min} files, found {len(files)}")
+    sys.exit(1)
+
+# Clear progress visibility
+logger.info(f"Processing {len(files)} files:")
+for f in files[:5]:
+    logger.info(f"  • {f.name}")
+```
+
+**Tool generation checklist**:
+
+- [ ] Uses recursive glob patterns for file discovery
+- [ ] Validates minimum inputs before processing
+- [ ] Shows clear progress/activity to user
+- [ ] Fails fast with descriptive errors
+- [ ] Uses defensive utilities from toolkit
+
+### Key Learnings
+
+2. **Templates prevent predictable failures**: Common patterns should be enforced
+3. **Visibility prevents confusion**: Always show what's being processed
+4. **Fail fast and loud**: Silent failures create debugging nightmares
+5. **Philosophy must be enforced**: Generated code often violates simplicity
+
+### Prevention
+
+- Validate against checklist before accepting generated tools
+- Update agent guidance to specify correct directories
+- Test with edge cases (empty dirs, single file, nested structures)
+- Review generated code for philosophy compliance
+
 ## LLM Response Handling and Defensive Utilities (2025-01-19)
 
 ### Issue

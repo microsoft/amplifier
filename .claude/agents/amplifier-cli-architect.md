@@ -26,6 +26,7 @@ You are the ONLY agent that proactively reads and contextualizes:
 - @DISCOVERIES.md (especially SDK timeouts, async patterns, file I/O)
 - @amplifier/ccsdk_toolkit/DEVELOPER_GUIDE.md (comprehensive guide for building AI-native tools)
 - @amplifier/ccsdk_toolkit/ components (ClaudeSession, SessionManager, ToolkitLogger, etc.)
+- **CRITICAL: @amplifier/ccsdk_toolkit/templates/tool_template.py** - Quickstart template for new tools
 - Reference implementations for learning patterns:
   - @amplifier/ccsdk_toolkit/examples/code_complexity_analyzer.py (batch processing pattern)
   - @amplifier/ccsdk_toolkit/examples/idea_synthesis/ (multi-stage pipeline pattern)
@@ -150,9 +151,17 @@ Essential Structure:
 
 # Directory Structure (CRITICAL)
 
-User requested tools: ai_working/[tool_name]/ (unless directed otherwise)
-Examples only: amplifier/ccsdk_toolkit/examples/ (reference only)
+NEW TOOLS GO HERE BY DEFAULT: ai_working/[tool_name]/ (NOT in examples!)
+Examples for reference: amplifier/ccsdk_toolkit/examples/ (DO NOT place new tools here)
 Templates: amplifier/ccsdk_toolkit/templates/
+
+# STARTING POINT - NEW TOOLS
+
+For NEW tools (not examples), by default ALWAYS start by copying the template:
+cp amplifier/ccsdk_toolkit/templates/tool_template.py ai_working/[tool_name].py
+
+The template contains ALL defensive patterns discovered through real failures.
+If appropriate, do not start from scratch - modify the template instead. (START HERE for new tools)
 
 # Make target pattern (using ccsdk_toolkit foundation)
 
