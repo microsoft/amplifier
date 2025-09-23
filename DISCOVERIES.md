@@ -152,3 +152,40 @@ clean_prompt = isolate_prompt(user_prompt)
 - Use `parse_llm_json()` for all LLM JSON responses - never use raw `json.loads()`
 - Wrap LLM operations with `retry_with_feedback()` for automatic error recovery
 - Apply `isolate_prompt()` when user content might be confused with instructions
+## Generator robustness via CCSDK toolkit and no-default composition (2025-09-20)
+
+### Issue
+
+Generated tools occasionally contained unterminated string literals and missing `run()` due to LLM-emitted multi-line strings. Progress output was inconsistent across generated tools. Composer inserted implicit default steps when plans were empty, violating the "no fallbacks" policy.
+
+### Root Cause
+
+- Raw LLM output was written directly into `recipes.py` and sometimes included unescaped newlines.
+- When planning returned prose with no structured steps, the generator attempted to continue with hidden defaults.
+
+### Solution
+
+- Replace emitted `microtasks/llm.py` with a wrapper around `amplifier.ccsdk_toolkit.core` (ClaudeSession/SessionOptions).
+- Replace emitted `microtasks/orchestrator.py` with a version that uses `amplifier.ccsdk_toolkit.logger` and `defensive.write_json_with_retry`.
+- Remove implicit default steps; fail fast unless steps are present or explicitly derived and written to `plan.json`.
+
+### Prevention
+
+- Assemble emitted code line-by-line; escape all embedded newlines.
+- Prefer composition from structured plans to raw code dumps for critical flows.
+- Use CCSDK toolkit for sessions/logging/defensive I/O in all generated tools.
+
+## Composer derivation and planning advisor (2025-09-23)
+
+### Issue
+
+Plans without explicit steps caused composition to fail or tempted implicit defaults (disallowed).
+
+### Solution
+
+- If plan lacks steps, deterministically derive steps from the description (visible in `artifacts/plan.json`) and compose from that.
+- Add an “amplifier-cli-architect” preamble to planning prompts to align outputs with Amplifier patterns.
+
+### Prevention
+
+- Keep the no-defaults invariant; any derivation must be explicit and materialized in `plan.json`.
