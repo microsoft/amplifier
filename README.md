@@ -75,7 +75,7 @@ Before starting, you'll need:
 
    # Your source materials (documentation, specs, design docs, notes)
    # Can point to multiple folders where you keep content
-   AMPLIFIER_CONTENT_DIRS=ai_context,~/OneDrive/amplifier/content,~/Documents/notes
+   AMPLIFIER_CONTENT_DIRS=.data/content,~/OneDrive/amplifier/content,~/Documents/notes
    ```
 
 4. **Activate the environment** (if not already active):
@@ -214,22 +214,26 @@ Instead of one generalist AI, you get 20+ specialists:
 **Never lose context again.** Amplifier automatically exports your entire conversation before compaction, preserving all the details that would otherwise be lost. When Claude Code compacts your conversation to stay within token limits, you can instantly restore the full history.
 
 **Automatic Export**: A PreCompact hook captures your conversation before any compaction event:
+
 - Saves complete transcript with all content types (messages, tool usage, thinking blocks)
 - Timestamps and organizes transcripts in `.data/transcripts/`
 - Works for both manual (`/compact`) and auto-compact events
 
 **Easy Restoration**: Use the `/transcripts` command in Claude Code to restore your full conversation:
+
 ```
 /transcripts  # Restores entire conversation history
 ```
 
 The transcript system helps you:
+
 - **Continue complex work** after compaction without losing details
 - **Review past decisions** with full context
 - **Search through conversations** to find specific discussions
 - **Export conversations** for sharing or documentation
 
 **Transcript Commands** (via Makefile):
+
 ```bash
 make transcript-list            # List available transcripts
 make transcript-search TERM="auth"  # Search past conversations
