@@ -31,9 +31,17 @@ def step_plan_tool_philosophy(llm: LLM, artifacts: Path, name: str, desc: str) -
 
     # Generate plan prompt with philosophy
     plan_prompt = generate_tool_plan(desc, exemplars)
+    # Consult the amplifier-cli-architect to bias toward Amplifier patterns and CCSDK Toolkit usage
+    advisor_preamble = (
+        "Role: amplifier-cli-architect in CONTEXTUALIZE+GUIDE mode.\n"
+        "- Apply Amplifier philosophies (ruthless simplicity, resume-friendly incremental saves).\n"
+        "- Leverage amplifier.ccsdk_toolkit for sessions, logging, defensive I/O, and JSON parsing.\n"
+        "- No fallbacks: fail fast on missing SDK/CLI with clear messages.\n"
+        "- Stream progress (job id, per-step ticks), write artifacts/status.json incrementally.\n"
+    )
 
     # Add exemplar context
-    full_prompt = f"{plan_prompt}\n\n{exemplar_context}"
+    full_prompt = f"{advisor_preamble}\n\n{plan_prompt}\n\n{exemplar_context}"
 
     # Generate plan with evaluation loop
     max_attempts = 3

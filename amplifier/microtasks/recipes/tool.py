@@ -138,52 +138,31 @@ def _llm_py() -> str:
             """
         from __future__ import annotations
 
-        import shutil
         import asyncio
+        from typing import Optional
+
+        # Leverage Amplifier CCSDK Toolkit for robust session management
+        from amplifier.ccsdk_toolkit.core import ClaudeSession, SessionOptions, SDKNotAvailableError
 
         class LLMUnavailable(RuntimeError):
             '''Raised when Claude Code SDK/CLI is unavailable.'''
 
-        try:
-            from claude_code_sdk import query as sdk_query, ClaudeCodeOptions
-        except Exception:  # pragma: no cover - handled at runtime
-            sdk_query = None  # type: ignore
-            ClaudeCodeOptions = None  # type: ignore
+        def complete(prompt: str, *, role: Optional[str] = None, model: Optional[str] = None) -> str:
+            '''Synchronous convenience wrapper around CCSDK Toolkit session.
 
-        def _ensure_available() -> None:
-            if sdk_query is None or ClaudeCodeOptions is None:
-                raise LLMUnavailable(
-                    "Claude Code SDK not available. Install: pip install claude-code-sdk"
-                )
-            cli = shutil.which("claude") or shutil.which("@anthropic-ai/claude-code")
-            if not cli:
-                raise LLMUnavailable(
-                    "Claude CLI not found. Install: npm i -g @anthropic-ai/claude-code"
-                )
-
-        def complete(prompt: str, *, role: str | None = None, model: str | None = None) -> str:
-            _ensure_available()
-
-            assert ClaudeCodeOptions is not None and sdk_query is not None
-            opts = ClaudeCodeOptions(
-                system_prompt=role,
-                model=model or "claude-3-5-sonnet-20241022",
-                max_turns=1,
-            )
+            Fails fast if SDK/CLI are unavailable. No fallbacks.
+            '''
 
             async def _go() -> str:
-                chunks: list[str] = []
-                final: str | None = None
-                async for message in sdk_query(prompt=prompt, options=opts):  # type: ignore[misc]
-                    tname = type(message).__name__
-                    if tname == "ResultMessage":
-                        final = getattr(message, "result", None)
-                    elif hasattr(message, "content"):
-                        for block in getattr(message, "content", []) or []:
-                            txt = getattr(block, "text", None)
-                            if txt:
-                                chunks.append(str(txt))
-                return final or "".join(chunks)
+                try:
+                    opts = SessionOptions(system_prompt=role or "", max_turns=1)
+                    async with ClaudeSession(opts) as session:
+                        resp = await session.query(prompt)
+                        if resp.success:
+                            return resp.content
+                        raise RuntimeError(resp.error or "Unknown CCSDK error")
+                except SDKNotAvailableError as e:  # pragma: no cover - runtime guard
+                    raise LLMUnavailable(str(e)) from e
 
             return asyncio.run(_go())
         """
@@ -198,8 +177,13 @@ def _orchestrator_py(tool_name: str) -> str:
         "",
         "import json",
         "import uuid",
+        "from datetime import datetime",
         "from pathlib import Path",
         "from typing import Any, Callable",
+        "",
+        "# Use CCSDK toolkit logging + defensive file I/O",
+        "from amplifier.ccsdk_toolkit.logger import create_logger, LogLevel, LogFormat",
+        "from amplifier.ccsdk_toolkit.defensive import write_json_with_retry",
         "",
         "class State:",
         "    def __init__(self, job_id: str, recipe: str, run_dir: Path) -> None:",
@@ -215,19 +199,19 @@ def _orchestrator_py(tool_name: str) -> str:
         "",
         "    def save(self) -> None:",
         "        path = self.run_dir / 'results.json'",
-        "        tmp = path.with_suffix('.tmp')",
-        "        tmp.write_text(json.dumps({",
+        "        payload = {",
         "            'job_id': self.job_id,",
         "            'recipe': self.recipe,",
-        "            'updated_at': '',",
+        "            'updated_at': datetime.utcnow().isoformat() + 'Z',",
         "            'steps': self.steps,",
-        "        }, indent=2))",
-        "        tmp.replace(path)",
+        "        }",
+        "        write_json_with_retry(payload, path)",
         "",
         "class Orchestrator:",
         "    def __init__(self, base: Path | None = None) -> None:",
         "        self.base = base or Path('.data') / '{TOOL_NAME}' / 'runs'",
         "        self.base.mkdir(parents=True, exist_ok=True)",
+        "        self.log = create_logger(name='{TOOL_NAME}', level=LogLevel.INFO, format=LogFormat.PLAIN)",
         "",
         "    def run(",
         "        self,",
@@ -242,20 +226,24 @@ def _orchestrator_py(tool_name: str) -> str:
         "        arts = state.artifacts_dir()",
         "        if on_event:",
         "            on_event('job', recipe, {'job_id': job_id, 'artifacts_dir': str(arts)})",
+        "        self.log.info('Run started', job_id=job_id, recipe=recipe, artifacts=str(arts))",
         "        for step_name, fn in steps:",
         "            if on_event:",
         "                on_event('start', step_name, None)",
+        "            self.log.stage_start(step_name)",
         "            try:",
         "                out = fn(arts)",
         "                state.steps.append({'name': step_name, 'status': 'succeeded', 'output': out})",
         "                state.save()",
         "                if on_event:",
         "                    on_event('success', step_name, out)",
+        "                self.log.stage_complete(step_name, 'ok', **(out or {}))",
         "            except Exception as e:  # noqa: BLE001",
         "                state.steps.append({'name': step_name, 'status': 'failed', 'error': str(e)})",
         "                state.save()",
         "                if on_event:",
         "                    on_event('fail', step_name, {'error': str(e)})",
+        "                self.log.error('Step failed', error=e, step=step_name)",
         "                break",
         "        return state",
     ]
@@ -311,7 +299,7 @@ def _ideas_recipe_py(tool_name: str) -> str:
         "    return {'summaries': idx}",
         "",
         "def _extract_json_array(text: str) -> list[dict]:",
-        "    m = re.search(r'```json\s*(.*?)```', text, flags=re.S | re.I)",
+        r"    m = re.search(r'```json\s*(.*?)```', text, flags=re.S | re.I)",
         "    block = m.group(1) if m else None",
         "    if not block:",
         "        s = text.find('[')",
@@ -330,7 +318,7 @@ def _ideas_recipe_py(tool_name: str) -> str:
         "    allowed = [d['path'] for d in docs]",
         "    prompt = (",
         "        'You are an idea synthesizer. Propose net-new ideas that combine insights across summaries.\n'",
-        "        + 'Return ONLY a JSON array of objects: {\"title\": str, \"rationale\": str, \"sources\": [str]}.\n'",
+        '        + \'Return ONLY a JSON array of objects: {"title": str, "rationale": str, "sources": [str]}.\n\'',
         "        + 'Use sources ONLY from this allowed list: ' + json.dumps(allowed) + '\n\n'",
         "        + json.dumps(docs)[:90000]",
         "    )",
@@ -339,7 +327,7 @@ def _ideas_recipe_py(tool_name: str) -> str:
         "    if not ideas:",
         "        prompt2 = (",
         "            'Return ONLY a JSON array with at least 5 items; each item must be ' ",
-        "            + '{\"title\": str, \"rationale\": str, \"sources\": [str]} and sources must come from: ' ",
+        '            + \'{"title": str, "rationale": str, "sources": [str]} and sources must come from: \' ',
         "            + json.dumps(allowed) + '\n\nSummaries:\n' + json.dumps(docs)[:90000]",
         "        )",
         "        raw = complete(prompt2, role='synthesis master')",
@@ -352,7 +340,7 @@ def _ideas_recipe_py(tool_name: str) -> str:
         "    if not ideas:",
         "        raw2 = complete(",
         "            'List 8-12 cross-document synthesis ideas as bullet points focused on novelty. ' ",
-        "            + 'Then output ONLY a JSON array under the schema {\"title\": str, \"rationale\": str, \"sources\": [str]} ' ",
+        '            + \'Then output ONLY a JSON array under the schema {"title": str, "rationale": str, "sources": [str]} \' ',
         "            + 'with sources restricted to: ' + json.dumps(allowed) + '\n\n' + json.dumps(docs)[:90000],",
         "            role='synthesis master',",
         "        )",
@@ -381,7 +369,7 @@ def _ideas_recipe_py(tool_name: str) -> str:
         "    status = art / 'status.json'",
         "    for i, idea in enumerate(ideas, 1):",
         "        title = idea.get('title') or f\"idea_{i:03d}\"",
-        "        outfile = out_dir / f\"{title.replace(\' \', \'_\').lower()}\"",
+        "        outfile = out_dir / f\"{title.replace(' ', '_').lower()}\"",
         "        if outfile.exists():",
         "            status.write_text(json.dumps({'stage': 'expand_ideas', 'done': i, 'total': total, 'title': title, 'skipped': True}))",
         "            continue",
@@ -393,7 +381,7 @@ def _ideas_recipe_py(tool_name: str) -> str:
         "            + 'Relevant sources (may be partial excerpts):\n' + body",
         "        )",
         "        text = complete(prompt, role='modular builder')",
-        "        if any(p in text.lower() for p in ['please provide', 'i don\'t see enough context', 'i need more', 'could you provide']):",
+        "        if any(p in text.lower() for p in ['please provide', 'i don't see enough context', 'i need more', 'could you provide']):",
         "            text = complete('Rewrite into a concrete blueprint with sections: ## Context, ## Benefits, ## Risks, ## Plan. Do not ask questions; use the sources as context.\n\n' + text, role='synthesis master')",
         "        if text.count('## ') < 3 or len(text) < 600:",
         "            critique = complete('Critique this blueprint; list missing sections and weak depth.', role='analysis expert')",
@@ -434,6 +422,7 @@ def _ideas_recipe_py(tool_name: str) -> str:
         "    }",
     ]
     return "\n".join(lines).replace("{TOOL}", tool_name) + "\n"
+
 
 def _summarize_recipe_py() -> str:
     lines = [
@@ -596,12 +585,9 @@ def _compose_recipes_from_plan(tool_name: str, plan_text: str) -> str:
                     return ('draft_blueprints', lambda art: step_draft_blueprints(art, workp))
                 raise ValueError('Unknown step kind: ' + str(kind))
 
-            steps = [_resolve(s) for s in steps_cfg] or [
-                ('discover', lambda art: step_discover_markdown(art, srcp, limit)),
-                ('extract_structured', lambda art: step_extract_structured(art, workp, ['features','constraints','acceptance_criteria'])),
-                ('synthesize_catalog', lambda art: step_synthesize_catalog(art)),
-                ('draft_blueprints', lambda art: step_draft_blueprints(art, workp)),
-            ]
+            if not steps_cfg:
+                raise ValueError('Plan has no steps; generator policy prohibits implicit defaults (no fallbacks).')
+            steps = [_resolve(s) for s in steps_cfg]
             s = orch.run('compose', steps, on_event)
             return {
                 'job_id': s.job_id,
@@ -733,44 +719,98 @@ def step_generate_tool(llm: LLM, artifacts: Path, name: str, desc: str, template
 
     # Template-specific or composed
     plan_json_path = artifacts / "plan.json"
-    if template is None and plan_json_path.exists():
+
+    def _derive_steps_from_desc(text: str) -> list[dict[str, Any]]:
+        tl = (text or "").lower()
+        steps: list[dict[str, Any]] = []
+        # Optional custom schema like [a, b, c]
+        schema = ["features", "constraints", "acceptance_criteria"]
         try:
-            _obj = json.loads(plan_json_path.read_text())
+            import re as _re
+
+            m = _re.search(r"\[\s*([\w\s_,-]+)\s*\]", text)
+            if m:
+                items = [s.strip().strip("\"'") for s in m.group(1).split(",") if s.strip()]
+                if items:
+                    schema = items[:8]
         except Exception:
-            _obj = {}
-        _steps = _obj.get("steps") if isinstance(_obj, dict) else None
+            pass
+        # Heuristic: look for the 4-stage spec-weaver style request
+        if (
+            ("discover" in tl or "first" in tl)
+            and ("extract" in tl)
+            and ("synthes" in tl)
+            and ("blueprint" in tl or "plan" in tl or "draft" in tl)
+        ):
+            steps = [
+                {"kind": "discover_markdown", "id": "discover", "params": {}},
+                {
+                    "kind": "extract_structured",
+                    "id": "extract",
+                    "params": {"schema": schema},
+                },
+                {"kind": "synthesize_catalog", "id": "catalog", "params": {}},
+                {"kind": "draft_blueprints", "id": "blueprints", "params": {}},
+            ]
+        return steps
+
+    if template is None:
+        _steps = None
+        _obj: dict[str, Any] | None = None
+        if plan_json_path.exists():
+            try:
+                _obj = json.loads(plan_json_path.read_text())
+                _steps = _obj.get("steps") if isinstance(_obj, dict) else None
+            except Exception:
+                _obj = None
+                _steps = None
+        if not _steps:
+            # Attempt to derive a concrete step plan from the description (no implicit defaults)
+            derived = _derive_steps_from_desc(desc)
+            if derived:
+                _obj = {"steps": derived, "cli": {"requires": ["--src", "--limit"]}}
+                plan_json_path.write_text(json.dumps(_obj, indent=2))
+                _steps = derived
         if _steps:
             plan_txt = _extract_json_object(plan_json_path.read_text())
             body = _compose_recipes_from_plan2(name, plan_txt)
             _write(pkg_dir / "microtasks" / "recipes.py", body)
-        # else: keep previously written code (from philosophy path)
     elif template == "ideas":
         _write(pkg_dir / "microtasks" / "recipes.py", _ideas_recipe_py(name))
     else:
         _write(pkg_dir / "microtasks" / "recipes.py", _summarize_recipe_py())
 
     _write(pkg_dir / "cli.py", _cli_py(name, pkg, template))
-    # Post-generation validation: ensure recipes export run()
+    # Post-generation validation: ensure recipes export run(); otherwise try composing from derived plan
     try:
         _code = (pkg_dir / "microtasks" / "recipes.py").read_text()
     except Exception:
         _code = ""
     if "def run(" not in _code:
-        _desc_l = (desc or "").lower()
-        if any(
-            k in _desc_l
-            for k in [
-                "net new ideas",
-                "synthesize",
-                "summarize each",
-                "expand ideas",
-                "case for it",
-                "plan for approaching",
-            ]
-        ):
-            _write(pkg_dir / "microtasks" / "recipes.py", _ideas_recipe_py(name))
-        else:
-            raise RuntimeError("Generated tool has no run() in recipes.py")
+        # Try compose from a derived plan if available
+        if plan_json_path.exists():
+            try:
+                _obj2 = json.loads(plan_json_path.read_text())
+            except Exception:
+                _obj2 = {}
+            _steps2 = _obj2.get("steps") if isinstance(_obj2, dict) else None
+            if not _steps2:
+                derived2 = _derive_steps_from_desc(desc)
+                if derived2:
+                    _obj2 = {"steps": derived2, "cli": {"requires": ["--src", "--limit"]}}
+                    plan_json_path.write_text(json.dumps(_obj2, indent=2))
+                    _steps2 = derived2
+            if _steps2:
+                plan_txt2 = _extract_json_object(plan_json_path.read_text())
+                body2 = _compose_recipes_from_plan2(name, plan_txt2)
+                _write(pkg_dir / "microtasks" / "recipes.py", body2)
+        # Re-check
+        try:
+            _code = (pkg_dir / "microtasks" / "recipes.py").read_text()
+        except Exception:
+            _code = ""
+        if "def run(" not in _code:
+            raise RuntimeError("Generated tool has no run() in recipes.py and no valid plan for composition.")
 
     _write(
         readme,
