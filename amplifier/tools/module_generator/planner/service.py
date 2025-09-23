@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 
+from amplifier.ccsdk_toolkit.defensive import parse_llm_json
+
 from ..plan_models import GenContext
 from ..plan_models import PlanBrick
 from ..plan_models import PlanDocument
@@ -24,18 +26,28 @@ async def generate_plan(ctx: GenContext, contract_text: str, spec_text: str) -> 
             "You design modular plans for the Amplifier project. Respond with strict JSON; no prose outside the JSON."
         ),
     )
-    payload = result.text.strip()
-    if payload.startswith("```json"):
-        payload = payload[7:]
-    if payload.startswith("```"):
-        payload = payload[3:]
-    if payload.endswith("```"):
-        payload = payload[:-3]
+    cleaned = result.text.strip()
+    data = parse_llm_json(cleaned, verbose=True)
 
-    try:
-        data = json.loads(payload.strip())
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"Planner returned non-JSON response: {result.text!r}") from exc
+    if data is None:
+        payload = cleaned
+        if payload.startswith("```json"):
+            payload = payload[7:]
+        if payload.startswith("```"):
+            payload = payload[3:]
+        if payload.endswith("```"):
+            payload = payload[:-3]
+        payload = payload.strip()
+        if payload and not payload.startswith("{"):
+            start = payload.find("{")
+            end = payload.rfind("}")
+            if start != -1 and end != -1 and end >= start:
+                payload = payload[start : end + 1]
+
+        try:
+            data = json.loads(payload.strip())
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Planner returned non-JSON response: {result.text!r}") from exc
 
     plan = PlanDocument.from_dict(data)
     plan.claude_session = result.session_id

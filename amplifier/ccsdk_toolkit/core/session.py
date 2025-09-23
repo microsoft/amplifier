@@ -1,13 +1,33 @@
 """Core Claude session implementation with robust error handling."""
 
+from __future__ import annotations
+
 import asyncio
 import os
 import shutil
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
 from .models import SessionOptions
 from .models import SessionResponse
+
+try:  # pragma: no cover - optional dependency handled gracefully
+    from claude_code_sdk import AssistantMessage
+    from claude_code_sdk import ClaudeCodeOptions
+    from claude_code_sdk import ClaudeSDKClient
+    from claude_code_sdk import ClaudeSDKError
+    from claude_code_sdk import ProcessError
+    from claude_code_sdk import ResultMessage
+    from claude_code_sdk import TextBlock
+except Exception:  # pragma: no cover - import errors handled at runtime
+    AssistantMessage = None  # type: ignore[assignment]
+    ClaudeCodeOptions = None  # type: ignore[assignment]
+    ClaudeSDKClient = None  # type: ignore[assignment]
+    ClaudeSDKError = Exception  # type: ignore[assignment]
+    ProcessError = Exception  # type: ignore[assignment]
+    ResultMessage = None  # type: ignore[assignment]
+    TextBlock = None  # type: ignore[assignment]
 
 
 class SessionError(Exception):
@@ -24,6 +44,7 @@ class ClaudeSession:
     This provides a robust wrapper around the claude_code_sdk with:
     - Prerequisite checking for the claude CLI
     - Automatic retry with exponential backoff
+    - Clean timeout handling
     - Graceful degradation when SDK unavailable
     """
 
@@ -64,16 +85,40 @@ class ClaudeSession:
     async def __aenter__(self):
         """Enter async context and initialize SDK client."""
         try:
-            # Import SDK only when actually using it
-            from claude_code_sdk import ClaudeCodeOptions
-            from claude_code_sdk import ClaudeSDKClient
+            if ClaudeSDKClient is None or ClaudeCodeOptions is None:  # pragma: no cover - runtime guard
+                raise ImportError("claude_code_sdk is not available")
 
-            self.client = ClaudeSDKClient(
-                options=ClaudeCodeOptions(
-                    system_prompt=self.options.system_prompt,
-                    max_turns=self.options.max_turns,
-                )
-            )
+            option_kwargs: dict[str, Any] = {
+                "system_prompt": self.options.system_prompt,
+                "max_turns": self.options.max_turns,
+            }
+
+            if self.options.max_thinking_tokens is not None:
+                option_kwargs["max_thinking_tokens"] = self.options.max_thinking_tokens
+            if self.options.append_system_prompt:
+                option_kwargs["append_system_prompt"] = self.options.append_system_prompt
+            if self.options.allowed_tools is not None:
+                option_kwargs["allowed_tools"] = list(self.options.allowed_tools)
+            if self.options.disallowed_tools is not None:
+                option_kwargs["disallowed_tools"] = list(self.options.disallowed_tools)
+            if self.options.permission_mode is not None:
+                option_kwargs["permission_mode"] = self.options.permission_mode
+            if self.options.resume:
+                option_kwargs["resume"] = self.options.resume
+            if self.options.model:
+                option_kwargs["model"] = self.options.model
+            if self.options.permission_prompt_tool_name:
+                option_kwargs["permission_prompt_tool_name"] = self.options.permission_prompt_tool_name
+            if self.options.cwd:
+                option_kwargs["cwd"] = str(self.options.cwd)
+            if self.options.settings:
+                option_kwargs["settings"] = self.options.settings
+            if self.options.add_dirs:
+                option_kwargs["add_dirs"] = [str(path) for path in self.options.add_dirs]
+            if self.options.extra_args:
+                option_kwargs["extra_args"] = self.options.extra_args
+
+            self.client = ClaudeSDKClient(options=ClaudeCodeOptions(**option_kwargs))
             await self.client.__aenter__()
             return self
 
@@ -87,72 +132,73 @@ class ClaudeSession:
         if self.client:
             await self.client.__aexit__(exc_type, exc_val, exc_tb)
 
-    async def query(self, prompt: str, stream: bool | None = None) -> SessionResponse:
-        """Send a query to Claude with automatic retry.
-
-        Args:
-            prompt: The prompt to send to Claude
-            stream: Override the session's stream_output setting
-
-        Returns:
-            SessionResponse with the result or error
-        """
+    async def query(
+        self,
+        prompt: str,
+        *,
+        stream: bool | None = None,
+        progress_callback: Callable[[str], None] | None = None,
+    ) -> SessionResponse:
+        """Send a query to Claude with automatic retry."""
         if not self.client:
             return SessionResponse(error="Session not initialized. Use 'async with' context.")
 
         retry_delay = self.options.retry_delay
         last_error = None
 
+        use_stream = stream if stream is not None else self.options.stream_output
+        callback = progress_callback or self.options.progress_callback
+
         for attempt in range(self.options.retry_attempts):
             try:
-                # Execute query directly
-                assert self.client is not None  # Type guard for pyright
-                await self.client.query(prompt)
+                # Query with timeout
+                async with asyncio.timeout(self.options.timeout_seconds):
+                    await self.client.query(prompt)
 
-                # Collect response with streaming support
-                response_text = ""
-                metadata: dict[str, Any] = {"attempt": attempt + 1}
+                    # Collect response
+                    response_text = ""
+                    session_id: str | None = None
+                    total_cost = 0.0
+                    duration_ms = 0
+                    usage: dict[str, Any] | None = None
 
-                async for message in self.client.receive_response():
-                    if hasattr(message, "content"):
-                        content = getattr(message, "content", [])
-                        if isinstance(content, list):
-                            for block in content:
-                                if hasattr(block, "text"):
-                                    text = getattr(block, "text", "")
-                                    if text:
-                                        response_text += text
+                    async for message in self.client.receive_response():
+                        if AssistantMessage is not None and isinstance(message, AssistantMessage):
+                            content = getattr(message, "content", [])
+                            if isinstance(content, list):
+                                for block in content:
+                                    if TextBlock is not None and isinstance(block, TextBlock):
+                                        chunk = getattr(block, "text", "")
+                                        if chunk:
+                                            response_text += chunk
+                                            if callback:
+                                                callback(chunk)
+                                            if use_stream:
+                                                print(chunk, end="", flush=True)
+                        elif ResultMessage is not None and isinstance(message, ResultMessage):
+                            session_id = getattr(message, "session_id", session_id)
+                            total_cost = getattr(message, "total_cost_usd", total_cost) or 0.0
+                            duration_ms = getattr(message, "duration_ms", duration_ms) or 0
+                            usage = getattr(message, "usage", usage) or usage
 
-                                        # Stream output if enabled
-                                        should_stream = stream if stream is not None else self.options.stream_output
-                                        if should_stream:
-                                            print(text, end="", flush=True)
+                    if response_text:
+                        metadata: dict[str, Any] = {
+                            "attempt": attempt + 1,
+                            "session_id": session_id,
+                            "total_cost_usd": total_cost,
+                            "duration_ms": duration_ms,
+                        }
+                        if usage:
+                            metadata["usage"] = usage
+                        return SessionResponse(content=response_text, metadata=metadata)
 
-                                        # Call progress callback if provided
-                                        if self.options.progress_callback:
-                                            self.options.progress_callback(text)
+                    # Empty response, retry
+                    last_error = "Received empty response from SDK"
 
-                    # Collect metadata from ResultMessage if available
-                    if hasattr(message, "__class__") and message.__class__.__name__ == "ResultMessage":
-                        if hasattr(message, "session_id"):
-                            metadata["session_id"] = getattr(message, "session_id", None)
-                        if hasattr(message, "total_cost_usd"):
-                            metadata["total_cost_usd"] = getattr(message, "total_cost_usd", 0.0)
-                        if hasattr(message, "duration_ms"):
-                            metadata["duration_ms"] = getattr(message, "duration_ms", 0)
-
-                # Add newline after streaming if enabled
-                should_stream = stream if stream is not None else self.options.stream_output
-                if should_stream and response_text:
-                    print()  # Final newline after streaming
-
-                if response_text:
-                    return SessionResponse(content=response_text, metadata=metadata)
-
-                # Empty response, will retry
-                raise ValueError("Received empty response from SDK")
-            except ValueError as e:
-                last_error = str(e)
+            except TimeoutError:
+                last_error = f"SDK timeout after {self.options.timeout_seconds} seconds"
+            except (ClaudeSDKError, ProcessError) as exc:  # pragma: no cover - passthrough
+                last_error = str(exc)
             except Exception as e:
                 last_error = str(e)
 

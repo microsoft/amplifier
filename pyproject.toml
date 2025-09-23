@@ -11,6 +11,7 @@ dependencies = [
     "networkx>=3.5",
     "pydantic-settings>=2.10.1",
     "python-dotenv>=1.1.1",
+    "python-frontmatter>=1.1.0",
     "pyvis>=0.3.2",
     "pyyaml>=6.0.2",
     "rapidfuzz>=3.13.0",

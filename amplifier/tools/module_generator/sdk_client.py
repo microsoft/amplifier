@@ -1,66 +1,35 @@
 from __future__ import annotations
 
+import os
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any
 
-try:
-    # Claude Code SDK (declared in project pyproject)
-    from claude_code_sdk import AssistantMessage
-    from claude_code_sdk import ClaudeCodeOptions
-    from claude_code_sdk import ClaudeSDKClient
-    from claude_code_sdk import ClaudeSDKError
-    from claude_code_sdk import CLINotFoundError
-    from claude_code_sdk import ProcessError
-    from claude_code_sdk import ResultMessage
-    from claude_code_sdk import TextBlock
-except Exception:  # pragma: no cover - handled via _ensure_sdk_available
-    AssistantMessage = None  # type: ignore[assignment]
-    ClaudeCodeOptions = None  # type: ignore[assignment]
-    ClaudeSDKClient = None  # type: ignore[assignment]
-    ClaudeSDKError = Exception  # type: ignore[assignment]
-    CLINotFoundError = Exception  # type: ignore[assignment]
-    ProcessError = Exception  # type: ignore[assignment]
-    ResultMessage = None  # type: ignore[assignment]
-    TextBlock = None  # type: ignore[assignment]
+from amplifier.ccsdk_toolkit import ClaudeSession
+from amplifier.ccsdk_toolkit import SDKNotAvailableError
+from amplifier.ccsdk_toolkit import SessionOptions
 
 
-def _ensure_sdk_available() -> None:
-    if ClaudeSDKClient is None or ClaudeCodeOptions is None:
-        raise RuntimeError(
-            "claude_code_sdk is not available. Ensure it's installed and importable in this environment.\n"
-            "Dependency is declared in the repo's pyproject; install via `make install`."
-        )
-
-
-async def _stream_all_messages(client: Any) -> tuple[str, str | None, float, int]:
-    """Collect streamed assistant text and return (text, session_id, total_cost_usd, duration_ms)."""
-    collected: list[str] = []
-    session_id: str | None = None
-    total_cost = 0.0
-    duration_ms = 0
-    async for msg in client.receive_response():
-        # Print any textual content while collecting
-        if AssistantMessage is not None and isinstance(msg, AssistantMessage):
-            for block in getattr(msg, "content", []) or []:
-                if TextBlock is not None and isinstance(block, TextBlock):
-                    text = getattr(block, "text", "")
-                    if text:
-                        print(text, end="", flush=True)
-                        collected.append(text)
-        if ResultMessage is not None and isinstance(msg, ResultMessage):
-            # Final stats
-            total_cost = getattr(msg, "total_cost_usd", 0.0) or 0.0
-            duration_ms = getattr(msg, "duration_ms", 0) or 0
-            session_id = getattr(msg, "session_id", None)
-    print("", flush=True)
-    return ("".join(collected), session_id, total_cost, duration_ms)
+def _prepare_claude_env(cwd: str | Path) -> Path:
+    base = Path(cwd) / ".claude_config"
+    cache = base / "cache"
+    logs = base / "logs"
+    base.mkdir(parents=True, exist_ok=True)
+    cache.mkdir(parents=True, exist_ok=True)
+    logs.mkdir(parents=True, exist_ok=True)
+    os.environ["HOME"] = str(Path(cwd))
+    os.environ.setdefault("CLAUDE_CODE_CONFIG_DIR", str(base))
+    os.environ.setdefault("CLAUDE_CODE_CACHE_DIR", str(cache))
+    os.environ.setdefault("CLAUDE_CODE_CACHE_PATH", str(cache))
+    os.environ.setdefault("CLAUDE_CODE_LOG_DIR", str(logs))
+    return base
 
 
 def _default_system_prompt() -> str:
     return (
         "You are the Modular Builder for the Amplifier repo.\n"
         "Follow contract-first, 'bricks & studs', and regeneration over patching.\n"
+        "Consult @ai_context/MODULAR_DESIGN_PHILOSOPHY.md and @ai_context/module_generator/CONTRACT_SPEC_AUTHORING_GUIDE.md.\n"
+        "Leverage @ai_context/AMPLIFIER_CLAUDE_CODE_LEVERAGE.md and @amplifier/ccsdk_toolkit/DEVELOPER_GUIDE.md when using the Claude Code SDK.\n"
         "Use concise, explicit steps. Respect repo conventions and tests."
     )
 
@@ -73,9 +42,7 @@ async def plan_from_specs(
     settings: str | None = None,
 ) -> tuple[str, str | None, float, int]:
     """Ask Claude to produce a concrete implementation plan (READ-ONLY)."""
-    _ensure_sdk_available()
-    assert ClaudeSDKClient is not None  # pyright: ignore[reportUnnecessaryComparison]
-    assert ClaudeCodeOptions is not None  # pyright: ignore[reportUnnecessaryComparison]
+    _prepare_claude_env(cwd)
     effective_add_dirs: list[str | Path] = list(add_dirs) if add_dirs is not None else []
     prompt = (
         "You are in PLANNING phase. Do NOT write or edit files.\n"
@@ -86,21 +53,34 @@ async def plan_from_specs(
         "=== IMPLEMENTATION SPEC ===\n" + impl_text + "\n\n"
         "End of inputs."
     )
-    async with ClaudeSDKClient(
-        options=ClaudeCodeOptions(
-            system_prompt=_default_system_prompt(),
-            cwd=cwd,
-            add_dirs=effective_add_dirs,
-            settings=settings,
-            # Plan mode not supported; emulate read-only by restricting tools.
-            allowed_tools=["Read", "Grep"],
-            permission_mode="default",
-            max_turns=3,
-        )
-    ) as client:
-        await client.query(prompt)
-        plan_output = await _stream_all_messages(client)
-    return plan_output
+
+    options = SessionOptions(
+        system_prompt=_default_system_prompt(),
+        max_turns=3,
+        timeout_seconds=int(os.environ.get("AMPLIFIER_CLAUDE_PLAN_TIMEOUT", "120")),
+        cwd=Path(cwd),
+        add_dirs=[str(path) for path in effective_add_dirs],
+        allowed_tools=["Read", "Grep"],
+        permission_mode="default",
+        settings=settings,
+    )
+
+    async with ClaudeSession(options) as session:
+        try:
+            response = await session.query(prompt)
+        except SDKNotAvailableError as exc:  # pragma: no cover - runtime guard
+            raise RuntimeError(str(exc)) from exc
+
+    if not response.success:
+        raise RuntimeError(response.error or "Claude session returned no plan output")
+
+    metadata = response.metadata or {}
+    return (
+        response.content,
+        metadata.get("session_id"),
+        float(metadata.get("total_cost_usd", 0.0) or 0.0),
+        int(metadata.get("duration_ms", 0) or 0),
+    )
 
 
 async def generate_from_specs(
@@ -111,38 +91,73 @@ async def generate_from_specs(
     cwd: str,
     add_dirs: Sequence[str | Path] | None = None,
     settings: str | None = None,
+    contract_path: Path | None = None,
+    spec_path: Path | None = None,
+    dependency_contracts: dict[str, str] | None = None,
+    extra_context: str | None = None,
 ) -> tuple[str | None, float, int]:
     """Ask Claude to IMPLEMENT the module by creating files in the repo (WRITE-ENABLED)."""
-    _ensure_sdk_available()
-    assert ClaudeSDKClient is not None  # pyright: ignore[reportUnnecessaryComparison]
-    assert ClaudeCodeOptions is not None  # pyright: ignore[reportUnnecessaryComparison]
+    _prepare_claude_env(cwd)
     effective_add_dirs: list[str | Path] = list(add_dirs) if add_dirs is not None else []
+    dependency_text = ""
+    if dependency_contracts:
+        blocks: list[str] = []
+        for dep_name, dep_ref in dependency_contracts.items():
+            blocks.append(f"### DEPENDENCY CONTRACT: {dep_name}\n@{dep_ref}\n")
+        dependency_text = "\n".join(blocks)
+
+    guidance_lines = [
+        "IMPLEMENT the module now. Create all necessary files and tests under the provided repository.",
+        f"Module target directory (relative to repo root): {module_dir_rel}",
+        "Strict rules:",
+        " - Follow the contract exactly.",
+        " - Generate runnable, import-clean Python 3.11 code.",
+        " - Add a README.md documenting the public interface.",
+        " - Emit a runnable sample script when the spec requests it (e.g. scripts/run_<module>_sample.py).",
+        " - When the spec lists paths outside the module directory, create them exactly at the stated locations.",
+        " - Add tests. Keep them fast.",
+        " - Use dependency public APIs exactly as defined in their contracts; do not invent wrapper classes if the contract exposes functions.",
+        " - Use idempotent writes (you may overwrite files in the target dir).",
+        " - Respect project style (ruff/pyright) and Makefile conventions.",
+        "Inputs follow.",
+    ]
+    if extra_context:
+        guidance_lines.append("Failure context from the previous attempt: " + extra_context.strip())
     prompt = (
-        "IMPLEMENT the module now. Create all necessary files and tests under the provided repository.\n"
-        f"Module target directory (relative to repo root): {module_dir_rel}\n"
-        "Strict rules:\n"
-        " - Follow the contract exactly.\n"
-        " - Generate runnable, import-clean Python 3.11 code.\n"
-        " - Add a README.md documenting the public interface.\n"
-        " - Add tests. Keep them fast.\n"
-        " - Use idempotent writes (you may overwrite files in the target dir).\n"
-        " - Respect project style (ruff/pyright) and Makefile conventions.\n\n"
-        "Inputs follow.\n\n"
-        "=== CONTRACT ===\n" + contract_text + "\n\n"
-        "=== IMPLEMENTATION SPEC ===\n" + impl_text + "\n\n"
-        "End of inputs."
+        "\n\n".join(guidance_lines)
+        + "\n\n"
+        + (f"=== CONTRACT (@{contract_path}) ===\n" if contract_path else "=== CONTRACT ===\n")
+        + contract_text
+        + "\n\n"
+        + (f"=== IMPLEMENTATION SPEC (@{spec_path}) ===\n" if spec_path else "=== IMPLEMENTATION SPEC ===\n")
+        + impl_text
+        + "\n\n"
+        + ("=== DEPENDENCY CONTRACTS ===\n" + dependency_text + "\n\n" if dependency_text else "")
+        + "End of inputs."
     )
-    async with ClaudeSDKClient(
-        options=ClaudeCodeOptions(
-            system_prompt=_default_system_prompt(),
-            cwd=cwd,
-            add_dirs=effective_add_dirs,
-            settings=settings,
-            allowed_tools=["Read", "Write", "Edit", "MultiEdit", "Bash"],
-            permission_mode="acceptEdits",  # auto-approve file edits
-            max_turns=40,
-        )
-    ) as client:
-        await client.query(prompt)
-        _, session_id, total_cost, duration_ms = await _stream_all_messages(client)
-    return (session_id, total_cost, duration_ms)
+    options = SessionOptions(
+        system_prompt=_default_system_prompt(),
+        max_turns=40,
+        timeout_seconds=int(os.environ.get("AMPLIFIER_CLAUDE_GENERATE_TIMEOUT", "240")),
+        cwd=Path(cwd),
+        add_dirs=[str(path) for path in effective_add_dirs],
+        allowed_tools=["Read", "Write", "Edit", "MultiEdit", "Bash"],
+        permission_mode="acceptEdits",
+        settings=settings,
+    )
+
+    async with ClaudeSession(options) as session:
+        try:
+            response = await session.query(prompt)
+        except SDKNotAvailableError as exc:  # pragma: no cover - runtime guard
+            raise RuntimeError(str(exc)) from exc
+
+    if not response.success:
+        raise RuntimeError(response.error or "Claude session returned no implementation output")
+
+    metadata = response.metadata or {}
+    return (
+        metadata.get("session_id"),
+        float(metadata.get("total_cost_usd", 0.0) or 0.0),
+        int(metadata.get("duration_ms", 0) or 0),
+    )

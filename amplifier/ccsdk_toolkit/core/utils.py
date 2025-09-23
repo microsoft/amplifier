@@ -59,11 +59,7 @@ def check_claude_cli() -> tuple[bool, str]:
 
 
 async def query_with_retry(
-    func: Callable,
-    *args,
-    max_attempts: int = 3,
-    initial_delay: float = 1.0,
-    **kwargs,
+    func: Callable, *args, max_attempts: int = 3, initial_delay: float = 1.0, timeout_seconds: int = 120, **kwargs
 ) -> Any:
     """Execute an async function with exponential backoff retry.
 
@@ -72,6 +68,7 @@ async def query_with_retry(
         *args: Positional arguments for the function
         max_attempts: Maximum number of retry attempts (default: 3)
         initial_delay: Initial delay between retries in seconds (default: 1.0)
+        timeout_seconds: Timeout for each attempt in seconds (default: 120)
         **kwargs: Keyword arguments for the function
 
     Returns:
@@ -91,10 +88,13 @@ async def query_with_retry(
 
     for attempt in range(max_attempts):
         try:
-            # Execute function directly - trust in natural completion
-            result = await func(*args, **kwargs)
-            return result
+            # Execute with timeout
+            async with asyncio.timeout(timeout_seconds):
+                result = await func(*args, **kwargs)
+                return result
 
+        except TimeoutError:
+            last_error = TimeoutError(f"Operation timed out after {timeout_seconds} seconds")
         except Exception as e:
             last_error = e
 

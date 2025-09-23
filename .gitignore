@@ -60,3 +60,6 @@ ai_working/tmp
 
 # Smoke test runtime logs
 .smoke_test_data/data
+
+# Config for browser-use and other tools that are local to user
+.config/

@@ -4,20 +4,25 @@ This document captures the target decomposition for the module generator so each
 
 ## Microtools
 
-| Module | Responsibility | Inputs | Outputs |
-| --- | --- | --- | --- |
-| `context.py` | Build `GenContext` from CLI inputs and repo inspection | CLI args | `GenContext` dataclass |
-| `planner/template.py` | Produce the canonical plan prompt template | `GenContext`, contract text, spec text | prompt string |
-| `planner/service.py` | Call Claude to obtain a structured plan using the template | prompt string | plan dict + telemetry |
-| `planner/store.py` | Persist/load plan artefacts (`.json`) | plan dict | filesystem artefact |
-| `decomposer/specs.py` | For each plan brick, synthesise or locate contract/spec files | plan brick | `(contract_path, spec_path)` |
-| `executor/recipe.py` | Walk the plan and dispatch brick-level work | plan dict | execution log |
-| `executor/run_submodule.py` | Invoke the generator recursively for a brick | `GenContext`, brick data | success status |
-| `executor/verify.py` | Ensure generated files exist & match plan entries | plan brick | validation result |
-| `sdk/claude.py` | All Claude SDK interactions (plan + generate, with retries) | prompt payloads | text + metadata |
-| `sdk/retry.py` | Retry/backoff + transcript augmentation on parse errors | raw response, error | new prompt instructions |
+| Module                      | Responsibility                                                | Inputs                                 | Outputs                      |
+| --------------------------- | ------------------------------------------------------------- | -------------------------------------- | ---------------------------- |
+| `context.py`                | Build `GenContext` from CLI inputs and repo inspection        | CLI args                               | `GenContext` dataclass       |
+| `planner/template.py`       | Produce the canonical plan prompt template                    | `GenContext`, contract text, spec text | prompt string                |
+| `planner/service.py`        | Call Claude to obtain a structured plan using the template    | prompt string                          | plan dict + telemetry        |
+| `planner/store.py`          | Persist/load plan artifacts (`.json`)                         | plan dict                              | filesystem artefact          |
+| `decomposer/specs.py`       | For each plan brick, synthesise or locate contract/spec files | plan brick                             | `(contract_path, spec_path)` |
+| `executor/recipe.py`        | Walk the plan and dispatch brick-level work                   | plan dict                              | execution log                |
+| `executor/run_submodule.py` | Invoke the generator recursively for a brick                  | `GenContext`, brick data               | success status               |
+| `executor/verify.py`        | Ensure generated files exist & match plan entries             | plan brick                             | validation result            |
+| `sdk/claude.py`             | All Claude SDK interactions (plan + generate) via CCSDK toolkit | prompt payloads                        | text + metadata              |
+| `sdk/retry.py`              | Retry/backoff + transcript augmentation on parse errors       | raw response, error                    | new prompt instructions      |
 
 All public microtools expose simple functions so we can test and script them individually.
+
+> **Claude Code SDK integration**: Both `sdk/claude.py` and `sdk_client.py` now route through
+> `amplifier.ccsdk_toolkit`, which provides hardened session management, timeout handling,
+> and defensive parsing. This keeps our generator aligned with the wider Amplifier tooling
+> philosophy and avoids bespoke SDK wrappers in each project.
 
 ## Orchestration Flow
 
