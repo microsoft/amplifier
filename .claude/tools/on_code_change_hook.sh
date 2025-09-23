@@ -55,30 +55,27 @@ if [[ -n "${TOOL_NAME:-}" ]]; then
     echo "Post-hook for $TOOL_NAME tool"
 fi
 
-# Check if we're editing a file in the claude project dir
-# CLAUDE_PROJECT_DIR is provided by Claude Code and points to the project root
-if [[ -n "${FILE_PATH:-}" ]] && [[ -n "${CLAUDE_PROJECT_DIR:-}" ]] && [[ "$FILE_PATH" == "$CLAUDE_PROJECT_DIR"/* ]]; then
-    # Editing a file in the claude project dir project - always run from project root
+# Determine the starting directory
+# Priority: 1) Directory of edited file, 2) CWD, 3) CLAUDE_PROJECT_DIR, 4) Current directory
+START_DIR=""
+if [[ -n "${FILE_PATH:-}" ]]; then
+    # Use directory of the edited file
+    FILE_DIR=$(dirname "$FILE_PATH" 2>/dev/null || echo "")
+    if [[ -n "$FILE_DIR" ]] && [[ -d "$FILE_DIR" ]]; then
+        START_DIR="$FILE_DIR"
+        echo "Using directory of edited file: $FILE_DIR"
+    fi
+fi
+
+if [[ -z "$START_DIR" ]] && [[ -n "${CWD:-}" ]]; then
+    START_DIR="$CWD"
+    echo "Using CWD: $CWD"
+elif [[ -z "$START_DIR" ]] && [[ -n "${CLAUDE_PROJECT_DIR:-}" ]]; then
     START_DIR="$CLAUDE_PROJECT_DIR"
-    echo "Detected edit in project - will run checks from: $CLAUDE_PROJECT_DIR"
-else
-    # Determine the starting directory for non-claude project dir files
-    # Priority: 1) Directory of edited file, 2) CWD, 3) Current directory
-    START_DIR=""
-    if [[ -n "${FILE_PATH:-}" ]]; then
-        # Use directory of the edited file
-        FILE_DIR=$(dirname "$FILE_PATH" 2>/dev/null || echo "")
-        if [[ -n "$FILE_DIR" ]] && [[ -d "$FILE_DIR" ]]; then
-            START_DIR="$FILE_DIR"
-            echo "Using directory of edited file: $FILE_DIR"
-        fi
-    fi
-    
-    if [[ -z "$START_DIR" ]] && [[ -n "${CWD:-}" ]]; then
-        START_DIR="$CWD"
-    elif [[ -z "$START_DIR" ]]; then
-        START_DIR=$(pwd)
-    fi
+    echo "Using CLAUDE_PROJECT_DIR: $CLAUDE_PROJECT_DIR"
+elif [[ -z "$START_DIR" ]]; then
+    START_DIR=$(pwd)
+    echo "Using current directory: $START_DIR"
 fi
 
 # Function to find project root (looks for .git or Makefile going up the tree)
@@ -131,35 +128,27 @@ setup_worktree_env() {
 cd "$START_DIR"
 
 # Find the project root first
-PROJECT_ROOT=$(find_project_root "$START_DIR")
+PROJECT_ROOT=$(find_project_root "$START_DIR" || echo "")
 
 if [[ -z "$PROJECT_ROOT" ]]; then
-    echo "Error: No project root found (no .git or Makefile)"
-    exit 1
+    echo "Info: No project root found (no .git or Makefile) - skipping make check"
+    exit 0  # Exit successfully - this is not an error condition
 fi
 
 # Set up proper environment for the project (handles worktrees)
 setup_worktree_env "$PROJECT_ROOT"
 
 # Check if there's a local Makefile with 'check' target in START_DIR
-if [[ "$START_DIR" != "$PROJECT_ROOT" ]] && make_target_exists "." "check"; then
+if [[ "$START_DIR" != "$PROJECT_ROOT" ]] && make_target_exists "$START_DIR" "check"; then
     echo "Running 'make check' in directory: $START_DIR"
+    cd "$START_DIR"
     make check
 elif make_target_exists "$PROJECT_ROOT" "check"; then
     echo "Running 'make check' from project root: $PROJECT_ROOT"
     cd "$PROJECT_ROOT"
     make check
 else
-    # Find the project root (may fail, that's OK)
-    PROJECT_ROOT=$(find_project_root "$START_DIR" || echo "")
-    
-    if [[ -n "$PROJECT_ROOT" ]] && make_target_exists "$PROJECT_ROOT" "check"; then
-        echo "Running 'make check' from project root: $PROJECT_ROOT"
-        cd "$PROJECT_ROOT"
-        make check
-    else
-        echo "Info: No Makefile with 'check' target found - skipping make check"
-        exit 0  # Exit successfully to avoid error messages
-    fi
+    echo "Info: No Makefile with 'check' target found - skipping make check"
+    exit 0  # Exit successfully to avoid error messages
 fi
 

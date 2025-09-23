@@ -175,7 +175,7 @@ test: ## Run all tests
 
 smoke-test: ## Run quick smoke tests to verify basic functionality
 	@echo "Running smoke tests..."
-	@PYTHONPATH=. python -m amplifier.smoke_tests
+	@PYTHONPATH=. uv run python -m amplifier.smoke_tests
 	@echo "Smoke tests complete!"
 
 # Git worktree management
