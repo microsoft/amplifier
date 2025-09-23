@@ -1,4 +1,4 @@
-"""Core Claude session implementation with robust error handling and SDK detection."""
+"""Core Claude session implementation with robust error handling."""
 
 import asyncio
 import os
@@ -18,189 +18,6 @@ class SDKNotAvailableError(SessionError):
     """Raised when Claude CLI/SDK is not available."""
 
 
-class MockClaudeClient:
-    """Mock client for when we're already in Claude Code SDK."""
-
-    def __init__(self, options: SessionOptions):
-        self.options = options
-        self.current_prompt = ""
-
-    async def __aenter__(self):
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        pass
-
-    async def query(self, prompt: str):
-        """Store the prompt for mock response generation."""
-        self.current_prompt = prompt
-
-    async def receive_response(self):
-        """Generate a mock response based on the prompt."""
-        # Generate appropriate mock responses for module generation
-        prompt_lower = self.current_prompt.lower()
-
-        if "extract module name" in prompt_lower and "contract" in prompt_lower:
-            # Task: Parse Contract
-            response = '{"module_name": "test_module", "functions": ["process_data"], "description": "A simple test module for data processing"}'
-        elif "design" in prompt_lower and "internal module structure" in prompt_lower:
-            # Task: Design Structure
-            response = '{"structure": "single_file", "dependencies": [], "files": ["core.py", "__init__.py", "README.md", "tests/test_core.py"]}'
-        elif "generate" in prompt_lower and "main implementation" in prompt_lower:
-            # Task: Generate Core Implementation
-            response = '''"""Core implementation for test_module."""
-
-from datetime import datetime
-from typing import Any
-
-
-def process_data(data: dict[str, Any]) -> dict[str, Any]:
-    """Process input data and return results.
-
-    Args:
-        data: Dictionary with data to process
-
-    Returns:
-        Dictionary with processed results
-
-    Raises:
-        ValueError: If input is not a dictionary
-    """
-    if not isinstance(data, dict):
-        raise ValueError("Input must be a dictionary")
-
-    result = data.copy()
-    result["processed"] = True
-    result["timestamp"] = datetime.now().isoformat()
-    return result'''
-        elif "generate data models" in prompt_lower or "generate models" in prompt_lower:
-            # Task: Generate Models - not needed for this simple module
-            response = '{"models_needed": false}'
-        elif "generate comprehensive test" in prompt_lower:
-            # Task: Generate Tests
-            response = '''"""Tests for test_module."""
-
-import pytest
-from datetime import datetime
-from test_module import process_data
-
-
-def test_process_data_success():
-    """Test successful data processing."""
-    input_data = {"key": "value", "number": 42}
-    result = process_data(input_data)
-
-    assert result["processed"] is True
-    assert "timestamp" in result
-    assert result["key"] == "value"
-    assert result["number"] == 42
-
-
-def test_process_data_empty_dict():
-    """Test processing empty dictionary."""
-    result = process_data({})
-
-    assert result["processed"] is True
-    assert "timestamp" in result
-
-
-def test_process_data_invalid_input():
-    """Test that non-dict input raises ValueError."""
-    with pytest.raises(ValueError, match="Input must be a dictionary"):
-        process_data("not a dict")
-
-    with pytest.raises(ValueError):
-        process_data([1, 2, 3])
-
-    with pytest.raises(ValueError):
-        process_data(None)'''
-        elif "__init__.py" in prompt_lower and "public exports" in prompt_lower:
-            # Task: Generate Init File
-            response = '''"""Test module for data processing.
-
-A simple module that provides data processing functionality.
-"""
-
-from .core import process_data
-
-__all__ = ["process_data"]
-
-__version__ = "0.1.0"'''
-        elif "readme" in prompt_lower and "documentation" in prompt_lower:
-            # Task: Generate README
-            response = """# test_module
-
-A simple test module for data processing.
-
-## Purpose
-
-This module provides a simple data processing function that adds metadata to input dictionaries.
-
-## Installation
-
-```bash
-pip install -e .
-```
-
-## Usage
-
-```python
-from test_module import process_data
-
-# Process some data
-input_data = {"key": "value", "count": 10}
-result = process_data(input_data)
-
-print(result)
-# Output: {'key': 'value', 'count': 10, 'processed': True, 'timestamp': '2024-01-01T12:00:00'}
-```
-
-## API Documentation
-
-### `process_data(data: dict) -> dict`
-
-Process input data and return results with added metadata.
-
-**Arguments:**
-- `data`: Dictionary with data to process
-
-**Returns:**
-- Dictionary with processed results including:
-  - All original data
-  - `processed`: Boolean flag set to True
-  - `timestamp`: ISO format timestamp of processing
-
-**Raises:**
-- `ValueError`: If input is not a dictionary
-
-## Testing
-
-Run tests with pytest:
-
-```bash
-cd test_module
-pytest tests/
-```
-
-## License
-
-MIT"""
-        else:
-            # Generic response - shouldn't happen with proper task matching
-            response = "# Generated mock response"
-
-        # Yield a mock message object
-        class MockMessage:
-            def __init__(self, text):
-                self.content = [MockBlock(text)]
-
-        class MockBlock:
-            def __init__(self, text):
-                self.text = text
-
-        yield MockMessage(response)
-
-
 class ClaudeSession:
     """Async context manager for Claude Code SDK sessions.
 
@@ -208,7 +25,6 @@ class ClaudeSession:
     - Prerequisite checking for the claude CLI
     - Automatic retry with exponential backoff
     - Graceful degradation when SDK unavailable
-    - Detection of nested SDK calls with mock fallback
     """
 
     def __init__(self, options: SessionOptions | None = None):
@@ -223,10 +39,6 @@ class ClaudeSession:
 
     def _check_prerequisites(self):
         """Check if claude CLI is installed and accessible."""
-        # Skip CLI check if we're in SDK mode (will use mock)
-        if os.getenv("CLAUDE_CODE_SDK") == "1" or os.getenv("__CLAUDE_CODE__") == "1":
-            return
-
         # Check if claude CLI is available
         claude_path = shutil.which("claude")
         if not claude_path:
@@ -237,9 +49,9 @@ class ClaudeSession:
                 Path("/usr/local/bin/claude"),
             ]
 
-            for location in known_locations:
-                if location.exists():
-                    claude_path = location
+            for loc in known_locations:
+                if loc.exists() and os.access(loc, os.X_OK):
+                    claude_path = str(loc)
                     break
 
             if not claude_path:
@@ -251,13 +63,6 @@ class ClaudeSession:
 
     async def __aenter__(self):
         """Enter async context and initialize SDK client."""
-        # Check if we're already in SDK mode
-        if os.getenv("CLAUDE_CODE_SDK") == "1" or os.getenv("__CLAUDE_CODE__") == "1":
-            # We're already in SDK mode, use mock client
-            print("[INFO] Detected Claude Code SDK environment - using mock mode")
-            self.client = MockClaudeClient(self.options)
-            return self
-
         try:
             # Import SDK only when actually using it
             from claude_code_sdk import ClaudeCodeOptions

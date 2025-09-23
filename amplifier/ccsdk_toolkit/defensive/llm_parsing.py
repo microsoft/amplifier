@@ -140,3 +140,102 @@ def parse_llm_json(
     if verbose:
         logger.debug(f"All JSON parsing attempts failed. Response (first 500 chars): {response[:500]}")
     return default
+
+
+def extract_code_from_response(response: str, language: str = "python") -> str:
+    """
+    Extract code from LLM response, handling various response formats.
+
+    Handles:
+    - Plain code
+    - Markdown-wrapped code blocks
+    - Code with preambles/explanations
+    - Multiple code blocks (returns concatenated)
+
+    Args:
+        response: Raw LLM response text
+        language: Language hint for markdown blocks (default: "python")
+
+    Returns:
+        Extracted code without preambles or markdown formatting
+    """
+    if not response or not isinstance(response, str):
+        return ""
+
+    # First check if the entire response is already clean code
+    # (starts with typical code patterns without preamble)
+    code_start_patterns = [
+        r"^(import |from |def |class |@|#!|'''|\"\"\")",
+        r"^[a-zA-Z_][a-zA-Z0-9_]*\s*=",  # Variable assignment
+    ]
+
+    for pattern in code_start_patterns:
+        if re.match(pattern, response.strip(), re.MULTILINE) and "```" not in response:
+            # Response starts with code and has no markdown wrappers
+            logger.debug("Response appears to be plain code")
+            return response.strip()
+
+    # Extract from markdown blocks
+    markdown_patterns = [
+        rf"```{language}\s*\n(.*?)\n```",
+        r"```\w*\s*\n(.*?)\n```",  # Any language marker
+        r"```\s*\n(.*?)\n```",  # No language marker
+    ]
+
+    extracted_blocks = []
+    for pattern in markdown_patterns:
+        matches = re.findall(pattern, response, re.DOTALL)
+        if matches:
+            extracted_blocks.extend(matches)
+            logger.debug(f"Extracted {len(matches)} code blocks from markdown")
+
+    if extracted_blocks:
+        # Join multiple blocks with double newlines
+        return "\n\n".join(block.strip() for block in extracted_blocks)
+
+    # Look for code after common preambles
+    # This handles cases like "I'll generate the code...\n\n[actual code]"
+    preamble_end_patterns = [
+        # Match preambles that end with a period and newline
+        r"(?:I'll\s+(?:generate|create|write|implement)|Let\s+me\s+(?:generate|create|write|implement)|Here(?:'s|\s+is)\s+(?:the|a)).*?\.\s*\n+",
+        # Match preambles that end with a colon and newline
+        r"(?:I'll\s+(?:generate|create|write|implement)|Let\s+me\s+(?:generate|create|write|implement)|Here(?:'s|\s+is)\s+(?:the|a)).*?:\s*\n+",
+        # Match preambles without punctuation (just newlines)
+        r"(?:I'll\s+(?:generate|create|write|implement)|Let\s+me\s+(?:generate|create|write|implement)|Here(?:'s|\s+is)\s+(?:the|a)).*?\n\n+",
+    ]
+
+    for pattern in preamble_end_patterns:
+        match = re.search(pattern, response, re.IGNORECASE)
+        if match:
+            # Get everything after the preamble
+            code_start = match.end()
+            potential_code = response[code_start:].strip()
+            if potential_code:
+                logger.debug("Extracted code after removing preamble")
+                # Recursively process in case there are markdown blocks after preamble
+                return extract_code_from_response(potential_code, language)
+
+    # Check if there's code starting after any line (more aggressive)
+    lines = response.split("\n")
+    code_started = False
+    code_lines = []
+
+    for line in lines:
+        # Check if this line looks like code
+        if not code_started:
+            for pattern in code_start_patterns:
+                if re.match(pattern, line.strip()):
+                    code_started = True
+                    break
+
+        if code_started:
+            code_lines.append(line)
+
+    if code_lines:
+        logger.debug(f"Extracted {len(code_lines)} lines of apparent code")
+        return "\n".join(code_lines)
+
+    # Last resort: if nothing else worked, return the original
+    # (might be code without typical patterns)
+    logger.warning("Could not identify code structure, returning original response")
+    return response.strip()
