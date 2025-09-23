@@ -64,10 +64,10 @@ ${AMPLIFIER_DATA_DIR}/
 
 ## Environment Variables
 
-| Variable                 | Default | Description                                         |
-| ------------------------ | ------- | --------------------------------------------------- |
-| `AMPLIFIER_DATA_DIR`     | `.data` | Main data directory for all application data        |
-| `AMPLIFIER_CONTENT_DIRS` | `.`     | Comma-separated list of content directories to scan |
+| Variable                 | Default         | Description                                         |
+| ------------------------ | --------------- | --------------------------------------------------- |
+| `AMPLIFIER_DATA_DIR`     | `.data`         | Main data directory for all application data        |
+| `AMPLIFIER_CONTENT_DIRS` | `.data/content` | Comma-separated list of content directories to scan |
 
 ## Path Resolution Rules
 
@@ -109,8 +109,8 @@ data_dir = custom_paths.data_dir
 
 ```bash
 # Set custom paths via environment
-export AMPLIFIER_DATA_DIR="~/amplifier-data"
-export AMPLIFIER_CONTENT_DIRS="~/content,~/more-content"
+export AMPLIFIER_DATA_DIR="~/amplifier"
+export AMPLIFIER_CONTENT_DIRS=".data/content,~/amplifier/content"
 
 # Run application - paths will use these values
 python -m amplifier.main
