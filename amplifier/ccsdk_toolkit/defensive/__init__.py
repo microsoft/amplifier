@@ -6,6 +6,8 @@ These utilities provide defensive programming patterns for reliable
 LLM integration and file I/O operations in cloud-synced environments.
 """
 
+from .code_extraction import extract_code_with_validation
+from .code_extraction import parse_llm_code
 from .file_io import read_json_with_retry
 from .file_io import write_json_with_retry
 from .llm_parsing import parse_llm_json
@@ -15,6 +17,8 @@ from .retry_patterns import retry_with_feedback
 __all__ = [
     # LLM response handling
     "parse_llm_json",
+    "parse_llm_code",
+    "extract_code_with_validation",
     "isolate_prompt",
     "retry_with_feedback",
     # File I/O with cloud sync awareness

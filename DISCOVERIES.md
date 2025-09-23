@@ -2,6 +2,63 @@
 
 This file documents non-obvious problems, solutions, and patterns discovered during development. Make sure these are regularly reviewed and updated, removing outdated entries or those replaced by better practices or code or tools, updating those where the best practice has evolved.
 
+## LLM Code Generation Reliability (2025-01-20)
+
+### Issue
+
+AI tool-builder was getting conversational responses instead of actual Python code during the generation stage, despite explicit prompts saying "Return ONLY the Python code, no markdown blocks or explanations."
+
+### Root Cause
+
+LLMs often respond conversationally even with explicit instructions to output only code. Common issues:
+
+1. **Conversational preambles**: "I'll create...", "Let me implement...", etc.
+2. **Mixed content**: Code wrapped in explanatory text
+3. **Weak prompting**: Single instruction at end of prompt is often ignored
+4. **Context contamination**: System context affecting responses
+
+### Solution
+
+Implemented multi-layered approach in `/amplifier/tools/tool_builder/stages/generation.py`:
+
+```python
+# 1. Enhanced code extraction utility (code_extraction.py)
+code, status = extract_code_with_validation(response)
+
+# 2. Retry with stronger prompts on failure
+if "conversational" in status.lower():
+    prompt = _add_code_only_reminder(prompt, attempt)
+
+# 3. Multiple extraction strategies
+- Markdown block extraction
+- Code start pattern detection
+- Contiguous code block extraction
+- Validation and auto-fixing
+
+# 4. Explicit prompt structure with XML tags
+<instructions>
+You MUST return ONLY Python code...
+</instructions>
+<python_code>
+#!/usr/bin/env python3
+```
+
+### Key Patterns
+
+1. **Defense in depth**: Multiple extraction methods, not relying on one
+2. **Progressive prompting**: Start gentle, get more explicit with retries
+3. **Code validation**: Always validate extracted text is valid Python
+4. **Clear delimiters**: Use XML tags and markers for clarity
+5. **Fallback generation**: Final attempt with minimal, direct prompt
+
+### Prevention
+
+- Use `extract_code_with_validation()` for all code generation tasks
+- Structure prompts with clear sections and delimiters
+- Include example of expected output format in prompt
+- Implement retry logic with progressive prompt strengthening
+- Test generation works before assuming test generation pattern applies
+
 ## OneDrive/Cloud Sync File I/O Errors (2025-01-21)
 
 ### Issue
