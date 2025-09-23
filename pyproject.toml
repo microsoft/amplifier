@@ -9,6 +9,7 @@ dependencies = [
     "langchain>=0.2.1",
     "langchain-openai>=0.3.28",
     "networkx>=3.5",
+    "pydantic-ai>=1.0.10",
     "pydantic-settings>=2.10.1",
     "python-dotenv>=1.1.1",
     "pyvis>=0.3.2",
