@@ -1,8 +1,12 @@
 """Core Claude session implementation with robust error handling."""
 
+from __future__ import annotations
+
 import asyncio
 import os
 import shutil
+from collections.abc import Callable
+from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
@@ -28,138 +32,271 @@ class ClaudeSession:
     """
 
     def __init__(self, options: SessionOptions | None = None):
-        """Initialize session with options.
+        """Initialize session with options."""
 
-        Args:
-            options: Session configuration options
-        """
         self.options = options or SessionOptions()
         self.client = None
         self._check_prerequisites()
 
-    def _check_prerequisites(self):
+    def _check_prerequisites(self) -> None:
         """Check if claude CLI is installed and accessible."""
-        # Check if claude CLI is available
+
         claude_path = shutil.which("claude")
-        if not claude_path:
-            # Check common installation locations
-            known_locations = [
-                Path.home() / ".local/share/reflex/bun/bin/claude",
-                Path.home() / ".npm-global/bin/claude",
-                Path("/usr/local/bin/claude"),
-            ]
+        if claude_path:
+            return
 
-            for loc in known_locations:
-                if loc.exists() and os.access(loc, os.X_OK):
-                    claude_path = str(loc)
-                    break
+        known_locations = [
+            Path.home() / ".local/share/reflex/bun/bin/claude",
+            Path.home() / ".npm-global/bin/claude",
+            Path("/usr/local/bin/claude"),
+        ]
 
-            if not claude_path:
-                raise SDKNotAvailableError(
-                    "Claude CLI not found. Install with one of:\n"
-                    "  - npm install -g @anthropic-ai/claude-code\n"
-                    "  - bun install -g @anthropic-ai/claude-code"
-                )
+        for loc in known_locations:
+            if loc.exists() and os.access(loc, os.X_OK):
+                return
 
-    async def __aenter__(self):
+        raise SDKNotAvailableError(
+            "Claude CLI not found. Install with one of:\n"
+            "  - npm install -g @anthropic-ai/claude-code\n"
+            "  - bun install -g @anthropic-ai/claude-code"
+        )
+
+    async def __aenter__(self) -> ClaudeSession:
         """Enter async context and initialize SDK client."""
+
         try:
-            # Import SDK only when actually using it
             from claude_code_sdk import ClaudeCodeOptions
             from claude_code_sdk import ClaudeSDKClient
-
-            self.client = ClaudeSDKClient(
-                options=ClaudeCodeOptions(
-                    system_prompt=self.options.system_prompt,
-                    max_turns=self.options.max_turns,
-                )
-            )
-            await self.client.__aenter__()
-            return self
-
-        except ImportError:
+        except ImportError as exc:  # pragma: no cover - exercised in environments without SDK
             raise SDKNotAvailableError(
                 "claude_code_sdk Python package not installed. Install with: pip install claude-code-sdk"
-            )
+            ) from exc
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        option_kwargs: dict[str, Any] = {
+            "system_prompt": self.options.system_prompt,
+            "permission_mode": self.options.permission_mode,
+        }
+
+        if self.options.max_turns is not None:
+            option_kwargs["max_turns"] = self.options.max_turns
+
+        allowed_tools = list(self.options.allowed_tools)
+        if allowed_tools:
+            option_kwargs["allowed_tools"] = allowed_tools
+
+        if self.options.cwd:
+            option_kwargs["cwd"] = str(self.options.cwd)
+
+        if self.options.add_dirs:
+            option_kwargs["add_dirs"] = [str(path) for path in self.options.add_dirs]
+
+        if self.options.settings_path:
+            option_kwargs["settings"] = str(self.options.settings_path)
+
+        self.client = ClaudeSDKClient(options=ClaudeCodeOptions(**option_kwargs))
+        await self.client.__aenter__()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         """Exit async context and cleanup."""
+
         if self.client:
             await self.client.__aexit__(exc_type, exc_val, exc_tb)
 
-    async def query(self, prompt: str, stream: bool | None = None) -> SessionResponse:
-        """Send a query to Claude with automatic retry.
+    async def query(
+        self,
+        prompt: str,
+        *,
+        stream: bool | None = None,
+        message_callback: Callable[[dict[str, Any]], None] | None = None,
+        todo_callback: Callable[[list[dict[str, Any]]], None] | None = None,
+    ) -> SessionResponse:
+        """Send a query to Claude with automatic retry."""
 
-        Args:
-            prompt: The prompt to send to Claude
-            stream: Override the session's stream_output setting
-
-        Returns:
-            SessionResponse with the result or error
-        """
         if not self.client:
             return SessionResponse(error="Session not initialized. Use 'async with' context.")
 
         retry_delay = self.options.retry_delay
-        last_error = None
+        last_error: str | Exception | None = None
 
         for attempt in range(self.options.retry_attempts):
             try:
-                # Execute query directly
-                assert self.client is not None  # Type guard for pyright
                 await self.client.query(prompt)
 
-                # Collect response with streaming support
-                response_text = ""
+                response_segments: list[str] = []
+                messages: list[dict[str, Any]] = []
+                todos: list[dict[str, Any]] = []
+                usage: dict[str, Any] | None = None
+                session_id: str | None = None
                 metadata: dict[str, Any] = {"attempt": attempt + 1}
 
-                async for message in self.client.receive_response():
-                    if hasattr(message, "content"):
-                        content = getattr(message, "content", [])
-                        if isinstance(content, list):
-                            for block in content:
-                                if hasattr(block, "text"):
-                                    text = getattr(block, "text", "")
-                                    if text:
-                                        response_text += text
+                async for raw_message in self.client.receive_response():
+                    normalized = _normalize_message(raw_message)
+                    messages.append(normalized)
 
-                                        # Stream output if enabled
-                                        should_stream = stream if stream is not None else self.options.stream_output
-                                        if should_stream:
-                                            print(text, end="", flush=True)
+                    if message_callback:
+                        message_callback(normalized)
 
-                                        # Call progress callback if provided
-                                        if self.options.progress_callback:
-                                            self.options.progress_callback(text)
+                    segments = _extract_text(normalized)
+                    if segments:
+                        response_segments.extend(segments)
+                        should_stream = stream if stream is not None else self.options.stream_output
+                        for segment in segments:
+                            if should_stream:
+                                print(segment, end="", flush=True)
+                            if self.options.progress_callback:
+                                self.options.progress_callback(segment)
 
-                    # Collect metadata from ResultMessage if available
-                    if hasattr(message, "__class__") and message.__class__.__name__ == "ResultMessage":
-                        if hasattr(message, "session_id"):
-                            metadata["session_id"] = getattr(message, "session_id", None)
-                        if hasattr(message, "total_cost_usd"):
-                            metadata["total_cost_usd"] = getattr(message, "total_cost_usd", 0.0)
-                        if hasattr(message, "duration_ms"):
-                            metadata["duration_ms"] = getattr(message, "duration_ms", 0)
+                    extracted_todos = _extract_todos(normalized)
+                    if extracted_todos:
+                        todos = extracted_todos
+                        if todo_callback:
+                            todo_callback(extracted_todos)
 
-                # Add newline after streaming if enabled
+                    usage_block = normalized.get("usage")
+                    if isinstance(usage_block, dict):
+                        usage = usage_block
+
+                    if normalized.get("session_id"):
+                        session_id = str(normalized["session_id"])
+                        metadata["session_id"] = session_id
+
+                    if normalized.get("total_cost_usd") is not None:
+                        metadata["total_cost_usd"] = normalized.get("total_cost_usd")
+                    if normalized.get("duration_ms") is not None:
+                        metadata["duration_ms"] = normalized.get("duration_ms")
+
                 should_stream = stream if stream is not None else self.options.stream_output
-                if should_stream and response_text:
-                    print()  # Final newline after streaming
+                if should_stream and response_segments:
+                    print()
 
-                if response_text:
-                    return SessionResponse(content=response_text, metadata=metadata)
+                if response_segments:
+                    content = "\n".join(response_segments).strip()
+                    return SessionResponse(
+                        content=content,
+                        metadata=metadata,
+                        todos=todos,
+                        usage=usage,
+                        session_id=session_id,
+                        messages=messages,
+                    )
 
-                # Empty response, will retry
                 raise ValueError("Received empty response from SDK")
-            except ValueError as e:
-                last_error = str(e)
-            except Exception as e:
-                last_error = str(e)
 
-            # Wait before retry (except on last attempt)
+            except ValueError as exc:
+                last_error = str(exc)
+            except Exception as exc:  # pragma: no cover - network failures are environment specific
+                last_error = exc
+
             if attempt < self.options.retry_attempts - 1:
                 await asyncio.sleep(retry_delay)
-                retry_delay *= 2  # Exponential backoff
+                retry_delay *= 2
 
-        # All retries exhausted
         return SessionResponse(error=f"Failed after {self.options.retry_attempts} attempts: {last_error}")
+
+
+def _normalize_message(message: Any) -> dict[str, Any]:
+    """Convert SDK message objects into plain dictionaries."""
+
+    if isinstance(message, dict):
+        normalized = dict(message)
+    else:
+        normalized = {}
+        for attribute in [
+            "type",
+            "content",
+            "name",
+            "input",
+            "usage",
+            "id",
+            "result",
+            "text",
+            "session_id",
+            "total_cost_usd",
+            "duration_ms",
+        ]:
+            if hasattr(message, attribute):
+                normalized[attribute] = getattr(message, attribute)
+
+        if hasattr(message, "__dict__"):
+            normalized.update({k: v for k, v in vars(message).items() if k not in normalized})
+
+        if hasattr(message, "to_dict"):
+            with suppress(Exception):  # pragma: no cover - defensive to avoid masking main failures
+                normalized = {**message.to_dict(), **normalized}
+
+    content = normalized.get("content")
+    if isinstance(content, list):
+        normalized["content"] = [_coerce_block(block) for block in content]
+    else:
+        normalized["content"] = []
+
+    return normalized
+
+
+def _coerce_block(block: Any) -> dict[str, Any]:
+    """Ensure individual content blocks are dictionaries."""
+
+    if isinstance(block, dict):
+        return block
+
+    block_dict: dict[str, Any] = {}
+    for attr in ("type", "text", "id", "language", "data", "name", "tool_use_id"):
+        if hasattr(block, attr):
+            value = getattr(block, attr)
+            if value is not None:
+                block_dict[attr] = value
+
+    if not block_dict and hasattr(block, "__dict__"):
+        block_dict = dict(vars(block))
+
+    return block_dict
+
+
+def _extract_text(message: dict[str, Any]) -> list[str]:
+    """Extract plain text segments from a normalized message."""
+
+    segments: list[str] = []
+
+    for block in message.get("content", []):
+        if isinstance(block, dict):
+            if block.get("tool_use_id"):
+                continue
+            text_value = block.get("text")
+            if isinstance(text_value, str):
+                stripped = text_value.strip()
+                if stripped:
+                    segments.append(stripped)
+        elif isinstance(block, str):
+            stripped = block.strip()
+            if stripped:
+                segments.append(stripped)
+
+    inline_text = message.get("text")
+    if isinstance(inline_text, str):
+        stripped = inline_text.strip()
+        if stripped:
+            segments.append(stripped)
+
+    result = message.get("result")
+    if isinstance(result, dict):
+        for key in ("text", "output_text"):
+            value = result.get(key)
+            if isinstance(value, str):
+                stripped = value.strip()
+                if stripped:
+                    segments.append(stripped)
+
+    return segments
+
+
+def _extract_todos(message: dict[str, Any]) -> list[dict[str, Any]]:
+    """Extract TodoWrite payloads from a message if present."""
+
+    if message.get("type") == "tool_use" and message.get("name") == "TodoWrite":
+        tool_input = message.get("input")
+        if isinstance(tool_input, dict):
+            todos = tool_input.get("todos")
+            if isinstance(todos, list):
+                return todos
+    return []

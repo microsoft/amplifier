@@ -9,20 +9,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from amplifier.ccsdk_toolkit import ClaudeSession
+from amplifier.ccsdk_toolkit import SessionError
+from amplifier.ccsdk_toolkit import SessionOptions
+
 from .models import ClaudeSessionResult
 from .models import PermissionMode
 
 logger = logging.getLogger(__name__)
-
-try:  # pragma: no cover - import guard exercised in tests
-    from claude_code_sdk import ClaudeCodeOptions
-    from claude_code_sdk import ClaudeSDKClient
-
-    CLAUDE_SDK_AVAILABLE = True
-except Exception:  # pragma: no cover - ensures graceful fallback when SDK missing
-    ClaudeCodeOptions = None  # type: ignore
-    ClaudeSDKClient = None  # type: ignore
-    CLAUDE_SDK_AVAILABLE = False
 
 
 def _preview(value: str | None, limit: int = 200) -> str:
@@ -111,23 +105,20 @@ class ClaudeSessionManager:
     ) -> ClaudeSessionResult:
         """Execute a single-turn conversation and collect structured output."""
 
-        if not CLAUDE_SDK_AVAILABLE or ClaudeSDKClient is None or ClaudeCodeOptions is None:
-            raise ClaudeUnavailableError(
-                "Claude Code SDK is required for module generation. Install `claude-code-sdk` and the `@anthropic-ai/claude-code` CLI."
-            )
-
         callbacks = callbacks or SessionCallbacks()
-        context_dirs = set(add_dirs or [])
-        context_dirs.add(self.repo_root)
+        context_dirs = {str(Path(self.repo_root).resolve())}
+        for extra in add_dirs or []:
+            context_dirs.add(str(Path(extra).resolve()))
+
         settings_path = Path(self.repo_root) / ".claude" / "settings.json"
 
-        options = ClaudeCodeOptions(
+        options = SessionOptions(
             system_prompt=system_prompt,
             permission_mode=permission_mode,
             allowed_tools=list(allowed_tools),
-            cwd=self.repo_root,
-            add_dirs=list(context_dirs),
-            settings=str(settings_path) if settings_path.exists() else None,
+            cwd=Path(self.repo_root),
+            add_dirs=[Path(path) for path in context_dirs],
+            settings_path=settings_path if settings_path.exists() else None,
             max_turns=max_turns,
         )
 
@@ -135,97 +126,55 @@ class ClaudeSessionManager:
         logger.debug("System prompt (first 200 chars): %s", _preview(system_prompt))
         logger.debug("User prompt (first 200 chars): %s", _preview(prompt))
 
-        async with ClaudeSDKClient(options=options) as client:  # type: ignore[arg-type]
-            session_id = getattr(client, "session_id", None)
-            await client.query(prompt)
+        collected_messages: list[dict[str, Any]] = []
+        todos_holder: list[dict[str, Any]] = []
 
-            logger.debug("Claude session %s awaiting response", session_id)
-            text_parts: list[str] = []
-            todos: list[dict] = []
-            usage: dict | None = None
+        def handle_message(message: dict[str, Any]) -> None:
+            collected_messages.append(message)
+            logger.debug("%s", _describe_message(message))
+            if callbacks.on_message:
+                callbacks.on_message(message)
 
-            async for message in client.receive_response():
-                normalized = _normalize_message(message)
-                logger.debug("%s", _describe_message(normalized))
-                if callbacks.on_message:
-                    callbacks.on_message(normalized)
+        def handle_todos(todos: list[dict[str, Any]]) -> None:
+            todos_holder.clear()
+            todos_holder.extend(todos)
+            if callbacks.on_todo:
+                callbacks.on_todo(todos)
 
-                if normalized.get("type") == "tool_use" and normalized.get("name") == "TodoWrite":
-                    todos = normalized.get("input", {}).get("todos", [])
-                    if callbacks.on_todo:
-                        callbacks.on_todo(todos)
-
-                for segment in _extract_text(normalized):
-                    if segment:
-                        text_parts.append(segment)
-
-                if "usage" in normalized and normalized["usage"]:
-                    usage = normalized["usage"]
-
-            output_lines = [segment for segment in text_parts if segment]
-            output_text = "\n".join(output_lines).strip()
-
-            if not output_lines and not todos and usage is None:
-                raise RuntimeError("Claude session ended without producing output")
-
-            logger.debug("Claude session %s completed with %s characters", session_id, len(output_text))
-
-            return ClaudeSessionResult(text=output_text, todos=todos, usage=usage, session_id=session_id)
-
-
-def _normalize_message(message: Any) -> dict[str, Any]:
-    """Convert SDK message objects into plain dictionaries for easier handling."""
-
-    if isinstance(message, dict):
-        return message
-
-    normalized: dict[str, Any] = {}
-
-    for attribute in ["type", "content", "name", "input", "usage", "id", "result", "text"]:
-        if hasattr(message, attribute):
-            normalized[attribute] = getattr(message, attribute)
-
-    if hasattr(message, "__dict__"):
-        for key, value in vars(message).items():
-            normalized.setdefault(key, value)
-
-    if hasattr(message, "to_dict"):
         try:
-            normalized = {**message.to_dict(), **normalized}
-        except Exception:  # pragma: no cover - defensive; if to_dict fails we keep current data
-            logger.debug("Failed to coerce message via to_dict()", exc_info=True)
+            async with ClaudeSession(options) as session:
+                response = await session.query(
+                    prompt,
+                    message_callback=handle_message,
+                    todo_callback=handle_todos,
+                )
+        except SessionError as exc:  # pragma: no cover - depends on external CLI availability
+            raise ClaudeUnavailableError(
+                "Claude Code SDK is required for module generation. Install `claude-code-sdk` and the `@anthropic-ai/claude-code` CLI."
+            ) from exc
 
-    content = normalized.get("content")
-    if isinstance(content, list):
-        normalized["content"] = [_coerce_block(block) for block in content]
-    else:
-        normalized["content"] = []
+        if not response.success:
+            raise RuntimeError(response.error or "Claude session returned no output")
 
-    return normalized
+        logger.debug(
+            "Claude session %s completed with %s characters",
+            response.session_id,
+            len(response.content),
+        )
 
+        todos = response.todos or todos_holder
 
-def _coerce_block(block: Any) -> dict[str, Any]:
-    """Convert Claude SDK content blocks to plain dictionaries."""
-
-    if isinstance(block, dict):
-        return block
-
-    block_dict: dict[str, Any] = {}
-
-    for attr in ("type", "text", "id", "language", "data", "name"):
-        if hasattr(block, attr):
-            value = getattr(block, attr)
-            if value is not None:
-                block_dict[attr] = value
-
-    if not block_dict and hasattr(block, "__dict__"):
-        block_dict = dict(vars(block))
-
-    return block_dict
+        return ClaudeSessionResult(
+            text=response.content.strip(),
+            todos=todos,
+            usage=response.usage,
+            session_id=response.session_id,
+        )
 
 
 def _extract_text(normalized: dict[str, Any]) -> list[str]:
     """Extract plaintext segments from normalized Claude messages."""
+
     texts: list[str] = []
 
     content = normalized.get("content")
@@ -236,19 +185,27 @@ def _extract_text(normalized: dict[str, Any]) -> list[str]:
                     continue
                 text_value = block.get("text")
                 if isinstance(text_value, str):
-                    texts.append(text_value.strip())
+                    stripped = text_value.strip()
+                    if stripped:
+                        texts.append(stripped)
             elif isinstance(block, str):
-                texts.append(block.strip())
+                stripped = block.strip()
+                if stripped:
+                    texts.append(stripped)
 
     result = normalized.get("result")
     if isinstance(result, dict):
         for key in ("text", "output_text"):
             value = result.get(key)
             if isinstance(value, str):
-                texts.append(value.strip())
+                stripped = value.strip()
+                if stripped:
+                    texts.append(stripped)
 
     inline_text = normalized.get("text")
     if isinstance(inline_text, str):
-        texts.append(inline_text.strip())
+        stripped = inline_text.strip()
+        if stripped:
+            texts.append(stripped)
 
     return [segment for segment in texts if segment]
