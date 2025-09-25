@@ -41,8 +41,9 @@ def cli(ctx: Context, version: bool, debug: bool, project_dir: str | None) -> No
 
     # If no subcommand, launch Claude (default behavior)
     if ctx.invoked_subcommand is None:
-        from amplifier.claude_launcher import launch_claude
         from pathlib import Path
+
+        from amplifier.claude_launcher import launch_claude
 
         # Use provided directory or current directory
         target_dir = Path(project_dir) if project_dir else Path.cwd()

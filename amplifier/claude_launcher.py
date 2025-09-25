@@ -165,7 +165,8 @@ def main() -> None:
     try:
         # Convert string to Path if provided
         path_obj = Path(project_dir) if project_dir else None
-        launch_claude(path_obj, extra_args)
+        result = launch_claude(path_obj, extra_args)
+        sys.exit(result)
     except RuntimeError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)

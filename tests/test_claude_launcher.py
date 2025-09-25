@@ -201,9 +201,28 @@ class TestCLIIntegration:
     def test_claude_command_help_examples(self):
         """Test that help text includes usage examples."""
         result = subprocess.run(["amplifier", "claude", "--help"], capture_output=True, text=True)
-        assert "amplifier claude" in result.stdout
-        assert "~/myproject" in result.stdout
+        assert "claude" in result.stdout
+        assert "Launch Claude with Amplifier context" in result.stdout
         assert "Examples:" in result.stdout
+
+    @patch("amplifier.claude_launcher.launch_claude")
+    def test_cli_default_behavior(self, mock_launch):
+        """Test that CLI launches Claude by default when no subcommand provided."""
+        from click.testing import CliRunner
+
+        from amplifier.cli import cli
+
+        mock_launch.return_value = 0
+        runner = CliRunner()
+
+        # Test with no arguments - should launch Claude in current dir
+        runner.invoke(cli, [])
+        mock_launch.assert_called_with(Path.cwd())
+
+        # Test with project directory - should launch Claude in that dir
+        mock_launch.reset_mock()
+        runner.invoke(cli, ["/tmp/project"])
+        mock_launch.assert_called_with(Path("/tmp/project"))
 
 
 class TestBackwardCompatibility:
@@ -250,6 +269,79 @@ class TestErrorHandling:
         with pytest.raises(SystemExit) as exc_info:
             launch_claude()
         assert exc_info.value.code == 0
+
+
+class TestMainEntryPoint:
+    """Test the main() function entry point."""
+
+    @patch("amplifier.claude_launcher.launch_claude")
+    @patch("sys.argv", ["amplifier"])
+    def test_main_no_args(self, mock_launch):
+        """Test main() with no arguments."""
+        from amplifier.claude_launcher import main
+
+        mock_launch.return_value = 0
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+
+        mock_launch.assert_called_once_with(None, [])
+        assert exc_info.value.code == 0
+
+    @patch("amplifier.claude_launcher.launch_claude")
+    @patch("sys.argv", ["amplifier", "/path/to/project"])
+    def test_main_with_project_dir(self, mock_launch):
+        """Test main() with project directory argument."""
+        from amplifier.claude_launcher import main
+
+        mock_launch.return_value = 0
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+
+        mock_launch.assert_called_once_with(Path("/path/to/project"), [])
+        assert exc_info.value.code == 0
+
+    @patch("amplifier.claude_launcher.launch_claude")
+    @patch("sys.argv", ["amplifier", "/path/to/project", "--model", "sonnet"])
+    def test_main_with_extra_args(self, mock_launch):
+        """Test main() with project directory and extra arguments."""
+        from amplifier.claude_launcher import main
+
+        mock_launch.return_value = 0
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+
+        mock_launch.assert_called_once_with(Path("/path/to/project"), ["--model", "sonnet"])
+        assert exc_info.value.code == 0
+
+    @patch("amplifier.claude_launcher.launch_claude")
+    @patch("sys.argv", ["amplifier", "--help"])
+    def test_main_with_help_flag(self, mock_launch):
+        """Test main() with --help flag (no project dir)."""
+        from amplifier.claude_launcher import main
+
+        mock_launch.return_value = 0
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+
+        mock_launch.assert_called_once_with(None, ["--help"])
+        assert exc_info.value.code == 0
+
+    @patch("amplifier.claude_launcher.launch_claude")
+    @patch("sys.argv", ["amplifier"])
+    def test_main_with_launch_error(self, mock_launch):
+        """Test main() when launch_claude raises an exception."""
+        from amplifier.claude_launcher import main
+
+        mock_launch.side_effect = RuntimeError("Test error")
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+
+        assert exc_info.value.code == 1
 
 
 if __name__ == "__main__":
