@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Substack Knowledge Constellation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #24243e 50%, #0f0c29 100%);
+            color: #fff;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        #canvas:active {
+            cursor: grabbing;
+        }
+
+        .controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(36, 36, 62, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 350px;
+            z-index: 100;
+        }
+
+        .controls h1 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .filter-section {
+            margin-bottom: 15px;
+        }
+
+        .filter-section h3 {
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            color: #a0a0ff;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .filter-btn {
+            padding: 8px 12px;
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.85rem;
+        }
+
+        .filter-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: rgba(102, 126, 234, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .filter-btn.active {
+            background: rgba(102, 126, 234, 0.4);
+            border-color: rgba(102, 126, 234, 0.8);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            margin-bottom: 15px;
+        }
+
+        .search-box::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .tooltip {
+            position: fixed;
+            background: rgba(36, 36, 62, 0.95);
+            padding: 15px;
+            border-radius: 10px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            max-width: 400px;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+        }
+
+        .tooltip.visible {
+            opacity: 1;
+        }
+
+        .tooltip h3 {
+            margin-bottom: 8px;
+            color: #667eea;
+        }
+
+        .tooltip p {
+            font-size: 0.9rem;
+            line-height: 1.4;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .stats {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(36, 36, 62, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+        }
+
+        .legend {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(36, 36, 62, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.85rem;
+        }
+
+        .legend-item {
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div class="controls">
+        <h1>Knowledge Constellation</h1>
+
+        <input type="text" class="search-box" placeholder="Search concepts, insights, articles..." id="searchBox">
+
+        <div class="filter-section">
+            <h3>View Mode</h3>
+            <div class="filter-grid">
+                <button class="filter-btn active" data-view="all">All</button>
+                <button class="filter-btn" data-view="concepts">Concepts</button>
+                <button class="filter-btn" data-view="insights">Insights</button>
+                <button class="filter-btn" data-view="connections">Connections</button>
+            </div>
+        </div>
+
+        <div class="filter-section">
+            <h3>Articles</h3>
+            <div class="filter-grid" id="articleFilters"></div>
+        </div>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-dot" style="background: #667eea;"></div>
+            <span>Concepts</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background: #f093fb;"></div>
+            <span>Insights</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background: #4facfe;"></div>
+            <span>Articles</span>
+        </div>
+    </div>
+
+    <div class="stats" id="stats">
+        Loading...
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <div class="loading" id="loading">Loading knowledge graph...</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const tooltip = document.getElementById('tooltip');
+        const searchBox = document.getElementById('searchBox');
+        const statsDiv = document.getElementById('stats');
+        const loadingDiv = document.getElementById('loading');
+
+        let nodes = [];
+        let edges = [];
+        let data = null;
+        let viewMode = 'all';
+        let selectedArticles = new Set();
+        let searchTerm = '';
+        let mouseX = 0;
+        let mouseY = 0;
+        let isDragging = false;
+        let dragStart = { x: 0, y: 0 };
+        let cameraOffset = { x: 0, y: 0 };
+        let zoom = 1;
+
+        // Resize canvas
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Load data
+        async function loadData() {
+            try {
+                const response = await fetch('data/substack_knowledge_graph.json');
+                data = await response.json();
+                initializeVisualization();
+                loadingDiv.style.display = 'none';
+            } catch (error) {
+                console.error('Error loading data:', error);
+                loadingDiv.textContent = 'Error loading data';
+            }
+        }
+
+        // Initialize visualization
+        function initializeVisualization() {
+            // Create article filters
+            const articleFilters = document.getElementById('articleFilters');
+            data.articles.slice(0, 8).forEach(article => {
+                const btn = document.createElement('button');
+                btn.className = 'filter-btn';
+                btn.dataset.article = article.id;
+                btn.textContent = article.title.split(' ').slice(0, 3).join(' ');
+                btn.onclick = () => toggleArticleFilter(article.id, btn);
+                articleFilters.appendChild(btn);
+            });
+
+            // Create nodes
+            createNodes();
+
+            // Update stats
+            updateStats();
+
+            // Start animation
+            animate();
+        }
+
+        // Create nodes from data
+        function createNodes() {
+            nodes = [];
+            edges = [];
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            // Add concept nodes
+            data.concepts.forEach((concept, i) => {
+                const angle = (i / data.concepts.length) * Math.PI * 2;
+                const radius = 200 + Math.random() * 200;
+
+                nodes.push({
+                    id: `concept-${i}`,
+                    type: 'concept',
+                    x: centerX + Math.cos(angle) * radius,
+                    y: centerY + Math.sin(angle) * radius,
+                    vx: 0,
+                    vy: 0,
+                    size: 5 + concept.count * 3,
+                    data: concept,
+                    color: '#667eea'
+                });
+            });
+
+            // Add insight nodes
+            data.insights.forEach((insight, i) => {
+                const angle = (i / data.insights.length) * Math.PI * 2;
+                const radius = 350 + Math.random() * 150;
+
+                nodes.push({
+                    id: `insight-${i}`,
+                    type: 'insight',
+                    x: centerX + Math.cos(angle) * radius,
+                    y: centerY + Math.sin(angle) * radius,
+                    vx: 0,
+                    vy: 0,
+                    size: 4,
+                    data: insight,
+                    color: '#f093fb'
+                });
+            });
+
+            // Add relationships as edges
+            data.relationships.forEach(rel => {
+                const sourceNode = nodes.find(n => n.type === 'concept' && n.data.name === rel.source);
+                const targetNode = nodes.find(n => n.type === 'concept' && n.data.name === rel.target);
+
+                if (sourceNode && targetNode) {
+                    edges.push({
+                        source: sourceNode,
+                        target: targetNode,
+                        strength: rel.strength,
+                        type: rel.type
+                    });
+                }
+            });
+
+            // Connect insights to concepts
+            nodes.filter(n => n.type === 'insight').forEach(insightNode => {
+                insightNode.data.concepts.forEach(conceptName => {
+                    const conceptNode = nodes.find(n =>
+                        n.type === 'concept' && n.data.name === conceptName
+                    );
+
+                    if (conceptNode) {
+                        edges.push({
+                            source: insightNode,
+                            target: conceptNode,
+                            strength: 0.3,
+                            type: 'related'
+                        });
+                    }
+                });
+            });
+        }
+
+        // Physics simulation
+        function updatePhysics() {
+            const damping = 0.95;
+            const repulsion = 50;
+            const attraction = 0.001;
+
+            // Apply forces
+            for (let i = 0; i < nodes.length; i++) {
+                const node1 = nodes[i];
+
+                // Apply repulsion between nodes
+                for (let j = i + 1; j < nodes.length; j++) {
+                    const node2 = nodes[j];
+                    const dx = node2.x - node1.x;
+                    const dy = node2.y - node1.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist > 0 && dist < 200) {
+                        const force = repulsion / (dist * dist);
+                        node1.vx -= dx * force;
+                        node1.vy -= dy * force;
+                        node2.vx += dx * force;
+                        node2.vy += dy * force;
+                    }
+                }
+
+                // Apply attraction to center
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                node1.vx += (centerX - node1.x) * attraction;
+                node1.vy += (centerY - node1.y) * attraction;
+
+                // Update position
+                node1.vx *= damping;
+                node1.vy *= damping;
+                node1.x += node1.vx;
+                node1.y += node1.vy;
+            }
+        }
+
+        // Draw function
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            ctx.translate(cameraOffset.x, cameraOffset.y);
+            ctx.scale(zoom, zoom);
+
+            // Filter nodes based on view mode and search
+            const visibleNodes = nodes.filter(node => {
+                if (viewMode !== 'all') {
+                    if (viewMode === 'concepts' && node.type !== 'concept') return false;
+                    if (viewMode === 'insights' && node.type !== 'insight') return false;
+                }
+
+                if (selectedArticles.size > 0) {
+                    if (node.type === 'concept') {
+                        const hasArticle = node.data.articles.some(a => selectedArticles.has(a));
+                        if (!hasArticle) return false;
+                    }
+                    if (node.type === 'insight') {
+                        if (!selectedArticles.has(node.data.article)) return false;
+                    }
+                }
+
+                if (searchTerm) {
+                    const term = searchTerm.toLowerCase();
+                    if (node.type === 'concept') {
+                        return node.data.name.toLowerCase().includes(term) ||
+                               node.data.description.toLowerCase().includes(term);
+                    }
+                    if (node.type === 'insight') {
+                        return node.data.text.toLowerCase().includes(term);
+                    }
+                }
+
+                return true;
+            });
+
+            // Draw edges
+            if (viewMode === 'all' || viewMode === 'connections') {
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.lineWidth = 1;
+
+                edges.forEach(edge => {
+                    if (visibleNodes.includes(edge.source) && visibleNodes.includes(edge.target)) {
+                        ctx.beginPath();
+                        ctx.moveTo(edge.source.x, edge.source.y);
+                        ctx.lineTo(edge.target.x, edge.target.y);
+                        ctx.globalAlpha = edge.strength * 0.3;
+                        ctx.stroke();
+                    }
+                });
+
+                ctx.globalAlpha = 1;
+            }
+
+            // Draw nodes
+            visibleNodes.forEach(node => {
+                // Draw node
+                ctx.fillStyle = node.color;
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, node.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Add glow effect
+                const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, node.size * 3);
+                gradient.addColorStop(0, node.color + '40');
+                gradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, node.size * 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw label for larger nodes
+                if (node.size > 8) {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(
+                        node.type === 'concept' ? node.data.name : '',
+                        node.x,
+                        node.y + node.size + 15
+                    );
+                }
+            });
+
+            ctx.restore();
+        }
+
+        // Animation loop
+        function animate() {
+            updatePhysics();
+            draw();
+            requestAnimationFrame(animate);
+        }
+
+        // Mouse events
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            dragStart.x = e.clientX - cameraOffset.x;
+            dragStart.y = e.clientY - cameraOffset.y;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+
+            if (isDragging) {
+                cameraOffset.x = e.clientX - dragStart.x;
+                cameraOffset.y = e.clientY - dragStart.y;
+            }
+
+            // Check for hover
+            const transformedX = (mouseX - cameraOffset.x) / zoom;
+            const transformedY = (mouseY - cameraOffset.y) / zoom;
+
+            let hoveredNode = null;
+            nodes.forEach(node => {
+                const dx = transformedX - node.x;
+                const dy = transformedY - node.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < node.size) {
+                    hoveredNode = node;
+                }
+            });
+
+            if (hoveredNode) {
+                showTooltip(hoveredNode, e.clientX, e.clientY);
+            } else {
+                hideTooltip();
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const scaleFactor = 0.95;
+            if (e.deltaY < 0) {
+                zoom *= 1 / scaleFactor;
+            } else {
+                zoom *= scaleFactor;
+            }
+            zoom = Math.min(Math.max(0.5, zoom), 3);
+        });
+
+        // Tooltip functions
+        function showTooltip(node, x, y) {
+            let content = '';
+
+            if (node.type === 'concept') {
+                content = `
+                    <h3>${node.data.name}</h3>
+                    <p>${node.data.description}</p>
+                    <p style="margin-top: 10px; font-size: 0.85rem; color: rgba(255, 255, 255, 0.6);">
+                        Appears in ${node.data.count} article(s)
+                    </p>
+                `;
+            } else if (node.type === 'insight') {
+                content = `
+                    <h3>Insight</h3>
+                    <p>${node.data.text}</p>
+                    <p style="margin-top: 10px; font-size: 0.85rem; color: rgba(255, 255, 255, 0.6);">
+                        From: ${node.data.article.replace('michaeljjabbour_', '').replace('.md', '').replace(/-/g, ' ')}
+                    </p>
+                `;
+            }
+
+            tooltip.innerHTML = content;
+            tooltip.style.left = (x + 10) + 'px';
+            tooltip.style.top = (y + 10) + 'px';
+            tooltip.classList.add('visible');
+        }
+
+        function hideTooltip() {
+            tooltip.classList.remove('visible');
+        }
+
+        // View mode buttons
+        document.querySelectorAll('[data-view]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-view]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                viewMode = btn.dataset.view;
+            });
+        });
+
+        // Article filter
+        function toggleArticleFilter(articleId, btn) {
+            if (selectedArticles.has(articleId)) {
+                selectedArticles.delete(articleId);
+                btn.classList.remove('active');
+            } else {
+                selectedArticles.add(articleId);
+                btn.classList.add('active');
+            }
+        }
+
+        // Search
+        searchBox.addEventListener('input', (e) => {
+            searchTerm = e.target.value;
+        });
+
+        // Update stats
+        function updateStats() {
+            statsDiv.innerHTML = `
+                <div>Articles: ${data.articles.length}</div>
+                <div>Concepts: ${data.concepts.length}</div>
+                <div>Insights: ${data.insights.length}</div>
+                <div>Connections: ${data.relationships.length}</div>
+            `;
+        }
+
+        // Start loading
+        loadData();
+    </script>
+</body>
+</html>

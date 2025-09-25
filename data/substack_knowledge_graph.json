@@ -1,0 +1,1221 @@
+{
+  "articles": [
+    {
+      "id": "michaeljjabbour_A-Cut-Too-Deep.md",
+      "title": "A Cut Too Deep",
+      "filename": "michaeljjabbour_A-Cut-Too-Deep.md"
+    },
+    {
+      "id": "michaeljjabbour_Anthropomorphize-Like-a-Champ.md",
+      "title": "Anthropomorphize Like a Champ",
+      "filename": "michaeljjabbour_Anthropomorphize-Like-a-Champ.md"
+    },
+    {
+      "id": "michaeljjabbour_Boomerang-Thinking.md",
+      "title": "Boomerang Thinking",
+      "filename": "michaeljjabbour_Boomerang-Thinking.md"
+    },
+    {
+      "id": "michaeljjabbour_Death-By-Syntax.md",
+      "title": "Death By Syntax",
+      "filename": "michaeljjabbour_Death-By-Syntax.md"
+    },
+    {
+      "id": "michaeljjabbour_Im-Cancelling-the-Apocalypse.md",
+      "title": "Im Cancelling the Apocalypse",
+      "filename": "michaeljjabbour_Im-Cancelling-the-Apocalypse.md"
+    },
+    {
+      "id": "michaeljjabbour_Of-Port-and-Purpose.md",
+      "title": "Of Port and Purpose",
+      "filename": "michaeljjabbour_Of-Port-and-Purpose.md"
+    },
+    {
+      "id": "michaeljjabbour_Out-of-Time.md",
+      "title": "Out of Time",
+      "filename": "michaeljjabbour_Out-of-Time.md"
+    },
+    {
+      "id": "michaeljjabbour_The-Activation-Energy-of-Everything.md",
+      "title": "The Activation Energy of Everything",
+      "filename": "michaeljjabbour_The-Activation-Energy-of-Everything.md"
+    },
+    {
+      "id": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "title": "The Beautiful Flaw",
+      "filename": "michaeljjabbour_The-Beautiful-Flaw.md"
+    },
+    {
+      "id": "michaeljjabbour_The-Consciousness-Countdown.md",
+      "title": "The Consciousness Countdown",
+      "filename": "michaeljjabbour_The-Consciousness-Countdown.md"
+    },
+    {
+      "id": "michaeljjabbour_The-First-Last-Principle.md",
+      "title": "The First Last Principle",
+      "filename": "michaeljjabbour_The-First-Last-Principle.md"
+    },
+    {
+      "id": "michaeljjabbour_The-Forgotten-Task.md",
+      "title": "The Forgotten Task",
+      "filename": "michaeljjabbour_The-Forgotten-Task.md"
+    },
+    {
+      "id": "michaeljjabbour_The-Illegal-Textbook.md",
+      "title": "The Illegal Textbook",
+      "filename": "michaeljjabbour_The-Illegal-Textbook.md"
+    },
+    {
+      "id": "michaeljjabbour_The-Last-Skill.md",
+      "title": "The Last Skill",
+      "filename": "michaeljjabbour_The-Last-Skill.md"
+    },
+    {
+      "id": "michaeljjabbour_The-Rhythm-Engine.md",
+      "title": "The Rhythm Engine",
+      "filename": "michaeljjabbour_The-Rhythm-Engine.md"
+    },
+    {
+      "id": "michaeljjabbour_The-Showroom-and-the-Stack.md",
+      "title": "The Showroom and the Stack",
+      "filename": "michaeljjabbour_The-Showroom-and-the-Stack.md"
+    },
+    {
+      "id": "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md",
+      "title": "The Warp and the Woof of AI",
+      "filename": "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md"
+    },
+    {
+      "id": "michaeljjabbour_Tuning-Forks-in-a-Tornado.md",
+      "title": "Tuning Forks in a Tornado",
+      "filename": "michaeljjabbour_Tuning-Forks-in-a-Tornado.md"
+    },
+    {
+      "id": "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md",
+      "title": "Vibe Code Like You Mean It",
+      "filename": "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md"
+    },
+    {
+      "id": "michaeljjabbour_Wave-Particle-Singularity.md",
+      "title": "Wave Particle Singularity",
+      "filename": "michaeljjabbour_Wave-Particle-Singularity.md"
+    },
+    {
+      "id": "michaeljjabbour_Welcome-to-the-Overwhelm.md",
+      "title": "Welcome to the Overwhelm",
+      "filename": "michaeljjabbour_Welcome-to-the-Overwhelm.md"
+    },
+    {
+      "id": "michaeljjabbour_Your-TI-85-Never-Said-No.md",
+      "title": "Your TI 85 Never Said No",
+      "filename": "michaeljjabbour_Your-TI-85-Never-Said-No.md"
+    }
+  ],
+  "concepts": [
+    {
+      "name": "Frontier Firms",
+      "articles": [
+        "michaeljjabbour_Boomerang-Thinking.md",
+        "michaeljjabbour_The-Showroom-and-the-Stack.md"
+      ],
+      "count": 2,
+      "description": "Organizations that master the transition to composition-based development, operating with smaller teams and lower costs | Organizations that are deeply embedding AI into their core functions rather than just experimenting.",
+      "category": "concept",
+      "importance": 0.6
+    },
+    {
+      "name": "Cyborg Model",
+      "articles": [
+        "michaeljjabbour_Tuning-Forks-in-a-Tornado.md",
+        "michaeljjabbour_Welcome-to-the-Overwhelm.md"
+      ],
+      "count": 2,
+      "description": "Human-AI collaboration where both pass the baton mid-sentence in shared tasks | Human-machine synthesis approach where highest value comes from genuine collaboration",
+      "category": "pattern",
+      "importance": 0.6
+    },
+    {
+      "name": "beautiful imperfection",
+      "articles": [
+        "michaeljjabbour_The-Beautiful-Flaw.md"
+      ],
+      "count": 1,
+      "description": "The deliberate cultivation of beautiful variability and human flaws as features rather than bugs in the age of perfect AI",
+      "category": "principle",
+      "importance": 1.0
+    },
+    {
+      "name": "imperfection-by-design",
+      "articles": [
+        "michaeljjabbour_The-Beautiful-Flaw.md"
+      ],
+      "count": 1,
+      "description": "A design philosophy that intentionally incorporates human inconsistency and flaws as valuable system features",
+      "category": "principle",
+      "importance": 0.9
+    },
+    {
+      "name": "ikigai",
+      "articles": [
+        "michaeljjabbour_The-Beautiful-Flaw.md"
+      ],
+      "count": 1,
+      "description": "Japanese concept of perfect alignment between what you love, what you're good at, what the world needs, and what you can be paid for",
+      "category": "concept",
+      "importance": 0.8
+    },
+    {
+      "name": "wabi-sabi",
+      "articles": [
+        "michaeljjabbour_The-Beautiful-Flaw.md"
+      ],
+      "count": 1,
+      "description": "Japanese art of finding beauty in imperfection, impermanence, and incompleteness",
+      "category": "principle",
+      "importance": 0.8
+    },
+    {
+      "name": "variability matrix",
+      "articles": [
+        "michaeljjabbour_The-Beautiful-Flaw.md"
+      ],
+      "count": 1,
+      "description": "Framework organizing work into zones based on complexity and variability tolerance (Zero Tolerance, Structured Flow, Creative Chaos, Calibrated Jazz)",
+      "category": "tool",
+      "importance": 0.7
+    },
+    {
+      "name": "beautiful failure points",
+      "articles": [
+        "michaeljjabbour_The-Beautiful-Flaw.md"
+      ],
+      "count": 1,
+      "description": "Places in systems where human imperfection doesn't break things but makes them better",
+      "category": "technique",
+      "importance": 0.8
+    },
+    {
+      "name": "wobble room",
+      "articles": [
+        "michaeljjabbour_The-Beautiful-Flaw.md"
+      ],
+      "count": 1,
+      "description": "Intentional flex points in systems that allow for human variability and adaptation",
+      "category": "technique",
+      "importance": 0.7
+    },
+    {
+      "name": "productive chaos",
+      "articles": [
+        "michaeljjabbour_The-Beautiful-Flaw.md"
+      ],
+      "count": 1,
+      "description": "Controlled environments where creative exploration and failure are encouraged to generate breakthrough ideas",
+      "category": "technique",
+      "importance": 0.6
+    },
+    {
+      "name": "confusion chronicle",
+      "articles": [
+        "michaeljjabbour_The-Beautiful-Flaw.md"
+      ],
+      "count": 1,
+      "description": "Documentation of every time someone gets lost or confused in a system to improve understanding",
+      "category": "tool",
+      "importance": 0.5
+    },
+    {
+      "name": "moments log",
+      "articles": [
+        "michaeljjabbour_The-Beautiful-Flaw.md"
+      ],
+      "count": 1,
+      "description": "Tracking system for capturing when human insight trumps algorithmic answers",
+      "category": "tool",
+      "importance": 0.5
+    },
+    {
+      "name": "terrible idea time",
+      "articles": [
+        "michaeljjabbour_The-Beautiful-Flaw.md"
+      ],
+      "count": 1,
+      "description": "Structured brainstorming session where participants deliberately share their worst solutions to overcome creative blocks",
+      "category": "technique",
+      "importance": 0.6
+    },
+    {
+      "name": "technostress",
+      "articles": [
+        "michaeljjabbour_The-Beautiful-Flaw.md"
+      ],
+      "count": 1,
+      "description": "Negative impact from over-reliance on perfect digital assistance leading to decreased problem-solving capability",
+      "category": "concept",
+      "importance": 0.6
+    },
+    {
+      "name": "automation bias",
+      "articles": [
+        "michaeljjabbour_The-Beautiful-Flaw.md"
+      ],
+      "count": 1,
+      "description": "Human tendency to over-rely on AI recommendations without proper critical evaluation",
+      "category": "concept",
+      "importance": 0.6
+    },
+    {
+      "name": "perfect assistance paradox",
+      "articles": [
+        "michaeljjabbour_The-Beautiful-Flaw.md"
+      ],
+      "count": 1,
+      "description": "The phenomenon where perfect AI assistance can create imperfect learning outcomes",
+      "category": "pattern",
+      "importance": 0.7
+    },
+    {
+      "name": "Vibe Coding",
+      "articles": [
+        "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md"
+      ],
+      "count": 1,
+      "description": "A development approach using natural language to express intent while AI co-constructs code with human feedback as guidance",
+      "category": "technique",
+      "importance": 1.0
+    },
+    {
+      "name": "CLI-First Development",
+      "articles": [
+        "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md"
+      ],
+      "count": 1,
+      "description": "Using command line interfaces as the primary tool for reliable AI-assisted development workflows",
+      "category": "technique",
+      "importance": 0.8
+    },
+    {
+      "name": "MVE (Minimally Viable Experiment)",
+      "articles": [
+        "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md"
+      ],
+      "count": 1,
+      "description": "A smaller-than-MVP single interaction that proves an idea has potential before building full features",
+      "category": "principle",
+      "importance": 0.9
+    },
+    {
+      "name": "Spec-First Systems",
+      "articles": [
+        "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md"
+      ],
+      "count": 1,
+      "description": "Building software by first creating detailed specifications that serve as blueprints for AI code generation",
+      "category": "technique",
+      "importance": 0.8
+    },
+    {
+      "name": "Modular Block Approach",
+      "articles": [
+        "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md"
+      ],
+      "count": 1,
+      "description": "Building software like Lego bricks with self-contained modules that have defined interfaces for easy assembly and regeneration",
+      "category": "pattern",
+      "importance": 0.9
+    },
+    {
+      "name": "40-55% AI Zone",
+      "articles": [
+        "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md"
+      ],
+      "count": 1,
+      "description": "The optimal balance where AI handles 40-55% of development tasks while humans retain key decision-making control",
+      "category": "principle",
+      "importance": 0.7
+    },
+    {
+      "name": "Structured Vibe Workflow",
+      "articles": [
+        "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md"
+      ],
+      "count": 1,
+      "description": "A systematic approach to vibe coding that maintains structure while preserving creative flow",
+      "category": "technique",
+      "importance": 0.8
+    },
+    {
+      "name": "Rhythm-Based Development",
+      "articles": [
+        "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md"
+      ],
+      "count": 1,
+      "description": "Finding a collaborative rhythm with AI tools rather than fighting against their natural patterns",
+      "category": "principle",
+      "importance": 0.6
+    },
+    {
+      "name": "Claude Code",
+      "articles": [
+        "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md"
+      ],
+      "count": 1,
+      "description": "AI development tool that provides structure, readable scaffolds, and memory capabilities for coding tasks",
+      "category": "tool",
+      "importance": 0.7
+    },
+    {
+      "name": "Gradio",
+      "articles": [
+        "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md"
+      ],
+      "count": 1,
+      "description": "Tool for quickly spinning up front-end interfaces that pairs well with AI-driven UX development",
+      "category": "tool",
+      "importance": 0.6
+    },
+    {
+      "name": "Github Copilot",
+      "articles": [
+        "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md"
+      ],
+      "count": 1,
+      "description": "AI coding assistant that integrates deeply with VS Code IDE for development environment support",
+      "category": "tool",
+      "importance": 0.7
+    },
+    {
+      "name": "Intentional Creation",
+      "articles": [
+        "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md"
+      ],
+      "count": 1,
+      "description": "Using AI tools to create thoughtful, purposeful software rather than generating endless algorithmic content",
+      "category": "principle",
+      "importance": 0.8
+    },
+    {
+      "name": "Rhythm Engine",
+      "articles": [
+        "michaeljjabbour_The-Rhythm-Engine.md"
+      ],
+      "count": 1,
+      "description": "AI systems that learn to sync with human timing, context, and flow rather than rigid repetition",
+      "category": "concept",
+      "importance": 0.9
+    },
+    {
+      "name": "Dependable Rhythm",
+      "articles": [
+        "michaeljjabbour_The-Rhythm-Engine.md"
+      ],
+      "count": 1,
+      "description": "The ability of AI to sync with human timing and context without rigid repetition",
+      "category": "principle",
+      "importance": 0.9
+    },
+    {
+      "name": "Statistical Dependability",
+      "articles": [
+        "michaeljjabbour_The-Rhythm-Engine.md"
+      ],
+      "count": 1,
+      "description": "Systems that are dependable within acceptable bounds rather than perfectly deterministic",
+      "category": "principle",
+      "importance": 0.8
+    },
+    {
+      "name": "Deterministic Clockwork",
+      "articles": [
+        "michaeljjabbour_The-Rhythm-Engine.md"
+      ],
+      "count": 1,
+      "description": "Traditional software approach where same input produces same output every time",
+      "category": "pattern",
+      "importance": 0.7
+    },
+    {
+      "name": "Jazz vs Sheet Music Metaphor",
+      "articles": [
+        "michaeljjabbour_The-Rhythm-Engine.md"
+      ],
+      "count": 1,
+      "description": "Contrast between rigid rule-following AI and adaptive AI that reads the room",
+      "category": "concept",
+      "importance": 0.8
+    },
+    {
+      "name": "Prompt Engineering Overhead",
+      "articles": [
+        "michaeljjabbour_The-Rhythm-Engine.md"
+      ],
+      "count": 1,
+      "description": "The burden of constantly re-inserting context into every AI prompt due to stateless systems",
+      "category": "pattern",
+      "importance": 0.7
+    },
+    {
+      "name": "Long-Term Memory Systems",
+      "articles": [
+        "michaeljjabbour_The-Rhythm-Engine.md"
+      ],
+      "count": 1,
+      "description": "AI systems that accumulate historical experiences and maintain context across interactions",
+      "category": "technique",
+      "importance": 0.8
+    },
+    {
+      "name": "Movement Synchronization",
+      "articles": [
+        "michaeljjabbour_The-Rhythm-Engine.md"
+      ],
+      "count": 1,
+      "description": "Natural human tendency to match tempo and rhythm in conversation and interaction",
+      "category": "principle",
+      "importance": 0.6
+    },
+    {
+      "name": "RAG (Retrieval-Augmented Generation)",
+      "articles": [
+        "michaeljjabbour_The-Rhythm-Engine.md"
+      ],
+      "count": 1,
+      "description": "AI approach that searches actual data before responding to enhance business intelligence",
+      "category": "technique",
+      "importance": 0.7
+    },
+    {
+      "name": "Six Memory Operations",
+      "articles": [
+        "michaeljjabbour_The-Rhythm-Engine.md"
+      ],
+      "count": 1,
+      "description": "Consolidation, updating, indexing, forgetting, retrieval, and compression for AI memory",
+      "category": "technique",
+      "importance": 0.6
+    },
+    {
+      "name": "Human-Rhythm Design",
+      "articles": [
+        "michaeljjabbour_The-Rhythm-Engine.md"
+      ],
+      "count": 1,
+      "description": "Designing AI systems to match natural cadence of human work and context shifts",
+      "category": "principle",
+      "importance": 0.7
+    },
+    {
+      "name": "Copilot vs Autopilot",
+      "articles": [
+        "michaeljjabbour_The-Rhythm-Engine.md"
+      ],
+      "count": 1,
+      "description": "AI as collaborative partner rather than autonomous replacement for human judgment",
+      "category": "concept",
+      "importance": 0.8
+    },
+    {
+      "name": "Tavus Sparrow Model",
+      "articles": [
+        "michaeljjabbour_The-Rhythm-Engine.md"
+      ],
+      "count": 1,
+      "description": "AI that reads facial expressions and body language with transformer-based turn-taking",
+      "category": "tool",
+      "importance": 0.6
+    },
+    {
+      "name": "Behavioral Inter-brain Synchronization",
+      "articles": [
+        "michaeljjabbour_The-Rhythm-Engine.md"
+      ],
+      "count": 1,
+      "description": "Enhanced synchronization that occurs when humans and machines match rhythm in tasks",
+      "category": "concept",
+      "importance": 0.6
+    },
+    {
+      "name": "Acceptable Error Bounds (ε < 0.02)",
+      "articles": [
+        "michaeljjabbour_The-Rhythm-Engine.md"
+      ],
+      "count": 1,
+      "description": "Statistical thresholds for creative AI systems reflecting human tolerance levels",
+      "category": "technique",
+      "importance": 0.5
+    },
+    {
+      "name": "Warp and Woof Metaphor",
+      "articles": [
+        "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md"
+      ],
+      "count": 1,
+      "description": "Weaving metaphor where humans provide narrative structure (warp) and machines provide precision and scale (woof) to create the fabric of AI-human collaboration",
+      "category": "concept",
+      "importance": 0.9
+    },
+    {
+      "name": "Small World vs Large World",
+      "articles": [
+        "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md"
+      ],
+      "count": 1,
+      "description": "Algorithms operate in small worlds with well-defined problems while organisms live in large worlds with ill-defined problems",
+      "category": "principle",
+      "importance": 0.8
+    },
+    {
+      "name": "Autopoiesis",
+      "articles": [
+        "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md"
+      ],
+      "count": 1,
+      "description": "The ability of living organisms to self-create and self-maintain, which AI systems fundamentally lack as their goals are imposed externally",
+      "category": "concept",
+      "importance": 0.7
+    },
+    {
+      "name": "Fitness-Beats-Truth Theorem",
+      "articles": [
+        "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md"
+      ],
+      "count": 1,
+      "description": "Natural selection rewards perceptions that are useful for survival over those that accurately estimate reality",
+      "category": "principle",
+      "importance": 0.7
+    },
+    {
+      "name": "Compression Direction Difference",
+      "articles": [
+        "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md"
+      ],
+      "count": 1,
+      "description": "Human brains compress sensory input while language models expand prompts into probability distributions",
+      "category": "pattern",
+      "importance": 0.6
+    },
+    {
+      "name": "Counterfactual Ache",
+      "articles": [
+        "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md"
+      ],
+      "count": 1,
+      "description": "The uniquely human ability to regret and feel emotional pain for alternative choices not taken",
+      "category": "concept",
+      "importance": 0.5
+    },
+    {
+      "name": "Agency by Graduation",
+      "articles": [
+        "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md"
+      ],
+      "count": 1,
+      "description": "Systems should assist first, act later, and only after proving safe operation in controlled environments",
+      "category": "principle",
+      "importance": 0.8
+    }
+  ],
+  "insights": [
+    {
+      "text": "Human advantage isn't in doing things machines can't do yet, but in being what machines can't be ever - inconsistent, surprising, breakable, healable",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Perfect AI assistance can create imperfect learning outcomes by removing necessary friction for growth",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "As task complexity rises, the space of valid solutions widens, increasing the payoff to exploratory variance",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Systems need 'wobble room' - flex points that allow human variability without breaking functionality",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "The Japanese paradox: cultures can successfully hold both pursuit of perfect purpose (ikigai) and beauty of imperfection (wabi-sabi) in tension",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Human imperfections create connection - coffee stains and crossed-out sections in documentation make it more relatable and usable",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Manufacturing and logistics benefit from ±2% deviation tolerance while maintaining standardized variation points",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Google's '20% time' produced Gmail and AdSense by enabling unstructured exploration with negligible marginal costs",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Medical errors typically result from complex system failures rather than isolated human variability",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Customer service approaches allowing agent flexibility generally outperform rigid scripted interactions",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Build 'confusion chronicles' - running logs of every time someone gets lost that only humans can populate",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Start projects with 'terrible idea time' using hand-written worst solutions to overcome creative blocks",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Track unmeasurable qualities like surprise, delight, and moments of insight alongside quantitative metrics",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Add ±15% schedule flex in early workflow phases to accommodate natural human variability",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Create 'mistakes that taught us' sections in reports to document learning journeys",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Measure surprise alongside success to capture human value creation",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Over-reliance on AI recommendations occurs in only 3.2% of disagreement cases, indicating potential automation bias",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Strong onboarding processes can improve new hire productivity by up to 70% when documentation includes common challenges",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Technostress from over-reliance on ICT negatively impacts user satisfaction and performance",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Human operators need to maintain critical evaluation skills even when working with highly accurate AI systems",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Document the journey, not just the destination, to preserve learning pathways for others",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Find ikigai in the imperfect process, not just the perfect outcome",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "The highest human achievement in the age of AI might be perfectly calibrated imperfection rather than competing with machine perfection",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Music isn't about playing notes correctly but about playing them wrong in exactly the right way",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Standardization reduces adverse events by 47% in high-stakes environments like surgery and aviation",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "One in twenty napkin sketches survives design review, but the marginal cost of sketching is negligible compared to breakthrough value",
+      "article": "michaeljjabbour_The-Beautiful-Flaw.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Express intent in natural language first, then refine through AI collaboration rather than starting with syntax",
+      "article": "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "CLI-based tools currently provide the most reliable path for serious AI-assisted development",
+      "article": "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Build one working interaction (MVE) before adding multiple features - one moment that proves your idea works",
+      "article": "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "The 40-55% AI contribution zone is optimal - below slows output, above increases debugging time",
+      "article": "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Use Git religiously and revert often when vibe coding - don't hesitate to undo changes that don't work",
+      "article": "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Include screenshots and voice notes when prompting AI - visual context dramatically improves results",
+      "article": "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Break large tasks into small steps and reset chat contexts per feature to maintain AI focus",
+      "article": "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Test ruthlessly after every change to catch regressions early in the vibe coding process",
+      "article": "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Ask AI for multiple options and deliberately pick the simplest one to avoid over-engineering",
+      "article": "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Keep your tech stack simple when vibe coding - complexity multiplies debugging challenges",
+      "article": "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Vibe coding democratizes creation but doesn't eliminate the need for professional craft and engineering",
+      "article": "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Start with 'vibe PMing' using natural language to describe outcomes before diving into implementation",
+      "article": "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Use checklists (todolist.md, test.md, output folder) to track your vibe coding workflow progress",
+      "article": "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Let AI ask clarifying questions one at a time until you reach a shared specification",
+      "article": "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Modular design allows regenerating individual components without breaking the whole system",
+      "article": "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Human role shifts from code mechanics to architects and quality inspectors in AI-assisted development",
+      "article": "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Voice and rhythm matter in development - speak your intentions aloud to improve AI collaboration",
+      "article": "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Maintain memory trails through documentation so AI can see what's been tried and what worked",
+      "article": "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Focus on coordination and AI collaboration skills over syntax knowledge",
+      "article": "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Choose curation over chaos - use AI tools to create intentional software, not endless algorithmic content",
+      "article": "michaeljjabbour_Vibe-Code-Like-You-Mean-It.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "When rhythm is random, no one can dance—human or machine",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "An AI that forgets turns creators into parrots",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "More output is just more noise unless it moves the needle",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Activity ≠ Outcomes - generating variations isn't valuable unless they resonate",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "The best AI systems catch your rhythm rather than disrupting your flow",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Forgetting is a feature, not a bug - remembering everything is hoarding, remembering what matters is intelligence",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Perfect repeatability became the enemy of good when AI partnership emerged",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Deterministic systems provide clarity but lack flexibility needed for creative collaboration",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "AI should match natural cadence of human work, not interrupt flow states",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Systems should understand context shifts and know when topics have changed",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "AI should provide breathing room, not respond instantly to every keystroke",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "The shift from 'Can it?' to 'Should it?' marks AI reaching human parity on benchmarks",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Behavioral synchronization improves when humans work with rhythm-matching machines",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Same input/same output worship created rigid, unusable systems",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "GitHub Copilot succeeded by understanding intent, not just syntax correctness",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Interactive behavior among humans is governed by movement synchronization dynamics",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "The best algorithm accounts for how humans will interact with provided information",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Stateless AI systems create constant context re-insertion overhead",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Companies discover RAG correlates trending data with unstructured context",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "AI curators need to sense mood and match energy, not just remember preferences",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Tools that win will feel like jamming with a talented partner who knows your style",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Without rhythm and memory, AI is just rearranging furniture in the dark",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Acceptable error bounds (ε < 0.02) reflect human tolerance for creative systems",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Victorian clockwork precision gave comfort but prevented true partnership",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Microsoft's meeting Copilot succeeds by following conversation flow, not transcribing robotically",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "The luxury showroom with bolted furniture is impressive but impossible to live with",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Current AI systems process queries in isolation without reference to previous interactions",
+      "article": "michaeljjabbour_The-Rhythm-Engine.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Build systems that ask permission before acting, not just systems that act autonomously",
+      "article": "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Add agency reviews to your technology stack alongside privacy and security audits",
+      "article": "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Show the mathematical reasoning behind AI outputs, not just the final results",
+      "article": "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Let AI draft content but always do a human second pass - never outsource final judgment",
+      "article": "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Design AI systems to forget information by default rather than logging everything forever",
+      "article": "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Expose decision-making seams and policy hooks so humans can understand and modify AI behavior",
+      "article": "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Regulate AI outcomes rather than trying to control internal mechanics or model weights",
+      "article": "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Trust should be versioned and revocable based on demonstrated performance in controlled environments",
+      "article": "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Eternal memory in AI systems becomes a surveillance tool by accident, not by design",
+      "article": "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "The goal isn't to stop AI progress but to guide it while maintaining human authorship",
+      "article": "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Current AI systems lack true agency because their goals are imposed externally rather than emerging internally",
+      "article": "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Human-AI collaboration works best when tension is maintained between human oversight and machine capability",
+      "article": "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "AI systems operate in well-defined problem spaces while humans navigate ambiguous, ill-defined challenges",
+      "article": "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "The dividing line between AI augmentation and replacement is already blurring in practice",
+      "article": "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Make it a practice to keep physical notebooks when using AI tools to maintain cognitive engagement",
+      "article": "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Symbiotic AI doesn't mean perfect balance - it means maintaining the ability to revoke and override",
+      "article": "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Pattern recognition reveals we're facing gradual erosion of authorship rather than sudden replacement",
+      "article": "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Interfaces that can't show their reasoning can't earn human trust in high-stakes decisions",
+      "article": "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Avoid outsourcing judgment entirely - maintain human involvement in decision-making processes",
+      "article": "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "AI systems should surface confidence levels to help humans calibrate trust appropriately",
+      "article": "michaeljjabbour_The-Warp-and-the-Woof-of-AI.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Anthropomorphism is a natural human cognitive tendency that evolved from our social nature and need for understanding",
+      "article": "michaeljjabbour_Anthropomorphize-Like-a-Champ.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Children naturally anthropomorphize as part of normal cognitive development, not foolishness",
+      "article": "michaeljjabbour_Anthropomorphize-Like-a-Champ.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Loneliness increases anthropomorphic behavior as people seek social connection in non-human entities",
+      "article": "michaeljjabbour_Anthropomorphize-Like-a-Champ.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "The need for control and understanding drives us to explain complex behaviors through human-like intentions",
+      "article": "michaeljjabbour_Anthropomorphize-Like-a-Champ.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Modern AI systems actively encourage anthropomorphism through design choices like names, voices, and conversational styles",
+      "article": "michaeljjabbour_Anthropomorphize-Like-a-Champ.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "Current AI systems simulate understanding and empathy but do not possess genuine feelings or consciousness",
+      "article": "michaeljjabbour_Anthropomorphize-Like-a-Champ.md",
+      "concepts": [],
+      "importance": 0.5
+    },
+    {
+      "text": "AI can be more persuasive than humans in debates, winning 64% of the time even with minimal demographic cues",
+      "article": "michaeljjabbour_Anthropomorphize-Like-a-Champ.md",
+      "concepts": [],
+      "importance": 0.5
+    }
+  ],
+  "relationships": []
+}

@@ -48,7 +48,10 @@ Before starting, you'll need:
    make install
    ```
 
-   This installs Python dependencies, the Claude CLI, and sets up your environment.
+   This installs:
+   - Python dependencies and virtual environment
+   - Claude CLI globally via pnpm
+   - Global `amplifier` command for use anywhere on your system
 
 3. **Configure your data directories** (Recommended but optional):
 
@@ -78,45 +81,124 @@ Before starting, you'll need:
    AMPLIFIER_CONTENT_DIRS=.data/content,~/OneDrive/amplifier/content,~/Documents/notes
    ```
 
-4. **Activate the environment** (if not already active):
+4. **That's it!** The `amplifier` command is now available globally:
+
    ```bash
-   source .venv/bin/activate  # Linux/Mac/WSL
-   .venv\Scripts\activate     # Windows
+   # Use from anywhere - it's that simple!
+   amplifier                    # Launch Claude with Amplifier in current directory
+   amplifier ~/my-project       # Launch Claude with Amplifier in any project
+
+   # Examples
+   cd ~/projects/website && amplifier    # Work on your website with AI agents
+   amplifier ~/work/backend              # Jump straight to your backend project
    ```
+
+   > **Note:** The virtual environment (`.venv`) is managed automatically by the amplifier command.
 
 ## 📖 How to Use Amplifier
 
-### Basic Usage
+### Launch from Anywhere! 🚀
 
-Start Claude in the Amplifier directory to get all enhancements automatically:
+After running `make install`, the `amplifier` command is available everywhere:
 
 ```bash
-cd amplifier
-claude  # Everything is pre-configured and ready
+# It's this simple - just run amplifier!
+amplifier                       # Launches Claude with AI agents in current directory
+amplifier ~/projects/my-app    # Work on any project with Amplifier's power
+
+# Real-world examples:
+cd ~/work/backend && amplifier              # Fix bugs in your backend
+amplifier ~/personal/blog --model sonnet    # Use specific Claude model
+amplifier ~/client/website                  # Jump straight into client work
 ```
 
-### Using with Your Own Projects
+**What happens:** Claude launches with access to all 20+ specialized AI agents, ready to help with architecture, debugging, testing, security reviews, and more. Your project gets the full power of Amplifier's expertise.
 
-Want Amplifier's power on your own code? Easy:
+### Working on Amplifier Itself
 
-1. **Start Claude with both directories**:
+If you're developing Amplifier itself:
 
-   ```bash
-   claude --add-dir /path/to/your/project
-   ```
+```bash
+cd ~/dev/amplifier
+claude  # Claude knows it's in Amplifier's directory
+```
 
-2. **Tell Claude where to work** (paste as first message):
+### Alternative Methods
 
-   ```
-   I'm working in /path/to/your/project which doesn't have Amplifier files.
-   Please cd to that directory and work there.
-   Do NOT update any issues or PRs in the Amplifier repo.
-   ```
+#### Using the Shell Script Directly
 
-3. **Use Amplifier's agents on your code**:
-   - "Use the zen-architect agent to design my application's caching layer"
-   - "Deploy bug-hunter to find why my login system is failing"
-   - "Have security-guardian review my API implementation for vulnerabilities"
+You can also use the shell script directly from the Amplifier directory:
+
+```bash
+cd ~/dev/amplifier
+./amplifier-anywhere.sh ~/path/to/your/project
+```
+
+#### Manual Setup
+
+For maximum control:
+
+```bash
+cd ~/dev/amplifier
+source .venv/bin/activate
+claude --add-dir /path/to/your/project
+```
+
+#### Usage Template
+
+**Important**: When Claude starts, always begin with this message template:
+
+```
+I'm working in [YOUR_PROJECT_PATH] which doesn't have Amplifier files.
+Please cd to that directory and work there.
+Do NOT update any issues or PRs in the Amplifier repo.
+
+Use [AGENT_NAME] to [TASK_DESCRIPTION].
+```
+
+**Examples**:
+- `"Use zen-architect to design my application's caching layer"`
+- `"Deploy bug-hunter to find why my login system is failing"`
+- `"Have security-guardian review my API implementation for vulnerabilities"`
+- `"Use modular-builder to implement the user profile feature"`
+
+#### Global Benefits
+
+✅ **All 20+ specialized agents** work on your projects  
+✅ **Shared knowledge base** - insights from one project help others  
+✅ **Same powerful automation** - quality checks, parallel development  
+✅ **Project isolation** - changes only affect your target project  
+✅ **Works anywhere** - no need to copy files or modify your projects
+
+#### Troubleshooting Global Access
+
+**Command not found: `amplifier`**
+```bash
+# Check if ~/bin is in PATH
+echo $PATH | grep $HOME/bin
+
+# Add to PATH if missing
+echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc  # or ~/.bashrc
+source ~/.zshrc
+```
+
+**Cannot find Amplifier installation**
+```bash
+# The global command looks for Amplifier in these locations:
+# - ~/dev/amplifier (most common)
+# - ~/amplifier
+# - ~/repos/amplifier  
+# - ~/code/amplifier
+
+# Create a symlink if needed
+ln -s /path/to/your/amplifier ~/dev/amplifier
+```
+
+**Get help anytime**
+```bash
+amplifier --help     # Show usage help
+amplifier --version  # Show version info
+```
 
 ### Parallel Development
 
