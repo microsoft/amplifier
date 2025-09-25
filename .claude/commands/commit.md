@@ -42,6 +42,7 @@ Or with options:
 
 - **Verify before committing**: Ensure code is linted, builds correctly, and documentation is updated
   - IMPORTANT: If verification fails, DO NOT proceed with the commit and instead provide feedback on what needs to be fixed so that user can decide how to proceed
+  - IMPORTANT: Do not actually fix issues yourself, just inform the user of what needs to be done and give them choice to do so or to proceed with commit anyway
 - **Atomic commits**: Each commit should contain related changes that serve a single purpose
 - **Split large changes**: If changes touch multiple concerns, split them into separate commits
 - **Conventional commit format**: Use the format `<type>: <description>` where type is one of:
@@ -56,3 +57,7 @@ Or with options:
 - **Present tense, imperative mood**: Write commit messages as commands (e.g., "add feature" not "added feature")
 - **Leverage context**: Use conversation history to inform commit messages when relevant, especially where the content of the conversation could be useful for understanding the intent of the changes when reviewing the full commit history later, especially when reviewed by other AI tools that are attempting to understand the context behind the changes to understand rationale, decision making, intent, problem being solved, etc.
 - **Concise first line**: Keep the first line under 72 characters
+
+## Additional Guidance
+
+$ARGUMENTS

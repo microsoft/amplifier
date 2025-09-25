@@ -3,7 +3,7 @@
 [git-collector-data]
 
 **URL:** https://github.com/anthropics/claude-code-sdk-python/blob/main/  
-**Date:** 9/14/2025, 9:58:47 AM  
+**Date:** 9/20/2025, 1:13:39 PM  
 **Files:** 27  
 
 === File: README.md ===
@@ -1200,7 +1200,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "claude-code-sdk"
-version = "0.0.22"
+version = "0.0.23"
 description = "Python SDK for Claude Code"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -1580,7 +1580,7 @@ def create_sdk_mcp_server(
     return McpSdkServerConfig(type="sdk", name=name, instance=server)
 
 
-__version__ = "0.0.22"
+__version__ = "0.0.23"
 
 __all__ = [
     # Main exports
@@ -1825,6 +1825,7 @@ from ..types import (
     ContentBlock,
     Message,
     ResultMessage,
+    StreamEvent,
     SystemMessage,
     TextBlock,
     ThinkingBlock,
@@ -1862,6 +1863,7 @@ def parse_message(data: dict[str, Any]) -> Message:
     match message_type:
         case "user":
             try:
+                parent_tool_use_id = data.get("parent_tool_use_id")
                 if isinstance(data["message"]["content"], list):
                     user_content_blocks: list[ContentBlock] = []
                     for block in data["message"]["content"]:
@@ -1886,8 +1888,14 @@ def parse_message(data: dict[str, Any]) -> Message:
                                         is_error=block.get("is_error"),
                                     )
                                 )
-                    return UserMessage(content=user_content_blocks)
-                return UserMessage(content=data["message"]["content"])
+                    return UserMessage(
+                        content=user_content_blocks,
+                        parent_tool_use_id=parent_tool_use_id,
+                    )
+                return UserMessage(
+                    content=data["message"]["content"],
+                    parent_tool_use_id=parent_tool_use_id,
+                )
             except KeyError as e:
                 raise MessageParseError(
                     f"Missing required field in user message: {e}", data
@@ -1925,7 +1933,9 @@ def parse_message(data: dict[str, Any]) -> Message:
                             )
 
                 return AssistantMessage(
-                    content=content_blocks, model=data["message"]["model"]
+                    content=content_blocks,
+                    model=data["message"]["model"],
+                    parent_tool_use_id=data.get("parent_tool_use_id"),
                 )
             except KeyError as e:
                 raise MessageParseError(
@@ -1959,6 +1969,19 @@ def parse_message(data: dict[str, Any]) -> Message:
             except KeyError as e:
                 raise MessageParseError(
                     f"Missing required field in result message: {e}", data
+                ) from e
+
+        case "stream_event":
+            try:
+                return StreamEvent(
+                    uuid=data["uuid"],
+                    session_id=data["session_id"],
+                    event=data["event"],
+                    parent_tool_use_id=data.get("parent_tool_use_id"),
+                )
+            except KeyError as e:
+                raise MessageParseError(
+                    f"Missing required field in stream_event message: {e}", data
                 ) from e
 
         case _:
@@ -2189,6 +2212,9 @@ class SubprocessCLITransport(Transport):
                 # String or Path format: pass directly as file path or JSON string
                 cmd.extend(["--mcp-config", str(self._options.mcp_servers)])
 
+        if self._options.include_partial_messages:
+            cmd.append("--include-partial-messages")
+
         # Add extra args for future CLI flags
         for flag, value in self._options.extra_args.items():
             if value is None:
@@ -2240,6 +2266,7 @@ class SubprocessCLITransport(Transport):
                 stderr=stderr_dest,
                 cwd=self._cwd,
                 env=process_env,
+                user=self._options.user,
             )
 
             if self._process.stdout:
@@ -3056,6 +3083,7 @@ class UserMessage:
     """User message."""
 
     content: str | list[ContentBlock]
+    parent_tool_use_id: str | None = None
 
 
 @dataclass
@@ -3064,6 +3092,7 @@ class AssistantMessage:
 
     content: list[ContentBlock]
     model: str
+    parent_tool_use_id: str | None = None
 
 
 @dataclass
@@ -3089,7 +3118,17 @@ class ResultMessage:
     result: str | None = None
 
 
-Message = UserMessage | AssistantMessage | SystemMessage | ResultMessage
+@dataclass
+class StreamEvent:
+    """Stream event for partial message updates during streaming."""
+
+    uuid: str
+    session_id: str
+    event: dict[str, Any]  # The raw Anthropic API stream event
+    parent_tool_use_id: str | None = None
+
+
+Message = UserMessage | AssistantMessage | SystemMessage | ResultMessage | StreamEvent
 
 
 @dataclass
@@ -3123,6 +3162,11 @@ class ClaudeCodeOptions:
 
     # Hook configurations
     hooks: dict[HookEvent, list[HookMatcher]] | None = None
+
+    user: str | None = None
+
+    # Partial message streaming support
+    include_partial_messages: bool = False
 
 
 # SDK Control Protocol
@@ -3819,6 +3863,17 @@ class TestMessageParser:
         assert isinstance(message.content[2], ToolResultBlock)
         assert isinstance(message.content[3], TextBlock)
 
+    def test_parse_user_message_inside_subagent(self):
+        """Test parsing a valid user message."""
+        data = {
+            "type": "user",
+            "message": {"content": [{"type": "text", "text": "Hello"}]},
+            "parent_tool_use_id": "toolu_01Xrwd5Y13sEHtzScxR77So8",
+        }
+        message = parse_message(data)
+        assert isinstance(message, UserMessage)
+        assert message.parent_tool_use_id == "toolu_01Xrwd5Y13sEHtzScxR77So8"
+
     def test_parse_valid_assistant_message(self):
         """Test parsing a valid assistant message."""
         data = {
@@ -3873,6 +3928,28 @@ class TestMessageParser:
         message = parse_message(data)
         assert isinstance(message, SystemMessage)
         assert message.subtype == "start"
+
+    def test_parse_assistant_message_inside_subagent(self):
+        """Test parsing a valid assistant message."""
+        data = {
+            "type": "assistant",
+            "message": {
+                "content": [
+                    {"type": "text", "text": "Hello"},
+                    {
+                        "type": "tool_use",
+                        "id": "tool_123",
+                        "name": "Read",
+                        "input": {"file_path": "/test.txt"},
+                    },
+                ],
+                "model": "claude-opus-4-1-20250805",
+            },
+            "parent_tool_use_id": "toolu_01Xrwd5Y13sEHtzScxR77So8",
+        }
+        message = parse_message(data)
+        assert isinstance(message, AssistantMessage)
+        assert message.parent_tool_use_id == "toolu_01Xrwd5Y13sEHtzScxR77So8"
 
     def test_parse_valid_result_message(self):
         """Test parsing a valid result message."""
@@ -5434,6 +5511,44 @@ class TestSubprocessCLITransport:
                 if "PATH" in os.environ:
                     assert "PATH" in env_passed
                     assert env_passed["PATH"] == os.environ["PATH"]
+
+        anyio.run(_test)
+
+    def test_connect_as_different_user(self):
+        """Test connect as different user."""
+
+        async def _test():
+            custom_user = "claude"
+            options = ClaudeCodeOptions(user=custom_user)
+
+            # Mock the subprocess to capture the env argument
+            with patch(
+                "anyio.open_process", new_callable=AsyncMock
+            ) as mock_open_process:
+                mock_process = MagicMock()
+                mock_process.stdout = MagicMock()
+                mock_stdin = MagicMock()
+                mock_stdin.aclose = AsyncMock()  # Add async aclose method
+                mock_process.stdin = mock_stdin
+                mock_process.returncode = None
+                mock_open_process.return_value = mock_process
+
+                transport = SubprocessCLITransport(
+                    prompt="test",
+                    options=options,
+                    cli_path="/usr/bin/claude",
+                )
+
+                await transport.connect()
+
+                # Verify open_process was called with correct user
+                mock_open_process.assert_called_once()
+                call_kwargs = mock_open_process.call_args.kwargs
+                assert "user" in call_kwargs
+                user_passed = call_kwargs["user"]
+
+                # Check that user was passed
+                assert user_passed == "claude"
 
         anyio.run(_test)
 

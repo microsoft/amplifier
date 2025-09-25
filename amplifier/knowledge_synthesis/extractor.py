@@ -58,7 +58,7 @@ class KnowledgeSynthesizer:
         response = ""  # Initialize to avoid unbound variable errors
 
         try:
-            # Use 120-second timeout as per DISCOVERIES.md
+            # Use 120-second timeout
             async with asyncio.timeout(120):
                 response = await self._call_claude(prompt)
                 if not response:
@@ -82,7 +82,7 @@ class KnowledgeSynthesizer:
                 return extraction
 
         except TimeoutError:
-            error_msg = "Claude Code SDK timeout after 120s - likely running outside Claude Code environment"
+            error_msg = "Claude Code SDK timeout after 120s"
             logger.error(error_msg)
             return self._empty_extraction(source_id, error_type="timeout", error_detail=error_msg)
         except json.JSONDecodeError as e:

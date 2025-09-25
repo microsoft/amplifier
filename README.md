@@ -17,6 +17,7 @@ We've taken our learnings about what works in AI-assisted development and packag
 - **Pre-loaded Context**: Proven patterns and philosophies built into the environment
 - **Parallel Worktree System**: Build and test multiple solutions simultaneously
 - **Knowledge Extraction System**: Transform your documentation into queryable, connected knowledge
+- **Conversation Transcripts**: Never lose context - automatic export before compaction, instant restoration
 - **Automation Tools**: Quality checks and patterns enforced automatically
 
 ## 🚀 Step-by-Step Setup
@@ -74,7 +75,7 @@ Before starting, you'll need:
 
    # Your source materials (documentation, specs, design docs, notes)
    # Can point to multiple folders where you keep content
-   AMPLIFIER_CONTENT_DIRS=ai_context,~/OneDrive/amplifier/content,~/Documents/notes
+   AMPLIFIER_CONTENT_DIRS=.data/content,~/OneDrive/amplifier/content,~/Documents/notes
    ```
 
 4. **Activate the environment** (if not already active):
@@ -221,6 +222,8 @@ make worktree-rm feature-jwt  # Remove the one you don't want
 
 Each worktree is completely isolated with its own branch, environment, and context.
 
+See the [Worktree Guide](docs/WORKTREE_GUIDE.md) for advanced features, such as hiding worktrees from VSCode when not in use, adopting branches from other machines, and more.
+
 ### Enhanced Status Line
 
 See costs, model, and session info at a glance:
@@ -295,6 +298,59 @@ Instead of one generalist AI, you get 20+ specialists:
    make knowledge-query Q="authentication patterns"
    make knowledge-graph-viz  # See how ideas connect
    ```
+
+### Conversation Transcripts
+
+**Never lose context again.** Amplifier automatically exports your entire conversation before compaction, preserving all the details that would otherwise be lost. When Claude Code compacts your conversation to stay within token limits, you can instantly restore the full history.
+
+**Automatic Export**: A PreCompact hook captures your conversation before any compaction event:
+
+- Saves complete transcript with all content types (messages, tool usage, thinking blocks)
+- Timestamps and organizes transcripts in `.data/transcripts/`
+- Works for both manual (`/compact`) and auto-compact events
+
+**Easy Restoration**: Use the `/transcripts` command in Claude Code to restore your full conversation:
+
+```
+/transcripts  # Restores entire conversation history
+```
+
+The transcript system helps you:
+
+- **Continue complex work** after compaction without losing details
+- **Review past decisions** with full context
+- **Search through conversations** to find specific discussions
+- **Export conversations** for sharing or documentation
+
+**Transcript Commands** (via Makefile):
+
+```bash
+make transcript-list            # List available transcripts
+make transcript-search TERM="auth"  # Search past conversations
+make transcript-restore         # Restore full lineage (for CLI use)
+```
+
+### Modular Builder (Lite)
+
+A one-command workflow to go from an idea to a module (**Contract & Spec → Plan → Generate → Review**) inside the Amplifier Claude Code environment.
+
+- **Run inside a Claude Code session:**
+  ```
+  /modular-build Build a module that reads markdown summaries, synthesizes net-new ideas with provenance, and expands them into plans. mode: auto level: moderate
+  ```
+- **Docs:** see `docs/MODULAR_BUILDER_LITE.md` for the detailed flow and guardrails.
+- **Artifacts:** planning goes to `ai_working/<module>/…` (contract/spec/plan/review); code & tests to `amplifier/<module>/…`.
+- **Isolation & discipline:** workers read only this module’s **contract/spec** plus dependency **contracts**. The spec’s **Output Files** are the single source of truth for what gets written. Every contract **Conformance Criterion** maps to tests. 〔Authoring Guide〕
+
+#### Modes
+
+- `auto` (default): runs autonomously if confidence ≥ 0.75; otherwise falls back to `assist`.
+- `assist`: asks ≤ 5 crisp questions to resolve ambiguity, then proceeds.
+- `dry-run`: plan/validate only (no code writes).
+
+#### Continue later
+
+Re‑run `/modular-build` with a follow‑up ask; it resumes from `ai_working/<module>/session.json`.
 
 ### Development Commands
 

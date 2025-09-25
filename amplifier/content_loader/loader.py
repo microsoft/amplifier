@@ -125,8 +125,11 @@ class ContentLoader:
             logger.warning(f"Failed to load {file_path}: {e}")
             return None
 
-    def load_all(self) -> Iterator[ContentItem]:
+    def load_all(self, quiet: bool = False) -> Iterator[ContentItem]:
         """Load all content from configured directories.
+
+        Args:
+            quiet: If True, suppress progress output to stdout.
 
         Yields ContentItem objects for each successfully loaded file.
         Skips files that cannot be loaded and logs warnings.
@@ -154,7 +157,7 @@ class ContentLoader:
                 total_files_found += 1
 
                 # Update progress during scanning
-                if dir_files_found % 10 == 0:  # Update every 10 files
+                if not quiet and dir_files_found % 10 == 0:  # Update every 10 files
                     sys.stdout.write(f"\rScanning: {total_files_found} files found...")
                     sys.stdout.flush()
 
@@ -164,7 +167,7 @@ class ContentLoader:
                     yield item
 
             # Clear the progress line
-            if dir_files_found > 0:
+            if not quiet and dir_files_found > 0:
                 sys.stdout.write(
                     f"\rScanned {content_dir}: {dir_files_found} files found, {total_files_loaded} loaded\n"
                 )
