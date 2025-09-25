@@ -84,63 +84,63 @@ Before starting, you'll need:
    .venv\Scripts\activate     # Windows
    ```
 
-5. **Install global access** (Optional but recommended):
+5. **Install global access** (Recommended):
    ```bash
    make install-global
    ```
-   
-   This installs the `amplifier` command globally, letting you use Amplifier on any project from anywhere:
-   
+
+   This installs the `amplifier` command globally, enabling you to use Amplifier's AI agents on ANY project:
+
    ```bash
-   cd ~/my-other-project
-   amplifier  # Starts Claude with Amplifier agents for this project
+   # Use from anywhere - it's that simple!
+   amplifier                    # Launch Claude with Amplifier in current directory
+   amplifier ~/my-project       # Launch Claude with Amplifier in any project
+
+   # Examples
+   cd ~/projects/website && amplifier    # Work on your website with AI agents
+   amplifier ~/work/backend              # Jump straight to your backend project
    ```
 
 ## 📖 How to Use Amplifier
 
-### Basic Usage
+### After Installation: Launch from Anywhere! 🚀
 
-Start Claude in the Amplifier directory to get all enhancements automatically:
-
-```bash
-cd amplifier
-claude  # Everything is pre-configured and ready
-```
-
-### Global Usage: Amplifier on Any Project 🌍
-
-**The power of Amplifier is no longer confined to the Amplifier directory.** Use all 20+ specialized agents, knowledge extraction, and automation tools on any codebase, anywhere on your system.
-
-#### Method 1: Global Command (Recommended)
-
-After running `make install-global`, use Amplifier from any directory:
+Once installed with `make install-global`, the `amplifier` command is available everywhere:
 
 ```bash
-# Work on any project
-cd ~/my-web-app
-amplifier
+# It's this simple - just run amplifier!
+amplifier                       # Launches Claude with AI agents in current directory
+amplifier ~/projects/my-app    # Work on any project with Amplifier's power
 
-# Or specify a different project
-amplifier ~/dev/my-python-api
-
-# Pass Claude options
-amplifier ~/my-project --model sonnet
-amplifier ~/my-app --print "Fix the authentication bug"
+# Real-world examples:
+cd ~/work/backend && amplifier              # Fix bugs in your backend
+amplifier ~/personal/blog --model sonnet    # Use specific Claude model
+amplifier ~/client/website                  # Jump straight into client work
 ```
 
-#### Method 2: From Amplifier Directory
+**What happens:** Claude launches with access to all 20+ specialized AI agents, ready to help with architecture, debugging, testing, security reviews, and more. Your project gets the full power of Amplifier's expertise.
 
-If you prefer not to install globally:
+### Working on Amplifier Itself
+
+If you're developing Amplifier itself:
+
+```bash
+cd ~/dev/amplifier
+claude  # Claude knows it's in Amplifier's directory
+```
+
+### Alternative Methods
+
+#### Without Global Installation
+
+If you haven't run `make install-global` yet:
 
 ```bash
 cd ~/dev/amplifier
 ./amplifier-anywhere.sh ~/path/to/your/project
-
-# Or with Claude options
-./amplifier-anywhere.sh ~/my-app --model sonnet
 ```
 
-#### Method 3: Manual Setup
+#### Manual Setup
 
 For maximum control:
 

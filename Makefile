@@ -167,16 +167,12 @@ install-global: ## Install global 'amplifier' command for system-wide access
 		uv pip install -e . > /dev/null 2>&1; \
 	fi
 	@if [ -f .venv/bin/amplifier ]; then \
-		ln -sf "$(PWD)/.venv/bin/amplifier" ~/bin/amplifier-cli; \
-		echo "✅ Python CLI installed"; \
+		ln -sf "$(PWD)/.venv/bin/amplifier" ~/bin/amplifier; \
+		echo "✅ Python CLI installed as global command"; \
 	else \
 		echo "❌ Failed to install Python CLI"; \
 		exit 1; \
 	fi
-	@echo "Installing unified wrapper..."
-	@chmod +x bin/amplifier-unified
-	@cp bin/amplifier-unified ~/bin/amplifier
-	@chmod +x ~/bin/amplifier
 	@echo "✅ Global 'amplifier' command installed"
 	@echo ""
 	@if echo "$$PATH" | grep -q "$$HOME/bin"; then \
@@ -187,9 +183,13 @@ install-global: ## Install global 'amplifier' command for system-wide access
 	fi
 	@echo ""
 	@echo "Usage:"
-	@echo "  amplifier doctor           # Run diagnostics"
-	@echo "  amplifier ~/project        # Start Claude Code in a project"
-	@echo "  amplifier --version        # Show version"
+	@echo "  amplifier doctor            # Run diagnostics"
+	@echo "  amplifier claude            # Start Claude Code in current directory"
+	@echo "  amplifier claude ~/project  # Start Claude Code in a project"
+	@echo "  amplifier --version         # Show version"
+	@echo ""
+	@echo "Legacy compatibility:"
+	@echo "  amplifier ~/project         # Still works (routes to claude command)"
 
 install-global-system: ## Install global 'amplifier' command system-wide (requires sudo)
 	@echo "Installing system-wide Amplifier command..."
@@ -214,6 +214,15 @@ uninstall-global: ## Remove global 'amplifier' command
 		echo "✅ Removed ~/bin/amplifier"; \
 	else \
 		echo "✓ ~/bin/amplifier not found"; \
+	fi
+	@# Clean up legacy files
+	@if [ -f ~/bin/amplifier-cli ]; then \
+		rm ~/bin/amplifier-cli; \
+		echo "✅ Removed legacy ~/bin/amplifier-cli"; \
+	fi
+	@if [ -f ~/bin/amplifier-unified ]; then \
+		rm ~/bin/amplifier-unified; \
+		echo "✅ Removed legacy ~/bin/amplifier-unified"; \
 	fi
 	@if [ -f /usr/local/bin/amplifier ]; then \
 		echo "System-wide installation found at /usr/local/bin/amplifier"; \

@@ -6,7 +6,9 @@ This provides a single entry point for all Amplifier functionality, replacing
 scattered make targets and individual scripts with a consistent interface.
 """
 
+import os
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -17,11 +19,18 @@ from click import Context
 @click.group(invoke_without_command=True)
 @click.option("--version", is_flag=True, help="Show version information")
 @click.option("--debug", is_flag=True, help="Enable debug output")
+@click.argument("project_dir", type=click.Path(), required=False)
 @click.pass_context
-def cli(ctx: Context, version: bool, debug: bool) -> None:
-    """Amplifier - AI-powered knowledge synthesis toolkit.
+def cli(ctx: Context, version: bool, debug: bool, project_dir: str | None) -> None:
+    """Amplifier - Launch Claude with Amplifier's AI agents and tools.
 
-    A unified CLI for extracting, synthesizing, and managing knowledge from documents.
+    Launch Claude with Amplifier context for any project. If no PROJECT_DIR is
+    provided, uses the current directory.
+
+    Examples:
+        amplifier                    # Launch in current directory
+        amplifier ~/myproject        # Launch in specific project
+        amplifier --version          # Show version
     """
     ctx.ensure_object(dict)
     ctx.obj["DEBUG"] = debug
@@ -30,8 +39,14 @@ def cli(ctx: Context, version: bool, debug: bool) -> None:
         click.echo("Amplifier v0.2.0")
         sys.exit(0)
 
+    # If no subcommand, launch Claude (default behavior)
     if ctx.invoked_subcommand is None:
-        click.echo(ctx.get_help())
+        from amplifier.claude_launcher import launch_claude
+        from pathlib import Path
+
+        # Use provided directory or current directory
+        target_dir = Path(project_dir) if project_dir else Path.cwd()
+        sys.exit(launch_claude(target_dir))
 
 
 @cli.command()
@@ -122,7 +137,6 @@ def doctor() -> None:
     click.echo()
 
     import shutil
-    import subprocess
     from enum import Enum
     from pathlib import Path
 
@@ -174,7 +188,6 @@ def doctor() -> None:
         checks.append(("npm", False, "Not found (needed for Claude CLI)", CheckStatus.REQUIRED))
 
     # Check environment variables (OPTIONAL)
-    import os
 
     amplifier_home = os.environ.get("AMPLIFIER_HOME")
     if amplifier_home:
@@ -243,6 +256,40 @@ def doctor() -> None:
     else:
         click.echo(click.style("✅ All required components are healthy!", fg="green", bold=True))
         click.echo(click.style("   Optional components marked with ◯ can be configured if needed.", fg="cyan"))
+
+
+@cli.command()
+@click.argument("project_dir", type=click.Path(exists=True), required=False)
+@click.argument("claude_args", nargs=-1, type=click.UNPROCESSED)
+@click.pass_context
+def claude(ctx: Context, project_dir: str | None, claude_args: tuple[str, ...]) -> None:
+    """Launch Claude with Amplifier context.
+
+    \b
+    Examples:
+        amplifier claude                    # Launch in current directory
+        amplifier claude ~/myproject        # Launch in specific project
+        amplifier claude . --help           # Pass args to claude CLI
+
+    This command launches Claude with appropriate context depending on whether
+    you're working on Amplifier itself or an external project.
+    """
+    from pathlib import Path
+
+    from amplifier.claude_launcher import launch_claude
+
+    try:
+        # Convert tuple to list for extra args
+        extra_args = list(claude_args) if claude_args else None
+        # Convert string path to Path object if provided
+        path_obj = Path(project_dir) if project_dir else None
+        launch_claude(path_obj, extra_args)
+    except RuntimeError as e:
+        click.echo(click.style(f"Error: {e}", fg="red"), err=True)
+        sys.exit(1)
+    except KeyboardInterrupt:
+        # Handled in launch_claude, just exit cleanly
+        sys.exit(0)
 
 
 @cli.group()
@@ -325,8 +372,6 @@ def self_update() -> None:
     """Update Amplifier to the latest version."""
     click.echo("Checking for updates...")
 
-    import subprocess
-
     try:
         # Try to update via pip/uv
         result = subprocess.run(
@@ -344,8 +389,6 @@ def self_update() -> None:
 def install_global() -> None:
     """Install Amplifier globally for use across all projects."""
     click.echo("Installing Amplifier globally...")
-
-    import subprocess
 
     # Detect installation method
     if shutil.which("pipx"):
