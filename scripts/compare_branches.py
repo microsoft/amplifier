@@ -56,16 +56,16 @@ class BranchComparison:
 
             cache = ArtifactCache(cache_dir=Path(f".test_cache_{branch}"))
 
+            def test_processor(text):
+                """Test processor function for cache testing."""
+                time.sleep(0.5)  # Simulate processing
+                return {"processed": True, "length": len(text)}
+
             # First run - no cache
             start = time.time()
             for _i, content in enumerate(test_content):
-
-                def mock_processor(text):
-                    time.sleep(0.5)  # Simulate processing
-                    return {"processed": True, "length": len(text)}
-
                 result, was_cached = cache.check_or_process(
-                    content=content, stage="test", processor_func=mock_processor, model="test-model"
+                    content=content, stage="test", processor_func=test_processor, model="test-model"
                 )
             first_run = time.time() - start
 
@@ -73,7 +73,7 @@ class BranchComparison:
             start = time.time()
             for _i, content in enumerate(test_content):
                 result, was_cached = cache.check_or_process(
-                    content=content, stage="test", processor_func=mock_processor, model="test-model"
+                    content=content, stage="test", processor_func=test_processor, model="test-model"
                 )
             cached_run = time.time() - start
 

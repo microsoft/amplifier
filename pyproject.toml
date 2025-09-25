@@ -4,6 +4,8 @@ version = "0.2.0"
 description = "AI-powered knowledge synthesis toolkit"
 requires-python = ">=3.11"
 dependencies = [
+    "aiohttp>=3.12.15",
+    "beautifulsoup4>=4.13.5",
     "claude-code-sdk>=0.0.20",
     "click>=8.2.1",
     "langchain>=0.2.1",

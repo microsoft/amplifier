@@ -176,16 +176,98 @@ cd "$PROJECT_DIR"
 if [[ -n "$EXTERNAL_PROJECT_MODE" ]]; then
     # Create the system prompt message
     EXTERNAL_MODE_PROMPT="EXTERNAL PROJECT MODE - AUTO-CONFIGURED: You are working on a project at: $PROJECT_DIR. This is your working directory. DO NOT update any issues, PRs, or code in the Amplifier repository. All your work should be in this project directory. This mode was automatically detected."
-    
+
+    # Create a temporary settings file with corrected paths for external mode
+    TEMP_SETTINGS=$(mktemp)
+    # Use Python to properly modify the settings JSON for external mode
+    python3 -c "
+import json
+import sys
+
+# Read the original settings
+with open('$AMPLIFIER_DIR/.claude/settings.json', 'r') as f:
+    settings = json.load(f)
+
+# Update additionalDirectories to use absolute paths pointing to Amplifier
+if 'permissions' in settings and 'additionalDirectories' in settings['permissions']:
+    dirs = []
+    for d in settings['permissions']['additionalDirectories']:
+        if d.startswith('.'):
+            # Convert relative paths to Amplifier absolute paths
+            dirs.append('$AMPLIFIER_DIR/' + d[1:] if d.startswith('./') else '$AMPLIFIER_DIR/' + d)
+        elif d == '~/dev/amplifier':
+            # Keep the amplifier reference
+            dirs.append('$AMPLIFIER_DIR')
+        else:
+            dirs.append(d)
+    settings['permissions']['additionalDirectories'] = dirs
+
+# Update all hook commands to use Amplifier paths
+def update_hooks(hooks_dict):
+    for event_type, event_configs in hooks_dict.items():
+        for config in event_configs:
+            if 'hooks' in config:
+                for hook in config['hooks']:
+                    if 'command' in hook:
+                        hook['command'] = hook['command'].replace('\$CLAUDE_PROJECT_DIR', '$AMPLIFIER_DIR')
+
+if 'hooks' in settings:
+    update_hooks(settings['hooks'])
+
+# Write the modified settings
+print(json.dumps(settings, indent=2))
+" > "$TEMP_SETTINGS"
+
     # Pass the additional system prompt to Claude
     # Also add the Amplifier dir so Claude can access agents and tools
-    exec claude --add-dir "$AMPLIFIER_DIR" --append-system-prompt "$EXTERNAL_MODE_PROMPT" $CLAUDE_ARGS
+    # Include modified settings for bypass permissions and other features
+    exec claude --add-dir "$AMPLIFIER_DIR" --settings "$TEMP_SETTINGS" --append-system-prompt "$EXTERNAL_MODE_PROMPT" $CLAUDE_ARGS
 else
     # Not in external mode, working on Amplifier itself
     # Still start in PROJECT_DIR but add Amplifier if different
     if [[ "$PROJECT_DIR" != "$AMPLIFIER_DIR" ]]; then
-        exec claude --add-dir "$AMPLIFIER_DIR" $CLAUDE_ARGS
+        # Create a temporary settings file with corrected paths
+        TEMP_SETTINGS=$(mktemp)
+        # Use Python to properly modify the settings JSON
+        python3 -c "
+import json
+
+# Read the original settings
+with open('$AMPLIFIER_DIR/.claude/settings.json', 'r') as f:
+    settings = json.load(f)
+
+# Update additionalDirectories to use absolute paths pointing to Amplifier
+if 'permissions' in settings and 'additionalDirectories' in settings['permissions']:
+    dirs = []
+    for d in settings['permissions']['additionalDirectories']:
+        if d.startswith('.'):
+            # Convert relative paths to Amplifier absolute paths
+            dirs.append('$AMPLIFIER_DIR/' + d[1:] if d.startswith('./') else '$AMPLIFIER_DIR/' + d)
+        elif d == '~/dev/amplifier':
+            # Keep the amplifier reference
+            dirs.append('$AMPLIFIER_DIR')
+        else:
+            dirs.append(d)
+    settings['permissions']['additionalDirectories'] = dirs
+
+# Update all hook commands to use Amplifier paths
+def update_hooks(hooks_dict):
+    for event_type, event_configs in hooks_dict.items():
+        for config in event_configs:
+            if 'hooks' in config:
+                for hook in config['hooks']:
+                    if 'command' in hook:
+                        hook['command'] = hook['command'].replace('\$CLAUDE_PROJECT_DIR', '$AMPLIFIER_DIR')
+
+if 'hooks' in settings:
+    update_hooks(settings['hooks'])
+
+# Write the modified settings
+print(json.dumps(settings, indent=2))
+" > "$TEMP_SETTINGS"
+        exec claude --add-dir "$AMPLIFIER_DIR" --settings "$TEMP_SETTINGS" $CLAUDE_ARGS
     else
+        # When working in Amplifier itself, settings will be loaded automatically from .claude/settings.json
         exec claude $CLAUDE_ARGS
     fi
 fi

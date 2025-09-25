@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Stellar Knowledge - Inline Data</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background: #2d5016; }
+        .error { background: #5d1216; }
+        .info { background: #16335d; }
+    </style>
+</head>
+<body>
+    <h1>Testing Stellar Knowledge Visualization</h1>
+
+    <div id="test-results"></div>
+
+    <script>
+        const resultsDiv = document.getElementById('test-results');
+
+        function addResult(message, status = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${status}`;
+            div.textContent = message;
+            resultsDiv.appendChild(div);
+        }
+
+        // Test 1: Check if we can create SVG elements
+        try {
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', 50);
+            circle.setAttribute('cy', 50);
+            circle.setAttribute('r', 10);
+            svg.appendChild(circle);
+            addResult('✓ SVG creation works', 'success');
+        } catch (e) {
+            addResult('✗ SVG creation failed: ' + e.message, 'error');
+        }
+
+        // Test 2: Check if we can fetch local JSON
+        fetch('substack_knowledge_graph.json')
+            .then(response => response.json())
+            .then(data => {
+                addResult(`✓ JSON loaded successfully: ${data.articles.length} articles found`, 'success');
+
+                // Test 3: Verify data structure
+                if (data.articles && Array.isArray(data.articles)) {
+                    addResult('✓ Articles array is valid', 'success');
+                } else {
+                    addResult('✗ Articles array is missing or invalid', 'error');
+                }
+
+                if (data.concepts && Array.isArray(data.concepts)) {
+                    addResult(`✓ Concepts array is valid: ${data.concepts.length} concepts found`, 'success');
+                } else {
+                    addResult('✗ Concepts array is missing or invalid', 'error');
+                }
+
+                // Test 4: Sample article structure
+                if (data.articles.length > 0) {
+                    const sampleArticle = data.articles[0];
+                    if (sampleArticle.id && sampleArticle.title) {
+                        addResult(`✓ Article structure valid: "${sampleArticle.title}"`, 'success');
+                    } else {
+                        addResult('✗ Article structure invalid', 'error');
+                    }
+                }
+
+                // Test 5: Sample concept structure
+                if (data.concepts.length > 0) {
+                    const sampleConcept = data.concepts[0];
+                    if (sampleConcept.name && sampleConcept.articles) {
+                        addResult(`✓ Concept structure valid: "${sampleConcept.name}"`, 'success');
+                    } else {
+                        addResult('✗ Concept structure invalid', 'error');
+                    }
+                }
+            })
+            .catch(error => {
+                addResult('✗ Failed to load JSON: ' + error.message, 'error');
+                addResult('Note: This test needs to be run from a web server (not file://)', 'info');
+            });
+
+        // Test 6: Check browser capabilities
+        if (typeof window.fetch === 'function') {
+            addResult('✓ Fetch API is supported', 'success');
+        } else {
+            addResult('✗ Fetch API not supported', 'error');
+        }
+
+        if (typeof window.addEventListener === 'function') {
+            addResult('✓ Event listeners supported', 'success');
+        } else {
+            addResult('✗ Event listeners not supported', 'error');
+        }
+
+        addResult('Test complete. If running from file://, start a local server with:', 'info');
+        addResult('python3 -m http.server 8765', 'info');
+        addResult('Then open: http://localhost:8765/stellar_knowledge.html', 'info');
+    </script>
+</body>
+</html>

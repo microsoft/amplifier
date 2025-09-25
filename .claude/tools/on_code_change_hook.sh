@@ -130,12 +130,12 @@ setup_worktree_env() {
 # Start from the determined directory
 cd "$START_DIR"
 
-# Find the project root first
-PROJECT_ROOT=$(find_project_root "$START_DIR")
+# Find the project root first (may not exist, that's OK)
+PROJECT_ROOT=$(find_project_root "$START_DIR" || echo "")
 
 if [[ -z "$PROJECT_ROOT" ]]; then
-    echo "Error: No project root found (no .git or Makefile)"
-    exit 1
+    echo "Info: No project root found (no .git or Makefile) - skipping make check"
+    exit 0  # Exit successfully - this is OK for external projects
 fi
 
 # Set up proper environment for the project (handles worktrees)
@@ -150,16 +150,10 @@ elif make_target_exists "$PROJECT_ROOT" "check"; then
     cd "$PROJECT_ROOT"
     make check
 else
-    # Find the project root (may fail, that's OK)
-    PROJECT_ROOT=$(find_project_root "$START_DIR" || echo "")
-    
-    if [[ -n "$PROJECT_ROOT" ]] && make_target_exists "$PROJECT_ROOT" "check"; then
-        echo "Running 'make check' from project root: $PROJECT_ROOT"
-        cd "$PROJECT_ROOT"
-        make check
-    else
-        echo "Info: No Makefile with 'check' target found - skipping make check"
-        exit 0  # Exit successfully to avoid error messages
-    fi
+    echo "Info: No Makefile with 'check' target found - skipping make check"
+    exit 0  # Exit successfully to avoid error messages
 fi
+
+# Ensure we always exit with a status code
+exit 0
 

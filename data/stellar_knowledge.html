@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stellar Knowledge - Michael J. Jabbour</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0e1a 0%, #0f1729 50%, #0d1117 100%);
+            color: #e2e8f0;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .header {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 10;
+            pointer-events: none;
+            animation: fadeIn 1s ease-out;
+        }
+
+        .header h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 4px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .header p {
+            color: rgba(148, 163, 184, 0.7);
+            font-size: 0.9rem;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        /* Minimal Timeline */
+        .timeline {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 1400px;
+            height: 60px;
+            z-index: 20;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .timeline.collapsed {
+            height: 30px;
+        }
+
+        .timeline-toggle {
+            position: absolute;
+            top: -30px;
+            right: 0;
+            width: 30px;
+            height: 20px;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(148, 163, 184, 0.5);
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .timeline-toggle:hover {
+            background: rgba(30, 41, 59, 0.8);
+            color: rgba(148, 163, 184, 0.8);
+        }
+
+        .timeline-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 14, 26, 0.4);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            padding: 20px 40px;
+            overflow: hidden;
+        }
+
+        .timeline.collapsed .timeline-container {
+            padding: 5px 40px;
+        }
+
+        .timeline-line {
+            position: absolute;
+            top: 50%;
+            left: 40px;
+            right: 40px;
+            height: 1px;
+            background: linear-gradient(90deg,
+                transparent,
+                rgba(148, 163, 184, 0.2) 10%,
+                rgba(148, 163, 184, 0.2) 90%,
+                transparent
+            );
+            transform: translateY(-50%);
+        }
+
+        .timeline-years {
+            position: absolute;
+            top: 50%;
+            left: 40px;
+            right: 40px;
+            transform: translateY(-50%);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .timeline-year {
+            position: absolute;
+            top: 10px;
+            font-size: 10px;
+            color: rgba(148, 163, 184, 0.3);
+            font-weight: 500;
+            letter-spacing: 1px;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .timeline.collapsed .timeline-year {
+            opacity: 0;
+        }
+
+        .timeline-dots {
+            position: absolute;
+            top: 50%;
+            left: 40px;
+            right: 40px;
+            transform: translateY(-50%);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .timeline-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--dot-color);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 10px var(--dot-color);
+        }
+
+        .timeline-dot:hover {
+            transform: scale(2);
+            box-shadow: 0 0 20px var(--dot-color);
+        }
+
+        .timeline-dot:hover .timeline-tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -10px);
+        }
+
+        .timeline-tooltip {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translate(-50%, 0);
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 8px;
+            padding: 8px 12px;
+            white-space: nowrap;
+            font-size: 11px;
+            color: #f1f5f9;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .detail-panel {
+            position: fixed;
+            right: -420px;
+            top: 0;
+            width: 420px;
+            height: 100%;
+            background: rgba(10, 14, 26, 0.8);
+            backdrop-filter: blur(30px);
+            border-left: 1px solid rgba(148, 163, 184, 0.1);
+            padding: 40px 30px;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+            z-index: 30;
+        }
+
+        .detail-panel.open {
+            right: 0;
+            box-shadow: -20px 0 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .detail-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border-radius: 50%;
+            color: rgba(148, 163, 184, 0.5);
+            font-size: 20px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .detail-close:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+            transform: rotate(90deg);
+        }
+
+        .detail-title {
+            font-size: 1.5rem;
+            font-weight: 300;
+            margin-bottom: 12px;
+            color: #f1f5f9;
+            line-height: 1.3;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-date {
+            color: rgba(148, 163, 184, 0.6);
+            font-size: 0.8rem;
+            margin-bottom: 20px;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+
+        .detail-quote {
+            font-style: italic;
+            color: rgba(203, 213, 225, 0.8);
+            margin-bottom: 30px;
+            padding-left: 16px;
+            border-left: 2px solid;
+            border-image: linear-gradient(135deg, rgba(96, 165, 250, 0.5), rgba(167, 139, 250, 0.5)) 1;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            font-weight: 300;
+        }
+
+        .detail-section {
+            margin-bottom: 24px;
+        }
+
+        .detail-section-title {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: rgba(148, 163, 184, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+        }
+
+        .concept-pill {
+            display: inline-block;
+            background: rgba(96, 165, 250, 0.1);
+            border: 1px solid rgba(96, 165, 250, 0.2);
+            border-radius: 20px;
+            padding: 6px 14px;
+            margin: 3px;
+            font-size: 0.85rem;
+            color: rgba(147, 197, 253, 0.9);
+            transition: all 0.2s ease;
+            font-weight: 400;
+        }
+
+        .concept-pill:hover {
+            background: rgba(96, 165, 250, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .insight-item {
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            color: rgba(226, 232, 240, 0.8);
+            line-height: 1.5;
+            border: 1px solid rgba(148, 163, 184, 0.05);
+            transition: all 0.2s ease;
+            font-weight: 300;
+        }
+
+        .insight-item:hover {
+            background: rgba(30, 41, 59, 0.3);
+            border-color: rgba(96, 165, 250, 0.1);
+        }
+
+        .stats {
+            position: fixed;
+            top: 100px;
+            left: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 10;
+        }
+
+        .stat {
+            background: rgba(10, 14, 26, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 12px;
+            padding: 12px 18px;
+            text-align: center;
+            transition: all 0.3s ease;
+            min-width: 100px;
+        }
+
+        .stat:hover {
+            background: rgba(15, 23, 42, 0.5);
+            transform: translateX(3px);
+            border-color: rgba(96, 165, 250, 0.2);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 300;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: rgba(148, 163, 184, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 2px;
+            font-weight: 500;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .control-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(10, 14, 26, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            color: rgba(148, 163, 184, 0.5);
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            background: rgba(15, 23, 42, 0.8);
+            border-color: rgba(96, 165, 250, 0.3);
+            color: #60a5fa;
+            transform: scale(1.1);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.2);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div class="header">
+        <h1>Stellar Knowledge</h1>
+        <p>22 Articles · 280 Concepts · 468 Insights</p>
+    </div>
+
+    <div class="controls">
+        <button class="control-btn" onclick="zoomIn()" title="Zoom In">+</button>
+        <button class="control-btn" onclick="zoomOut()" title="Zoom Out">−</button>
+        <button class="control-btn" onclick="resetView()" title="Reset View">↻</button>
+    </div>
+
+    <div class="timeline" id="timeline">
+        <div class="timeline-toggle" onclick="toggleTimeline()">▼</div>
+        <div class="timeline-container">
+            <div class="timeline-line"></div>
+            <div class="timeline-years" id="timelineYears"></div>
+            <div class="timeline-dots" id="timelineDots"></div>
+        </div>
+    </div>
+
+    <div class="detail-panel" id="detailPanel">
+        <div class="detail-close" onclick="closeDetail()">×</div>
+        <div class="detail-title" id="detailTitle"></div>
+        <div class="detail-date" id="detailDate"></div>
+        <div class="detail-quote" id="detailQuote"></div>
+        <div class="detail-section">
+            <div class="detail-section-title">Key Concepts</div>
+            <div id="detailConcepts"></div>
+        </div>
+        <div class="detail-section">
+            <div class="detail-section-title">Insights</div>
+            <div id="detailInsights"></div>
+        </div>
+    </div>
+
+    <div class="stats">
+        <div class="stat">
+            <div class="stat-value">22</div>
+            <div class="stat-label">Articles</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value">280</div>
+            <div class="stat-label">Concepts</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value">468</div>
+            <div class="stat-label">Insights</div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced article data with themes for better clustering
+        const articles = [
+            {
+                id: "beautiful-flaw",
+                title: "The Beautiful Flaw",
+                date: "2024-12-15",
+                quote: "The most profound truths often hide in our imperfections.",
+                themes: ["Philosophy", "Creativity", "Systems"],
+                concepts: ["Imperfection", "Authenticity", "Wabi-Sabi", "Creative Process"],
+                insights: [
+                    "Flaws create character in both systems and people",
+                    "Perfection is often the enemy of progress",
+                    "The crack is where the light gets in"
+                ],
+                connections: ["vibe-code", "cut-deep", "rhythm-engine"],
+                color: "#60a5fa",
+                theme: "creativity"
+            },
+            {
+                id: "vibe-code",
+                title: "Vibe Code Like You Mean It",
+                date: "2024-12-08",
+                quote: "Code has a feeling, a rhythm, a vibe that transcends syntax.",
+                themes: ["Programming", "Creativity", "Art"],
+                concepts: ["Code Aesthetics", "Programming Style", "Flow State"],
+                insights: [
+                    "Code quality includes emotional resonance",
+                    "The best code feels right before it works right"
+                ],
+                connections: ["beautiful-flaw", "rhythm-engine", "death-syntax"],
+                color: "#a78bfa",
+                theme: "creativity"
+            },
+            {
+                id: "rhythm-engine",
+                title: "The Rhythm Engine",
+                date: "2024-12-01",
+                quote: "Finding the beat that drives innovation while maintaining humanity.",
+                themes: ["Innovation", "Balance", "Creativity"],
+                concepts: ["Creative Flow", "Innovation Rhythm", "Sustainable Pace"],
+                insights: [
+                    "Innovation has a natural rhythm that can't be forced",
+                    "Teams perform best when they find their collective beat"
+                ],
+                connections: ["vibe-code", "tuning-forks", "out-time"],
+                color: "#34d399",
+                theme: "creativity"
+            },
+            {
+                id: "warp-woof",
+                title: "The Warp and the Woof of AI",
+                date: "2024-11-24",
+                quote: "We're weaving a new reality where human and machine intelligence intertwine.",
+                themes: ["AI", "Integration", "Future"],
+                concepts: ["AI Integration", "Hybrid Intelligence", "Emergence"],
+                insights: [
+                    "AI and human intelligence are becoming inseparable",
+                    "Integration patterns matter more than individual capabilities"
+                ],
+                connections: ["anthropomorphize", "wave-particle", "consciousness-countdown"],
+                color: "#f472b6",
+                theme: "ai"
+            },
+            {
+                id: "anthropomorphize",
+                title: "Anthropomorphize Like a Champ",
+                date: "2024-11-17",
+                quote: "Treating AI with human courtesy unlocks better interactions.",
+                themes: ["AI", "Communication", "Psychology"],
+                concepts: ["AI Interaction", "Anthropomorphism", "Conversational AI"],
+                insights: [
+                    "Anthropomorphism improves AI interaction quality",
+                    "Courtesy and context yield better AI responses"
+                ],
+                connections: ["warp-woof", "last-skill", "consciousness-countdown"],
+                color: "#fbbf24",
+                theme: "ai"
+            },
+            {
+                id: "cut-deep",
+                title: "A Cut Too Deep",
+                date: "2024-11-10",
+                quote: "Sometimes optimization cuts away the very thing that made it valuable.",
+                themes: ["Systems", "Optimization", "Balance"],
+                concepts: ["Over-optimization", "Essential Complexity", "Value Preservation"],
+                insights: [
+                    "Optimization can destroy essential complexity",
+                    "Not everything that can be simplified should be"
+                ],
+                connections: ["beautiful-flaw", "forgotten-task", "activation-energy"],
+                color: "#f87171",
+                theme: "systems"
+            },
+            {
+                id: "out-time",
+                title: "Out of Time",
+                date: "2024-11-03",
+                quote: "How downtime hits differently in the age of AI acceleration.",
+                themes: ["Time", "AI", "Experience"],
+                concepts: ["Time Perception", "AI Speed", "Digital Fatigue"],
+                insights: [
+                    "AI acceleration distorts human time perception",
+                    "Rest becomes more critical as pace increases"
+                ],
+                connections: ["rhythm-engine", "welcome-overwhelm", "activation-energy"],
+                color: "#60a5fa",
+                theme: "experience"
+            },
+            {
+                id: "port-purpose",
+                title: "Of Port and Purpose",
+                date: "2024-10-27",
+                quote: "Every connection point tells a story of intention and compromise.",
+                themes: ["Architecture", "Design", "Systems"],
+                concepts: ["System Architecture", "Interface Design", "Technical Debt"],
+                insights: [
+                    "Every technical decision embeds values",
+                    "Interfaces reveal system philosophy"
+                ],
+                connections: ["showroom-stack", "illegal-textbook", "forgotten-task"],
+                color: "#a78bfa",
+                theme: "systems"
+            },
+            {
+                id: "forgotten-task",
+                title: "The Forgotten Task",
+                date: "2024-10-20",
+                quote: "What we choose to forget shapes us as much as what we remember.",
+                themes: ["Memory", "Focus", "Cognition"],
+                concepts: ["Memory Systems", "Cognitive Load", "Strategic Ignorance"],
+                insights: [
+                    "Forgetting is an active cognitive strategy",
+                    "Not all tasks deserve equal memory"
+                ],
+                connections: ["cut-deep", "port-purpose", "last-skill"],
+                color: "#34d399",
+                theme: "cognition"
+            },
+            {
+                id: "last-skill",
+                title: "The Last Skill",
+                date: "2024-10-13",
+                quote: "As AI masters more skills, what remains uniquely human becomes clearer.",
+                themes: ["AI", "Humanity", "Skills"],
+                concepts: ["Human Uniqueness", "AI Capabilities", "Skill Evolution"],
+                insights: [
+                    "Human value isn't in doing what machines can't, but being what they can't be",
+                    "Emotional intelligence remains irreplaceable"
+                ],
+                connections: ["anthropomorphize", "forgotten-task", "consciousness-countdown"],
+                color: "#f472b6",
+                theme: "ai"
+            },
+            {
+                id: "cancelling-apocalypse",
+                title: "I'm Cancelling the Apocalypse",
+                date: "2024-10-06",
+                quote: "The future doesn't have to be the dystopia we've been sold.",
+                themes: ["Future", "Optimism", "Technology"],
+                concepts: ["Future Vision", "Technological Optimism", "Human Agency"],
+                insights: [
+                    "We have more control over the future than we think",
+                    "Pessimism is often a luxury we can't afford"
+                ],
+                connections: ["consciousness-countdown", "first-last", "welcome-overwhelm"],
+                color: "#fbbf24",
+                theme: "future"
+            },
+            {
+                id: "consciousness-countdown",
+                title: "The Consciousness Countdown",
+                date: "2024-09-29",
+                quote: "The race to understand consciousness before we accidentally create it.",
+                themes: ["Consciousness", "AI", "Philosophy"],
+                concepts: ["Machine Consciousness", "Emergence", "Philosophical Questions"],
+                insights: [
+                    "We might create consciousness before understanding it",
+                    "The hard problem of consciousness remains unsolved"
+                ],
+                connections: ["warp-woof", "anthropomorphize", "last-skill", "cancelling-apocalypse"],
+                color: "#f87171",
+                theme: "ai"
+            },
+            {
+                id: "activation-energy",
+                title: "The Activation Energy of Everything",
+                date: "2024-09-22",
+                quote: "Every transformation requires an initial push to overcome inertia.",
+                themes: ["Change", "Energy", "Systems"],
+                concepts: ["Activation Energy", "Change Management", "System Inertia"],
+                insights: [
+                    "Starting is often harder than continuing",
+                    "Systems resist change until a threshold is reached"
+                ],
+                connections: ["cut-deep", "out-time", "boomerang"],
+                color: "#60a5fa",
+                theme: "systems"
+            },
+            {
+                id: "death-syntax",
+                title: "Death By Syntax",
+                date: "2024-09-15",
+                quote: "When form becomes more important than function, creativity dies.",
+                themes: ["Programming", "Creativity", "Rules"],
+                concepts: ["Syntax vs Semantics", "Creative Freedom", "Rule Systems"],
+                insights: [
+                    "Rigid syntax can stifle creative problem-solving",
+                    "The best languages get out of the way"
+                ],
+                connections: ["vibe-code", "ti85", "illegal-textbook"],
+                color: "#a78bfa",
+                theme: "creativity"
+            },
+            {
+                id: "ti85",
+                title: "Your TI-85 Never Said No",
+                date: "2024-09-08",
+                quote: "Simple tools that never limit us teach us to think differently.",
+                themes: ["Tools", "Learning", "Simplicity"],
+                concepts: ["Tool Philosophy", "Learning Tools", "Constraint Freedom"],
+                insights: [
+                    "Limitations can enhance creativity",
+                    "Simple tools teach fundamental thinking"
+                ],
+                connections: ["death-syntax", "first-last", "illegal-textbook"],
+                color: "#34d399",
+                theme: "learning"
+            },
+            {
+                id: "wave-particle",
+                title: "Wave-Particle Singularity",
+                date: "2024-09-01",
+                quote: "In the quantum realm of ideas, thoughts exist in superposition.",
+                themes: ["Physics", "Ideas", "Duality"],
+                concepts: ["Idea Superposition", "Thought Duality", "Quantum Thinking"],
+                insights: [
+                    "Ideas can exist in multiple states simultaneously",
+                    "Observation collapses possibility into reality"
+                ],
+                connections: ["warp-woof", "first-last", "boomerang"],
+                color: "#f472b6",
+                theme: "philosophy"
+            },
+            {
+                id: "first-last",
+                title: "The First Last Principle",
+                date: "2024-08-25",
+                quote: "Begin with the end, end with the beginning, find wisdom in the cycle.",
+                themes: ["Philosophy", "Cycles", "Wisdom"],
+                concepts: ["Circular Thinking", "First Principles", "Cyclical Wisdom"],
+                insights: [
+                    "Linear thinking misses cyclical truths",
+                    "Endings often contain new beginnings"
+                ],
+                connections: ["cancelling-apocalypse", "ti85", "wave-particle"],
+                color: "#fbbf24",
+                theme: "philosophy"
+            },
+            {
+                id: "illegal-textbook",
+                title: "The Illegal Textbook",
+                date: "2024-08-18",
+                quote: "The most valuable knowledge is often that which challenges orthodoxy.",
+                themes: ["Knowledge", "Education", "Rebellion"],
+                concepts: ["Forbidden Knowledge", "Educational Freedom", "Orthodoxy"],
+                insights: [
+                    "Breakthrough insights often come from forbidden questions",
+                    "Education should challenge, not conform"
+                ],
+                connections: ["port-purpose", "death-syntax", "ti85"],
+                color: "#f87171",
+                theme: "learning"
+            },
+            {
+                id: "showroom-stack",
+                title: "The Showroom and the Stack",
+                date: "2024-08-11",
+                quote: "What we show and what we build on are rarely the same.",
+                themes: ["Technology", "Reality", "Display"],
+                concepts: ["Frontend vs Backend", "Presentation Layer", "Technical Reality"],
+                insights: [
+                    "The visible is a tiny fraction of the real",
+                    "Showrooms sell dreams, stacks deliver reality"
+                ],
+                connections: ["port-purpose", "boomerang", "tuning-forks"],
+                color: "#60a5fa",
+                theme: "systems"
+            },
+            {
+                id: "boomerang",
+                title: "Boomerang Thinking",
+                date: "2024-08-04",
+                quote: "Ideas that return transformed teach us more than those that stay.",
+                themes: ["Thinking", "Ideas", "Evolution"],
+                concepts: ["Idea Evolution", "Recursive Thinking", "Thought Transformation"],
+                insights: [
+                    "Ideas grow through circulation and return",
+                    "The best thoughts come back improved"
+                ],
+                connections: ["activation-energy", "wave-particle", "showroom-stack"],
+                color: "#a78bfa",
+                theme: "cognition"
+            },
+            {
+                id: "tuning-forks",
+                title: "Tuning Forks in a Tornado",
+                date: "2024-07-28",
+                quote: "Finding harmony in chaos requires different instruments.",
+                themes: ["Chaos", "Harmony", "Balance"],
+                concepts: ["Chaos Navigation", "Finding Signal", "Dynamic Balance"],
+                insights: [
+                    "Stability in chaos comes from resonance, not resistance",
+                    "The right frequency cuts through any noise"
+                ],
+                connections: ["rhythm-engine", "showroom-stack", "welcome-overwhelm"],
+                color: "#34d399",
+                theme: "experience"
+            },
+            {
+                id: "welcome-overwhelm",
+                title: "Welcome to the Overwhelm",
+                date: "2024-07-21",
+                quote: "The flood of information isn't drowning us; we're learning to swim.",
+                themes: ["Information", "Adaptation", "Growth"],
+                concepts: ["Information Overload", "Adaptive Capacity", "Digital Evolution"],
+                insights: [
+                    "Overwhelm is a transitional state, not a permanent condition",
+                    "We're evolving new cognitive strategies for information abundance"
+                ],
+                connections: ["out-time", "cancelling-apocalypse", "tuning-forks"],
+                color: "#f472b6",
+                theme: "experience"
+            }
+        ];
+
+        // Canvas setup
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let nodes = [];
+        let particles = [];
+        let selectedNode = null;
+        let hoveredNode = null;
+        let zoom = 1;
+        let panX = 0;
+        let panY = 0;
+        let frame = 0;
+
+        // Theme-based clustering centers
+        const themeCenters = {
+            creativity: { x: 0.75, y: 0.3 },
+            ai: { x: 0.25, y: 0.4 },
+            systems: { x: 0.5, y: 0.6 },
+            cognition: { x: 0.7, y: 0.5 },
+            philosophy: { x: 0.3, y: 0.7 },
+            experience: { x: 0.6, y: 0.35 },
+            future: { x: 0.35, y: 0.25 },
+            learning: { x: 0.45, y: 0.45 }
+        };
+
+        // Particle class for flowing connections
+        class Particle {
+            constructor(startNode, endNode) {
+                this.startNode = startNode;
+                this.endNode = endNode;
+                this.progress = 0;
+                this.speed = 0.005 + Math.random() * 0.005;
+                this.size = 2 + Math.random() * 2;
+                this.opacity = 0.3 + Math.random() * 0.4;
+            }
+
+            update() {
+                this.progress += this.speed;
+                if (this.progress >= 1) {
+                    this.progress = 0;
+                }
+            }
+
+            draw() {
+                const t = this.progress;
+                const x1 = this.startNode.x;
+                const y1 = this.startNode.y;
+                const x2 = this.endNode.x;
+                const y2 = this.endNode.y;
+
+                // Bezier curve control points
+                const cx1 = x1 + (x2 - x1) * 0.25;
+                const cy1 = y1 + (y2 - y1) * 0.1 - 30;
+                const cx2 = x1 + (x2 - x1) * 0.75;
+                const cy2 = y1 + (y2 - y1) * 0.9 + 30;
+
+                // Calculate position along bezier curve
+                const x = Math.pow(1-t, 3) * x1 +
+                         3 * Math.pow(1-t, 2) * t * cx1 +
+                         3 * (1-t) * Math.pow(t, 2) * cx2 +
+                         Math.pow(t, 3) * x2;
+                const y = Math.pow(1-t, 3) * y1 +
+                         3 * Math.pow(1-t, 2) * t * cy1 +
+                         3 * (1-t) * Math.pow(t, 2) * cy2 +
+                         Math.pow(t, 3) * y2;
+
+                // Draw particle
+                ctx.save();
+                ctx.globalAlpha = this.opacity * (1 - Math.abs(t - 0.5) * 0.5);
+                const gradient = ctx.createRadialGradient(x, y, 0, x, y, this.size * 2);
+                gradient.addColorStop(0, this.startNode.color + 'ff');
+                gradient.addColorStop(0.5, this.startNode.color + '80');
+                gradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(x, y, this.size * 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // Node class for force-directed layout
+        class Node {
+            constructor(article, index) {
+                this.article = article;
+                this.id = article.id;
+                this.title = article.title;
+                this.color = article.color;
+                this.theme = article.theme;
+
+                // Initialize position with some randomness around theme center
+                const center = themeCenters[article.theme] || { x: 0.5, y: 0.5 };
+                this.x = (center.x + (Math.random() - 0.5) * 0.2) * canvas.width;
+                this.y = (center.y + (Math.random() - 0.5) * 0.2) * canvas.height;
+
+                this.vx = 0;
+                this.vy = 0;
+                this.radius = 12;
+                this.pulsePhase = Math.random() * Math.PI * 2;
+            }
+
+            update() {
+                // Apply forces
+                let fx = 0, fy = 0;
+
+                // Attraction to theme center (weak)
+                const center = themeCenters[this.theme] || { x: 0.5, y: 0.5 };
+                const targetX = center.x * canvas.width;
+                const targetY = center.y * canvas.height;
+                fx += (targetX - this.x) * 0.0005;
+                fy += (targetY - this.y) * 0.0005;
+
+                // Repulsion from other nodes
+                nodes.forEach(other => {
+                    if (other.id !== this.id) {
+                        const dx = this.x - other.x;
+                        const dy = this.y - other.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const minDist = 80;
+
+                        if (dist < minDist && dist > 0) {
+                            const force = (minDist - dist) / dist * 2;
+                            fx += dx * force;
+                            fy += dy * force;
+                        }
+                    }
+                });
+
+                // Attraction along connections (stronger)
+                this.article.connections.forEach(connId => {
+                    const connected = nodes.find(n => n.id === connId);
+                    if (connected) {
+                        const dx = connected.x - this.x;
+                        const dy = connected.y - this.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const idealDist = 150;
+
+                        if (dist > idealDist) {
+                            const force = (dist - idealDist) * 0.001;
+                            fx += dx * force;
+                            fy += dy * force;
+                        }
+                    }
+                });
+
+                // Apply velocity with damping
+                this.vx = (this.vx + fx) * 0.85;
+                this.vy = (this.vy + fy) * 0.85;
+
+                // Update position
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Keep nodes on screen
+                const margin = 50;
+                this.x = Math.max(margin, Math.min(canvas.width - margin, this.x));
+                this.y = Math.max(margin, Math.min(canvas.height - margin, this.y));
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(canvas.width/2, canvas.height/2);
+                ctx.scale(zoom, zoom);
+                ctx.translate(-canvas.width/2 + panX, -canvas.height/2 + panY);
+
+                const isHovered = hoveredNode === this;
+                const isSelected = selectedNode === this;
+                const pulse = Math.sin(frame * 0.02 + this.pulsePhase) * 0.1 + 1;
+                const scale = (isHovered ? 1.3 : 1) * (isSelected ? 1.2 : 1) * pulse;
+                const radius = this.radius * scale;
+
+                // Outer glow
+                if (isHovered || isSelected) {
+                    const glowGradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, radius * 4);
+                    glowGradient.addColorStop(0, this.color + '30');
+                    glowGradient.addColorStop(0.5, this.color + '10');
+                    glowGradient.addColorStop(1, 'transparent');
+                    ctx.fillStyle = glowGradient;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, radius * 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Node gradient
+                const nodeGradient = ctx.createRadialGradient(
+                    this.x - radius/3, this.y - radius/3, 0,
+                    this.x, this.y, radius
+                );
+                nodeGradient.addColorStop(0, this.color + 'ff');
+                nodeGradient.addColorStop(0.7, this.color + 'cc');
+                nodeGradient.addColorStop(1, this.color + '99');
+
+                ctx.fillStyle = nodeGradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Subtle ring
+                ctx.strokeStyle = this.color + '40';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, radius + 4, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Title on hover
+                if (isHovered || isSelected) {
+                    ctx.fillStyle = 'rgba(241, 245, 249, 0.9)';
+                    ctx.font = '12px Inter, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'top';
+                    ctx.fillText(this.title, this.x, this.y + radius + 10);
+                }
+
+                ctx.restore();
+            }
+        }
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initNodes();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function initNodes() {
+            nodes = articles.map((article, i) => new Node(article, i));
+            initParticles();
+        }
+
+        function initParticles() {
+            particles = [];
+            nodes.forEach(node => {
+                node.article.connections.forEach(connId => {
+                    const connected = nodes.find(n => n.id === connId);
+                    if (connected && Math.random() > 0.5) {
+                        // Add 2-3 particles per connection
+                        for (let i = 0; i < 2 + Math.floor(Math.random() * 2); i++) {
+                            const particle = new Particle(node, connected);
+                            particle.progress = Math.random(); // Start at random positions
+                            particles.push(particle);
+                        }
+                    }
+                });
+            });
+        }
+
+        function drawBackground() {
+            // Deep gradient background
+            const gradient = ctx.createRadialGradient(
+                canvas.width/2, canvas.height/2, 0,
+                canvas.width/2, canvas.height/2, canvas.width
+            );
+            gradient.addColorStop(0, '#0f1729');
+            gradient.addColorStop(0.5, '#0a0e1a');
+            gradient.addColorStop(1, '#050709');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Subtle vignette
+            const vignette = ctx.createRadialGradient(
+                canvas.width/2, canvas.height/2, canvas.width * 0.3,
+                canvas.width/2, canvas.height/2, canvas.width
+            );
+            vignette.addColorStop(0, 'transparent');
+            vignette.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
+            ctx.fillStyle = vignette;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function drawConnections() {
+            ctx.save();
+            ctx.translate(canvas.width/2, canvas.height/2);
+            ctx.scale(zoom, zoom);
+            ctx.translate(-canvas.width/2 + panX, -canvas.height/2 + panY);
+
+            nodes.forEach(node => {
+                node.article.connections.forEach(connId => {
+                    const connected = nodes.find(n => n.id === connId);
+                    if (connected && nodes.indexOf(node) < nodes.indexOf(connected)) {
+                        const x1 = node.x;
+                        const y1 = node.y;
+                        const x2 = connected.x;
+                        const y2 = connected.y;
+
+                        // Control points for bezier curve
+                        const cx1 = x1 + (x2 - x1) * 0.25;
+                        const cy1 = y1 + (y2 - y1) * 0.1 - 30;
+                        const cx2 = x1 + (x2 - x1) * 0.75;
+                        const cy2 = y1 + (y2 - y1) * 0.9 + 30;
+
+                        // Draw bezier connection
+                        const gradient = ctx.createLinearGradient(x1, y1, x2, y2);
+                        gradient.addColorStop(0, node.color + '20');
+                        gradient.addColorStop(0.5, node.color + '30');
+                        gradient.addColorStop(1, connected.color + '20');
+
+                        ctx.strokeStyle = gradient;
+                        ctx.lineWidth = hoveredNode === node || hoveredNode === connected ? 2 : 1;
+                        ctx.globalAlpha = hoveredNode === node || hoveredNode === connected ? 0.6 : 0.3;
+
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.bezierCurveTo(cx1, cy1, cx2, cy2, x2, y2);
+                        ctx.stroke();
+                        ctx.globalAlpha = 1;
+                    }
+                });
+            });
+
+            ctx.restore();
+        }
+
+        function draw() {
+            drawBackground();
+            drawConnections();
+
+            // Draw and update particles
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+
+            // Draw nodes
+            nodes.forEach(node => {
+                node.update();
+                node.draw();
+            });
+
+            frame++;
+        }
+
+        // Interaction handlers
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Transform coordinates
+            const tx = (x - canvas.width/2) / zoom + canvas.width/2 - panX;
+            const ty = (y - canvas.height/2) / zoom + canvas.height/2 - panY;
+
+            hoveredNode = null;
+            nodes.forEach(node => {
+                const dist = Math.sqrt((tx - node.x)**2 + (ty - node.y)**2);
+                if (dist < 30) {
+                    hoveredNode = node;
+                    canvas.style.cursor = 'pointer';
+                }
+            });
+
+            if (!hoveredNode) {
+                canvas.style.cursor = 'grab';
+            }
+        });
+
+        canvas.addEventListener('click', (e) => {
+            if (hoveredNode) {
+                selectArticle(hoveredNode.article);
+            }
+        });
+
+        // Pan with mouse drag
+        let isDragging = false;
+        let dragStartX, dragStartY;
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (!hoveredNode) {
+                isDragging = true;
+                dragStartX = e.clientX - panX;
+                dragStartY = e.clientY - panY;
+                canvas.style.cursor = 'grabbing';
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                panX = e.clientX - dragStartX;
+                panY = e.clientY - dragStartY;
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            if (!hoveredNode) {
+                canvas.style.cursor = 'grab';
+            }
+        });
+
+        // Mouse wheel zoom
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            const newZoom = Math.max(0.5, Math.min(3, zoom * delta));
+
+            // Zoom towards mouse position
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const dx = (x - canvas.width/2) / zoom;
+            const dy = (y - canvas.height/2) / zoom;
+
+            zoom = newZoom;
+
+            panX -= dx * (newZoom - zoom / delta);
+            panY -= dy * (newZoom - zoom / delta);
+        });
+
+        function selectArticle(article) {
+            selectedNode = nodes.find(n => n.id === article.id);
+            document.getElementById('detailTitle').textContent = article.title;
+            document.getElementById('detailDate').textContent = new Date(article.date).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            document.getElementById('detailQuote').textContent = article.quote;
+
+            // Add concepts
+            const conceptsDiv = document.getElementById('detailConcepts');
+            conceptsDiv.innerHTML = article.concepts.map(c =>
+                `<span class="concept-pill">${c}</span>`
+            ).join('');
+
+            // Add insights
+            const insightsDiv = document.getElementById('detailInsights');
+            insightsDiv.innerHTML = article.insights.map(i =>
+                `<div class="insight-item">${i}</div>`
+            ).join('');
+
+            document.getElementById('detailPanel').classList.add('open');
+        }
+
+        function closeDetail() {
+            selectedNode = null;
+            document.getElementById('detailPanel').classList.remove('open');
+        }
+
+        // Controls
+        function zoomIn() {
+            zoom = Math.min(zoom * 1.2, 3);
+        }
+
+        function zoomOut() {
+            zoom = Math.max(zoom / 1.2, 0.5);
+        }
+
+        function resetView() {
+            zoom = 1;
+            panX = 0;
+            panY = 0;
+        }
+
+        function toggleTimeline() {
+            const timeline = document.getElementById('timeline');
+            const toggle = timeline.querySelector('.timeline-toggle');
+            timeline.classList.toggle('collapsed');
+            toggle.textContent = timeline.classList.contains('collapsed') ? '▲' : '▼';
+        }
+
+        // Minimal timeline setup
+        function setupTimeline() {
+            const dotsContainer = document.getElementById('timelineDots');
+            const yearsContainer = document.getElementById('timelineYears');
+
+            // Sort articles by date
+            const sortedArticles = [...articles].sort((a, b) =>
+                new Date(a.date) - new Date(b.date)
+            );
+
+            // Get date range
+            const dates = sortedArticles.map(a => new Date(a.date));
+            const minDate = dates[0];
+            const maxDate = dates[dates.length - 1];
+            const range = maxDate - minDate;
+
+            // Add year markers
+            const years = ['2024 JUL', '2024 SEP', '2024 NOV', '2025 JAN'];
+            const yearPositions = [5, 35, 65, 95];
+
+            years.forEach((year, i) => {
+                const yearDiv = document.createElement('div');
+                yearDiv.className = 'timeline-year';
+                yearDiv.textContent = year;
+                yearDiv.style.left = `${yearPositions[i]}%`;
+                yearsContainer.appendChild(yearDiv);
+            });
+
+            // Add dots for articles
+            sortedArticles.forEach(article => {
+                const date = new Date(article.date);
+                const position = ((date - minDate) / range) * 100;
+
+                const dot = document.createElement('div');
+                dot.className = 'timeline-dot';
+                dot.style.setProperty('--dot-color', article.color);
+                dot.style.left = `${position}%`;
+
+                // Tooltip
+                const tooltip = document.createElement('div');
+                tooltip.className = 'timeline-tooltip';
+                tooltip.textContent = article.title;
+                dot.appendChild(tooltip);
+
+                dot.onclick = () => {
+                    selectArticle(article);
+                    // Smooth pan to article
+                    const node = nodes.find(n => n.id === article.id);
+                    if (node) {
+                        panX = (canvas.width/2 - node.x) * zoom;
+                        panY = (canvas.height/2 - node.y) * zoom;
+                    }
+                };
+
+                dotsContainer.appendChild(dot);
+            });
+        }
+
+        // Initialize
+        initNodes();
+        setupTimeline();
+
+        // Animation loop
+        function animate() {
+            draw();
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
