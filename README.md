@@ -48,7 +48,10 @@ Before starting, you'll need:
    make install
    ```
 
-   This installs Python dependencies, the Claude CLI, and sets up your environment.
+   This installs:
+   - Python dependencies and virtual environment
+   - Claude CLI globally via pnpm
+   - Global `amplifier` command for use anywhere on your system
 
 3. **Configure your data directories** (Recommended but optional):
 
@@ -78,18 +81,7 @@ Before starting, you'll need:
    AMPLIFIER_CONTENT_DIRS=.data/content,~/OneDrive/amplifier/content,~/Documents/notes
    ```
 
-4. **Activate the environment** (if not already active):
-   ```bash
-   source .venv/bin/activate  # Linux/Mac/WSL
-   .venv\Scripts\activate     # Windows
-   ```
-
-5. **Install global access** (Recommended):
-   ```bash
-   make install-global
-   ```
-
-   This installs the `amplifier` command globally, enabling you to use Amplifier's AI agents on ANY project:
+4. **That's it!** The `amplifier` command is now available globally:
 
    ```bash
    # Use from anywhere - it's that simple!
@@ -101,11 +93,13 @@ Before starting, you'll need:
    amplifier ~/work/backend              # Jump straight to your backend project
    ```
 
+   > **Note:** The virtual environment (`.venv`) is managed automatically by the amplifier command.
+
 ## 📖 How to Use Amplifier
 
-### After Installation: Launch from Anywhere! 🚀
+### Launch from Anywhere! 🚀
 
-Once installed with `make install-global`, the `amplifier` command is available everywhere:
+After running `make install`, the `amplifier` command is available everywhere:
 
 ```bash
 # It's this simple - just run amplifier!
@@ -131,9 +125,9 @@ claude  # Claude knows it's in Amplifier's directory
 
 ### Alternative Methods
 
-#### Without Global Installation
+#### Using the Shell Script Directly
 
-If you haven't run `make install-global` yet:
+You can also use the shell script directly from the Amplifier directory:
 
 ```bash
 cd ~/dev/amplifier

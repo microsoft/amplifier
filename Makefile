@@ -20,8 +20,7 @@ endef
 default: ## Show essential commands
 	@echo ""
 	@echo "Quick Start:"
-	@echo "  make install         Install all dependencies"
-	@echo "  make install-global  Install global 'amplifier' command"
+	@echo "  make install         Install everything (dependencies + global command)"
 	@echo ""
 	@echo "Knowledge Base:"
 	@echo "  make knowledge-update        Full pipeline: extract & synthesize"
@@ -54,8 +53,7 @@ help: ## Show ALL available commands
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo ""
 	@echo "QUICK START:"
-	@echo "  make install         Install all dependencies"
-	@echo "  make install-global  Install global 'amplifier' command"
+	@echo "  make install         Install everything (dependencies + global command)"
 	@echo ""
 	@echo "KNOWLEDGE BASE:"
 	@echo "  make knowledge-update        Full pipeline: extract & synthesize"
@@ -118,11 +116,11 @@ help: ## Show ALL available commands
 	@echo ""
 
 # Installation
-install: ## Install all dependencies and global commands
-	@echo "Installing workspace dependencies..."
+install: ## Install everything: dependencies, Claude CLI, and global amplifier command
+	@echo "📦 Installing Python dependencies..."
 	uv sync --group dev
 	@echo ""
-	@echo "Installing npm packages globally..."
+	@echo "🌐 Installing Claude CLI globally..."
 	@command -v pnpm >/dev/null 2>&1 || { echo "❌ pnpm required. Install: curl -fsSL https://get.pnpm.io/install.sh | sh -"; exit 1; }
 	@# Ensure pnpm global directory exists and is configured (handles non-interactive shells)
 	@PNPM_HOME=$$(pnpm bin -g 2>/dev/null || echo "$$HOME/.local/share/pnpm"); \
@@ -140,17 +138,21 @@ install: ## Install all dependencies and global commands
 		exit 1; \
 	}
 	@echo ""
-	@echo "Installing global Amplifier commands..."
+	@echo "🚀 Installing global 'amplifier' command..."
 	@$(MAKE) install-global
 	@echo ""
-	@echo "✅ All dependencies and global commands installed!"
+	@echo "✅ Installation complete! The 'amplifier' command is now available globally."
 	@echo ""
-	@if [ -n "$$VIRTUAL_ENV" ]; then \
-		echo "✓ Virtual environment already active"; \
-	elif [ -f .venv/bin/activate ]; then \
-		echo "→ Run this command: source .venv/bin/activate"; \
+	@echo "🎉 You can now use Amplifier from anywhere:"
+	@echo "   amplifier                    # Launch in current directory"
+	@echo "   amplifier ~/my-project       # Launch in any project"
+	@echo ""
+	@if echo "$$PATH" | grep -q "$$HOME/bin"; then \
+		echo "✓ Your PATH is configured correctly"; \
 	else \
-		echo "✗ No virtual environment found. Run 'make install' first."; \
+		echo "⚠️  Add ~/bin to your PATH for the amplifier command to work:"; \
+		echo '   export PATH="$$HOME/bin:$$PATH"'; \
+		echo "   (Add this to your ~/.bashrc or ~/.zshrc)"; \
 	fi
 
 # Global installation
