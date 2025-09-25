@@ -41,6 +41,9 @@ default: ## Show essential commands
 	@echo "AI Context:"
 	@echo "  make ai-context-files Build AI context documentation"
 	@echo ""
+	@echo "Blog Writing:"
+	@echo "  make blog-write      Create a blog post from your ideas"
+	@echo ""
 	@echo "Other:"
 	@echo "  make clean          Clean build artifacts"
 	@echo "  make help           Show ALL available commands"
@@ -106,6 +109,10 @@ help: ## Show ALL available commands
 	@echo ""
 	@echo "AI CONTEXT:"
 	@echo "  make ai-context-files  Build AI context documentation"
+	@echo ""
+	@echo "BLOG WRITING:"
+	@echo "  make blog-write BRAIN=<file> WRITINGS=<dir>  Create blog post from ideas"
+	@echo "  make blog-resume       Resume interrupted blog writing session"
 	@echo ""
 	@echo "UTILITIES:"
 	@echo "  make clean           Clean build artifacts"
@@ -469,6 +476,37 @@ ai-context-files: ## Build AI context files
 	uv run python tools/build_ai_context_files.py
 	uv run python tools/build_git_collector_files.py
 	@echo "AI context files generated"
+
+# Blog Writing
+blog-write: ## Create a blog post from your ideas. Usage: make blog-write BRAIN=ideas.md WRITINGS=my_writings/
+	@if [ -z "$(BRAIN)" ]; then \
+		echo "Error: Please provide a brain dump file. Usage: make blog-write BRAIN=ideas.md WRITINGS=my_writings/"; \
+		exit 1; \
+	fi
+	@if [ -z "$(WRITINGS)" ]; then \
+		echo "Error: Please provide a writings directory. Usage: make blog-write BRAIN=ideas.md WRITINGS=my_writings/"; \
+		exit 1; \
+	fi
+	@output="$${OUTPUT:-blog_post.md}"; \
+	echo "🚀 Starting blog post writer..."; \
+	echo "  Brain dump: $(BRAIN)"; \
+	echo "  Writings: $(WRITINGS)"; \
+	echo "  Output: $$output"; \
+	uv run python -m ai_working.blog_post_writer \
+		--brain-dump "$(BRAIN)" \
+		--writings-dir "$(WRITINGS)" \
+		--output "$$output"
+
+blog-resume: ## Resume an interrupted blog writing session
+	@echo "📝 Resuming blog post writer..."
+	@uv run python -m ai_working.blog_post_writer --resume
+
+blog-write-example: ## Run blog writer with example data
+	@echo "📝 Running blog writer with example data..."
+	@uv run python -m ai_working.blog_post_writer \
+		--brain-dump ai_working/blog_post_writer/tests/sample_brain_dump.md \
+		--writings-dir ai_working/blog_post_writer/tests/sample_writings/ \
+		--output example_blog_post.md
 
 # Clean WSL Files
 clean-wsl-files: ## Clean up WSL-related files (Zone.Identifier, sec.endpointdlp)
