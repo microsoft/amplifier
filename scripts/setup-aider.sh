@@ -26,10 +26,8 @@ fi
 
 # Install aider-chat in the separate environment
 echo "📥 Installing aider-chat..."
-source "$AIDER_VENV/bin/activate"
-pip install --upgrade pip
-pip install aider-chat
-deactivate
+"$AIDER_VENV/bin/python" -m pip install --upgrade pip
+"$AIDER_VENV/bin/python" -m pip install aider-chat
 
 # Create a wrapper script that can be called from Amplifier
 WRAPPER_PATH="$PROJECT_ROOT/amplifier/tools/aider_wrapper.py"
