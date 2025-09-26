@@ -274,8 +274,8 @@ main() {
         log "==============================================="
         log ""
 
-        # Start Claude with enhanced configuration and explicit API key
-        claude --api-key "$ANTHROPIC_API_KEY" --add-dir "$TARGET_DIR" --permission-mode acceptEdits
+        # Start Claude with enhanced configuration
+        claude --add-dir "$TARGET_DIR" --permission-mode acceptEdits
 
     elif [ ! -z "$AWS_ACCESS_KEY_ID" ]; then
         log "🔧 Configuring Claude Code with AWS Bedrock..."
