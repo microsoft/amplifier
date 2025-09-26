@@ -212,21 +212,22 @@ Write-Status "Press Ctrl+C to exit when done"
 $ContainerName = "amplifier-$(Split-Path -Leaf $TargetProject)-$PID"
 
 # Docker run arguments with complete environment configuration
-$DockerArgs = @(
-    "run", "-it", "--rm"
-    $EnvArgs
-    # Essential environment variables for Amplifier operation
-    "-e", "TARGET_DIR=/workspace"                    # Target project directory in container
-    "-e", "AMPLIFIER_DATA_DIR=/app/amplifier-data"   # Amplifier data persistence
-    # Volume mounts: Host → Container
-    "-v", "$($DockerProjectPath):/workspace"         # User project files
-    "-v", "$($DockerDataPath):/app/amplifier-data"   # Amplifier data directory
-    # Container identification
-    "--name", $ContainerName
-    $ImageName
-)
+# FIX: Use array concatenation (+) to properly flatten $EnvArgs instead of embedding as nested array
+$DockerArgs = @("run", "-it", "--rm") +
+              $EnvArgs +
+              @(
+                  # Essential environment variables for Amplifier operation
+                  "-e", "TARGET_DIR=/workspace"                    # Target project directory in container
+                  "-e", "AMPLIFIER_DATA_DIR=/app/amplifier-data"   # Amplifier data persistence
+                  # Volume mounts: Host → Container
+                  "-v", "$($DockerProjectPath):/workspace"         # User project files
+                  "-v", "$($DockerDataPath):/app/amplifier-data"   # Amplifier data directory
+                  # Container identification
+                  "--name", $ContainerName
+                  $ImageName
+              )
 
-Write-Status "Executing: docker run with $(($DockerArgs | Where-Object { $_ -like '-e' }).Count / 2) environment variables"
+Write-Status "Executing: docker run with $(($DockerArgs | Where-Object { $_ -eq '-e' }).Count) environment variables"
 
 try {
     & docker @DockerArgs
