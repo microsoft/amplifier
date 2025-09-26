@@ -134,8 +134,8 @@ CONFIG_EOF
     echo "==============================================="
     echo ""
 
-    # Start Claude with directory access - this should open interactive session
-    claude --add-dir "$TARGET_DIR"
+    # Start Claude with directory access and explicit permission mode
+    claude --add-dir "$TARGET_DIR" --permission-mode acceptEdits
 
 elif [ ! -z "$AWS_ACCESS_KEY_ID" ]; then
     echo "🔧 Configuring Claude Code with AWS Bedrock..."
@@ -165,8 +165,8 @@ CONFIG_EOF
     echo "==============================================="
     echo ""
 
-    # Start Claude with directory access - this should open interactive session
-    claude --add-dir "$TARGET_DIR"
+    # Start Claude with directory access and explicit permission mode
+    claude --add-dir "$TARGET_DIR" --permission-mode acceptEdits
 else
     echo "❌ No supported API configuration found!"
     exit 1

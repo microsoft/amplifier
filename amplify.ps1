@@ -100,10 +100,10 @@ try {
     Write-Success "Docker image built successfully"
 }
 
-# Prepare environment variables
+# Prepare environment variables for Claude Code configuration
 $EnvArgs = @()
 
-# Forward API keys if they exist
+# Critical API keys that Claude Code needs
 $ApiKeys = @(
     "ANTHROPIC_API_KEY",
     "AWS_ACCESS_KEY_ID",
@@ -112,52 +112,127 @@ $ApiKeys = @(
     "AWS_REGION"
 )
 
+$HasAnthropicKey = $false
+$HasAwsKeys = $false
+
 foreach ($Key in $ApiKeys) {
-    $Value = [Environment]::GetEnvironmentVariable($Key)
+    $Value = [System.Environment]::GetEnvironmentVariable($Key, [System.EnvironmentVariableTarget]::Process)
     if ($Value) {
         $EnvArgs += "-e"
         $EnvArgs += "$Key=$Value"
-        Write-Status "Forwarding $Key"
+        Write-Status "✓ Forwarding $Key"
+
+        if ($Key -eq "ANTHROPIC_API_KEY") { $HasAnthropicKey = $true }
+        if ($Key -eq "AWS_ACCESS_KEY_ID") { $HasAwsKeys = $true }
     }
 }
 
-# Check if we have any API keys
-if ($EnvArgs.Count -eq 0) {
-    Write-Warning "No API keys detected in environment."
-    Write-Warning "Make sure to set ANTHROPIC_API_KEY or AWS credentials before running."
+# Validate API key configuration
+if (-not $HasAnthropicKey -and -not $HasAwsKeys) {
+    Write-Error "❌ No valid API configuration found!"
+    Write-Error ""
+    Write-Error "Claude Code requires one of the following:"
+    Write-Error "  1. ANTHROPIC_API_KEY environment variable"
+    Write-Error "  2. AWS credentials (AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY)"
+    Write-Error ""
+    Write-Error "Set the appropriate environment variable and try again."
+    exit 1
 }
 
-# Convert Windows paths to Docker-compatible paths
-$DockerProjectPath = $TargetProject.Path -replace '\\', '/' -replace '^([A-Z]):', '/mnt/$1'.ToLower()
-$DockerDataPath = $ResolvedDataDir.Path -replace '\\', '/' -replace '^([A-Z]):', '/mnt/$1'.ToLower()
-
-# For Windows Docker Desktop, use the original Windows paths
-if ($IsWindows -or $env:OS -eq "Windows_NT") {
-    $DockerProjectPath = $TargetProject.Path
-    $DockerDataPath = $ResolvedDataDir.Path
+if ($HasAnthropicKey) {
+    Write-Success "🔑 Anthropic API key detected - will use direct API"
+} elseif ($HasAwsKeys) {
+    Write-Success "🔑 AWS credentials detected - will use Bedrock"
 }
 
-# Run the Docker container
-Write-Status "Starting Amplifier container..."
+# Function to convert paths for Docker mounting based on environment
+function ConvertTo-DockerPath {
+    param([string]$LocalPath)
+
+    # Simple environment detection using built-in PowerShell variables
+    if ($env:WSL_DISTRO_NAME) {
+        # Running in WSL - convert Windows paths to WSL mount format
+        # C:\Users\... becomes /mnt/c/Users/...
+        $DockerPath = $LocalPath -replace '\\', '/' -replace '^([A-Za-z]):', { '/mnt/' + $_.Groups[1].Value.ToLower() }
+        Write-Status "WSL environment: $LocalPath -> $DockerPath"
+        return $DockerPath
+    } elseif ($IsWindows -or $env:OS -eq "Windows_NT") {
+        # Native Windows - Docker Desktop handles Windows paths directly
+        Write-Status "Windows environment: Using native path $LocalPath"
+        return $LocalPath
+    } else {
+        # Unix/Linux - use paths as-is
+        Write-Status "Unix environment: Using path $LocalPath"
+        return $LocalPath
+    }
+}
+
+# Convert paths to Docker-compatible format
+$DockerProjectPath = ConvertTo-DockerPath -LocalPath $TargetProject.Path
+$DockerDataPath = ConvertTo-DockerPath -LocalPath $ResolvedDataDir.Path
+
+# Simple validation: test if Docker can mount the project directory
+Write-Status "Testing Docker mount accessibility..."
+try {
+    $TestOutput = docker run --rm -v "${DockerProjectPath}:/test" alpine:latest test -d /test 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "Docker may not be able to access project directory: $DockerProjectPath"
+        Write-Warning "If container fails to start:"
+        Write-Warning "  - For Docker Desktop: Enable file sharing for this drive in Settings"
+        Write-Warning "  - For WSL: Ensure path is accessible from within WSL"
+        Write-Warning "  - Check path exists and has proper permissions"
+    } else {
+        Write-Success "Docker mount test successful"
+    }
+} catch {
+    Write-Warning "Could not test Docker mount accessibility: $_"
+    Write-Warning "Container will attempt to start anyway"
+}
+
+# Run the Docker container with Claude Code pre-configured
+Write-Status "🚀 Starting Amplifier Docker container..."
+Write-Status "📁 Project: $DockerProjectPath → /workspace"
+Write-Status "💾 Data: $DockerDataPath → /app/amplifier-data"
+
+if ($HasAnthropicKey) {
+    Write-Status "🔗 API: Anthropic Direct API"
+} elseif ($HasAwsKeys) {
+    Write-Status "🔗 API: AWS Bedrock"
+}
+
+Write-Warning "⚠️  IMPORTANT: When Claude starts, send this first message:"
+Write-Host "===========================================" -ForegroundColor Yellow
+Write-Host "I'm working in /workspace which contains my project files." -ForegroundColor White
+Write-Host "Please cd to /workspace and work there." -ForegroundColor White
+Write-Host "Do NOT update any issues or PRs in the Amplifier repo." -ForegroundColor White
+Write-Host "===========================================" -ForegroundColor Yellow
+Write-Host ""
 Write-Status "Press Ctrl+C to exit when done"
 
 $ContainerName = "amplifier-$(Split-Path -Leaf $TargetProject)-$PID"
 
+# Docker run arguments with complete environment configuration
 $DockerArgs = @(
     "run", "-it", "--rm"
     $EnvArgs
-    "-e", "TARGET_DIR=/workspace"
-    "-e", "AMPLIFIER_DATA_DIR=/app/amplifier-data"
-    "-v", "$($DockerProjectPath):/workspace"
-    "-v", "$($DockerDataPath):/app/amplifier-data"
+    # Essential environment variables for Amplifier operation
+    "-e", "TARGET_DIR=/workspace"                    # Target project directory in container
+    "-e", "AMPLIFIER_DATA_DIR=/app/amplifier-data"   # Amplifier data persistence
+    # Volume mounts: Host → Container
+    "-v", "$($DockerProjectPath):/workspace"         # User project files
+    "-v", "$($DockerDataPath):/app/amplifier-data"   # Amplifier data directory
+    # Container identification
     "--name", $ContainerName
     $ImageName
 )
 
+Write-Status "Executing: docker run with $(($DockerArgs | Where-Object { $_ -like '-e' }).Count / 2) environment variables"
+
 try {
     & docker @DockerArgs
-    Write-Success "Amplifier session completed"
+    Write-Success "✅ Amplifier session completed successfully"
 } catch {
-    Write-Error "Failed to run Amplifier container: $_"
+    Write-Error "❌ Failed to run Amplifier container: $_"
+    Write-Error "Check that Docker is running and the image exists"
     exit 1
 }
