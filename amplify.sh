@@ -78,44 +78,84 @@ else
     print_status "Using existing Docker image: $IMAGE_NAME"
 fi
 
-# Prepare environment variables
+# Prepare environment variables for Claude Code configuration
 ENV_ARGS=()
 
-# Forward API keys if they exist
-if [ ! -z "$ANTHROPIC_API_KEY" ]; then
-    ENV_ARGS+=("-e" "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY")
-    print_status "Forwarding ANTHROPIC_API_KEY"
+# Critical API keys that Claude Code needs
+API_KEYS=("ANTHROPIC_API_KEY" "AWS_ACCESS_KEY_ID" "AWS_SECRET_ACCESS_KEY" "AWS_DEFAULT_REGION" "AWS_REGION")
+
+HAS_ANTHROPIC_KEY=false
+HAS_AWS_KEYS=false
+
+for key in "${API_KEYS[@]}"; do
+    value="${!key}"
+    if [ ! -z "$value" ]; then
+        ENV_ARGS+=("-e" "$key=$value")
+        print_status "✓ Forwarding $key"
+
+        if [ "$key" = "ANTHROPIC_API_KEY" ]; then
+            HAS_ANTHROPIC_KEY=true
+        fi
+        if [ "$key" = "AWS_ACCESS_KEY_ID" ]; then
+            HAS_AWS_KEYS=true
+        fi
+    fi
+done
+
+# Validate API key configuration
+if [ "$HAS_ANTHROPIC_KEY" = false ] && [ "$HAS_AWS_KEYS" = false ]; then
+    print_error "❌ No valid API configuration found!"
+    print_error ""
+    print_error "Claude Code requires one of the following:"
+    print_error "  1. ANTHROPIC_API_KEY environment variable"
+    print_error "  2. AWS credentials (AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY)"
+    print_error ""
+    print_error "Set the appropriate environment variable and try again."
+    exit 1
 fi
 
-if [ ! -z "$AWS_ACCESS_KEY_ID" ]; then
-    ENV_ARGS+=("-e" "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID")
-    print_status "Forwarding AWS_ACCESS_KEY_ID"
+if [ "$HAS_ANTHROPIC_KEY" = true ]; then
+    print_success "🔑 Anthropic API key detected - will use direct API"
+elif [ "$HAS_AWS_KEYS" = true ]; then
+    print_success "🔑 AWS credentials detected - will use Bedrock"
 fi
 
-if [ ! -z "$AWS_SECRET_ACCESS_KEY" ]; then
-    ENV_ARGS+=("-e" "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY")
-    print_status "Forwarding AWS_SECRET_ACCESS_KEY"
+# Simple validation: test if Docker can mount the project directory
+print_status "Testing Docker mount accessibility..."
+if docker run --rm -v "$TARGET_PROJECT:/test" alpine:latest test -d /test >/dev/null 2>&1; then
+    print_success "Docker mount test successful"
+else
+    print_warning "Docker may not be able to access project directory: $TARGET_PROJECT"
+    print_warning "If container fails to start:"
+    print_warning "  - For Docker Desktop: Enable file sharing for this drive in Settings"
+    print_warning "  - For WSL: Ensure path is accessible from within WSL"
+    print_warning "  - Check path exists and has proper permissions"
 fi
 
-if [ ! -z "$AWS_DEFAULT_REGION" ]; then
-    ENV_ARGS+=("-e" "AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION")
-    print_status "Forwarding AWS_DEFAULT_REGION"
+# Run the Docker container with Claude Code pre-configured
+print_status "🚀 Starting Amplifier Docker container..."
+print_status "📁 Project: $TARGET_PROJECT → /workspace"
+print_status "💾 Data: $DATA_DIR → /app/amplifier-data"
+
+if [ "$HAS_ANTHROPIC_KEY" = true ]; then
+    print_status "🔗 API: Anthropic Direct API"
+elif [ "$HAS_AWS_KEYS" = true ]; then
+    print_status "🔗 API: AWS Bedrock"
 fi
 
-if [ ! -z "$AWS_REGION" ]; then
-    ENV_ARGS+=("-e" "AWS_REGION=$AWS_REGION")
-    print_status "Forwarding AWS_REGION"
-fi
-
-# Check if we have any API keys
-if [ ${#ENV_ARGS[@]} -eq 0 ]; then
-    print_warning "No API keys detected in environment."
-    print_warning "Make sure to set ANTHROPIC_API_KEY or AWS credentials before running."
-fi
-
-# Run the Docker container
-print_status "Starting Amplifier container..."
+print_warning "⚠️  IMPORTANT: When Claude starts, send this first message:"
+echo -e "${YELLOW}===========================================${NC}"
+echo -e "${NC}I'm working in /workspace which contains my project files.${NC}"
+echo -e "${NC}Please cd to /workspace and work there.${NC}"
+echo -e "${NC}Do NOT update any issues or PRs in the Amplifier repo.${NC}"
+echo -e "${YELLOW}===========================================${NC}"
+echo ""
 print_status "Press Ctrl+C to exit when done"
+
+CONTAINER_NAME="amplifier-$(basename "$TARGET_PROJECT")-$$"
+
+# Docker run with complete environment configuration
+print_status "Executing: docker run with $(echo "${ENV_ARGS[@]}" | grep -o ' -e ' | wc -l) environment variables"
 
 docker run -it --rm \
     "${ENV_ARGS[@]}" \
@@ -123,7 +163,13 @@ docker run -it --rm \
     -e "AMPLIFIER_DATA_DIR=/app/amplifier-data" \
     -v "$TARGET_PROJECT:/workspace" \
     -v "$DATA_DIR:/app/amplifier-data" \
-    --name "amplifier-$(basename "$TARGET_PROJECT")-$$" \
+    --name "$CONTAINER_NAME" \
     "$IMAGE_NAME"
 
-print_success "Amplifier session completed"
+if [ $? -eq 0 ]; then
+    print_success "✅ Amplifier session completed successfully"
+else
+    print_error "❌ Failed to run Amplifier container"
+    print_error "Check that Docker is running and the image exists"
+    exit 1
+fi
