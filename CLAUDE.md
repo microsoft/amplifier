@@ -13,6 +13,8 @@ This file is reserved for Claude Code-specific instructions.
 - @AGENT_ORCHESTRATION.md
 - @ai_context/IMPLEMENTATION_PHILOSOPHY.md
 - @ai_context/MODULAR_DESIGN_PHILOSOPHY.md
+- @ai_context/FRACTALIZED_THINKING_PHILOSOPHY.md
+- @ai_context/FRACTALIZED_THINKING_INTEGRATION.md
 
 # Claude's Working Philosophy and Memory System
 
@@ -211,9 +213,11 @@ Single message with multiple Task calls:
 
 - Always reference `@ai_context/IMPLEMENTATION_PHILOSOPHY.md`
 - Always reference `@ai_context/MODULAR_DESIGN_PHILOSOPHY.md`
-- Embrace ruthless simplicity
-- Build as bricks and studs
+- Always reference `@ai_context/FRACTALIZED_THINKING_PHILOSOPHY.md` when working with complex problems
+- Embrace ruthless simplicity through patient understanding (fractalized approach)
+- Build as bricks and studs, finding the pattern that generates all bricks
 - Trust in emergence over control
+- Find the thread before forcing the solution
 
 ## Next Actions
 

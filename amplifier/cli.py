@@ -15,6 +15,8 @@ from pathlib import Path
 import click
 from click import Context
 
+from amplifier.cli_tools.aider import cli as aider_cli
+
 
 @click.group(invoke_without_command=True)
 @click.option("--version", is_flag=True, help="Show version information")
@@ -297,6 +299,17 @@ def claude(ctx: Context, project_dir: str | None, claude_args: tuple[str, ...]) 
 def events() -> None:
     """Manage and view event logs."""
     pass
+
+
+@cli.group()
+def aider() -> None:
+    """AI-powered code generation and regeneration with Aider."""
+    pass
+
+
+# Register all Aider subcommands
+for name, cmd in aider_cli.commands.items():
+    aider.add_command(cmd, name=name)
 
 
 @events.command("tail")

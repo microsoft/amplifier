@@ -1,0 +1,78 @@
+#!/bin/bash
+# Pre-commit hook for optional Aider code regeneration
+# This hook can be enabled to regenerate modules before committing
+
+# Configuration
+AIDER_REGENERATE="${AIDER_REGENERATE:-false}"
+AIDER_PHILOSOPHY="${AIDER_PHILOSOPHY:-fractalized}"
+AIDER_AUTO_ADD="${AIDER_AUTO_ADD:-true}"
+
+# Skip if regeneration is disabled
+if [ "$AIDER_REGENERATE" != "true" ]; then
+    exit 0
+fi
+
+echo "🔄 Aider pre-commit regeneration enabled..."
+
+# Get list of modified Python files
+MODIFIED_PY_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.py$')
+
+if [ -z "$MODIFIED_PY_FILES" ]; then
+    echo "✅ No Python files to regenerate"
+    exit 0
+fi
+
+echo "📦 Found $(echo "$MODIFIED_PY_FILES" | wc -l) modified Python file(s)"
+
+# Function to check if file should be regenerated
+should_regenerate() {
+    local file=$1
+
+    # Skip test files
+    if [[ "$file" == *"test_"* ]] || [[ "$file" == *"/tests/"* ]]; then
+        return 1
+    fi
+
+    # Skip __init__ files
+    if [[ "$file" == *"__init__.py" ]]; then
+        return 1
+    fi
+
+    # Skip configuration files
+    if [[ "$file" == "setup.py" ]] || [[ "$file" == "pyproject.toml" ]]; then
+        return 1
+    fi
+
+    # Regenerate everything else
+    return 0
+}
+
+# Track regenerated files
+REGENERATED_FILES=""
+
+# Process each modified file
+for file in $MODIFIED_PY_FILES; do
+    if should_regenerate "$file"; then
+        echo "🔧 Regenerating $file with $AIDER_PHILOSOPHY philosophy..."
+
+        # Run Aider regeneration
+        if python -m amplifier.cli_tools.aider regenerate "$file" --philosophy "$AIDER_PHILOSOPHY" 2>/dev/null; then
+            echo "  ✅ Regenerated successfully"
+            REGENERATED_FILES="$REGENERATED_FILES $file"
+        else
+            echo "  ⚠️  Regeneration failed, keeping original"
+        fi
+    fi
+done
+
+# Re-add regenerated files to staging if configured
+if [ "$AIDER_AUTO_ADD" = "true" ] && [ -n "$REGENERATED_FILES" ]; then
+    echo "📝 Re-staging regenerated files..."
+    for file in $REGENERATED_FILES; do
+        git add "$file"
+    done
+    echo "✅ Files re-staged"
+fi
+
+echo "✨ Pre-commit regeneration complete"
+exit 0
