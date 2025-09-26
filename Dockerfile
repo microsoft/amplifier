@@ -108,7 +108,9 @@ fi
 
 # Configure Claude Code based on available credentials
 if [ ! -z "$ANTHROPIC_API_KEY" ]; then
-    echo "🔧 Configuring Claude Code with Anthropic API key..."
+    echo "🔧 Configuring Claude Code with Anthropic API..."
+    echo "🌐 Backend: ANTHROPIC DIRECT API"
+    echo "🔑 Using provided ANTHROPIC_API_KEY"
 
     # Create Claude Code configuration with API key
     mkdir -p /root/.config/claude-code
@@ -120,25 +122,26 @@ if [ ! -z "$ANTHROPIC_API_KEY" ]; then
 }
 CONFIG_EOF
 
-    echo "🤖 Starting Claude Code..."
-    claude "I am running in a dockerized Amplifier environment. The target project is mounted at $TARGET_DIR.
+    echo "🤖 Starting Claude Code from Amplifier directory..."
+    echo "📁 Adding target directory: $TARGET_DIR"
+    echo "🚀 Starting interactive Claude Code session..."
+    echo ""
+    echo "==============================================="
+    echo "📋 FIRST MESSAGE TO SEND TO CLAUDE:"
+    echo "I'm working in $TARGET_DIR which doesn't have Amplifier files."
+    echo "Please cd to that directory and work there."
+    echo "Do NOT update any issues or PRs in the Amplifier repo."
+    echo "==============================================="
+    echo ""
 
-Environment setup:
-- Target project: $TARGET_DIR
-- Amplifier tools and agents: /root/amplifier
-- Amplifier data directory: $AMPLIFIER_DATA_DIR
-- All Amplifier capabilities are available
-
-Please:
-1. Use 'cd $TARGET_DIR' to work in the user's project directory
-2. All Amplifier agents and tools are available via /agents command
-3. Do NOT update any issues or PRs in the Amplifier repository itself
-4. Focus all work on the user's project in $TARGET_DIR
-
-Start by changing to the target directory and helping with the user's project."
+    # Start Claude with directory access - this should open interactive session
+    claude --add-dir "$TARGET_DIR"
 
 elif [ ! -z "$AWS_ACCESS_KEY_ID" ]; then
-    echo "🔧 Starting Claude Code with AWS Bedrock..."
+    echo "🔧 Configuring Claude Code with AWS Bedrock..."
+    echo "🌐 Backend: AWS BEDROCK"
+    echo "🔑 Using provided AWS credentials"
+    echo "⚠️  Setting CLAUDE_CODE_USE_BEDROCK=1"
     export CLAUDE_CODE_USE_BEDROCK=1
 
     # Create basic config for Bedrock
@@ -150,21 +153,20 @@ elif [ ! -z "$AWS_ACCESS_KEY_ID" ]; then
 }
 CONFIG_EOF
 
-    claude "I am running in a dockerized Amplifier environment. The target project is mounted at $TARGET_DIR.
+    echo "🤖 Starting Claude Code from Amplifier directory with AWS Bedrock..."
+    echo "📁 Adding target directory: $TARGET_DIR"
+    echo "🚀 Starting interactive Claude Code session..."
+    echo ""
+    echo "==============================================="
+    echo "📋 FIRST MESSAGE TO SEND TO CLAUDE:"
+    echo "I'm working in $TARGET_DIR which doesn't have Amplifier files."
+    echo "Please cd to that directory and work there."
+    echo "Do NOT update any issues or PRs in the Amplifier repo."
+    echo "==============================================="
+    echo ""
 
-Environment setup:
-- Target project: $TARGET_DIR
-- Amplifier tools and agents: /root/amplifier
-- Amplifier data directory: $AMPLIFIER_DATA_DIR
-- All Amplifier capabilities are available
-
-Please:
-1. Use 'cd $TARGET_DIR' to work in the user's project directory
-2. All Amplifier agents and tools are available via /agents command
-3. Do NOT update any issues or PRs in the Amplifier repository itself
-4. Focus all work on the user's project in $TARGET_DIR
-
-Start by changing to the target directory and helping with the user's project."
+    # Start Claude with directory access - this should open interactive session
+    claude --add-dir "$TARGET_DIR"
 else
     echo "❌ No supported API configuration found!"
     exit 1
