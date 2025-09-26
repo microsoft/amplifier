@@ -9,15 +9,19 @@ The Claude Code SDK is available in multiple forms to suit different use cases:
 - **[Headless Mode](/en/docs/claude-code/sdk/sdk-headless)** - For CLI scripts and automation
 - **[TypeScript SDK](/en/docs/claude-code/sdk/sdk-typescript)** - For Node.js and web applications
 - **[Python SDK](/en/docs/claude-code/sdk/sdk-python)** - For Python applications and data science
+- **[Streaming vs Single Mode](/en/docs/claude-code/sdk/streaming-vs-single-mode)** - Understanding input modes and best practices
 
 ## Why use the Claude Code SDK?
 
-Built on top of the agent harness that powers Claude Code, the Claude Code SDK provides all the building blocks you need to build production-ready agents:
+Built on top of the agent harness that powers Claude Code, the Claude Code SDK provides all the building blocks you need to build production-ready agents.
 
-- **Optimized Claude integration**: Automatic prompt caching and performance optimizations
+Taking advantage of the work we've done on Claude Code including:
+
+- **Context Management**: Automatic compaction and context management to ensure your agent doesn't run out of context.
 - **Rich tool ecosystem**: File operations, code execution, web search, and MCP extensibility
 - **Advanced permissions**: Fine-grained control over agent capabilities
 - **Production essentials**: Built-in error handling, session management, and monitoring
+- **Optimized Claude integration**: Automatic prompt caching and performance optimizations
 
 ## What can you build with the SDK?
 

@@ -44,7 +44,21 @@ The notification system keeps you in flow by alerting you when:
 
 ## 🚀 Quick Start
 
-Notifications work out of the box! The system automatically:
+### For CLI Tools
+
+Notifications are **OFF by default** for CLI tools. Enable them with:
+
+```bash
+# Enable notifications for a command
+NOTIFY=true amplifier-synthesis process article.md
+
+# Or use make with notification support
+make synthesis  # Uses NOTIFY=true internally
+```
+
+### Automatic Detection
+
+The system automatically:
 
 1. Detects your platform
 2. Uses the best notification method
@@ -272,8 +286,8 @@ fi
 Group related notifications:
 
 ```bash
-# macOS - Group by project
-osascript -e "display notification \"$MESSAGE\" with title \"$PROJECT\" group \"$PROJECT\""
+# macOS - Show with project subtitle
+osascript -e "display notification \"$MESSAGE\" with title \"Amplifier\" subtitle \"$PROJECT\""
 ```
 
 ## 🎯 Best Practices

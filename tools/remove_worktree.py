@@ -116,8 +116,11 @@ def main():
     current_dir = Path.cwd()
     repo_name = current_dir.name
 
+    # Extract feature name (part after last '/' if present, otherwise full name)
+    feature_name = args.branch.split("/")[-1] if "/" in args.branch else args.branch
+
     # Construct worktree path (same pattern as create_worktree.py)
-    worktree_path = current_dir.parent / f"{repo_name}-{args.branch}"
+    worktree_path = current_dir.parent / f"{repo_name}.{feature_name}"
 
     print(f"Looking for worktree at: {worktree_path}")
 

@@ -71,6 +71,7 @@ For complex tasks, use this three-phase cycle:
 1. **Architecture Phase**: zen-architect or amplifier-cli-architect designs the approach
 2. **Implementation Phase**: modular-builder, api-contract-designer, etc. implement
 3. **Validation Phase**: Return to architectural agents for compliance review
+4. **Testing Phase**: Run it like a user, if any issues discovered then leverage bug-hunter
 
 ### **When to Loop Back for Validation**
 
@@ -147,6 +148,8 @@ Ask these questions to identify amplifier CLI tool needs:
 6. **Cleanup**: Are we done with the core work? → post-task-cleanup
 
 **If 2+ answers are "yes" to questions 1-2, use amplifier-cli-architect first and proactively.**
+
+**ALWAYS include use amplifier-cli-architect if the topic of using ccsdk or ccsdk_toolkit comes up, it is the expert on the subject and can provide all of the context you need**
 
 ### **Tool Lifecycle Management**
 
