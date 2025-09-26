@@ -68,6 +68,44 @@ RUN mkdir -p /root/amplifier/.data/knowledge && \
     mkdir -p /root/amplifier/.data/memories && \
     mkdir -p /root/amplifier/.data/cache
 
+# Create Claude Code settings and tools
+RUN mkdir -p /root/amplifier/.claude/tools && \
+    cat > /root/amplifier/.claude/settings.json << 'SETTINGS_EOF'
+{
+    "statusLine": {
+      "type": "command",
+      "command": "bash /root/amplifier/.claude/tools/statusline-example.sh"
+    }
+}
+SETTINGS_EOF
+
+# Create the statusline script referenced in settings
+RUN cat > /root/amplifier/.claude/tools/statusline-example.sh << 'STATUSLINE_EOF'
+#!/bin/bash
+
+# Simple statusline script for Claude Code
+# Shows current directory, git branch (if available), and timestamp
+
+# Get current directory (relative to home)
+current_dir=$(pwd | sed "s|$HOME|~|")
+
+# Try to get git branch if in a git repository
+git_info=""
+if git rev-parse --git-dir > /dev/null 2>&1; then
+    branch=$(git branch --show-current 2>/dev/null || echo "detached")
+    git_info=" [git:$branch]"
+fi
+
+# Get current timestamp
+timestamp=$(date '+%H:%M:%S')
+
+# Output statusline
+echo "📂 $current_dir$git_info | 🕐 $timestamp"
+STATUSLINE_EOF
+
+# Make the statusline script executable
+RUN chmod +x /root/amplifier/.claude/tools/statusline-example.sh
+
 # Create entrypoint script with comprehensive Claude Code configuration
 RUN cat > /app/entrypoint.sh << 'EOF'
 #!/bin/bash
@@ -264,18 +302,11 @@ main() {
 
         log "✅ Claude Code configuration completed successfully"
         log "📁 Adding target directory: $TARGET_DIR"
-        log "🚀 Starting interactive Claude Code session..."
-        log ""
-        log "==============================================="
-        log "📋 FIRST MESSAGE TO SEND TO CLAUDE:"
-        log "I'm working in $TARGET_DIR which doesn't have Amplifier files."
-        log "Please cd to that directory and work there."
-        log "Do NOT update any issues or PRs in the Amplifier repo."
-        log "==============================================="
+        log "🚀 Starting interactive Claude Code session with initial prompt..."
         log ""
 
-        # Start Claude with enhanced configuration
-        claude --add-dir "$TARGET_DIR" --permission-mode acceptEdits
+        # Start Claude with enhanced configuration and initial prompt
+        claude --add-dir "$TARGET_DIR" --permission-mode acceptEdits "I'm working in $TARGET_DIR which doesn't have Amplifier files. Please cd to that directory and work there. Do NOT update any issues or PRs in the Amplifier repo."
 
     elif [ ! -z "$AWS_ACCESS_KEY_ID" ]; then
         log "🔧 Configuring Claude Code with AWS Bedrock..."
@@ -307,18 +338,11 @@ CONFIG_EOF
 
         log "✅ Claude Code Bedrock configuration completed"
         log "📁 Adding target directory: $TARGET_DIR"
-        log "🚀 Starting interactive Claude Code session..."
-        log ""
-        log "==============================================="
-        log "📋 FIRST MESSAGE TO SEND TO CLAUDE:"
-        log "I'm working in $TARGET_DIR which doesn't have Amplifier files."
-        log "Please cd to that directory and work there."
-        log "Do NOT update any issues or PRs in the Amplifier repo."
-        log "==============================================="
+        log "🚀 Starting interactive Claude Code session with initial prompt..."
         log ""
 
-        # Start Claude with directory access and explicit permission mode
-        claude --add-dir "$TARGET_DIR" --permission-mode acceptEdits
+        # Start Claude with directory access, explicit permission mode, and initial prompt
+        claude --add-dir "$TARGET_DIR" --permission-mode acceptEdits "I'm working in $TARGET_DIR which doesn't have Amplifier files. Please cd to that directory and work there. Do NOT update any issues or PRs in the Amplifier repo."
     else
         error_exit "No supported API configuration found!"
     fi
