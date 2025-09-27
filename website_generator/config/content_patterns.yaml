@@ -1,0 +1,260 @@
+# Content Generation Patterns Configuration
+# Defines how to extract and generate content based on repository analysis
+
+# Repository Analysis Patterns
+analysis_patterns:
+  agent_detection:
+    file_patterns:
+      - ".claude/agents/*.md"
+      - "agents/*.md"
+      - "subagents/*.md"
+      - ".ai/agents/*.md"
+    capability_extraction: "yaml_frontmatter_and_sections"
+    description_sources:
+      - "yaml:description"
+      - "first_paragraph"
+      - "generated_from_name"
+
+  command_detection:
+    file_patterns:
+      - ".claude/commands/*.md"
+      - "commands/*.md"
+      - "scripts/*.sh"
+      - "Makefile"
+    usage_pattern_extraction: true
+    example_extraction: true
+
+  documentation_detection:
+    file_patterns:
+      - "README.md"
+      - "docs/**/*.md"
+      - "GETTING_STARTED.md"
+      - "CONTRIBUTING.md"
+      - "CHANGELOG.md"
+    priority_order: ["README.md", "docs/README.md", "GETTING_STARTED.md"]
+
+  paradigm_indicators:
+    revolutionary_keywords:
+      - "revolution"
+      - "paradigm"
+      - "transformation"
+      - "breakthrough"
+      - "game-changing"
+      - "disruptive"
+      - "fundamental"
+      - "reimagine"
+      - "multiplier"
+      - "supercharge"
+      - "amplify"
+
+    ai_keywords:
+      - "claude"
+      - "ai"
+      - "llm"
+      - "gpt"
+      - "assistant"
+      - "agent"
+      - "amplifier"
+      - "subagent"
+      - "claude code"
+
+    knowledge_keywords:
+      - "synthesis"
+      - "knowledge"
+      - "extraction"
+      - "mining"
+      - "analysis"
+      - "insight"
+      - "understanding"
+      - "learning"
+      - "memory"
+      - "context"
+
+# Content Generation Templates
+content_templates:
+
+  # Revolutionary Paradigm Content
+  revolution_section:
+    title: "The Development Revolution"
+    subtitle_template: "Why {project_name} Changes Everything"
+
+    problem_statement:
+      template: "constraint_based"
+      structure:
+        - "current_limitation"
+        - "pain_points"
+        - "scale_of_problem"
+
+    paradigm_comparison:
+      template: "before_after_table"
+      format: "side_by_side"
+      categories:
+        - "Development Speed"
+        - "Code Quality"
+        - "Learning Curve"
+        - "Scalability"
+        - "Maintenance"
+
+    multiplier_calculation:
+      template: "capability_multiplication"
+      metrics:
+        - name: "Ideas Generated"
+          old_value: 50
+          new_value: 1247
+          unit: "per month"
+        - name: "Time to Implementation"
+          old_value: 12
+          new_value: 1
+          unit: "hours"
+          inverse: true  # Lower is better
+
+    role_transformation:
+      template: "old_role_vs_new_role"
+      transformation_type: "elevation"  # elevation, replacement, enhancement
+      old_role:
+        title: "Traditional Developer"
+        characteristics:
+          - "Code line by line"
+          - "Debug manually"
+          - "Single-threaded work"
+      new_role:
+        title: "AI-Amplified Architect"
+        characteristics:
+          - "Design and orchestrate"
+          - "Deploy specialized agents"
+          - "Parallel development streams"
+
+  # Progressive Setup Tiers
+  progressive_setup:
+    tier_structure:
+      quick_taste:
+        name: "Quick Taste"
+        duration: "1 minute"
+        description: "Experience the power immediately"
+        content_type: "1_minute_demo"
+
+      essential:
+        name: "Essential Setup"
+        duration: "5 minutes"
+        description: "Core features and workflows"
+        content_type: "5_minute_core_features"
+
+      power_user:
+        name: "Power User"
+        duration: "15+ minutes"
+        description: "Full ecosystem mastery"
+        content_type: "15_minute_full_ecosystem"
+
+    content_generation:
+      demo_commands:
+        extract_from: "README.md"
+        fallback: "generated_examples"
+        format: "terminal_block"
+
+      step_by_step:
+        number_steps: true
+        include_screenshots: false
+        code_highlighting: true
+
+  # Agent Capability Showcase
+  capability_showcase:
+    organization: "beginner_intermediate_expert"  # beginner_intermediate_expert, by_category, alphabetical
+    presentation: "card_grid_with_examples"       # card_grid_with_examples, list_with_details, table_format
+    progressive_reveal: true
+
+    agent_card_template:
+      elements:
+        - "agent_name"
+        - "agent_badge"  # Category/specialty
+        - "description"
+        - "key_capabilities"
+        - "usage_example"
+
+      badge_categories:
+        architecture: "Architecture"
+        debugging: "Debugging"
+        testing: "Testing"
+        security: "Security"
+        analysis: "Analysis"
+        synthesis: "Synthesis"
+        automation: "Automation"
+
+    examples_generation:
+      include_code: true
+      include_commands: true
+      show_output: true
+      max_length: 200  # characters
+
+  # Feature Documentation
+  feature_documentation:
+    organization: "by_importance"  # by_importance, alphabetical, by_category
+    detail_level: "comprehensive"   # brief, standard, comprehensive
+
+    feature_template:
+      structure:
+        - "description"
+        - "benefits"
+        - "usage_example"
+        - "related_features"
+
+      example_formats:
+        - "code_block"
+        - "terminal_session"
+        - "configuration_snippet"
+
+# Trust Building Patterns
+trust_building:
+  safety_demonstrations: true
+  gradual_confidence_building: true
+  human_role_elevation: true
+  ai_quality_assurance_showcase: true
+
+  progression_stages:
+    1_skeptical:
+      focus: "concrete_examples"
+      tone: "professional_proof"
+      content: ["quick_wins", "safety_first", "easy_exit"]
+
+    2_curious:
+      focus: "deeper_capabilities"
+      tone: "educational_guide"
+      content: ["how_it_works", "best_practices", "common_patterns"]
+
+    3_convinced:
+      focus: "mastery_path"
+      tone: "empowering_mentor"
+      content: ["advanced_features", "customization", "integration"]
+
+# Content Quality Guidelines
+quality_guidelines:
+  readability:
+    target_grade_level: 12  # Flesch-Kincaid
+    sentence_length: "medium"  # short, medium, long
+    paragraph_length: "concise"  # concise, standard, detailed
+
+  technical_accuracy:
+    verify_commands: true
+    test_examples: false  # Future feature
+    check_links: false    # Future feature
+
+  consistency:
+    terminology: "strict"     # strict, flexible
+    formatting: "consistent" # consistent, adaptive
+    voice: "professional"    # professional, casual, technical
+
+# Responsive Content Adaptation
+responsive_content:
+  mobile:
+    simplify_tables: true
+    stack_comparisons: true
+    shorter_descriptions: true
+    fewer_examples: false
+
+  tablet:
+    medium_complexity: true
+    balanced_layout: true
+
+  desktop:
+    full_complexity: true
+    side_by_side_comparisons: true
+    rich_interactions: true

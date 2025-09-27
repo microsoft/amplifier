@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amplifier - Supercharged AI Development Environment</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-brand">
+                <h1>Amplifier</h1>
+                <span class="tagline">Supercharged AI Development</span>
+            </div>
+            <div class="nav-links">
+                <a href="#overview" class="nav-link">Overview</a>
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#agents" class="nav-link">Agents</a>
+                <a href="#setup" class="nav-link">Setup</a>
+                <a href="#examples" class="nav-link">Examples</a>
+                <a href="knowledge.html" class="nav-link">Knowledge Base</a>
+            </div>
+            <div class="nav-mobile">
+                <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-content">
+                <h1 class="hero-title">Turn AI Assistants into Force Multipliers</h1>
+                <p class="hero-subtitle">A complete development environment that supercharges AI coding assistants with discovered patterns, specialized expertise, and powerful automation.</p>
+                <div class="hero-actions">
+                    <a href="#setup" class="btn btn-primary">Get Started</a>
+                    <a href="https://github.com/microsoft/amplifier" class="btn btn-secondary">View on GitHub</a>
+                </div>
+                <div class="hero-quote">
+                    <blockquote>"I have more ideas than time to try them out" — The problem we're solving</blockquote>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="demo-terminal">
+                    <div class="terminal-header">
+                        <div class="terminal-buttons">
+                            <span class="btn-close"></span>
+                            <span class="btn-minimize"></span>
+                            <span class="btn-maximize"></span>
+                        </div>
+                        <span class="terminal-title">claude</span>
+                    </div>
+                    <div class="terminal-body">
+                        <div class="terminal-line">
+                            <span class="prompt">$</span>
+                            <span class="command">claude</span>
+                        </div>
+                        <div class="terminal-line response">
+                            <span class="typing-animation">Use zen-architect to design my notification system</span>
+                        </div>
+                        <div class="terminal-line response">
+                            <span class="agent-tag">[zen-architect]</span>
+                            <span>Designing with ruthless simplicity...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Overview Section -->
+        <section id="overview" class="section">
+            <div class="container">
+                <h2 class="section-title">What Is Amplifier?</h2>
+                <div class="overview-grid">
+                    <div class="overview-item">
+                        <div class="overview-icon">🤖</div>
+                        <h3>20+ Specialized Agents</h3>
+                        <p>Each expert in specific tasks like architecture, debugging, security, and testing.</p>
+                    </div>
+                    <div class="overview-item">
+                        <div class="overview-icon">🧠</div>
+                        <h3>Pre-loaded Context</h3>
+                        <p>Proven patterns and philosophies built into the environment from day one.</p>
+                    </div>
+                    <div class="overview-item">
+                        <div class="overview-icon">🌳</div>
+                        <h3>Parallel Worktree System</h3>
+                        <p>Build and test multiple solutions simultaneously without conflicts.</p>
+                    </div>
+                    <div class="overview-item">
+                        <div class="overview-icon">📚</div>
+                        <h3>Knowledge Extraction</h3>
+                        <p>Transform documentation into queryable, connected knowledge graphs.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="section section-alt">
+            <div class="container">
+                <h2 class="section-title">Key Features</h2>
+                <div class="features-tabs">
+                    <div class="tabs-nav">
+                        <button class="tab-btn active" onclick="showTab('agents-tab', this)">Specialized Agents</button>
+                        <button class="tab-btn" onclick="showTab('knowledge-tab', this)">Knowledge Base</button>
+                        <button class="tab-btn" onclick="showTab('parallel-tab', this)">Parallel Development</button>
+                        <button class="tab-btn" onclick="showTab('modular-tab', this)">Modular Builder</button>
+                    </div>
+
+                    <div id="agents-tab" class="tab-content active">
+                        <div class="feature-showcase">
+                            <div class="feature-text">
+                                <h3>Specialized Agents</h3>
+                                <p>Instead of one generalist AI, you get 20+ specialists, each expert in specific domains:</p>
+                                <ul>
+                                    <li><strong>zen-architect</strong> - Designs with ruthless simplicity</li>
+                                    <li><strong>bug-hunter</strong> - Systematic debugging approach</li>
+                                    <li><strong>security-guardian</strong> - Security analysis and vulnerability detection</li>
+                                    <li><strong>test-coverage</strong> - Comprehensive testing strategies</li>
+                                    <li><strong>performance-optimizer</strong> - Performance profiling and optimization</li>
+                                </ul>
+                                <a href="agents.html" class="btn btn-outline">View All Agents</a>
+                            </div>
+                            <div class="feature-demo">
+                                <div class="agent-carousel">
+                                    <div class="agent-card active">
+                                        <div class="agent-header">
+                                            <span class="agent-name">zen-architect</span>
+                                            <span class="agent-badge">Architecture</span>
+                                        </div>
+                                        <p>Designs systems with ruthless simplicity, focusing on essential patterns and clean abstractions.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="knowledge-tab" class="tab-content">
+                        <div class="feature-showcase">
+                            <div class="feature-text">
+                                <h3>Knowledge Base System</h3>
+                                <p>Stop losing insights. Every document becomes part of your permanent, queryable knowledge:</p>
+                                <ul>
+                                    <li>Extract concepts and relationships from documentation</li>
+                                    <li>Query accumulated wisdom instantly</li>
+                                    <li>Visualize how ideas connect</li>
+                                    <li>Share knowledge across all worktrees</li>
+                                </ul>
+                                <div class="code-snippet">
+                                    <code>make knowledge-update  # Extract from docs<br>
+make knowledge-query Q="auth patterns"</code>
+                                </div>
+                            </div>
+                            <div class="feature-demo">
+                                <div class="knowledge-graph">
+                                    <div class="node">Authentication</div>
+                                    <div class="node">Security</div>
+                                    <div class="node">Patterns</div>
+                                    <div class="connection"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="parallel-tab" class="tab-content">
+                        <div class="feature-showcase">
+                            <div class="feature-text">
+                                <h3>Parallel Development</h3>
+                                <p>Stop wondering "what if" — build multiple solutions simultaneously:</p>
+                                <ul>
+                                    <li>Try different approaches in parallel worktrees</li>
+                                    <li>Compare implementations side by side</li>
+                                    <li>Keep the best, discard the rest</li>
+                                    <li>Each worktree is completely isolated</li>
+                                </ul>
+                                <div class="code-snippet">
+                                    <code>make worktree feature-jwt     # JWT approach<br>
+make worktree feature-oauth   # OAuth approach<br>
+make worktree-list            # Compare both</code>
+                                </div>
+                            </div>
+                            <div class="feature-demo">
+                                <div class="worktree-visual">
+                                    <div class="worktree-branch">
+                                        <span>main</span>
+                                        <div class="branch-line"></div>
+                                    </div>
+                                    <div class="worktree-branch">
+                                        <span>feature-jwt</span>
+                                        <div class="branch-line jwt"></div>
+                                    </div>
+                                    <div class="worktree-branch">
+                                        <span>feature-oauth</span>
+                                        <div class="branch-line oauth"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="modular-tab" class="tab-content">
+                        <div class="feature-showcase">
+                            <div class="feature-text">
+                                <h3>Modular Builder</h3>
+                                <p>One-command workflow from idea to working module:</p>
+                                <ul>
+                                    <li>Contract & Spec → Plan → Generate → Review</li>
+                                    <li>Auto or assisted modes</li>
+                                    <li>Built-in conformance testing</li>
+                                    <li>Resume from any point</li>
+                                </ul>
+                                <div class="code-snippet">
+                                    <code>/modular-build Build a notification system<br>
+mode: auto level: moderate</code>
+                                </div>
+                            </div>
+                            <div class="feature-demo">
+                                <div class="modular-flow">
+                                    <div class="flow-step">Contract</div>
+                                    <div class="flow-arrow">→</div>
+                                    <div class="flow-step">Spec</div>
+                                    <div class="flow-arrow">→</div>
+                                    <div class="flow-step">Plan</div>
+                                    <div class="flow-arrow">→</div>
+                                    <div class="flow-step">Code</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Setup Section -->
+        <section id="setup" class="section">
+            <div class="container">
+                <h2 class="section-title">Quick Setup</h2>
+                <div class="setup-steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>Clone Repository</h3>
+                            <div class="code-snippet">
+                                <code>git clone https://github.com/microsoft/amplifier.git<br>
+cd amplifier</code>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>Install Dependencies</h3>
+                            <div class="code-snippet">
+                                <code>make install</code>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3>Start Claude</h3>
+                            <div class="code-snippet">
+                                <code>claude  # Everything is pre-configured!</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="setup-note">
+                    <p><strong>Prerequisites:</strong> Python 3.11+, Node.js, VS Code (recommended), Git</p>
+                    <a href="setup.html" class="btn btn-outline">Detailed Setup Guide</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Examples Section -->
+        <section id="examples" class="section section-alt">
+            <div class="container">
+                <h2 class="section-title">Example Workflows</h2>
+                <div class="examples-grid">
+                    <div class="example-card">
+                        <h3>🏗️ Building a Feature</h3>
+                        <ol>
+                            <li>"Use zen-architect to design my notification system"</li>
+                            <li>"Have modular-builder implement the notification module"</li>
+                            <li>"Deploy test-coverage to add comprehensive tests"</li>
+                        </ol>
+                    </div>
+                    <div class="example-card">
+                        <h3>🐛 Debugging Issues</h3>
+                        <ol>
+                            <li>"Use bug-hunter to find why API calls are failing"</li>
+                            <li>"Have security-guardian review authentication"</li>
+                            <li>"Deploy performance-optimizer to identify bottlenecks"</li>
+                        </ol>
+                    </div>
+                    <div class="example-card">
+                        <h3>📚 Knowledge-Driven Development</h3>
+                        <ol>
+                            <li>Extract: <code>make knowledge-update</code></li>
+                            <li>Query: <code>make knowledge-query Q="error patterns"</code></li>
+                            <li>Apply: "Implement using patterns from knowledge base"</li>
+                        </ol>
+                    </div>
+                </div>
+                <a href="examples.html" class="btn btn-primary">More Examples</a>
+            </div>
+        </section>
+
+        <!-- Status Section -->
+        <section class="section warning-section">
+            <div class="container">
+                <div class="warning-box">
+                    <div class="warning-icon">⚠️</div>
+                    <div class="warning-content">
+                        <h3>Experimental System</h3>
+                        <p>This project is a research demonstrator in early development. Use with caution and careful supervision. Not accepting contributions yet, but we plan to!</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <h3>Amplifier</h3>
+                    <p>Supercharged AI Development Environment</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Documentation</h4>
+                        <a href="setup.html">Setup Guide</a>
+                        <a href="agents.html">Agent Catalog</a>
+                        <a href="knowledge.html">Knowledge Base</a>
+                        <a href="examples.html">Examples</a>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Resources</h4>
+                        <a href="https://github.com/microsoft/amplifier">GitHub</a>
+                        <a href="../AMPLIFIER_VISION.md">Vision</a>
+                        <a href="../README.md">README</a>
+                        <a href="../SUPPORT.md">Support</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Microsoft. Licensed under MIT.</p>
+                <p>"The best AI system isn't the smartest - it's the one that makes YOU most effective."</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
