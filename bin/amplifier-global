@@ -1,0 +1,130 @@
+#!/bin/bash
+
+# Global Amplifier Command
+# This version doesn't rely on virtual environments
+
+# Auto-detect Amplifier directory from common locations
+AMPLIFIER_DIRS=(
+    "$HOME/dev/amplifier"
+    "$HOME/amplifier"
+    "$HOME/repos/amplifier"
+    "$HOME/code/amplifier"
+    "/opt/amplifier"
+)
+
+AMPLIFIER_DIR=""
+for dir in "${AMPLIFIER_DIRS[@]}"; do
+    if [[ -d "$dir" && -f "$dir/pyproject.toml" ]]; then
+        AMPLIFIER_DIR="$dir"
+        break
+    fi
+done
+
+if [[ -z "$AMPLIFIER_DIR" ]]; then
+    echo "❌ Cannot find Amplifier installation"
+    echo "   Searched locations:"
+    for dir in "${AMPLIFIER_DIRS[@]}"; do
+        echo "   - $dir"
+    done
+    echo ""
+    echo "   Please ensure Amplifier is cloned in one of these locations."
+    echo "   Or create a symlink: ln -s /path/to/your/amplifier ~/dev/amplifier"
+    exit 1
+fi
+
+# Save original working directory
+ORIGINAL_PWD="$(pwd)"
+
+# Parse arguments
+PROJECT_DIR="${1:-$ORIGINAL_PWD}"
+
+# Check if first arg is a Claude flag (starts with --)
+if [[ "$1" == --* ]] && [[ "$1" != "--help" ]] && [[ "$1" != "-h" ]] && [[ "$1" != "--version" ]]; then
+    # First argument is a Claude option, use current directory
+    PROJECT_DIR="$ORIGINAL_PWD"
+    CLAUDE_ARGS="$@"
+else
+    # First argument might be a directory
+    if [[ -n "$1" ]]; then
+        shift || true  # Remove first argument, ignore error if no args
+    fi
+    CLAUDE_ARGS="$@"
+fi
+
+# Handle help and version flags
+if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    cat << EOF
+Amplifier Universal Access Script
+
+USAGE:
+    amplifier [PROJECT_DIR] [CLAUDE_OPTIONS...]
+    amplifier --help
+    amplifier --version
+
+EXAMPLES:
+    amplifier                           # Use current directory
+    amplifier ~/dev/my-project          # Use specific directory
+    amplifier . --model sonnet          # Pass options to Claude
+    amplifier ~/app --print "Fix bugs"  # Non-interactive mode
+
+DESCRIPTION:
+    Starts Claude with Amplifier's specialized agents and tools,
+    configured to work on projects in any directory.
+
+    All of Amplifier's 20+ agents become available:
+    - zen-architect (design with simplicity)
+    - bug-hunter (systematic debugging)
+    - security-guardian (security analysis)
+    - And many more...
+
+EOF
+    exit 0
+fi
+
+if [[ "$1" == "--version" ]]; then
+    echo "Amplifier Universal Access 0.1.0"
+    exit 0
+fi
+
+# Validate project directory
+if [[ ! -d "$PROJECT_DIR" ]]; then
+    echo "❌ Directory '$PROJECT_DIR' does not exist"
+    exit 1
+fi
+
+# Convert to absolute path
+PROJECT_DIR="$(cd "$PROJECT_DIR" && pwd)"
+
+echo "🚀 Starting Amplifier for project: $PROJECT_DIR"
+echo "📁 Amplifier location: $AMPLIFIER_DIR"
+
+# Set up pnpm paths
+export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+export PATH="$PNPM_HOME:$PATH"
+
+# Check Claude availability
+if ! command -v claude >/dev/null 2>&1; then
+    echo "❌ Claude CLI not found. Please run 'make install' to install it."
+    exit 1
+fi
+
+# Create necessary directories
+mkdir -p "$AMPLIFIER_DIR/.claude-trace"
+mkdir -p "$AMPLIFIER_DIR/.data"
+
+echo "✅ Environment ready"
+echo "🤖 Claude: $(which claude)"
+echo "📂 Project: $PROJECT_DIR"
+echo ""
+
+if [[ "$AMPLIFIER_DIR" != "$PROJECT_DIR" ]]; then
+    echo "💡 First message template:"
+    echo "   I'm working in $PROJECT_DIR which doesn't have Amplifier files."
+    echo "   Please cd to that directory and work there."
+    echo "   Do NOT update any issues or PRs in the Amplifier repo."
+    echo ""
+fi
+
+# Start Claude with both directories
+cd "$AMPLIFIER_DIR"
+exec claude --add-dir "$PROJECT_DIR" $CLAUDE_ARGS

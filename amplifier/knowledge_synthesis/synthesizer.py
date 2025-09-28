@@ -3,15 +3,19 @@ Synthesizer - Generates new insights from cross-article patterns.
 Creates synthesis across article boundaries through pattern emergence.
 """
 
+import json
 from collections import Counter
 from typing import Any
+
+from .cache import SynthesisCache
+from .config import SynthesisCacheConfig
 
 
 class Synthesizer:
     """Synthesizes new insights from patterns across articles."""
 
     def __init__(self):
-        """Initialize synthesizer with synthesis patterns."""
+        """Initialize synthesizer with synthesis patterns and cache."""
         self.synthesis_patterns = {
             "convergence": self._find_convergence,
             "divergence": self._find_divergence,
@@ -20,29 +24,67 @@ class Synthesizer:
             "bridge": self._find_bridges,
         }
 
+        # Initialize cache if enabled
+        self._config = SynthesisCacheConfig()
+        if self._config.enabled:
+            self._cache = SynthesisCache(max_size=self._config.max_size, ttl_seconds=self._config.ttl_seconds)
+        else:
+            self._cache = None
+
+    def _get_cache_key(self, pattern_type: str, patterns: dict[str, Any]) -> str:
+        """Generate stable cache key for pattern analysis."""
+        serialized = json.dumps(patterns, sort_keys=True)
+        return f"{pattern_type}:{serialized}"
+
     def synthesize(self, patterns: dict[str, Any]) -> list[dict[str, Any]]:
-        """
-        Generate synthesis insights from patterns.
-
-        Contract: pattern dict -> list of insights
-
-        Args:
-            patterns: Dictionary containing concepts, relationships, cooccurrences, etc.
-
-        Returns:
-            List of synthesis insight dictionaries
-        """
+        """Generate synthesis insights from patterns."""
         insights = []
 
+        # Try cache for full synthesis result
+        if self._cache:
+            cache_key = self._get_cache_key("full_synthesis", patterns)
+            cached = self._cache.get(cache_key, json.dumps(patterns))
+            if cached is not None:
+                return cached
+
         # Run each synthesis pattern
-        for _pattern_name, pattern_func in self.synthesis_patterns.items():
-            pattern_insights = pattern_func(patterns)
+        for pattern_name, pattern_func in self.synthesis_patterns.items():
+            pattern_insights = self._run_pattern_analysis(pattern_name, pattern_func, patterns)
             insights.extend(pattern_insights)
 
         # Rank insights by novelty and importance
         insights = self._rank_insights(insights)
+        result = insights[:10]  # Return top 10 insights
 
-        return insights[:10]  # Return top 10 insights
+        # Cache full synthesis result
+        if self._cache:
+            self._cache.put(
+                cache_key, json.dumps(patterns), result, {"pattern_count": len(patterns), "insight_count": len(result)}
+            )
+
+        return result
+
+    def _run_pattern_analysis(self, pattern_name: str, pattern_func, patterns: dict[str, Any]) -> list[dict[str, Any]]:
+        """Run individual pattern analysis with caching."""
+        if not self._cache:
+            return pattern_func(patterns)
+
+        cache_key = self._get_cache_key(pattern_name, patterns)
+        cached = self._cache.get(cache_key, json.dumps(patterns))
+        if cached is not None:
+            return cached
+
+        result = pattern_func(patterns)
+        self._cache.put(
+            cache_key, json.dumps(patterns), result, {"pattern_type": pattern_name, "pattern_count": len(patterns)}
+        )
+        return result
+
+    def get_cache_stats(self) -> dict[str, int]:
+        """Get cache statistics if enabled."""
+        if self._cache:
+            return self._cache.get_stats()
+        return {"enabled": False}
 
     def _find_convergence(self, patterns: dict[str, Any]) -> list[dict[str, Any]]:
         """Find concepts converging toward common themes."""
