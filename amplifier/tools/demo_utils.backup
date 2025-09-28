@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+"""Test module with intentionally poor health for healing demonstration."""
+
+
+def complex_function(data, config, mode, flags, options, cache, state):
+    """Overly complex function that needs healing."""
+    result = None
+
+    # Nested complexity nightmare
+    if data:
+        if isinstance(data, list):
+            if len(data) > 0:
+                if mode == "fast":
+                    for item in data:
+                        if item.get("type") == "A":
+                            if flags.get("process_a"):
+                                if options.get("validate"):
+                                    if cache.get(item["id"]):
+                                        result = cache[item["id"]]
+                                    else:
+                                        # Process type A
+                                        temp = item["value"] * 2
+                                        if state.get("multiplier"):
+                                            temp = temp * state["multiplier"]
+                                        cache[item["id"]] = temp
+                                        result = temp
+                                else:
+                                    result = item["value"] * 2
+                        elif item.get("type") == "B":
+                            if flags.get("process_b"):
+                                if options.get("validate"):
+                                    # Process type B
+                                    result = item["value"] / 2
+                                else:
+                                    result = item["value"]
+                        else:
+                            if flags.get("process_other"):
+                                result = item.get("value", 0)
+                elif mode == "slow":
+                    # Different processing for slow mode
+                    for item in data:
+                        if config.get("slow_config"):
+                            if config["slow_config"].get("enabled"):
+                                result = process_slow(item, state)
+                            else:
+                                result = item.get("value", 0)
+                        else:
+                            result = 0
+                else:
+                    # Default mode
+                    result = len(data)
+            else:
+                result = 0
+        elif isinstance(data, dict):
+            if mode == "fast":
+                result = data.get("default", 0)
+            else:
+                result = sum(data.values()) if data else 0
+        else:
+            result = 0
+    else:
+        result = 0
+
+    # More nested conditions
+    if result and result > 100:
+        if flags.get("cap_results"):
+            result = 100
+        elif flags.get("scale_results"):
+            result = result / 10
+
+    return result
+
+
+def process_slow(item, state):
+    """Helper with more complexity."""
+    if item:
+        if state:
+            if item.get("special"):
+                return item["value"] * state.get("factor", 1)
+            return item.get("value", 0)
+        return item.get("value", 0)
+    return 0
+
+
+def another_complex_function(x, y, z, a, b, c, d=None, e=None, f=None, g=None):
+    """Another overly complex function."""
+    total = 0
+    if x:
+        if y:
+            if z:
+                if a:
+                    if b:
+                        if c:
+                            total = x + y + z + a + b + c
+                            if d:
+                                if e:
+                                    total += d + e
+                                else:
+                                    total += d
+                        else:
+                            total = x + y + z + a + b
+                    else:
+                        total = x + y + z + a
+                else:
+                    total = x + y + z
+            else:
+                total = x + y
+        else:
+            total = x
+
+    # Add more complexity
+    if total > 0:
+        if total > 10:
+            if total > 100:
+                if total > 1000:
+                    if f:
+                        total = total / 3 + f
+                    else:
+                        total = total / 2
+                else:
+                    total = total / 2
+            else:
+                if g:
+                    total = total * 2 + g
+                else:
+                    total = total * 2
+        else:
+            total = total + 1
+
+    return total

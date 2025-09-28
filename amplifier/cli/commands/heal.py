@@ -14,8 +14,9 @@ from amplifier.tools.health_monitor import HealthMonitor
 @click.option("--max", default=3, help="Maximum modules to heal")
 @click.option("--threshold", default=70, help="Health score threshold")
 @click.option("--check-only", is_flag=True, help="Only check health, don't heal")
+@click.option("--yes", "-y", is_flag=True, help="Skip confirmation prompt")
 @click.option("--verbose", "-v", is_flag=True, help="Verbose output")
-def heal(max: int, threshold: float, check_only: bool, verbose: bool):
+def heal(max: int, threshold: float, check_only: bool, yes: bool, verbose: bool):
     """Auto-heal unhealthy Python modules using AI.
 
     This command analyzes module health (complexity, LOC, type errors)
@@ -53,8 +54,8 @@ def heal(max: int, threshold: float, check_only: bool, verbose: bool):
         click.echo("\n(Check-only mode - no healing performed)")
         return
 
-    # Confirm before healing
-    if not click.confirm(f"\n🔧 Heal up to {max} modules?"):
+    # Confirm before healing (unless --yes flag is used)
+    if not yes and not click.confirm(f"\n🔧 Heal up to {max} modules?"):
         click.echo("Cancelled.")
         return
 

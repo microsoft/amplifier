@@ -12,6 +12,6 @@ Automate healing of unhealthy modules using the Amplifier CLI.
 ## Task
 Based on the health analysis above, run the healing process with the provided arguments (or use defaults if no arguments provided).
 
-Execute: !`python -m amplifier.cli heal $ARGUMENTS 2>&1`
+Execute: !`python -m amplifier.cli heal --yes $ARGUMENTS 2>&1`
 
 Review the reported results and summarize the improvements made to each module.
