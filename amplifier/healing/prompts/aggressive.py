@@ -161,7 +161,7 @@ RESULT: Each function should be scannable in 5 seconds.
 
 
 def select_best_prompt(
-    module_path: str, health_score: float, complexity: int, loc: int, dependencies: list[str] = None
+    module_path: str, health_score: float, complexity: int, loc: int, dependencies: list[str] | None = None
 ) -> str:
     """Select the most appropriate healing prompt based on module characteristics."""
 

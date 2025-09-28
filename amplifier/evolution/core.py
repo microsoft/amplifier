@@ -6,6 +6,8 @@ import hashlib
 import json
 import random
 import time
+from abc import ABC
+from abc import abstractmethod
 from dataclasses import dataclass
 from dataclasses import field
 from datetime import datetime
@@ -89,16 +91,17 @@ class BenchmarkResult:
     custom_metrics: dict[str, float] = field(default_factory=dict)
 
 
-class MutationOperator:
+class MutationOperator(ABC):
     """Base class for code mutations."""
 
     def __init__(self, name: str, mutation_strength: float = 0.5):
         self.name = name
         self.mutation_strength = mutation_strength
 
+    @abstractmethod
     async def mutate(self, phenotype: Phenotype) -> Phenotype:
         """Apply mutation to create new variant."""
-        raise NotImplementedError
+        pass  # Abstract method - implemented in subclasses
 
 
 class ParadigmShiftMutation(MutationOperator):

@@ -28,7 +28,7 @@ class ParallelHealer:
         with ThreadPoolExecutor(max_workers=1) as pool:
             return await loop.run_in_executor(pool, self.healer.heal_module_safely, module_path)
 
-    async def heal_batch(self, max_modules: int = 10, threshold: float = 70) -> list[HealingResult]:
+    async def heal_batch(self, max_modules: int = 10, threshold: float = 70) -> list[HealingResult | BaseException]:
         """Heal multiple modules in parallel."""
         candidates = self.monitor.get_healing_candidates(threshold)
         modules = [Path(h.module_path) for h in candidates[:max_modules]]

@@ -61,4 +61,17 @@ ai_working/tmp
 
 # Smoke test runtime logs
 .smoke_test_data/data
+
+# Aider artifacts
 .aider*
+.aider.*/
+
+# Test reports and temporary test files
+*_TEST_REPORT.md
+test_pr*.py
+test_cli_*.py
+
+# Temporary files that might be accidentally created
+evaluate
+repo
+this

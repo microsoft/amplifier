@@ -75,9 +75,9 @@ def heal(max: int, threshold: float, check_only: bool, yes: bool, verbose: bool)
             improvement = result.health_after - result.health_before
             click.echo(f"✅ {module_name}: +{improvement:.1f} points")
         elif result.status == "failed":
-            click.echo(f"❌ {module_name}: {result.error}")
+            click.echo(f"❌ {module_name}: {result.reason}")
         elif result.status == "skipped":
-            click.echo(f"⏭️  {module_name}: {result.error}")
+            click.echo(f"⏭️  {module_name}: {result.reason}")
 
     successful = sum(1 for r in results if r.status == "success")
     click.echo(f"\n✨ Healed {successful}/{len(results)} modules successfully!")

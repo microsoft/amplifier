@@ -251,7 +251,7 @@ class TestAutoHealer:
         result = heal_single_module(module_path, 40.0, tmp_path)
 
         assert result.status == "failed"
-        assert "Healing failed" in result.reason
+        assert result.reason and "Healing failed" in result.reason
         mock_cleanup.assert_called_once()
 
     @patch("amplifier.tools.auto_healer.HealthMonitor")
@@ -393,7 +393,13 @@ class TestParallelHealing:
             results = await healer.heal_batch(max_modules=3, threshold=60)
 
             assert len(results) == 3
-            assert all(r.status == "success" for r in results)
+            # Check all non-exception results are successful
+            from amplifier.tools.healing_models import HealingResult
+
+            successes: list[HealingResult] = [r for r in results if isinstance(r, HealingResult)]
+            assert len(successes) == 3
+            for r in successes:
+                assert r.status == "success"
             assert mock_heal.call_count == 3
 
     @pytest.mark.asyncio
@@ -431,7 +437,15 @@ class TestParallelHealing:
             results = await healer.heal_batch(max_modules=2)
 
             assert len(results) == 2
-            assert results[0].status == "success"
+            # First result should be success, second should be exception
+            assert not isinstance(results[0], Exception)
+            assert isinstance(results[1], Exception)
+            # Cast for type checking since we already asserted
+            from amplifier.tools.healing_models import HealingResult
+
+            success_result = results[0]
+            assert isinstance(success_result, HealingResult)  # Explicit type guard
+            assert success_result.status == "success"
             assert isinstance(results[1], Exception)
 
 
@@ -742,7 +756,7 @@ def complex_function(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p):
         elif i == 200:
             continue
         elif i == 300:
-            pass
+            pass  # Legitimate use: no-op branch for testing control flow complexity
         elif i == 400:
             i = 500
 

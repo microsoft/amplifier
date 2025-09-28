@@ -89,7 +89,9 @@ class CouplingAnalyzer:
         relative = path.relative_to(self.project_root)
         return str(relative.with_suffix("")).replace("/", ".")
 
-    def _find_circular_dependencies(self, module: str, visited: set = None, path: list = None) -> list[str]:
+    def _find_circular_dependencies(
+        self, module: str, visited: set | None = None, path: list | None = None
+    ) -> list[str]:
         """Find circular dependencies starting from module."""
         if visited is None:
             visited = set()
