@@ -41,6 +41,10 @@ default: ## Show essential commands
 	@echo "AI Context:"
 	@echo "  make ai-context-files Build AI context documentation"
 	@echo ""
+	@echo "Claude Code Transcripts:"
+	@echo "  make claude-transcripts     Build transcripts (current project)"
+	@echo "  make claude-transcripts-all Build for all projects"
+	@echo ""
 	@echo "Other:"
 	@echo "  make clean          Clean build artifacts"
 	@echo "  make help           Show ALL available commands"
@@ -86,6 +90,11 @@ help: ## Show ALL available commands
 	@echo "  make content-scan    Scan configured content directories"
 	@echo "  make content-search q=\"...\"  Search content"
 	@echo "  make content-status  Show content statistics"
+	@echo ""
+	@echo "CLAUDE CODE TRANSCRIPTS:"
+	@echo "  make claude-transcripts [PROJECT=name]  Build for project"
+	@echo "  make claude-transcripts-all   Build for all projects"
+	@echo "  make claude-transcripts-current  Build for current directory"
 	@echo ""
 	@echo "DEVELOPMENT:"
 	@echo "  make check           Format, lint, and type-check code"
@@ -348,6 +357,24 @@ transcript-export: ## Export transcript to file. Usage: make transcript-export S
 	fi
 	@format="$${FORMAT:-text}"; \
 	python tools/transcript_manager.py export --session-id $(SESSION) --format $$format
+
+# Claude Code Transcript Management
+claude-transcripts: ## Build transcripts from Claude Code session files. Usage: make claude-transcripts [PROJECT=name]
+	@if [ -n "$(PROJECT)" ]; then \
+		echo "Building Claude Code transcripts for project: $(PROJECT)"; \
+		python tools/claude_code_transcripts_builder.py --project-name $(PROJECT) --output ~/.claude/transcripts; \
+	else \
+		echo "Building Claude Code transcripts for current project"; \
+		python tools/claude_code_transcripts_builder.py --output ~/.claude/transcripts; \
+	fi
+
+claude-transcripts-all: ## Build transcripts for all Claude Code projects
+	@echo "Building transcripts for all Claude Code projects..."
+	@python tools/claude_code_transcripts_builder.py ~/.claude/projects --output ~/.claude/transcripts --verbose
+
+claude-transcripts-current: ## Build transcripts for current directory's Claude Code project
+	@echo "Building transcripts for current project..."
+	@python tools/claude_code_transcripts_builder.py --output ~/.claude/transcripts --verbose
 
 
 # Knowledge Graph Commands

@@ -31,28 +31,40 @@ Sidechains are **inline message sequences** embedded within the main conversatio
 
 ### Primary Method: Task Tool Correlation
 
-Agent names are extracted from the `Task` tool invocation that precedes each sidechain:
+Agent names are extracted from the `Task` tool invocation that precedes each sidechain. The Task tool appears in the message content array:
 
 ```json
-// Task tool invocation
+// Task tool invocation in message content
 {
   "type": "assistant",
-  "subtype": "tool_use",
-  "toolName": "Task",
-  "toolArguments": {
-    "subagent_type": "bug-hunter",  // Agent identifier
-    "prompt": "Analyze this code for bugs"
+  "message": {
+    "role": "assistant",
+    "content": [
+      {
+        "type": "tool_use",
+        "id": "toolu_01KHFXvQPSoUtUMPeVdMdXKp",
+        "name": "Task",
+        "input": {
+          "subagent_type": "bug-hunter",  // Agent identifier
+          "prompt": "Analyze this code for bugs",
+          "description": "Bug analysis"
+        }
+      }
+    ]
   },
   "uuid": "task-123",
   "timestamp": "2025-01-27T10:00:00Z"
 }
 
-// Corresponding sidechain begins
+// Corresponding sidechain begins - exact prompt match
 {
   "type": "user",
   "isSidechain": true,
   "userType": "external",
-  "message": "Analyze this code for bugs",  // Matches task prompt
+  "message": {
+    "role": "user",
+    "content": "Analyze this code for bugs"  // EXACT match to Task input.prompt
+  },
   "parentUuid": "task-123",
   "timestamp": "2025-01-27T10:00:01Z"
 }
@@ -90,7 +102,44 @@ Agent names are extracted from the `Task` tool invocation that precedes each sid
 - **Typical duration**: 2-30 seconds
 - **Message count**: 5-20 messages average
 - **Deep sidechains**: Up to 50+ messages for complex tasks
-- **Parallel execution**: Multiple sidechains can run concurrently
+- **Parallel execution**: Multiple sidechains can run concurrently via multiple Task tools in single message
+
+### Task Execution Patterns
+
+#### Single Task Invocation (Most Common)
+
+The predominant pattern is single Task tool invocation:
+
+```json
+{
+  "message": {
+    "content": [
+      {
+        "type": "tool_use",
+        "name": "Task",
+        "input": {"subagent_type": "zen-architect", "prompt": "Design the architecture"}
+      }
+    ]
+  }
+}
+```
+
+#### Parallel Task Execution (Supported)
+
+Claude can invoke multiple Task tools in a single message for parallel execution:
+
+```json
+{
+  "message": {
+    "content": [
+      {"type": "tool_use", "name": "Task", "input": {"subagent_type": "bug-hunter", ...}},
+      {"type": "tool_use", "name": "Task", "input": {"subagent_type": "test-coverage", ...}}
+    ]
+  }
+}
+```
+
+Results return in completion order (not necessarily invocation order).
 
 ## Technical Details
 
@@ -222,16 +271,20 @@ def extract_sidechains(messages):
     task_invocations = {}
 
     for msg in messages:
-        # Track Task tool invocations
-        if msg.get('toolName') == 'Task':
-            task_id = msg.get('uuid')
-            agent_name = msg.get('toolArguments', {}).get('subagent_type', 'unknown')
-            task_prompt = msg.get('toolArguments', {}).get('prompt', '')
-            task_invocations[task_id] = {
-                'agent': agent_name,
-                'prompt': task_prompt,
-                'timestamp': msg.get('timestamp')
-            }
+        # Track Task tool invocations in message content arrays
+        if msg.get('message') and isinstance(msg['message'], dict):
+            content = msg['message'].get('content', [])
+            if isinstance(content, list):
+                for item in content:
+                    if isinstance(item, dict) and item.get('type') == 'tool_use' and item.get('name') == 'Task':
+                        task_id = msg.get('uuid')
+                        agent_name = item.get('input', {}).get('subagent_type', 'unknown')
+                        task_prompt = item.get('input', {}).get('prompt', '')
+                        task_invocations[task_id] = {
+                            'agent': agent_name,
+                            'prompt': task_prompt,
+                            'timestamp': msg.get('timestamp')
+                        }
 
         # Process sidechain messages
         if msg.get('isSidechain'):
@@ -306,34 +359,13 @@ def analyze_sidechain_patterns(sidechains):
     return stats
 ```
 
-### Correlation Strategies
+### Correlation Strategy
 
-1. **Direct Parent UUID Matching**: Most reliable method
-2. **Timestamp Proximity**: Within 2-second window
-3. **Prompt Text Matching**: Fallback when UUID chain broken
-4. **Session Context**: Use session ID for grouping
+**Prompt Text Matching**: The definitive method - the first sidechain message contains the EXACT prompt text from the Task tool's `input.prompt` field. This character-for-character match is the most reliable correlation method for programmatic parsing.
 
 ## Complex Sidechain Patterns
 
-### Nested Sidechains (Theoretical)
 
-While not observed in current logs, the architecture could support nested sidechains:
-
-```
-Main conversation
-  └── Sidechain 1 (Claude → Agent A)
-      └── Sidechain 2 (Agent A → Agent B)
-```
-
-### Parallel Sidechains
-
-Claude can spawn multiple sidechains for parallel task execution:
-
-```
-Main: "Analyze and document this code"
-  ├── Sidechain 1: "Analyze code structure"
-  └── Sidechain 2: "Generate documentation"
-```
 
 ### Long-Running Sidechains
 
@@ -442,6 +474,37 @@ bug-hunter → fix → bug-hunter → verify
 - **Timeout rate**: 3% exceed time limits
 - **Error rate**: 5% encounter recoverable errors
 
+## Task Tool and Sidechain Matching
+
+### Definitive Matching Pattern
+
+The first sidechain message after a Task tool invocation contains the **exact prompt text** from the Task tool's `input.prompt` field:
+
+```python
+def match_task_to_sidechain(task_tool, sidechain_first_msg):
+    """Match Task tool to its sidechain by prompt."""
+    task_prompt = task_tool['input']['prompt']
+
+    # Extract sidechain message content
+    sc_content = sidechain_first_msg.get('message', {})
+    if isinstance(sc_content, dict):
+        sc_text = sc_content.get('content', '')
+    else:
+        sc_text = str(sc_content)
+
+    # Exact match is the definitive correlation
+    return task_prompt == sc_text
+```
+
+### Verified Pattern Structure
+
+Based on empirical analysis of Claude Code sessions:
+
+1. **Task tool appears in content array** (not as direct message field)
+2. **First sidechain message contains exact prompt** (character-for-character match)
+3. **Sidechains start 2-3 lines after Task tool** (consistent spacing)
+4. **UserType is always "external"** (Claude acting as user)
+
 ## Edge Cases and Gotchas
 
 ### 1. Orphaned Sidechain Messages
@@ -456,9 +519,9 @@ Sidechains that start but don't complete - may indicate errors or timeouts.
 
 Avoid mixing sidechain and main conversation in analysis - they're separate contexts.
 
-### 4. Task Prompt Variations
+### 4. Task Tool Structure Variations
 
-While task usually matches exactly, minor formatting differences may occur.
+Task tools appear in `message.content[]` arrays, not as direct `toolName` fields. Always check content arrays.
 
 ### 5. Silent Sidechains
 

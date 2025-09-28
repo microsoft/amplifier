@@ -1,171 +1,156 @@
 #!/usr/bin/env python3
 """
-Claude Code Transcripts Builder
+Tool: Claude Code Transcripts Builder
+Purpose: Parse Claude Code session files and generate organized markdown transcripts
 
-Extracts and generates human-readable transcripts from Claude Code session logs.
-Handles DAG structure, compact boundaries, and generates organized markdown output.
+Contract:
+  Inputs: Claude Code project directory containing JSONL session files
+  Outputs: Organized session directories with transcripts, manifests, and separated sidechains
+  Failures: Clear errors for corrupt JSONL, missing files, or invalid DAG structures
+
+Philosophy:
+  - Ruthless simplicity: Direct DAG parsing without unnecessary abstractions
+  - Fail fast and loud: Clear errors for corrupt data
+  - Progress visibility: Show what's being processed
+  - Defensive by default: Handle file I/O edge cases with retries
+
+Architecture (Codex-inspired):
+  output_dir/
+  ├── 2025-01-27-10-15-am__repos~amplifier__abc123/
+  │   ├── manifest.json                    # Session metadata
+  │   ├── history.jsonl                    # Original session data
+  │   ├── transcript.md                    # Main path simplified
+  │   ├── transcript_extended.md           # Main path with details
+  │   ├── branches/                        # Alternate paths
+  │   │   ├── branch_001_transcript.md
+  │   │   └── branch_001_extended.md
+  │   └── sidechains/                      # Sub-agent conversations
+  │       └── sidechain_001_bug-hunter.md
 """
 
-import argparse
-import contextlib
 import json
 import logging
+import shutil
 import sys
+from collections import defaultdict
 from dataclasses import dataclass
-from dataclasses import field
-from datetime import UTC
 from datetime import datetime
 from pathlib import Path
+from typing import Any
+
+import click
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
+
+
+def write_with_retry(content: str, filepath: Path, max_retries: int = 3, initial_delay: float = 0.5) -> None:
+    """Write text file with retry logic for cloud sync issues."""
+    import time
+
+    retry_delay = initial_delay
+    for attempt in range(max_retries):
+        try:
+            filepath.parent.mkdir(parents=True, exist_ok=True)
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(content)
+                f.flush()
+            return
+        except OSError as e:
+            if e.errno == 5 and attempt < max_retries - 1:
+                if attempt == 0:
+                    logger.warning(
+                        f"File I/O error writing to {filepath} - retrying. This may be due to cloud-synced files."
+                    )
+                time.sleep(retry_delay)
+                retry_delay *= 2
+            else:
+                raise
+
+
+# ============================================================================
+# DATA MODELS (Simple, clear structures)
+# ============================================================================
 
 
 @dataclass
 class Message:
-    """Represents a single message in the conversation."""
+    """A single message in the conversation."""
 
     uuid: str
     parent_uuid: str | None
-    logical_parent_uuid: str | None
-    content: str
-    type: str  # 'human' or 'assistant'
-    timestamp: datetime | None = None
-    line_number: int = 0
-    metadata: dict = field(default_factory=dict)
+    session_id: str
+    timestamp: str
+    msg_type: str  # 'user' or 'assistant' or 'system'
+    content: Any
+    line_number: int  # For abandoned branch detection
+    logical_parent_uuid: str | None = None  # For compact boundaries
 
-    @property
-    def effective_parent(self) -> str | None:
-        """Returns logical parent if present, otherwise regular parent."""
-        return self.logical_parent_uuid or self.parent_uuid
+    # Enhanced fields for complete support
+    subtype: str | None = None  # tool_use, thinking, response, command, compact_boundary
+    is_sidechain: bool = False  # True for sub-agent conversations
+    user_type: str | None = None  # 'external' when Claude is the user
+    tool_name: str | None = None  # Name of tool being used
+    tool_arguments: dict | None = None  # Arguments passed to tool
+    tool_result: Any = None  # Result from tool execution
+    is_meta: bool = False  # Meta messages (system info, etc)
+    is_error: bool = False  # Error messages
+    is_deleted: bool = False  # Deleted messages
+    compact_metadata: dict[str, Any] | None = None  # Compact operation details
+    sidechain_agent: str | None = None  # Name of sub-agent in sidechain
 
 
 @dataclass
 class ConversationPath:
-    """Represents a path through the conversation DAG."""
+    """A complete conversation path from root to leaf."""
 
     messages: list[Message]
-    is_active: bool = True
-    branch_point: Message | None = None
-    path_id: str = "main"
-
-    @property
-    def message_count(self) -> int:
-        return len(self.messages)
-
-    @property
-    def human_messages(self) -> int:
-        return sum(1 for m in self.messages if m.type == "human")
-
-    @property
-    def assistant_messages(self) -> int:
-        return sum(1 for m in self.messages if m.type == "assistant")
+    session_id: str
+    path_id: int
+    is_abandoned: bool = False
+    fork_point_uuid: str | None = None
+    has_compact: bool = False
+    sidechain_count: int = 0  # Number of sidechain segments
+    sidechain_messages: int = 0  # Total messages in sidechains
 
 
-@dataclass
-class SessionData:
-    """Container for all session data."""
-
-    messages: dict[str, Message]
-    root_messages: list[Message]
-    paths: list[ConversationPath]
-    metadata: dict = field(default_factory=dict)
-    project_name: str = ""
-    session_id: str = ""
+# ============================================================================
+# SESSION PARSER (Parse JSONL files into message DAG)
+# ============================================================================
 
 
-class ClaudeTranscriptBuilder:
-    """Main class for building transcripts from Claude Code sessions."""
+class SessionParser:
+    """Parse Claude Code session JSONL files."""
 
-    def __init__(self, claude_dir: Path, output_dir: Path):
-        self.claude_dir = claude_dir
-        self.output_dir = output_dir
-        self.sessions_processed = 0
-        self.sessions_failed = 0
+    def __init__(self):
+        """Initialize parser."""
+        self.all_messages: list[Message] = []  # All messages from all files
+        self.message_by_uuid: dict[str, Message] = {}  # Global UUID index
+        self.messages_by_session: dict[str, list[Message]] = defaultdict(list)  # Messages per session
+        self.task_calls: list[dict] = []  # All Task tool calls with results
+        self.sidechain_agent_map: dict[str, str] = {}  # Map session IDs to agent names
+        self.session_file_map: dict[str, Path] = {}  # Map session IDs to source files
 
-    def process_all(
-        self, project_filter: str | None = None, include_abandoned: bool = False, timezone_str: str = "UTC"
-    ) -> None:
-        """Process all Claude Code sessions."""
-        logger.info(f"Scanning Claude directory: {self.claude_dir}")
+    def parse_all_files(self, session_files: list[Path]) -> None:
+        """Parse all JSONL files into a unified message pool."""
+        logger.info(f"Loading {len(session_files)} session files into unified message pool...")
 
-        # Find all session files
-        session_files = self._find_session_files(project_filter)
-
-        if not session_files:
-            logger.warning("No session files found")
-            return
-
-        logger.info(f"Found {len(session_files)} session files to process")
-
-        # Process each session
         for session_file in session_files:
-            try:
-                self._process_session(session_file, include_abandoned, timezone_str)
-                self.sessions_processed += 1
-            except Exception as e:
-                logger.error(f"Failed to process {session_file}: {e}")
-                self.sessions_failed += 1
+            self._parse_single_file(session_file)
 
-        # Generate global index
-        self._generate_global_index()
+        logger.info(f"  Loaded {len(self.all_messages)} total messages")
+        logger.info(f"  Found {len(self.task_calls)} Task tool calls")
 
-        logger.info(f"Processing complete: {self.sessions_processed} succeeded, {self.sessions_failed} failed")
-
-    def _find_session_files(self, project_filter: str | None) -> list[Path]:
-        """Find all .jsonl session files in Claude projects directory."""
-        session_files = []
-
-        for project_dir in self.claude_dir.iterdir():
-            if not project_dir.is_dir():
-                continue
-
-            # Apply project filter if specified
-            if project_filter and project_filter not in project_dir.name:
-                continue
-
-            # Look for JSONL session files (UUID format)
-            for session_file in project_dir.glob("*.jsonl"):
-                session_files.append(session_file)
-
-        return sorted(session_files)
-
-    def _process_session(self, session_file: Path, include_abandoned: bool, timezone_str: str) -> None:
-        """Process a single session file."""
-        logger.info(f"Processing: {session_file}")
-
-        # Parse session data
-        session_data = self._parse_session_file(session_file)
-
-        if not session_data.messages:
-            logger.warning(f"No messages found in {session_file}")
+    def _parse_single_file(self, session_file: Path) -> None:
+        """Parse a single JSONL file and add to unified pool."""
+        if not session_file.exists():
+            logger.warning(f"Session file not found: {session_file}")
             return
 
-        # Extract conversation paths
-        paths = self._extract_paths(session_data)
-        session_data.paths = paths
+        file_line_offset = len(self.all_messages)  # Offset for global line numbers
 
-        logger.info(f"  Found {len(paths)} conversation paths")
-
-        # Generate transcripts
-        self._generate_transcripts(session_data, include_abandoned, timezone_str)
-
-    def _parse_session_file(self, session_file: Path) -> SessionData:
-        """Parse a .jsonl session file and extract messages."""
-        session_data = SessionData(messages={}, root_messages=[], paths=[])
-
-        # Extract project and session info from path
-        parts = session_file.parts
-        for i, part in enumerate(parts):
-            if part == "projects" and i + 1 < len(parts):
-                session_data.project_name = parts[i + 1]
-
-        # Session ID is the filename without extension
-        session_data.session_id = session_file.stem
-
-        # Read JSONL file line by line
-        with open(session_file, encoding="utf-8", errors="ignore") as f:
+        with open(session_file, encoding="utf-8") as f:
             for line_num, line in enumerate(f, 1):
                 line = line.strip()
                 if not line:
@@ -173,383 +158,1220 @@ class ClaudeTranscriptBuilder:
 
                 try:
                     data = json.loads(line)
-                    message = self._parse_message(data, line_num)
-                    if message:
-                        session_data.messages[message.uuid] = message
-                        if not message.parent_uuid:
-                            session_data.root_messages.append(message)
-                except json.JSONDecodeError:
-                    logger.debug(f"Skipping non-JSON line {line_num}")
-                except Exception as e:
-                    logger.warning(f"Error parsing line {line_num}: {e}")
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Skipping invalid JSON at line {line_num} in {session_file.name}: {e}")
+                    continue
 
-        logger.info(f"  Parsed {len(session_data.messages)} messages")
-        return session_data
+                # Skip non-message entries but keep meta for completeness
+                if "uuid" not in data:
+                    continue
 
-    def _parse_message(self, data: dict, line_number: int) -> Message | None:
-        """Parse a message from JSON data."""
-        # Skip non-message entries (e.g., summary entries or meta)
-        msg_type = data.get("type")
-        if msg_type not in ["user", "assistant"]:
-            return None
+                # Extract message content and tool info
+                msg_content = data.get("message", {})
+                tool_name = None
+                tool_arguments = None
+                tool_result = None
+                sidechain_agent = None
+                task_info = None  # Track current Task call
 
-        # Extract required fields
-        uuid = data.get("uuid", "")
-        if not uuid:
-            return None
+                if isinstance(msg_content, dict):
+                    content = msg_content.get("content", "")
+                    # Extract tool information from structured content
+                    if isinstance(content, list):
+                        for item in content:
+                            if isinstance(item, dict):
+                                if item.get("type") == "tool_use":
+                                    tool_name = item.get("name")
+                                    tool_arguments = item.get("input", {})
+                                    # Track Task tool invocations
+                                    if tool_name == "Task":
+                                        task_info = {
+                                            "timestamp": data.get("timestamp", ""),
+                                            "session_id": data.get("sessionId", ""),
+                                            "subagent_type": tool_arguments.get("subagent_type", "unknown"),
+                                            "prompt": tool_arguments.get("prompt", "")[:100]
+                                            if tool_arguments.get("prompt")
+                                            else "",
+                                            "uuid": data["uuid"],
+                                            "source_file": session_file.name,
+                                            "spawned_session_id": None,  # Will be filled from result
+                                        }
+                                        self.task_calls.append(task_info)  # Add immediately
+                                        # Map for sidechain labeling
+                                        if "subagent_type" in tool_arguments:
+                                            sidechain_agent = tool_arguments["subagent_type"]
+                                elif item.get("type") == "tool_result":
+                                    tool_result = item.get("content")
+                                    # Debug: log structure of tool results
+                                    if tool_name == "Task" and line_num <= 10:  # Log first few
+                                        logger.debug(
+                                            f"DEBUG: Task tool_result structure: type={type(tool_result)}, len={len(str(tool_result)) if tool_result else 0}"
+                                        )
+                                    # If this is a Task result, extract the spawned session ID
+                                    if task_info and isinstance(tool_result, str):
+                                        # Look for session ID pattern in the result
+                                        import re
 
-        # Extract content from message field
-        content = ""
-        if "message" in data:
-            msg = data["message"]
-            if isinstance(msg, dict):
-                msg_content = msg.get("content", "")
-                if isinstance(msg_content, str):
+                                        session_pattern = r"session[_\s]?id[:\s]+([a-f0-9\-]+)"
+                                        match = re.search(session_pattern, tool_result, re.IGNORECASE)
+                                        if match:
+                                            task_info["spawned_session_id"] = match.group(1)
+                elif isinstance(msg_content, str):
                     content = msg_content
-                elif isinstance(msg_content, list):
-                    # Handle array content (tool use, etc.)
-                    parts = []
-                    for item in msg_content:
-                        if isinstance(item, dict):
-                            if item.get("type") == "text":
-                                parts.append(item.get("text", ""))
-                            elif item.get("type") == "tool_use":
-                                parts.append(f"[Tool: {item.get('name', 'unknown')}]")
-                        elif isinstance(item, str):
-                            parts.append(item)
-                    content = "\n".join(parts)
+                else:
+                    content = str(data.get("content", ""))
 
-        # Map Claude Code types to our internal types
-        internal_type = "human" if msg_type == "user" else "assistant"
+                # Create message object with enhanced fields
+                msg = Message(
+                    uuid=data["uuid"],
+                    parent_uuid=data.get("parentUuid"),
+                    session_id=data.get("sessionId", "unknown"),
+                    timestamp=data.get("timestamp", ""),
+                    msg_type=data.get("type", "unknown"),
+                    content=content,
+                    line_number=file_line_offset + line_num,  # Global line number
+                    logical_parent_uuid=data.get("logicalParentUuid"),
+                    subtype=data.get("subtype"),
+                    is_sidechain=data.get("isSidechain", False),
+                    user_type=data.get("userType"),
+                    tool_name=tool_name,
+                    tool_arguments=tool_arguments,
+                    tool_result=tool_result,
+                    is_meta=data.get("isMeta", False),
+                    is_error=data.get("isError", False),
+                    is_deleted=data.get("isDeleted", False),
+                    compact_metadata=data.get("compactMetadata"),
+                    sidechain_agent=sidechain_agent,
+                )
 
-        message = Message(
-            uuid=uuid,
-            parent_uuid=data.get("parentUuid"),
-            logical_parent_uuid=data.get("logicalParentUuid"),
-            content=content,
-            type=internal_type,
-            line_number=line_number,
-            metadata=data,
-        )
+                # Add to unified pool
+                self.all_messages.append(msg)
+                self.message_by_uuid[msg.uuid] = msg
+                self.messages_by_session[msg.session_id].append(msg)
 
-        # Parse timestamp if available
-        if "timestamp" in data:
-            with contextlib.suppress(ValueError, TypeError):
-                timestamp_str = data["timestamp"]
-                if isinstance(timestamp_str, str):
-                    message.timestamp = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
+                # Track session to file mapping
+                if msg.session_id not in self.session_file_map:
+                    self.session_file_map[msg.session_id] = session_file
 
-        return message
 
-    def _extract_paths(self, session_data: SessionData) -> list[ConversationPath]:
-        """Extract all conversation paths from the DAG structure."""
-        paths = []
+# ============================================================================
+# UNIFIED DAG BUILDER (Build global message graph across all sessions)
+# ============================================================================
 
-        # Build children mapping for traversal
-        children_map = self._build_children_map(session_data.messages)
 
-        # Find the latest line number to determine active path
-        max_line = max((m.line_number for m in session_data.messages.values()), default=0)
+class UnifiedMessageDAG:
+    """Build and navigate unified message DAG structure across all sessions."""
 
-        # Process each root message
-        for root in session_data.root_messages:
-            root_paths = self._extract_paths_from_root(root, session_data.messages, children_map, max_line)
-            paths.extend(root_paths)
+    def __init__(self, parser: SessionParser):
+        """Initialize DAG from unified message pool."""
+        self.messages = parser.all_messages
+        self.message_by_uuid = parser.message_by_uuid
+        self.messages_by_session = parser.messages_by_session
+        self.task_calls = parser.task_calls
+        self.sidechain_agent_map = parser.sidechain_agent_map
+        self.session_file_map = parser.session_file_map
 
-        # Sort paths: active first, then by message count
-        paths.sort(key=lambda p: (not p.is_active, -p.message_count))
+        self.children_map: dict[str, list[str]] = defaultdict(list)
+        self.roots: list[Message] = []
+        self.sidechain_roots: list[Message] = []  # Separate tracking for sidechain roots
 
-        # Assign path IDs
-        active_count = sum(1 for p in paths if p.is_active)
-        if active_count == 1:
-            for p in paths:
-                if p.is_active:
-                    p.path_id = "main"
+        # Match sidechains to parent tasks
+        self._match_sidechains_to_tasks()
+
+        # Build the unified DAG
+        self._build_dag()
+
+    def _match_sidechains_to_tasks(self) -> None:
+        """Match sidechain sessions to their parent Task calls using temporal ordering.
+
+        Sidechains appear immediately after Task tool calls in the message flow.
+        We track Task calls and match them with subsequent sidechain segments.
+        """
+        logger.debug("Starting sidechain matching...")
+
+        # First, collect all sidechain segments with their starting line numbers
+        sidechain_segments = []
+
+        for session_id, messages in self.messages_by_session.items():
+            current_segment = []
+            in_sidechain = False
+            sidechain_count_in_session = 0
+            segment_start_line = None
+
+            for msg in messages:
+                # Use the is_sidechain flag from the JSONL data
+                if msg.is_sidechain and not in_sidechain:
+                    # Start of new sidechain segment
+                    in_sidechain = True
+                    current_segment = [msg]
+                    segment_start_line = msg.line_number
+                    sidechain_count_in_session += 1
+                elif msg.is_sidechain and in_sidechain:
+                    # Continue current sidechain
+                    current_segment.append(msg)
+                elif not msg.is_sidechain and in_sidechain:
+                    # End of sidechain - save the segment
+                    if current_segment:
+                        sidechain_segments.append(
+                            {
+                                "messages": current_segment,
+                                "session_id": session_id,
+                                "start_line": segment_start_line,
+                            }
+                        )
+                    in_sidechain = False
+                    current_segment = []
+                    segment_start_line = None
+
+            # Handle unclosed sidechain at end
+            if current_segment:
+                sidechain_segments.append(
+                    {
+                        "messages": current_segment,
+                        "session_id": session_id,
+                        "start_line": segment_start_line,
+                    }
+                )
+
+            if sidechain_count_in_session > 0:
+                logger.debug(f"  Session {session_id[:8]}: Found {sidechain_count_in_session} sidechain segments")
+
+        logger.debug(f"Total sidechain segments found: {len(sidechain_segments)}")
+
+        # Build a list of Task calls with their line numbers
+        task_calls = []
+
+        for msg in self.messages:
+            # Check if this message contains a Task tool_use
+            if msg.msg_type == "assistant" and isinstance(msg.content, list):
+                for item in msg.content:
+                    if isinstance(item, dict) and item.get("type") == "tool_use" and item.get("name") == "Task":
+                        tool_arguments = item.get("input", {})
+                        task_info = {
+                            "uuid": msg.uuid,
+                            "subagent_type": tool_arguments.get("subagent_type", "unknown"),
+                            "session_id": msg.session_id,
+                            "line_number": msg.line_number,
+                        }
+                        task_calls.append(task_info)
+                        logger.debug(
+                            f"  Found Task call: subagent_type={task_info['subagent_type']}, line={msg.line_number}"
+                        )
+                        break
+
+        logger.debug(f"Found {len(task_calls)} Task calls")
+
+        # Match each sidechain segment to the most recent Task call before it
+        matched_count = 0
+        unmatched_count = 0
+
+        # Sort Task calls by line number for efficient searching
+        task_calls_sorted = sorted(task_calls, key=lambda t: t["line_number"])
+
+        for segment_idx, segment in enumerate(sidechain_segments):
+            logger.debug(f"Processing sidechain segment {segment_idx + 1}/{len(sidechain_segments)}")
+            logger.debug(f"  Session: {segment['session_id'][:8]}, Start line: {segment['start_line']}")
+
+            # Find the most recent Task call before this sidechain
+            matched_task = None
+            for task in reversed(task_calls_sorted):
+                if task["line_number"] < segment["start_line"]:
+                    # This task came before the sidechain
+                    matched_task = task
+                    logger.debug(f"  Matched to Task {task['subagent_type']} at line {task['line_number']}")
                     break
 
-        branch_num = 1
-        for p in paths:
-            if p.path_id == "main":
-                continue
-            p.path_id = f"branch{branch_num}"
-            branch_num += 1
+            if matched_task:
+                agent_type = matched_task["subagent_type"]
+                matched_count += 1
 
-        return paths
-
-    def _build_children_map(self, messages: dict[str, Message]) -> dict[str, list[str]]:
-        """Build a mapping of parent UUID to child UUIDs."""
-        children_map = {}
-
-        for uuid, message in messages.items():
-            parent = message.effective_parent
-            if parent:
-                if parent not in children_map:
-                    children_map[parent] = []
-                children_map[parent].append(uuid)
-
-        return children_map
-
-    def _extract_paths_from_root(
-        self, root: Message, messages: dict[str, Message], children_map: dict[str, list[str]], max_line: int
-    ) -> list[ConversationPath]:
-        """Extract all paths starting from a root message."""
-        paths = []
-
-        def traverse(current_uuid: str, path_so_far: list[Message], branch_point: Message | None = None):
-            current = messages.get(current_uuid)
-            if not current:
-                return
-
-            new_path = path_so_far + [current]
-
-            # Get children
-            children = children_map.get(current_uuid, [])
-
-            if not children:
-                # Leaf node - create a path
-                is_active = current.line_number == max_line
-                path = ConversationPath(messages=new_path, is_active=is_active, branch_point=branch_point)
-                paths.append(path)
-            elif len(children) == 1:
-                # Single child - continue path
-                traverse(children[0], new_path, branch_point)
+                # Apply agent type to all messages in this segment
+                for msg in segment["messages"]:
+                    msg.sidechain_agent = agent_type
             else:
-                # Multiple children - branching point
-                for child_uuid in children:
-                    traverse(child_uuid, new_path, current)
+                unmatched_count += 1
+                logger.warning(f"  No Task call found before sidechain at line {segment['start_line']}")
 
-        traverse(root.uuid, [])
-        return paths
+        logger.info(f"Matched {matched_count}/{len(sidechain_segments)} sidechains to their parent agents")
 
-    def _generate_transcripts(self, session_data: SessionData, include_abandoned: bool, timezone_str: str) -> None:
-        """Generate transcript files for all paths."""
-        # Create output directory structure
-        output_path = self.output_dir / session_data.project_name / session_data.session_id
-        output_path.mkdir(parents=True, exist_ok=True)
+    def _is_sidechain_start(self, msg: Message) -> bool:
+        """Check if a message starts a sidechain conversation."""
+        if msg.msg_type != "user":
+            return False
 
-        # Generate transcript for each path
-        for path in session_data.paths:
-            if not include_abandoned and not path.is_active:
+        content_str = str(msg.content)[:500] if msg.content else ""
+
+        # Strong indicators of sidechain start
+        sidechain_patterns = [
+            "You are evaluating",
+            "You are analyzing",
+            "You are reviewing",
+            "You are implementing",
+            "You are a specialized",
+            "You are an expert",
+            "Your task is to",
+            "Your role is to",
+            "Analyze the following",
+            "Review the following",
+            "Debug and fix",
+            "Create comprehensive",
+            "Update the following",
+            "Design a comprehensive",
+        ]
+
+        return any(pattern in content_str for pattern in sidechain_patterns)
+
+    def _is_sidechain_end(self, msg: Message) -> bool:
+        """Check if a message indicates end of sidechain (back to main conversation)."""
+        # A user message without sidechain patterns likely means back to main
+        if msg.msg_type == "user":
+            return not self._is_sidechain_start(msg)
+        return False
+
+    def _detect_sidechain_session(self, messages: list[Message]) -> bool:
+        """Detect if a session is a sidechain based on patterns."""
+        # Check if session has Task calls (parent sessions have them, sidechains don't)
+        has_task_calls = any(msg.tool_name == "Task" for msg in messages)
+        if has_task_calls:
+            return False
+
+        # Check first user message for sidechain patterns
+        for msg in messages:
+            if msg.msg_type == "user" and msg.content:
+                content_str = str(msg.content)[:500]  # Check first 500 chars
+
+                sidechain_patterns = [
+                    "You are evaluating",
+                    "You are analyzing",
+                    "You are reviewing",
+                    "You are implementing",
+                    "You are a ",
+                    "Your task is",
+                    "Your role is",
+                    "Analyze the following",
+                    "Review the following",
+                    "Debug and fix",
+                ]
+
+                for pattern in sidechain_patterns:
+                    if pattern in content_str:
+                        return True
+                break  # Only check first user message
+
+        return False
+
+    def _build_dag(self) -> None:
+        """Build parent-child relationships and find roots across all sessions."""
+        # First, build the children map from all messages
+        for msg in self.messages:
+            if msg.parent_uuid:
+                self.children_map[msg.parent_uuid].append(msg.uuid)
+
+        # Find roots: messages without parents OR with non-existent parents in ANY session
+        # This is key: a message is only a root if its parent doesn't exist ANYWHERE
+        for msg in self.messages:
+            is_root = False
+
+            if not msg.parent_uuid:
+                # No parent - this is a root
+                is_root = True
+            elif msg.parent_uuid not in self.message_by_uuid:
+                # Parent doesn't exist in the unified pool - treat as orphaned root
+                # This handles true conversation starts that reference messages from outside our dataset
+                is_root = True
+
+            if is_root:
+                if msg.is_sidechain:
+                    # Sidechain root - track separately
+                    self.sidechain_roots.append(msg)
+                else:
+                    # Main conversation root
+                    self.roots.append(msg)
+
+        # Connect compact boundaries to their logical parents for continuity
+        for msg in self.messages:
+            if (
+                msg.logical_parent_uuid
+                and msg.logical_parent_uuid in self.message_by_uuid
+                and msg.uuid not in self.children_map[msg.logical_parent_uuid]
+            ):
+                # Add as child of logical parent for path continuity across compacts
+                self.children_map[msg.logical_parent_uuid].append(msg.uuid)
+
+        logger.info(f"  Built unified DAG: {len(self.roots)} main roots, {len(self.sidechain_roots)} sidechain roots")
+
+    def _find_leaves(self) -> list[Message]:
+        """Find all leaf nodes (messages with no children) in the main conversation."""
+        leaves = []
+        for msg in self.messages:
+            # Skip sidechain messages when finding main conversation leaves
+            if msg.is_sidechain:
                 continue
 
-            self._generate_transcript_file(path, session_data, output_path, timezone_str)
+            # A message is a leaf if it has no children OR all its children are sidechains
+            if msg.uuid not in self.children_map:
+                # No children at all
+                leaves.append(msg)
+            else:
+                # Check if all children are sidechains
+                children_uuids = self.children_map[msg.uuid]
+                all_sidechain = all(
+                    self.message_by_uuid[child_uuid].is_sidechain
+                    for child_uuid in children_uuids
+                    if child_uuid in self.message_by_uuid
+                )
+                if all_sidechain:
+                    # All children are sidechains, so this is effectively a leaf for the main conversation
+                    leaves.append(msg)
 
-        # Generate metadata file
-        self._generate_metadata_file(session_data, output_path)
+        return leaves
 
-        # Generate project index
-        self._generate_project_index(session_data.project_name)
+    def _trace_backward_to_root(self, leaf: Message) -> list[Message]:
+        """Trace backwards from a leaf to the absolute beginning of the conversation.
 
-    def _generate_transcript_file(
-        self, path: ConversationPath, session_data: SessionData, output_path: Path, timezone_str: str
-    ) -> None:
-        """Generate a transcript markdown file for a conversation path."""
-        # Determine filename
-        if path.is_active:
-            filename = f"transcript_{path.path_id}.md"
+        This method ensures we capture the COMPLETE history from the very first message,
+        not just from an orphaned message that appears to be a root in this session.
+        """
+        path = []
+        current = leaf
+        visited = set()  # Prevent cycles
+
+        while current:
+            if current.uuid in visited:
+                logger.warning(f"Cycle detected at message {current.uuid}, breaking")
+                break
+
+            visited.add(current.uuid)
+            path.append(current)
+
+            # Try to find parent
+            parent_uuid = current.parent_uuid
+
+            # If no parent UUID, check for logical parent (compact boundaries)
+            if not parent_uuid and current.logical_parent_uuid:
+                parent_uuid = current.logical_parent_uuid
+                logger.debug(f"Using logical parent for compact boundary: {parent_uuid}")
+
+            if not parent_uuid:
+                # No parent at all - we've reached the absolute beginning
+                logger.debug(f"Reached absolute root at {current.uuid}")
+                break
+
+            # Try to find the parent message
+            parent = self.message_by_uuid.get(parent_uuid)
+
+            if not parent:
+                # Parent doesn't exist in this session
+                # Try logical parent if we haven't already
+                if current.logical_parent_uuid and current.logical_parent_uuid != parent_uuid:
+                    parent = self.message_by_uuid.get(current.logical_parent_uuid)
+                    if parent:
+                        logger.debug(f"Found parent via logical parent: {current.logical_parent_uuid}")
+
+                if not parent:
+                    # Parent truly doesn't exist - this is as far back as we can go
+                    logger.debug(f"Parent {parent_uuid} not found in session, stopping trace")
+                    break
+
+            # Move to parent
+            current = parent
+
+        # Reverse to get chronological order (root to leaf)
+        return list(reversed(path))
+
+    def extract_all_paths(self) -> list[ConversationPath]:
+        """Extract all unique conversation paths using root-forward approach on unified DAG.
+
+        Since we have the complete message graph across all sessions, we can now traverse
+        from true roots forward, capturing complete conversation lineages.
+        """
+        all_paths = []
+        path_id = 0
+
+        # Use root-forward traversal since we have the complete graph
+        logger.info(f"  Tracing paths from {len(self.roots)} root messages...")
+
+        for root in self.roots:
+            # Trace all paths from this root forward
+            paths_from_root = self._trace_all_paths_from(root.uuid)
+
+            for path_uuids in paths_from_root:
+                path_messages = [self.message_by_uuid[uuid] for uuid in path_uuids]
+
+                # Skip empty paths
+                if not path_messages:
+                    continue
+
+                # Count path characteristics
+                path_id += 1
+                has_compact = any(msg.subtype == "compact_boundary" for msg in path_messages)
+
+                # Use the most common session_id in the path
+                session_ids = [msg.session_id for msg in path_messages]
+                from collections import Counter
+
+                session_id = Counter(session_ids).most_common(1)[0][0] if session_ids else "unknown"
+
+                # Count sidechain segments and messages
+                sidechain_count = 0
+                sidechain_messages = 0
+                in_sidechain = False
+                for msg in path_messages:
+                    if msg.is_sidechain and not in_sidechain:
+                        sidechain_count += 1
+                        in_sidechain = True
+                    elif not msg.is_sidechain and in_sidechain:
+                        in_sidechain = False
+
+                    if msg.is_sidechain:
+                        sidechain_messages += 1
+
+                path = ConversationPath(
+                    messages=path_messages,
+                    session_id=session_id,
+                    path_id=path_id,
+                    has_compact=has_compact,
+                    sidechain_count=sidechain_count,
+                    sidechain_messages=sidechain_messages,
+                )
+                all_paths.append(path)
+
+        # Eliminate subset paths (paths that are entirely contained in other paths)
+        all_paths = self._eliminate_subset_paths(all_paths)
+
+        # Mark abandoned branches based on fork points
+        self._mark_abandoned_branches(all_paths)
+
+        logger.info(f"  Extracted {len(all_paths)} unique conversation paths")
+        return all_paths
+
+    def _trace_all_paths_from(self, root_uuid: str, visited: set[str] | None = None) -> list[list[str]]:
+        """Recursively trace all paths from a root to all leaves."""
+        if visited is None:
+            visited = set()
+
+        # Detect cycles
+        if root_uuid in visited:
+            logger.warning(f"Cycle detected at {root_uuid[:8]}, breaking")
+            return []
+
+        visited = visited | {root_uuid}
+
+        children = self.children_map.get(root_uuid, [])
+
+        if not children:
+            # Leaf node - return single path ending here
+            return [[root_uuid]]
+
+        # Get all paths from children
+        all_paths = []
+        for child_uuid in children:
+            child_paths = self._trace_all_paths_from(child_uuid, visited)
+            for path in child_paths:
+                all_paths.append([root_uuid] + path)
+
+        return all_paths
+
+    def _eliminate_subset_paths(self, paths: list[ConversationPath]) -> list[ConversationPath]:
+        """Eliminate paths that are subsets of other paths."""
+        unique_paths = []
+
+        # Sort by message count (descending) to prefer longer paths
+        sorted_paths = sorted(paths, key=lambda p: len(p.messages), reverse=True)
+
+        for candidate in sorted_paths:
+            candidate_uuids = {msg.uuid for msg in candidate.messages}
+
+            # Check if this path is a subset of any already selected path
+            is_subset = False
+            for selected in unique_paths:
+                selected_uuids = {msg.uuid for msg in selected.messages}
+                if candidate_uuids.issubset(selected_uuids) and candidate_uuids != selected_uuids:
+                    is_subset = True
+                    break
+
+            if not is_subset:
+                unique_paths.append(candidate)
+
+        removed = len(paths) - len(unique_paths)
+        if removed > 0:
+            logger.info(f"    Removed {removed} subset paths")
+
+        return unique_paths
+
+    def extract_sidechain_paths(self) -> list[tuple[str, list[Message]]]:
+        """Extract sidechain conversation paths."""
+        sidechains = []
+
+        for root in self.sidechain_roots:
+            # Trace the sidechain conversation from its root
+            paths = self._trace_paths_from(root.uuid)
+            for path_messages in paths:
+                # Determine agent name from the messages or session ID map
+                agent_name = "unknown"
+
+                # First try to get from sidechain_agent field
+                for msg in path_messages:
+                    if msg.sidechain_agent:
+                        agent_name = msg.sidechain_agent
+                        break
+
+                # If still unknown, try session ID mapping
+                if agent_name == "unknown" and path_messages:
+                    session_id = path_messages[0].session_id
+                    if session_id in self.sidechain_agent_map:
+                        agent_name = self.sidechain_agent_map[session_id]
+
+                sidechains.append((agent_name, path_messages))
+
+        return sidechains
+
+    def _trace_paths_from(self, node_uuid: str) -> list[list[Message]]:
+        """Recursively trace all paths from a node to leaves."""
+        node = self.message_by_uuid[node_uuid]
+        children_uuids = self.children_map.get(node_uuid, [])
+
+        if not children_uuids:
+            # Leaf node - return path ending here
+            return [[node]]
+
+        # Get all paths from children
+        all_paths = []
+        for child_uuid in children_uuids:
+            child_paths = self._trace_paths_from(child_uuid)
+            for path in child_paths:
+                all_paths.append([node] + path)
+
+        return all_paths
+
+    def _mark_abandoned_branches(self, paths: list[ConversationPath]) -> None:
+        """Mark paths as abandoned based on fork points."""
+        # Group paths by their fork points
+        fork_groups: dict[str, list[ConversationPath]] = defaultdict(list)
+
+        for path in paths:
+            # Find fork points (messages with multiple children)
+            for i, msg in enumerate(path.messages[:-1]):
+                children = self.children_map.get(msg.uuid, [])
+                if len(children) > 1:
+                    # This is a fork point
+                    next_msg = path.messages[i + 1]
+                    fork_key = f"{msg.uuid}:{next_msg.uuid}"
+                    fork_groups[fork_key].append(path)
+                    path.fork_point_uuid = msg.uuid
+                    break
+
+        # Within each fork group, earlier branches (by line number) are abandoned
+        for _fork_key, group_paths in fork_groups.items():
+            if len(group_paths) > 1:
+                # Sort by line number of first message after fork
+                fork_uuid = group_paths[0].fork_point_uuid
+                if fork_uuid:
+                    fork_idx = next(i for i, msg in enumerate(group_paths[0].messages) if msg.uuid == fork_uuid)
+                    sorted_paths = sorted(group_paths, key=lambda p: p.messages[fork_idx + 1].line_number)
+                    # Mark all but the last as abandoned
+                    for path in sorted_paths[:-1]:
+                        path.is_abandoned = True
+
+
+# ============================================================================
+# TRANSCRIPT GENERATOR (Convert paths to markdown)
+# ============================================================================
+
+
+class TranscriptGenerator:
+    """Generate organized markdown transcripts from conversation paths."""
+
+    def __init__(self, output_dir: Path, session_file: Path | None = None):
+        """Initialize generator with output directory."""
+        self.output_dir = output_dir
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.session_file = session_file
+
+    def generate_session_output(
+        self, paths: list[ConversationPath], session_file: Path | None, dag: UnifiedMessageDAG | None = None
+    ) -> Path:
+        """Generate complete organized output for a session with all paths."""
+        if not paths:
+            return self.output_dir
+
+        # Create session directory with timestamp__cwd__id naming
+        first_msg_timestamp = None
+        for path in paths:
+            for msg in path.messages:
+                if msg.timestamp:
+                    first_msg_timestamp = msg.timestamp
+                    break
+            if first_msg_timestamp:
+                break
+
+        # Parse timestamp for directory name
+        if first_msg_timestamp:
+            try:
+                dt = datetime.fromisoformat(first_msg_timestamp.replace("Z", "+00:00"))
+                timestamp_str = dt.strftime("%Y-%m-%d-%I-%M-%p").lower()
+            except Exception:
+                timestamp_str = "unknown-time"
         else:
-            filename = f"transcript_{path.path_id}_abandoned.md"
+            timestamp_str = "unknown-time"
 
-        filepath = output_path / filename
+        # Extract project context from session file path
+        project_name = session_file.parent.name if session_file else "unknown"
+        # Clean project name (replace problematic chars)
+        project_name = project_name.replace("/", "~").replace("-", "~")
 
-        # Build transcript content
+        session_id = paths[0].session_id[:8] if paths[0].session_id else "unknown"
+        session_dir_name = f"{timestamp_str}__{project_name}__{session_id}"
+        session_dir = self.output_dir / session_dir_name
+        session_dir.mkdir(parents=True, exist_ok=True)
+
+        # Copy original JSONL as history.jsonl
+        if session_file and session_file.exists():
+            history_file = session_dir / "history.jsonl"
+            shutil.copy2(session_file, history_file)
+            logger.info("  Copied original session to history.jsonl")
+
+        # Identify main path (longest active path)
+        active_paths = [p for p in paths if not p.is_abandoned]
+        main_path = max(active_paths, key=lambda p: len(p.messages)) if active_paths else paths[0]
+
+        # Generate main transcripts
+        self._generate_main_transcripts(main_path, session_dir)
+
+        # Generate branch transcripts
+        branch_paths = [p for p in paths if p != main_path and not p.is_abandoned]
+        if branch_paths:
+            branches_dir = session_dir / "branches"
+            branches_dir.mkdir(exist_ok=True)
+            for idx, branch_path in enumerate(branch_paths, 1):
+                self._generate_branch_transcripts(branch_path, branches_dir, idx)
+
+        # Extract and generate sidechain transcripts from DAG
+        sidechains = []
+        if dag:
+            sidechains = dag.extract_sidechain_paths()
+
+        if sidechains:
+            sidechains_dir = session_dir / "sidechains"
+            sidechains_dir.mkdir(exist_ok=True)
+            for idx, (agent_name, sidechain_msgs) in enumerate(sidechains, 1):
+                self._generate_sidechain_transcript(sidechain_msgs, sidechains_dir, idx, agent_name)
+
+            # Update main path stats
+            main_path.sidechain_count = len(sidechains)
+            main_path.sidechain_messages = sum(len(msgs) for _, msgs in sidechains)
+
+        # Generate manifest.json
+        manifest = self._generate_manifest(paths, session_dir, timestamp_str)
+        manifest_file = session_dir / "manifest.json"
+        write_with_retry(json.dumps(manifest, indent=2), manifest_file)
+        logger.info("  Generated manifest.json")
+
+        return session_dir
+
+    def _generate_main_transcripts(self, path: ConversationPath, session_dir: Path) -> None:
+        """Generate both simplified and extended transcripts for main path."""
+        # Generate simplified transcript
+        simplified_content = self._format_transcript(path, simplified=True, is_main=True)
+        write_with_retry(simplified_content, session_dir / "transcript.md")
+        logger.info("  Generated transcript.md (simplified)")
+
+        # Generate extended transcript
+        extended_content = self._format_transcript(path, simplified=False, is_main=True)
+        write_with_retry(extended_content, session_dir / "transcript_extended.md")
+        logger.info("  Generated transcript_extended.md (with details)")
+
+    def _generate_branch_transcripts(self, path: ConversationPath, branches_dir: Path, idx: int) -> None:
+        """Generate transcripts for a branch."""
+        # Generate simplified branch transcript
+        simplified_content = self._format_transcript(path, simplified=True, is_main=False, branch_id=idx)
+        write_with_retry(simplified_content, branches_dir / f"branch_{idx:03d}_transcript.md")
+
+        # Generate extended branch transcript
+        extended_content = self._format_transcript(path, simplified=False, is_main=False, branch_id=idx)
+        write_with_retry(extended_content, branches_dir / f"branch_{idx:03d}_extended.md")
+        logger.info(f"  Generated branch {idx:03d} transcripts")
+
+    def _extract_sidechains(self, path: ConversationPath) -> list[tuple[str, list[Message]]]:
+        """Extract sidechain conversations from path."""
+        sidechains = []
+        current_sidechain = []
+        current_agent = None
+
+        for msg in path.messages:
+            if msg.is_sidechain:
+                if not current_agent and msg.sidechain_agent:
+                    current_agent = msg.sidechain_agent
+                current_sidechain.append(msg)
+            elif current_sidechain:
+                # End of sidechain
+                sidechains.append((current_agent or "unknown", current_sidechain))
+                current_sidechain = []
+                current_agent = None
+
+        # Handle final sidechain if exists
+        if current_sidechain:
+            sidechains.append((current_agent or "unknown", current_sidechain))
+
+        return sidechains
+
+    def _generate_sidechain_transcript(
+        self, messages: list[Message], sidechains_dir: Path, idx: int, agent_name: str
+    ) -> None:
+        """Generate transcript for a sidechain conversation."""
+        lines = []
+        lines.append(f"# Sidechain {idx:03d}: {agent_name}\n")
+        lines.append(f"Agent: {agent_name}")
+        lines.append(f"Messages: {len(messages)}")
+        lines.append("---\n")
+
+        for msg in messages:
+            # Format sidechain message
+            if msg.msg_type == "user":
+                lines.append("## 🤖→ CLAUDE (as user)")
+            else:
+                lines.append(f"## 🧠 {agent_name.upper()}")
+
+            # Add timestamp
+            if msg.timestamp:
+                try:
+                    dt = datetime.fromisoformat(msg.timestamp.replace("Z", "+00:00"))
+                    lines.append(f"*{dt.strftime('%Y-%m-%d %H:%M:%S')}*\n")
+                except Exception:
+                    pass
+
+            # Add content (simplified)
+            content = self._format_content(msg, simplified=True)
+            lines.append(content)
+            lines.append("\n---\n")
+
+        filename = f"sidechain_{idx:03d}_{agent_name.lower().replace(' ', '_')}.md"
+        write_with_retry("\n".join(lines), sidechains_dir / filename)
+        logger.info(f"  Generated sidechain {idx:03d} ({agent_name})")
+
+    def _generate_manifest(self, paths: list[ConversationPath], session_dir: Path, timestamp_str: str) -> dict:
+        """Generate manifest with session metadata."""
+        # Count statistics
+        total_messages = sum(len(p.messages) for p in paths)
+        active_branches = len([p for p in paths if not p.is_abandoned])
+        abandoned_branches = len([p for p in paths if p.is_abandoned])
+
+        # Collect sidechain stats
+        total_sidechains = sum(p.sidechain_count for p in paths)
+        total_sidechain_msgs = sum(p.sidechain_messages for p in paths)
+
+        # List generated files
+        files = []
+        if (session_dir / "transcript.md").exists():
+            files.append("transcript.md")
+        if (session_dir / "transcript_extended.md").exists():
+            files.append("transcript_extended.md")
+        if (session_dir / "history.jsonl").exists():
+            files.append("history.jsonl")
+
+        branches_dir = session_dir / "branches"
+        if branches_dir.exists():
+            files.extend([f"branches/{f.name}" for f in branches_dir.glob("*.md")])
+
+        sidechains_dir = session_dir / "sidechains"
+        if sidechains_dir.exists():
+            files.extend([f"sidechains/{f.name}" for f in sidechains_dir.glob("*.md")])
+
+        manifest = {
+            "session_id": paths[0].session_id if paths else "unknown",
+            "timestamp": timestamp_str,
+            "project": session_dir.parent.name,
+            "statistics": {
+                "total_messages": total_messages,
+                "branches": {"active": active_branches, "abandoned": abandoned_branches, "total": len(paths)},
+                "sidechains": {"count": total_sidechains, "messages": total_sidechain_msgs},
+            },
+            "files": sorted(files),
+            "generated_at": datetime.now().isoformat(),
+        }
+
+        return manifest
+
+    def _format_transcript(
+        self, path: ConversationPath, simplified: bool = False, is_main: bool = True, branch_id: int | None = None
+    ) -> str:
+        """Format a conversation path as markdown."""
         lines = []
 
         # Header
-        lines.append("# Claude Code Session Transcript")
-        lines.append("")
-        lines.append(f"**Project**: {session_data.project_name}")
-        lines.append(f"**Session**: {session_data.session_id}")
-        lines.append(f"**Path**: {path.path_id} ({'Active' if path.is_active else 'Abandoned'})")
-        lines.append(
-            f"**Messages**: {path.message_count} ({path.human_messages} human, {path.assistant_messages} assistant)"
-        )
+        if is_main:
+            lines.append("# Claude Code Session Transcript\n")
+            if simplified:
+                lines.append("*Simplified view - tool details hidden*\n")
+            else:
+                lines.append("*Extended view - includes full tool payloads*\n")
+        else:
+            lines.append(f"# Branch {branch_id:03d} Transcript\n")
 
-        if path.branch_point:
-            lines.append(f"**Branched from**: Message at line {path.branch_point.line_number}")
+        lines.append(f"Session ID: {path.session_id}")
+        lines.append(f"Status: {'ABANDONED' if path.is_abandoned else 'ACTIVE'}")
 
-        lines.append("")
-        lines.append("---")
-        lines.append("")
+        if path.fork_point_uuid:
+            lines.append(f"Fork Point: {path.fork_point_uuid}")
 
-        # Messages
-        prev_message = None
-        for i, message in enumerate(path.messages):
-            # Check for compact boundary
-            if prev_message and message.logical_parent_uuid and message.logical_parent_uuid != prev_message.uuid:
+        if path.has_compact:
+            lines.append("**Contains Compact Operation(s)**")
+
+        if path.sidechain_count > 0 and not simplified:
+            lines.append(f"**Sidechains**: {path.sidechain_count} conversations ({path.sidechain_messages} messages)")
+
+        lines.append(f"Total Messages: {len(path.messages)}")
+        lines.append(f"Generated: {datetime.now().isoformat()}\n")
+        lines.append("---\n")
+
+        # Add messages (skip sidechains in simplified main transcript)
+        for msg in path.messages:
+            # Skip deleted messages and sidechains in simplified view
+            if msg.is_deleted:
+                continue
+            if simplified and msg.is_sidechain:
+                # Add a marker for sidechain in simplified view
+                if msg.sidechain_agent and not any(
+                    "→ Sidechain:" in line and msg.sidechain_agent in line for line in lines[-5:]
+                ):
+                    lines.append(f"\n→ *Sidechain: Conversation with {msg.sidechain_agent} (see sidechains folder)*\n")
+                continue
+
+            # Handle compact boundaries with enhanced formatting
+            if msg.subtype == "compact_boundary":
+                lines.append("\n")
+                lines.append("═" * 50)
+                lines.append("📦 CONVERSATION COMPACTED")
+                if msg.compact_metadata:
+                    lines.append(f"- Trigger: {msg.compact_metadata.get('trigger', 'unknown')}")
+                    lines.append(f"- Pre-compact tokens: {msg.compact_metadata.get('preTokens', 'unknown')}")
+                    preserved = msg.compact_metadata.get("preservedMessageCount", "unknown")
+                    lines.append(f"- Preserved messages: {preserved}")
+                lines.append(f"- Logical parent: {msg.logical_parent_uuid}")
+                lines.append("═" * 50)
                 lines.append("")
-                lines.append("---")
-                lines.append("*[Compact boundary - conversation compacted here]*")
-                lines.append("---")
-                lines.append("")
+                continue
 
-            # Format timestamp
-            timestamp_str = ""
-            if message.timestamp:
+            # Format message header
+            role_emoji, role_label = self._get_role_info(msg)
+
+            if msg.tool_name and not simplified:
+                lines.append(f"\n## {role_emoji} {role_label} [🔧 {msg.tool_name}]")
+            else:
+                lines.append(f"\n## {role_emoji} {role_label}")
+
+            # Add timestamp if available
+            if msg.timestamp:
                 try:
-                    # Convert to specified timezone if needed
-                    if timezone_str != "UTC":
-                        # For now, just use UTC
-                        timestamp_str = message.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC")
+                    dt = datetime.fromisoformat(msg.timestamp.replace("Z", "+00:00"))
+                    lines.append(f"*{dt.strftime('%Y-%m-%d %H:%M:%S')}*\n")
+                except Exception:
+                    lines.append(f"*{msg.timestamp}*\n")
+
+            # Format content
+            content_str = self._format_content(msg, simplified)
+            lines.append(content_str)
+            lines.append("\n---")
+
+        return "\n".join(lines)
+
+    def _get_role_info(self, msg: Message) -> tuple[str, str]:
+        """Get role emoji and label for a message."""
+        if msg.is_sidechain:
+            if msg.msg_type == "user":
+                return "🤖→👤", "CLAUDE (as user)"
+            return "🧠", msg.sidechain_agent.upper() if msg.sidechain_agent else "SUB-AGENT"
+        if msg.msg_type == "user":
+            return "👤", "USER"
+        if msg.msg_type == "system":
+            return "⚙️", "SYSTEM"
+        return "🤖", "ASSISTANT"
+
+    def _format_content(self, msg: Message, simplified: bool = False) -> str:
+        """Format message content based on type and simplification level."""
+        lines = []
+        content = msg.content
+
+        if isinstance(content, list):
+            for item in content:
+                if isinstance(item, dict):
+                    item_type = item.get("type")
+
+                    if item_type == "text":
+                        text = item.get("text", "")
+                        lines.append(text)
+
+                    elif item_type == "tool_use":
+                        tool_name = item.get("name", "unknown")
+                        tool_input = item.get("input", {})
+
+                        if simplified:
+                            # Simplified tool display
+                            lines.append(f"\n🔧 **Tool: {tool_name}**")
+                            if tool_name in ["Write", "Edit", "MultiEdit"]:
+                                if "file_path" in tool_input:
+                                    lines.append(f"File: `{tool_input['file_path']}`")
+                            elif tool_name == "Read":
+                                if "file_path" in tool_input:
+                                    lines.append(f"Reading: `{tool_input['file_path']}`")
+                            elif tool_name == "Bash":
+                                if "command" in tool_input:
+                                    cmd = tool_input["command"]
+                                    if len(cmd) > 100:
+                                        cmd = cmd[:100] + "..."
+                                    lines.append(f"```\n{cmd}\n```")
+                            elif tool_name == "Task" and "agent" in tool_input:
+                                lines.append(f"Calling agent: {tool_input['agent']}")
+                        else:
+                            # Full tool display
+                            lines.append(f"\n### 🔧 TOOL: {tool_name}")
+                            lines.append("```json")
+                            lines.append(json.dumps(tool_input, indent=2))
+                            lines.append("```")
+
+                    elif item_type == "tool_result":
+                        result = item.get("content", "")
+                        if simplified and isinstance(result, str) and len(result) > 100:
+                            lines.append(f"```\n{result[:100]}...\n[Truncated {len(result)} chars]\n```")
+                        elif isinstance(result, str) and len(result) > 500 and not simplified:
+                            lines.append(f"```\n{result[:500]}...\n[Output truncated - {len(result)} chars total]\n```")
+                        else:
+                            lines.append(f"```\n{result}\n```")
+
+                    elif item_type == "thinking":
+                        thinking = item.get("text", "")
+                        if not simplified:
+                            lines.append("\n💭 **Thinking:**")
+                            for think_line in thinking.split("\n"):
+                                lines.append("> " + think_line)
+                        # Skip thinking in simplified mode
+
                     else:
-                        timestamp_str = message.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC")
-                except (ValueError, AttributeError):
-                    timestamp_str = ""
+                        lines.append(str(item))
+                else:
+                    lines.append(str(item))
+        else:
+            # Simple text content
+            lines.append(str(content))
 
-            # Message header
-            if message.type == "human":
-                lines.append(f"## Human Message {i + 1}")
-            else:
-                lines.append(f"## Assistant Response {i + 1}")
-
-            if timestamp_str:
-                lines.append(f"*{timestamp_str}*")
-
-            lines.append("")
-
-            # Message content
-            lines.append(message.content)
-            lines.append("")
-
-            prev_message = message
-
-        # Write file
-        filepath.write_text("\n".join(lines), encoding="utf-8")
-        logger.info(f"  Generated: {filepath.name}")
-
-    def _generate_metadata_file(self, session_data: SessionData, output_path: Path) -> None:
-        """Generate a metadata JSON file for the session."""
-        metadata = {
-            "project_name": session_data.project_name,
-            "session_id": session_data.session_id,
-            "total_messages": len(session_data.messages),
-            "total_paths": len(session_data.paths),
-            "active_paths": sum(1 for p in session_data.paths if p.is_active),
-            "abandoned_paths": sum(1 for p in session_data.paths if not p.is_active),
-            "root_messages": len(session_data.root_messages),
-            "paths": [],
-        }
-
-        for path in session_data.paths:
-            path_info = {
-                "id": path.path_id,
-                "is_active": path.is_active,
-                "message_count": path.message_count,
-                "human_messages": path.human_messages,
-                "assistant_messages": path.assistant_messages,
-            }
-            metadata["paths"].append(path_info)
-
-        filepath = output_path / "metadata.json"
-        filepath.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
-
-    def _generate_project_index(self, project_name: str) -> None:
-        """Generate an index file for a project."""
-        project_path = self.output_dir / project_name
-        if not project_path.exists():
-            return
-
-        lines = [f"# Claude Code Sessions - {project_name}", "", "## Sessions", ""]
-
-        # List all sessions
-        for session_dir in sorted(project_path.iterdir()):
-            if not session_dir.is_dir():
-                continue
-
-            # Load metadata if available
-            metadata_file = session_dir / "metadata.json"
-            if metadata_file.exists():
-                metadata = json.loads(metadata_file.read_text())
-                lines.append(f"### [{session_dir.name}]({session_dir.name}/)")
-                lines.append(f"- Total messages: {metadata['total_messages']}")
-                lines.append(f"- Paths: {metadata['active_paths']} active, {metadata['abandoned_paths']} abandoned")
-
-                # List transcripts
-                lines.append("- Transcripts:")
-                for path in metadata["paths"]:
-                    status = "active" if path["is_active"] else "abandoned"
-                    filename = (
-                        f"transcript_{path['id']}.md" if path["is_active"] else f"transcript_{path['id']}_abandoned.md"
-                    )
-                    lines.append(f"  - [{path['id']} ({status})]({session_dir.name}/{filename})")
-            else:
-                lines.append(f"### [{session_dir.name}]({session_dir.name}/)")
-
-            lines.append("")
-
-        filepath = project_path / "index.md"
-        filepath.write_text("\n".join(lines), encoding="utf-8")
-
-    def _generate_global_index(self) -> None:
-        """Generate a global index file for all projects."""
-        lines = ["# Claude Code Transcripts", "", "## Projects", ""]
-
-        # List all projects
-        for project_dir in sorted(self.output_dir.iterdir()):
-            if not project_dir.is_dir():
-                continue
-
-            lines.append(f"- [{project_dir.name}]({project_dir.name}/index.md)")
-
-            # Count sessions
-            session_count = sum(1 for d in project_dir.iterdir() if d.is_dir())
-            if session_count > 0:
-                lines.append(f"  - {session_count} sessions")
-
-        lines.append("")
-        lines.append("---")
-        lines.append(f"*Generated: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}*")
-
-        filepath = self.output_dir / "global_index.md"
-        filepath.write_text("\n".join(lines), encoding="utf-8")
-        logger.info(f"Generated global index: {filepath}")
+        return "\n".join(lines)
 
 
-def main():
-    """Main entry point."""
-    parser = argparse.ArgumentParser(description="Extract and generate transcripts from Claude Code session logs")
+# ============================================================================
+# DEDUPLICATOR (Remove duplicate conversation paths across sessions)
+# ============================================================================
 
-    parser.add_argument(
-        "--claude-dir",
-        type=Path,
-        default=Path.home() / ".claude" / "projects",
-        help="Claude projects directory (default: ~/.claude/projects)",
-    )
 
-    parser.add_argument(
-        "--output", type=Path, default=Path("claude_transcripts"), help="Output directory (default: claude_transcripts)"
-    )
+class PathDeduplicator:
+    """Deduplicate conversation paths across multiple sessions."""
 
-    parser.add_argument("--project", help="Filter to specific project name")
+    def deduplicate(self, all_paths: list[ConversationPath]) -> list[ConversationPath]:
+        """Remove paths that are subsets of other paths."""
+        unique_paths = []
 
-    parser.add_argument("--include-abandoned", action="store_true", help="Include abandoned conversation branches")
+        # Sort by message count (descending) to prefer longer paths
+        sorted_paths = sorted(all_paths, key=lambda p: len(p.messages), reverse=True)
 
-    parser.add_argument("--timezone", default="UTC", help="Timezone for timestamp formatting (default: UTC)")
+        for candidate in sorted_paths:
+            candidate_uuids = {msg.uuid for msg in candidate.messages}
 
-    parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
+            # Check if this path is a subset of any already selected path
+            is_subset = False
+            for selected in unique_paths:
+                selected_uuids = {msg.uuid for msg in selected.messages}
+                if candidate_uuids.issubset(selected_uuids):
+                    is_subset = True
+                    break
 
-    args = parser.parse_args()
+            if not is_subset:
+                unique_paths.append(candidate)
 
-    # Set logging level
-    if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
+        removed = len(all_paths) - len(unique_paths)
+        if removed > 0:
+            logger.info(f"  Removed {removed} duplicate paths")
 
-    # Validate Claude directory
-    if not args.claude_dir.exists():
-        logger.error(f"Claude directory not found: {args.claude_dir}")
+        return unique_paths
+
+
+# ============================================================================
+# MAIN ORCHESTRATOR (CLI and coordination)
+# ============================================================================
+
+
+@click.command()
+@click.argument(
+    "project_dir",
+    type=click.Path(exists=True, path_type=Path),
+    required=False,
+)
+@click.option(
+    "--project-name",
+    help="Project name to search for in ~/.claude/projects/",
+)
+@click.option(
+    "--output",
+    type=click.Path(path_type=Path),
+    default=Path("claude_transcripts"),
+    help="Output directory for transcripts",
+)
+@click.option(
+    "--include-abandoned",
+    is_flag=True,
+    default=True,
+    help="Include abandoned conversation branches",
+)
+@click.option("--verbose", is_flag=True, help="Enable verbose output")
+def main(
+    project_dir: Path | None,
+    project_name: str | None,
+    output: Path,
+    include_abandoned: bool,
+    verbose: bool,
+):
+    """Claude Code Transcripts Builder - Extract all conversation paths from session files.
+
+    This tool parses Claude Code session JSONL files and generates markdown transcripts
+    for each conversation path, including branches created by "redo" operations and
+    compact boundaries.
+
+    Usage:
+        # Process a specific project directory
+        claude_code_transcripts_builder ~/.claude/projects/my-project
+
+        # Search for project by name
+        claude_code_transcripts_builder --project-name my-project
+
+        # Process current directory's Claude project
+        claude_code_transcripts_builder
+    """
+    if verbose:
+        logger.setLevel("DEBUG")
+
+    # Determine project directory
+    if project_dir:
+        session_dir = project_dir
+    elif project_name:
+        # Search for project in default location
+        claude_dir = Path.home() / ".claude" / "projects"
+        matching = list(claude_dir.glob(f"*{project_name}*"))
+        if not matching:
+            logger.error(f"No project found matching: {project_name}")
+            sys.exit(1)
+        if len(matching) > 1:
+            logger.error(f"Multiple projects found matching '{project_name}':")
+            for p in matching:
+                logger.error(f"  - {p.name}")
+            sys.exit(1)
+        session_dir = matching[0]
+    else:
+        # Try to find project for current directory
+        # Claude Code converts paths like /home/user/project to -home-user-project
+        # and also converts dots to hyphens
+        cwd_path = Path.cwd().resolve()
+        claude_project_name = str(cwd_path).replace("/", "-").replace(".", "-")
+
+        claude_dir = Path.home() / ".claude" / "projects"
+        session_dir = claude_dir / claude_project_name
+
+        if not session_dir.exists():
+            # Fallback: try partial match with just the directory name
+            cwd_name = Path.cwd().name
+            matching = list(claude_dir.glob(f"*{cwd_name}*"))
+            if not matching:
+                logger.error("No Claude project found for current directory")
+                logger.error(f"  Looked for: {claude_project_name}")
+                logger.error(f"  Also tried partial match: *{cwd_name}*")
+                logger.error("Use --project-name or provide explicit path")
+                sys.exit(1)
+            session_dir = matching[0]
+
+    logger.info(f"Processing project: {session_dir.name}")
+
+    # Find all JSONL session files
+    session_files = sorted(session_dir.glob("*.jsonl"))
+    if not session_files:
+        logger.error(f"No JSONL files found in: {session_dir}")
         sys.exit(1)
 
-    # Create output directory
-    args.output.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Found {len(session_files)} session files")
 
-    # Run the builder
-    builder = ClaudeTranscriptBuilder(args.claude_dir, args.output)
-    builder.process_all(
-        project_filter=args.project, include_abandoned=args.include_abandoned, timezone_str=args.timezone
-    )
+    # Build unified message pool from ALL session files
+    parser = SessionParser()
+    parser.parse_all_files(session_files)
 
-    logger.info(f"Transcripts generated in: {args.output}")
+    if not parser.all_messages:
+        logger.error("No messages found in any session files")
+        sys.exit(1)
+
+    # Build unified DAG across all sessions
+    logger.info("Building unified message graph across all sessions...")
+    unified_dag = UnifiedMessageDAG(parser)
+
+    # Extract all unique conversation paths from the unified graph
+    all_paths = unified_dag.extract_all_paths()
+
+    if not all_paths:
+        logger.error("No conversation paths found")
+        sys.exit(1)
+
+    # No need for separate deduplication since UnifiedMessageDAG already handles it
+    unique_paths = all_paths
+
+    # Filter abandoned if requested
+    if not include_abandoned:
+        unique_paths = [p for p in unique_paths if not p.is_abandoned]
+        logger.info(f"Filtered to {len(unique_paths)} active paths")
+
+    # Group paths by session for output organization
+    paths_by_session = defaultdict(list)
+
+    for path in unique_paths:
+        session_id = path.session_id
+        paths_by_session[session_id].append(path)
+
+    # Use the session file map from the parser
+    session_file_map = parser.session_file_map
+
+    # Generate organized output for each session
+    logger.info(f"Generating organized output for {len(paths_by_session)} sessions...")
+    generator = TranscriptGenerator(output)
+
+    generated_dirs = []
+    for session_id, session_paths in paths_by_session.items():
+        session_file = session_file_map.get(session_id)
+        # Use the unified DAG for all sessions
+        if session_file:
+            session_dir = generator.generate_session_output(session_paths, session_file, unified_dag)
+            generated_dirs.append(session_dir)
+        else:
+            # If we couldn't find the session file, create a fallback
+            logger.warning(f"Could not find session file for session {session_id}, using first available")
+            session_dir = generator.generate_session_output(
+                session_paths, session_files[0] if session_files else None, unified_dag
+            )
+            generated_dirs.append(session_dir)
+
+    logger.info(f"✅ Successfully generated transcripts for {len(paths_by_session)} sessions")
+    logger.info(f"📁 Output directory: {output.absolute()}")
+
+    # Summary statistics
+    compact_paths = sum(1 for p in unique_paths if p.has_compact)
+    abandoned_paths = sum(1 for p in unique_paths if p.is_abandoned)
+    sidechain_paths = sum(1 for p in unique_paths if p.sidechain_count > 0)
+    total_sidechains = sum(p.sidechain_count for p in unique_paths)
+    total_sidechain_msgs = sum(p.sidechain_messages for p in unique_paths)
+
+    logger.info("\nSummary:")
+    logger.info(f"  - Total paths: {len(unique_paths)}")
+    logger.info(f"  - Active paths: {len(unique_paths) - abandoned_paths}")
+    logger.info(f"  - Abandoned paths: {abandoned_paths}")
+    logger.info(f"  - Paths with compacts: {compact_paths}")
+    logger.info(f"  - Paths with sidechains: {sidechain_paths}")
+    logger.info(f"  - Total sidechains: {total_sidechains}")
+    logger.info(f"  - Total sidechain messages: {total_sidechain_msgs}")
+
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
