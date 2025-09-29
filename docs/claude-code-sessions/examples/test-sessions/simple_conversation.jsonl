@@ -1,0 +1,4 @@
+{"uuid":"msg-001","type":"user","message":"Hello, Claude!","timestamp":"2024-01-01T10:00:00Z","sessionId":"session-001"}
+{"uuid":"msg-002","parentUuid":"msg-001","type":"assistant","message":"Hello! How can I help you today?","timestamp":"2024-01-01T10:00:01Z","sessionId":"session-001"}
+{"uuid":"msg-003","parentUuid":"msg-002","type":"user","message":"What's 2 + 2?","timestamp":"2024-01-01T10:00:05Z","sessionId":"session-001"}
+{"uuid":"msg-004","parentUuid":"msg-003","type":"assistant","message":"2 + 2 = 4","timestamp":"2024-01-01T10:00:06Z","sessionId":"session-001"}

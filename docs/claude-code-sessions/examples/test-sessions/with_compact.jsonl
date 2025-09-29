@@ -1,0 +1,7 @@
+{"uuid":"msg-301","type":"user","message":"Let's start a long conversation","timestamp":"2024-01-01T13:00:00Z","sessionId":"session-004"}
+{"uuid":"msg-302","parentUuid":"msg-301","type":"assistant","message":"Sure! What would you like to discuss?","timestamp":"2024-01-01T13:00:01Z","sessionId":"session-004"}
+{"uuid":"msg-303","parentUuid":"msg-302","type":"user","message":"Tell me about Python","timestamp":"2024-01-01T13:00:05Z","sessionId":"session-004"}
+{"uuid":"msg-304","parentUuid":"msg-303","type":"assistant","message":"Python is a high-level programming language...","timestamp":"2024-01-01T13:00:06Z","sessionId":"session-004"}
+{"uuid":"msg-305","type":"system","message":"Conversation compacted","timestamp":"2024-01-01T13:10:00Z","sessionId":"session-004","subtype":"compact_boundary","compactMetadata":{"preservedMessageCount":2,"totalMessageCount":50,"trigger":"automatic"}}
+{"uuid":"msg-306","parentUuid":"msg-305","logicalParentUuid":"msg-304","type":"user","message":"What about its use in data science?","timestamp":"2024-01-01T13:10:01Z","sessionId":"session-004"}
+{"uuid":"msg-307","parentUuid":"msg-306","type":"assistant","message":"Python is widely used in data science for several reasons...","timestamp":"2024-01-01T13:10:02Z","sessionId":"session-004"}
