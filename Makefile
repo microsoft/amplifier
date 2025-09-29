@@ -164,7 +164,7 @@ check: ## Format, lint, and type-check all code
 	@echo "Linting code with ruff..."
 	@VIRTUAL_ENV= uv run ruff check . --fix
 	@echo "Type-checking code with pyright..."
-	@VIRTUAL_ENV= uv run pyright
+	@npx pyright
 	@echo "Checking for stubs and placeholders..."
 	@python tools/check_stubs.py
 	@echo "All checks passed!"
@@ -483,3 +483,74 @@ workspace-info: ## Show workspace information
 	@echo ""
 	$(call list_projects)
 	@echo ""
+
+# Ideas Management
+ideas-init: ## Initialize ideas file with sample data
+	@echo "Initializing ideas file..."
+	uv run python -m amplifier.ideas.cli init --sample
+
+ideas-add: ## Add a new idea. Usage: make ideas-add IDEA="title" [DESCRIPTION="desc"] [ASSIGNEE="user"] [PRIORITY="high|medium|low"] [THEMES="theme1,theme2"]
+	@if [ -z "$(IDEA)" ]; then \
+		echo "Error: Please provide an idea title. Usage: make ideas-add IDEA=\"Build caching layer\""; \
+		exit 1; \
+	fi
+	@cmd="uv run python -m amplifier.ideas.cli add \"$(IDEA)\""; \
+	if [ -n "$(DESCRIPTION)" ]; then cmd="$$cmd --description \"$(DESCRIPTION)\""; fi; \
+	if [ -n "$(ASSIGNEE)" ]; then cmd="$$cmd --assignee \"$(ASSIGNEE)\""; fi; \
+	if [ -n "$(PRIORITY)" ]; then cmd="$$cmd --priority \"$(PRIORITY)\""; fi; \
+	if [ -n "$(THEMES)" ]; then \
+		for theme in $$(echo "$(THEMES)" | tr ',' ' '); do \
+			cmd="$$cmd --themes \"$$theme\""; \
+		done; \
+	fi; \
+	eval $$cmd
+
+ideas-list: ## List ideas with optional filters. Usage: make ideas-list [USER="alice"] [PRIORITY="high"] [THEME="ui"]
+	@cmd="uv run python -m amplifier.ideas.cli list"; \
+	if [ -n "$(USER)" ]; then cmd="$$cmd --user \"$(USER)\""; fi; \
+	if [ "$(UNASSIGNED)" = "true" ]; then cmd="$$cmd --unassigned"; fi; \
+	if [ -n "$(PRIORITY)" ]; then cmd="$$cmd --priority \"$(PRIORITY)\""; fi; \
+	if [ -n "$(THEME)" ]; then cmd="$$cmd --theme \"$(THEME)\""; fi; \
+	eval $$cmd
+
+ideas-assign: ## Assign an idea to a user. Usage: make ideas-assign IDEA_ID="idea_123" USER="alice"
+	@if [ -z "$(IDEA_ID)" ] || [ -z "$(USER)" ]; then \
+		echo "Error: Please provide both IDEA_ID and USER. Usage: make ideas-assign IDEA_ID=\"idea_123\" USER=\"alice\""; \
+		exit 1; \
+	fi
+	uv run python -m amplifier.ideas.cli assign "$(IDEA_ID)" "$(USER)"
+
+ideas-status: ## Show ideas collection status and statistics
+	uv run python -m amplifier.ideas.cli status
+
+ideas-goals: ## List active goals for idea prioritization
+	uv run python -m amplifier.ideas.cli goals
+
+ideas-add-goal: ## Add a new goal. Usage: make ideas-add-goal GOAL="Focus on user experience"
+	@if [ -z "$(GOAL)" ]; then \
+		echo "Error: Please provide a goal description. Usage: make ideas-add-goal GOAL=\"Focus on user experience\""; \
+		exit 1; \
+	fi
+	@cmd="uv run python -m amplifier.ideas.cli add-goal \"$(GOAL)\""; \
+	if [ -n "$(PRIORITY)" ]; then cmd="$$cmd --priority $(PRIORITY)"; fi; \
+	eval $$cmd
+
+ideas-reorder: ## Reorder ideas based on active goals using AI
+	@echo "🎯 Reordering ideas based on goals..."
+	uv run python -m amplifier.ideas.cli reorder
+
+ideas-themes: ## Detect common themes across ideas using AI
+	@echo "🔍 Detecting themes in ideas..."
+	uv run python -m amplifier.ideas.cli themes
+
+ideas-similar: ## Find similar ideas. Usage: make ideas-similar IDEA_ID="idea_123"
+	@if [ -z "$(IDEA_ID)" ]; then \
+		echo "Error: Please provide IDEA_ID. Usage: make ideas-similar IDEA_ID=\"idea_123\""; \
+		exit 1; \
+	fi
+	@echo "🔎 Finding similar ideas..."
+	uv run python -m amplifier.ideas.cli similar "$(IDEA_ID)"
+
+ideas-optimize: ## Optimize idea order for maximum leverage using AI
+	@echo "⚡ Optimizing ideas for leverage..."
+	uv run python -m amplifier.ideas.cli optimize

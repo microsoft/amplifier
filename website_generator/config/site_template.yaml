@@ -1,0 +1,155 @@
+# Master Site Template Configuration
+# This file defines the overall structure and behavior of generated websites
+
+# Site Identity & Branding
+site:
+  name: "Amplifier"
+  tagline: "Supercharged AI Development"
+  description: "A complete development environment that supercharges AI coding assistants"
+  theme: "revolution"  # revolution, professional, minimal, modern
+  favicon: "assets/favicon.ico"
+  logo: "assets/logo.png"
+
+# Content Generation Strategy
+content_strategy:
+  paradigm_shift_detection: true
+  progressive_disclosure: true
+  trust_building_focus: true
+  role_transformation_emphasis: true
+
+  # Content depth based on paradigm type
+  revolutionary_features:
+    - "development_revolution_section"
+    - "paradigm_comparison_table"
+    - "capability_multiplication_demo"
+    - "role_transformation_narrative"
+    - "trust_building_progression"
+
+  evolutionary_features:
+    - "improvement_showcase"
+    - "before_after_comparison"
+    - "enhancement_timeline"
+    - "migration_guide"
+
+  incremental_features:
+    - "feature_list"
+    - "getting_started_guide"
+    - "api_documentation"
+    - "examples_gallery"
+
+# Design System
+design_system:
+  color_palette: "amplifier_blue_gradient"  # amplifier_blue_gradient, professional_navy, minimal_gray
+  typography: "inter_modern"               # inter_modern, roboto_clean, system_default
+  component_style: "card_based_progressive" # card_based_progressive, minimal_list, traditional_docs
+  animation_level: "engaging"              # minimal, subtle, engaging, bold
+
+  # CSS Custom Properties
+  colors:
+    primary: "#2563eb"      # Main blue
+    secondary: "#1e40af"    # Darker blue
+    accent: "#3b82f6"       # Lighter blue
+    success: "#10b981"      # Green
+    warning: "#f59e0b"      # Orange
+    danger: "#ef4444"       # Red
+    background: "#ffffff"   # White
+    surface: "#f8fafc"      # Light gray
+    text_primary: "#1f2937" # Dark gray
+    text_secondary: "#6b7280" # Medium gray
+    border: "#e5e7eb"       # Light gray border
+
+# Page Structure
+pages:
+  - name: "index"
+    title: "Home"
+    sections:
+      - "revolution"        # Only for revolutionary paradigm
+      - "hero"
+      - "overview"
+      - "features"
+      - "quick_setup"
+      - "examples"
+      - "cta"
+
+  - name: "setup"
+    title: "Setup Guide"
+    sections:
+      - "progressive_tiers"
+      - "detailed_instructions"
+      - "troubleshooting"
+      - "advanced_configuration"
+
+  - name: "agents"
+    title: "Specialized Agents"
+    sections:
+      - "agent_showcase"
+      - "capability_matrix"
+      - "integration_patterns"
+      - "custom_agents"
+
+  - name: "examples"
+    title: "Examples"
+    sections:
+      - "example_gallery"
+      - "use_cases"
+      - "workflows"
+      - "best_practices"
+
+# Interactive Elements
+interactions:
+  animated_counters: true
+  progressive_setup_tiers: true
+  terminal_demos: true
+  copy_paste_commands: true
+  tabbed_content: true
+  collapsible_sections: true
+  search_functionality: false  # Advanced feature for later
+
+  # Animation settings
+  animations:
+    fade_in_delay: 100        # ms
+    counter_duration: 2000    # ms
+    scroll_reveal_threshold: 0.1
+    typing_speed: 80          # ms per character
+
+# Navigation
+navigation:
+  style: "horizontal"  # horizontal, vertical, mobile_first
+  sticky: true
+  include_search: false
+
+  # Navigation items (auto-generated from pages + custom)
+  custom_items:
+    - name: "GitHub"
+      url: "https://github.com/repository"
+      external: true
+    - name: "Documentation"
+      url: "/docs"
+      external: false
+
+# SEO and Meta
+seo:
+  meta_description_template: "{description} - {tagline}"
+  keywords: ["ai", "development", "automation", "agents", "claude"]
+  og_image: "assets/og-image.png"
+  twitter_card: "summary_large_image"
+
+# Build Settings
+build:
+  minify_css: true
+  minify_js: true
+  optimize_images: false  # Future feature
+  generate_sitemap: true
+
+# Responsive Design
+responsive:
+  breakpoints:
+    mobile: "768px"
+    tablet: "1024px"
+    desktop: "1280px"
+
+  # Mobile-specific settings
+  mobile:
+    hide_animations: false
+    simplify_navigation: true
+    stack_cards: true

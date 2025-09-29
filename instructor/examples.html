@@ -1,0 +1,1721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examples & Workflows - Amplifier</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .examples-hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text-light);
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+        .copy-paste-banner {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: var(--text-light);
+            padding: 2rem;
+            border-radius: var(--border-radius-lg);
+            margin: 2rem 0;
+            text-align: center;
+        }
+        .copy-paste-banner h3 {
+            margin-bottom: 0.5rem;
+            font-size: 1.5rem;
+        }
+        .copy-paste-banner p {
+            opacity: 0.9;
+            margin-bottom: 1.5rem;
+        }
+        .quick-start-commands {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            font-family: monospace;
+            text-align: left;
+            position: relative;
+        }
+        .copy-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--text-light);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            font-size: 0.8rem;
+            transition: var(--transition);
+        }
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .code-block {
+            background: var(--dark-bg);
+            color: var(--text-light);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            font-family: monospace;
+            position: relative;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+        .code-block .copy-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .expected-output {
+            background: var(--light-bg);
+            border-left: 4px solid #10b981;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: var(--border-radius);
+        }
+        .expected-output h5 {
+            color: #10b981;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .troubleshooting {
+            background: #fef3cd;
+            border-left: 4px solid #f59e0b;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            margin: 1.5rem 0;
+        }
+        .troubleshooting h5 {
+            color: #d97706;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        .troubleshooting ul {
+            margin: 0;
+            padding-left: 1.5rem;
+        }
+        .troubleshooting li {
+            color: #92400e;
+            margin-bottom: 0.5rem;
+        }
+        .difficulty-levels {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .difficulty-btn {
+            background: white;
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: var(--transition);
+        }
+        .difficulty-btn.active {
+            background: var(--primary-color);
+            color: var(--text-light);
+            border-color: var(--primary-color);
+        }
+        .difficulty-content {
+            display: none;
+        }
+        .difficulty-content.active {
+            display: block;
+        }
+        .verification-steps {
+            background: #f0f9ff;
+            border-left: 4px solid #0ea5e9;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            margin: 1.5rem 0;
+        }
+        .verification-steps h5 {
+            color: #0369a1;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        .step-detail {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin: 1.5rem 0;
+            box-shadow: var(--shadow);
+        }
+        .step-detail h4 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        .collapsible-section {
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            margin: 1rem 0;
+        }
+        .collapsible-header {
+            background: var(--light-bg);
+            padding: 1rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .collapsible-header:hover {
+            background: #f8f9fa;
+        }
+        .collapsible-content {
+            padding: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            display: none;
+        }
+        .collapsible-content.active {
+            display: block;
+        }
+        .command-sequence {
+            background: var(--dark-bg);
+            color: var(--text-light);
+            padding: 1.5rem;
+            border-radius: var(--border-radius-lg);
+            margin: 1.5rem 0;
+        }
+        .command-sequence h5 {
+            color: #4fd1c7;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+        .command-line {
+            margin: 0.5rem 0;
+            font-family: monospace;
+        }
+        .command-line .prompt {
+            color: #4fd1c7;
+        }
+        .command-line .command {
+            color: #f7fafc;
+        }
+        .command-line .comment {
+            color: #a0aec0;
+            font-style: italic;
+        }
+        .real-world-example {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: var(--text-light);
+            padding: 2rem;
+            border-radius: var(--border-radius-lg);
+            margin: 2rem 0;
+        }
+        .real-world-example h4 {
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+        .real-world-example p {
+            opacity: 0.9;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+        .examples-hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .examples-hero p {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .workflow-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .workflow {
+            background: white;
+            margin: 3rem 0;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+        .workflow-header {
+            background: linear-gradient(135deg, var(--primary-color), #0052a3);
+            color: var(--text-light);
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .workflow-icon {
+            font-size: 2.5rem;
+        }
+        .workflow-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .workflow-subtitle {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        .workflow-body {
+            padding: 2rem;
+        }
+        .workflow-steps {
+            display: grid;
+            gap: 2rem;
+        }
+        .workflow-step {
+            display: flex;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            background: var(--light-bg);
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--primary-color);
+        }
+        .step-number {
+            background: var(--primary-color);
+            color: var(--text-light);
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        .step-content h4 {
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        .step-content p {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        .step-command {
+            background: var(--dark-bg);
+            color: var(--text-light);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            font-family: monospace;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        .command-prompt {
+            color: #4fd1c7;
+        }
+        .agent-highlight {
+            background: var(--primary-color);
+            color: var(--text-light);
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+        .quick-examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 3rem 0;
+        }
+        .quick-example {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--accent-color);
+        }
+        .quick-example h4 {
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+        .quick-example .command {
+            background: var(--light-bg);
+            padding: 0.75rem;
+            border-radius: var(--border-radius);
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: var(--primary-color);
+            margin-top: 0.5rem;
+        }
+        .scenario-tabs {
+            display: flex;
+            justify-content: center;
+            margin: 3rem 0 2rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .scenario-tab {
+            background: white;
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+        }
+        .scenario-tab.active,
+        .scenario-tab:hover {
+            background: var(--primary-color);
+            color: var(--text-light);
+            border-color: var(--primary-color);
+        }
+        .scenario-content {
+            display: none;
+        }
+        .scenario-content.active {
+            display: block;
+        }
+        .parallel-demo {
+            background: var(--dark-bg);
+            color: var(--text-light);
+            padding: 2rem;
+            border-radius: var(--border-radius-lg);
+            margin: 2rem 0;
+        }
+        .parallel-demo h4 {
+            color: #4fd1c7;
+            margin-bottom: 1rem;
+        }
+        .terminal-session {
+            font-family: monospace;
+            line-height: 1.6;
+        }
+        .terminal-session .command {
+            color: #f7fafc;
+        }
+        .terminal-session .comment {
+            color: #a0aec0;
+            font-style: italic;
+        }
+        .tips-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin: 3rem 0;
+        }
+        .tip-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+        .tip-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        .tip-item h4 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        .tip-item p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-brand">
+                <h1>Amplifier</h1>
+                <span class="tagline">Examples & Workflows</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="agents.html" class="nav-link">Agents</a>
+                <a href="setup.html" class="nav-link">Setup</a>
+                <a href="knowledge.html" class="nav-link">Knowledge Base</a>
+                <a href="https://github.com/microsoft/amplifier" class="nav-link">GitHub</a>
+            </div>
+            <div class="nav-mobile">
+                <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+            </div>
+        </nav>
+    </header>
+
+    <main style="padding-top: 0;">
+        <!-- Hero Section -->
+        <section class="examples-hero">
+            <div class="container">
+                <h1>Examples & Workflows</h1>
+                <p>Real-world examples of how to use Amplifier's specialized agents and features to accelerate your development</p>
+
+                <div class="copy-paste-banner">
+                    <h3>⚡ Ready to Copy & Paste</h3>
+                    <p>All examples include working commands you can copy directly into Claude. No guesswork, no setup - just results.</p>
+                    <div class="quick-start-commands">
+                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                        <div># Start with any workflow in 3 commands:</div>
+                        <div>cd amplifier</div>
+                        <div>claude</div>
+                        <div>"Use zen-architect to design my [feature name]"</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Scenario Tabs -->
+        <section class="section">
+            <div class="container">
+                <div class="scenario-tabs">
+                    <button class="scenario-tab active" onclick="showScenario('development', this)">Feature Development</button>
+                    <button class="scenario-tab" onclick="showScenario('debugging', this)">Debugging & Fixing</button>
+                    <button class="scenario-tab" onclick="showScenario('knowledge', this)">Knowledge-Driven</button>
+                    <button class="scenario-tab" onclick="showScenario('optimization', this)">Optimization</button>
+                    <button class="scenario-tab" onclick="showScenario('parallel', this)">Parallel Development</button>
+                </div>
+
+                <!-- Development Scenarios -->
+                <div id="development-scenario" class="scenario-content active">
+                    <div class="workflow-container">
+                        <!-- Complete Feature Development -->
+                        <div class="workflow">
+                            <div class="workflow-header">
+                                <div class="workflow-icon">🏗️</div>
+                                <div>
+                                    <div class="workflow-title">Building a Complete Feature</div>
+                                    <div class="workflow-subtitle">From design to testing with specialized agents</div>
+                                </div>
+                            </div>
+                            <div class="workflow-body">
+                                <div class="difficulty-levels">
+                                    <button class="difficulty-btn active" onclick="showDifficulty('feature-beginner', this)">👶 Beginner</button>
+                                    <button class="difficulty-btn" onclick="showDifficulty('feature-intermediate', this)">🚀 Intermediate</button>
+                                    <button class="difficulty-btn" onclick="showDifficulty('feature-advanced', this)">🎯 Advanced</button>
+                                </div>
+
+                                <!-- Beginner Level -->
+                                <div id="feature-beginner" class="difficulty-content active">
+                                    <div class="real-world-example">
+                                        <h4>🎯 Example: Building a User Profile System</h4>
+                                        <p>We'll build a complete user profile feature from scratch - user registration, profile editing, avatar upload, and privacy settings.</p>
+                                    </div>
+
+                                    <div class="step-detail">
+                                        <h4>Step 1: Architecture Design</h4>
+                                        <p>Start with zen-architect to get a clean, maintainable design:</p>
+                                        <div class="code-block">
+                                            <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                            "Use zen-architect to design a user profile system with registration, profile editing, avatar upload, and privacy settings. Focus on simplicity and maintainability."
+                                        </div>
+                                        <div class="expected-output">
+                                            <h5>✅ What zen-architect will provide:</h5>
+                                            • Problem breakdown and requirements analysis<br>
+                                            • 3 architectural approaches with trade-offs<br>
+                                            • Recommended modular structure<br>
+                                            • Database schema suggestions<br>
+                                            • API endpoint specifications
+                                        </div>
+                                    </div>
+
+                                    <div class="step-detail">
+                                        <h4>Step 2: Module Implementation</h4>
+                                        <p>Use modular-builder to create the actual code:</p>
+                                        <div class="code-block">
+                                            <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                            "Have modular-builder implement the user profile module following the zen-architect design. Include user registration, profile CRUD operations, and avatar upload functionality."
+                                        </div>
+                                        <div class="expected-output">
+                                            <h5>✅ What modular-builder will create:</h5>
+                                            • Complete module structure with clear contracts<br>
+                                            • Database models and migrations<br>
+                                            • API endpoints with proper validation<br>
+                                            • File upload handling for avatars<br>
+                                            • Privacy settings implementation
+                                        </div>
+                                    </div>
+
+                                    <div class="step-detail">
+                                        <h4>Step 3: Comprehensive Testing</h4>
+                                        <p>Deploy test-coverage to ensure everything works:</p>
+                                        <div class="code-block">
+                                            <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                            "Deploy test-coverage to add comprehensive tests for the user profile system including unit tests, integration tests, and edge cases for file uploads and validation."
+                                        </div>
+                                        <div class="expected-output">
+                                            <h5>✅ What test-coverage will add:</h5>
+                                            • Unit tests for all business logic<br>
+                                            • Integration tests for API endpoints<br>
+                                            • File upload edge cases (size limits, formats)<br>
+                                            • Validation error scenarios<br>
+                                            • Security test cases
+                                        </div>
+                                    </div>
+
+                                    <div class="step-detail">
+                                        <h4>Step 4: Security Review</h4>
+                                        <p>Have security-guardian check for vulnerabilities:</p>
+                                        <div class="code-block">
+                                            <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                            "Have security-guardian review the user profile system for security vulnerabilities, including file upload security, input validation, and privacy controls."
+                                        </div>
+                                        <div class="expected-output">
+                                            <h5>✅ What security-guardian will check:</h5>
+                                            • File upload security (malicious files)<br>
+                                            • Input validation and XSS prevention<br>
+                                            • Authentication and authorization<br>
+                                            • Privacy setting enforcement<br>
+                                            • OWASP compliance
+                                        </div>
+                                    </div>
+
+                                    <div class="verification-steps">
+                                        <h5>🧪 Verification Steps</h5>
+                                        <ol>
+                                            <li><strong>Run Tests:</strong> <code>make test</code> - All tests should pass</li>
+                                            <li><strong>Check Security:</strong> <code>make check</code> - No security issues</li>
+                                            <li><strong>Manual Testing:</strong> Create a user, upload avatar, edit profile</li>
+                                            <li><strong>Privacy Check:</strong> Verify privacy settings work correctly</li>
+                                        </ol>
+                                    </div>
+
+                                    <div class="troubleshooting">
+                                        <h5>🚨 Common Issues</h5>
+                                        <ul>
+                                            <li><strong>File upload fails:</strong> Check file size limits and storage configuration</li>
+                                            <li><strong>Tests fail:</strong> Run <code>make lint</code> to check code formatting</li>
+                                            <li><strong>Security warnings:</strong> Review input validation and sanitization</li>
+                                            <li><strong>Database errors:</strong> Verify migrations are applied correctly</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <!-- Intermediate Level -->
+                                <div id="feature-intermediate" class="difficulty-content">
+                                    <div class="real-world-example">
+                                        <h4>🎯 Example: E-commerce Cart & Checkout</h4>
+                                        <p>Build a complete shopping cart with inventory management, payment processing, order history, and email notifications.</p>
+                                    </div>
+
+                                    <div class="collapsible-section">
+                                        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                                            <h4>Step 1: Architecture & Integration Planning</h4>
+                                            <span>+</span>
+                                        </div>
+                                        <div class="collapsible-content">
+                                            <div class="command-sequence">
+                                                <h5>📋 Command Sequence</h5>
+                                                <div class="command-line"><span class="prompt">1.</span> <span class="command">"Use zen-architect to design an e-commerce cart system with inventory management, payment integration (Stripe), order processing, and email notifications"</span></div>
+                                                <div class="command-line"><span class="prompt">2.</span> <span class="command">"Have integration-specialist analyze the payment and email service integrations for the cart system"</span></div>
+                                                <div class="command-line"><span class="prompt">3.</span> <span class="command">"Use database-architect to optimize the cart and inventory database design for high performance"</span></div>
+                                            </div>
+                                            <div class="expected-output">
+                                                <h5>✅ Expected Results:</h5>
+                                                • Microservices architecture with clear boundaries<br>
+                                                • Integration patterns for Stripe and email services<br>
+                                                • Optimized database schema with proper indexes<br>
+                                                • Inventory concurrency handling strategy<br>
+                                                • Error handling and rollback mechanisms
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="collapsible-section">
+                                        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                                            <h4>Step 2: Core Implementation</h4>
+                                            <span>+</span>
+                                        </div>
+                                        <div class="collapsible-content">
+                                            <div class="command-sequence">
+                                                <h5>📋 Command Sequence</h5>
+                                                <div class="command-line"><span class="prompt">1.</span> <span class="command">"Have modular-builder implement the shopping cart module with session management and inventory tracking"</span></div>
+                                                <div class="command-line"><span class="prompt">2.</span> <span class="command">"Use api-contract-designer to create the checkout and payment API endpoints"</span></div>
+                                                <div class="command-line"><span class="prompt">3.</span> <span class="command">"Have modular-builder implement the order processing and email notification systems"</span></div>
+                                            </div>
+                                            <p><strong>Key Features to Implement:</strong></p>
+                                            <ul>
+                                                <li>Shopping cart CRUD with session persistence</li>
+                                                <li>Real-time inventory checking and reservation</li>
+                                                <li>Stripe payment processing with webhooks</li>
+                                                <li>Order status tracking and history</li>
+                                                <li>Automated email notifications</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    <div class="collapsible-section">
+                                        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                                            <h4>Step 3: Performance & Security</h4>
+                                            <span>+</span>
+                                        </div>
+                                        <div class="collapsible-content">
+                                            <div class="command-sequence">
+                                                <h5>📋 Command Sequence</h5>
+                                                <div class="command-line"><span class="prompt">1.</span> <span class="command">"Have performance-optimizer analyze the cart and checkout flow for bottlenecks"</span></div>
+                                                <div class="command-line"><span class="prompt">2.</span> <span class="command">"Use security-guardian to audit payment processing and PII handling"</span></div>
+                                                <div class="command-line"><span class="prompt">3.</span> <span class="command">"Deploy test-coverage to add comprehensive tests including payment scenarios and race conditions"</span></div>
+                                            </div>
+                                            <div class="troubleshooting">
+                                                <h5>🚨 E-commerce Specific Issues</h5>
+                                                <ul>
+                                                    <li><strong>Race conditions:</strong> Multiple users buying the last item</li>
+                                                    <li><strong>Payment failures:</strong> Network timeouts during payment processing</li>
+                                                    <li><strong>Inventory sync:</strong> Real-time inventory updates across sessions</li>
+                                                    <li><strong>PCI compliance:</strong> Secure handling of payment information</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Advanced Level -->
+                                <div id="feature-advanced" class="difficulty-content">
+                                    <div class="real-world-example">
+                                        <h4>🎯 Example: Multi-tenant SaaS Platform</h4>
+                                        <p>Build a complete multi-tenant SaaS platform with tenant isolation, usage billing, admin dashboards, and white-label customization.</p>
+                                    </div>
+
+                                    <div class="command-sequence">
+                                        <h5>📋 Advanced Multi-Agent Orchestration</h5>
+                                        <div class="command-line"><span class="comment"># Architecture phase - multiple agents in parallel</span></div>
+                                        <div class="command-line"><span class="prompt">1a.</span> <span class="command">"Use zen-architect to design multi-tenant architecture with data isolation, tenant onboarding, and billing integration"</span></div>
+                                        <div class="command-line"><span class="prompt">1b.</span> <span class="command">"Have database-architect design tenant isolation strategies and performance optimization for multi-tenancy"</span></div>
+                                        <div class="command-line"><span class="prompt">1c.</span> <span class="command">"Use security-guardian to analyze multi-tenant security requirements and isolation boundaries"</span></div>
+                                        <div class="command-line"><span class="comment"># Implementation phase - coordinated development</span></div>
+                                        <div class="command-line"><span class="prompt">2a.</span> <span class="command">"Have modular-builder implement the tenant management and onboarding system"</span></div>
+                                        <div class="command-line"><span class="prompt">2b.</span> <span class="command">"Use api-contract-designer to create the admin dashboard API with tenant-scoped endpoints"</span></div>
+                                        <div class="command-line"><span class="prompt">2c.</span> <span class="command">"Have integration-specialist implement billing system integration with usage tracking"</span></div>
+                                        <div class="command-line"><span class="comment"># Validation phase - comprehensive testing</span></div>
+                                        <div class="command-line"><span class="prompt">3a.</span> <span class="command">"Deploy test-coverage to add multi-tenant isolation tests and billing scenarios"</span></div>
+                                        <div class="command-line"><span class="prompt">3b.</span> <span class="command">"Use performance-optimizer to test scalability with multiple tenants and high load"</span></div>
+                                        <div class="command-line"><span class="prompt">3c.</span> <span class="command">"Have security-guardian perform penetration testing for tenant isolation"</span></div>
+                                    </div>
+
+                                    <div class="collapsible-section">
+                                        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                                            <h4>Advanced Techniques: Parallel Worktrees for Architecture Comparison</h4>
+                                            <span>+</span>
+                                        </div>
+                                        <div class="collapsible-content">
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                                # Test 3 different multi-tenant approaches in parallel
+                                                make worktree tenant-shared-db      # Shared database approach
+                                                make worktree tenant-separate-db    # Separate database per tenant
+                                                make worktree tenant-schema-based   # Schema-based isolation
+
+                                                # Develop each approach with different agents
+                                                # Compare performance, security, and maintainability
+                                                make worktree-list                  # Review all approaches
+                                            </div>
+                                            <p><strong>Evaluation Criteria:</strong></p>
+                                            <ul>
+                                                <li>Data isolation effectiveness</li>
+                                                <li>Performance at scale (1000+ tenants)</li>
+                                                <li>Backup and disaster recovery complexity</li>
+                                                <li>Development and maintenance overhead</li>
+                                                <li>Cost optimization opportunities</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    <div class="verification-steps">
+                                        <h5>🧪 Advanced Verification Protocol</h5>
+                                        <ol>
+                                            <li><strong>Tenant Isolation:</strong> Verify data cannot leak between tenants</li>
+                                            <li><strong>Performance Testing:</strong> Load test with 100+ concurrent tenants</li>
+                                            <li><strong>Billing Accuracy:</strong> Validate usage tracking and billing calculations</li>
+                                            <li><strong>Security Audit:</strong> Penetration testing for multi-tenant vulnerabilities</li>
+                                            <li><strong>Disaster Recovery:</strong> Test backup/restore for individual tenants</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="workflow">
+                            <div class="workflow-header">
+                                <div class="workflow-icon">⚡</div>
+                                <div>
+                                    <div class="workflow-title">Rapid API Development</div>
+                                    <div class="workflow-subtitle">Design and implement APIs with proper contracts</div>
+                                </div>
+                            </div>
+                            <div class="workflow-body">
+                                <div class="workflow-steps">
+                                    <div class="workflow-step">
+                                        <div class="step-number">1</div>
+                                        <div class="step-content">
+                                            <h4>API Contract Design <span class="agent-highlight">api-contract-designer</span></h4>
+                                            <p>Create clean, consistent API design with proper documentation.</p>
+                                            <div class="step-command">
+                                                <span class="command-prompt">></span> "Use api-contract-designer to create a RESTful API for user management with authentication endpoints"
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="workflow-step">
+                                        <div class="step-number">2</div>
+                                        <div class="step-content">
+                                            <h4>Implementation <span class="agent-highlight">modular-builder</span></h4>
+                                            <p>Build the API following the contract specifications.</p>
+                                            <div class="step-command">
+                                                <span class="command-prompt">></span> "Have modular-builder implement the user management API following the contract design"
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="workflow-step">
+                                        <div class="step-number">3</div>
+                                        <div class="step-content">
+                                            <h4>Integration Testing <span class="agent-highlight">integration-specialist</span></h4>
+                                            <p>Set up proper error handling and monitoring.</p>
+                                            <div class="step-command">
+                                                <span class="command-prompt">></span> "Have integration-specialist add proper error handling, retry logic, and monitoring to the API"
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Debugging Scenarios -->
+                <div id="debugging-scenario" class="scenario-content">
+                    <div class="workflow-container">
+                        <div class="workflow">
+                            <div class="workflow-header">
+                                <div class="workflow-icon">🐛</div>
+                                <div>
+                                    <div class="workflow-title">Systematic Bug Investigation</div>
+                                    <div class="workflow-subtitle">From symptoms to root cause to solution</div>
+                                </div>
+                            </div>
+                            <div class="workflow-body">
+                                <div class="real-world-example">
+                                    <h4>🎯 Real Bug Hunt: "Login timeouts affecting 30% of users since yesterday"</h4>
+                                    <p>A classic production issue - sudden onset, affects some users but not others, timing suggests recent change. Let's hunt it down systematically.</p>
+                                </div>
+
+                                <div class="step-detail">
+                                    <h4>Step 1: Initial Triage & Information Gathering</h4>
+                                    <p>Start with bug-hunter to systematically analyze symptoms:</p>
+                                    <div class="code-block">
+                                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                        "Use bug-hunter to investigate login timeout errors. Issue started yesterday, affects 30% of login attempts. Users report seeing 'Connection timeout' after 10 seconds. Some users can login fine, others consistently fail."
+                                    </div>
+                                    <div class="expected-output">
+                                        <h5>✅ What bug-hunter will analyze:</h5>
+                                        • Pattern analysis (affected vs unaffected users)<br>
+                                        • Timing correlation with recent deployments<br>
+                                        • Error frequency and distribution<br>
+                                        • Hypothesis generation for likely causes<br>
+                                        • Investigation plan with priorities
+                                    </div>
+                                </div>
+
+                                <div class="step-detail">
+                                    <h4>Step 2: Performance Deep Dive</h4>
+                                    <p>Check if performance degradation is the culprit:</p>
+                                    <div class="code-block">
+                                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                        "Have performance-optimizer analyze the login flow end-to-end. Check database query times, external service calls, and identify any bottlenecks that could cause 10-second timeouts."
+                                    </div>
+                                    <div class="expected-output">
+                                        <h5>✅ What performance-optimizer will check:</h5>
+                                        • Database query execution times<br>
+                                        • External API response times (auth services)<br>
+                                        • Memory and CPU usage patterns<br>
+                                        • Connection pool exhaustion<br>
+                                        • Performance regression analysis
+                                    </div>
+                                </div>
+
+                                <div class="step-detail">
+                                    <h4>Step 3: Database Investigation</h4>
+                                    <p>Database issues are a common culprit for intermittent timeouts:</p>
+                                    <div class="code-block">
+                                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                        "Use database-architect to investigate authentication database queries. Check for missing indexes, query plan changes, lock contention, or connection pool issues that could cause intermittent timeouts."
+                                    </div>
+                                    <div class="expected-output">
+                                        <h5>✅ What database-architect will examine:</h5>
+                                        • Query execution plans and index usage<br>
+                                        • Database locks and blocking sessions<br>
+                                        • Connection pool configuration and usage<br>
+                                        • Recent schema changes or data growth<br>
+                                        • Database server resource utilization
+                                    </div>
+                                </div>
+
+                                <div class="step-detail">
+                                    <h4>Step 4: Knowledge Base Search</h4>
+                                    <p>Check if we've seen similar issues before:</p>
+                                    <div class="code-block">
+                                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                        "Use content-researcher to search our knowledge base for previous login timeout issues, authentication problems, and database performance fixes. Look for patterns and solutions we've used before."
+                                    </div>
+                                </div>
+
+                                <div class="step-detail">
+                                    <h4>Step 5: Implement & Test Fix</h4>
+                                    <p>Once root cause is identified, implement the solution:</p>
+                                    <div class="code-block">
+                                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                        "Have modular-builder implement the login timeout fix with proper error handling, retry logic, and monitoring. Include graceful degradation and user-friendly error messages."
+                                    </div>
+                                </div>
+
+                                <div class="troubleshooting">
+                                    <h5>🚨 Common Login Timeout Causes</h5>
+                                    <ul>
+                                        <li><strong>Database connection pool exhaustion:</strong> Too many concurrent requests</li>
+                                        <li><strong>Missing database indexes:</strong> Queries getting slower as data grows</li>
+                                        <li><strong>External auth service issues:</strong> Third-party API degradation</li>
+                                        <li><strong>Memory leaks:</strong> Application consuming too much memory</li>
+                                        <li><strong>Network issues:</strong> Increased latency or packet loss</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Security Issue Response -->
+                        <div class="workflow">
+                            <div class="workflow-header">
+                                <div class="workflow-icon">🔒</div>
+                                <div>
+                                    <div class="workflow-title">Security Incident Response</div>
+                                    <div class="workflow-subtitle">Systematic security vulnerability handling</div>
+                                </div>
+                            </div>
+                            <div class="workflow-body">
+                                <div class="real-world-example">
+                                    <h4>🎯 Security Alert: Potential SQL Injection in User Search</h4>
+                                    <p>Security scanner flagged possible SQL injection vulnerability in user search functionality. Need immediate assessment and remediation.</p>
+                                </div>
+
+                                <div class="command-sequence">
+                                    <h5>📋 Immediate Response Protocol</h5>
+                                    <div class="command-line"><span class="comment"># Phase 1: Assessment (URGENT)</span></div>
+                                    <div class="command-line"><span class="prompt">1.</span> <span class="command">"Have security-guardian perform immediate security assessment of the user search functionality. Check for SQL injection, XSS, and other OWASP Top 10 vulnerabilities."</span></div>
+                                    <div class="command-line"><span class="comment"># Phase 2: Historical Analysis</span></div>
+                                    <div class="command-line"><span class="prompt">2.</span> <span class="command">"Use content-researcher to find previous SQL injection fixes and security patches in our codebase for similar patterns."</span></div>
+                                    <div class="command-line"><span class="comment"># Phase 3: Impact Analysis</span></div>
+                                    <div class="command-line"><span class="prompt">3.</span> <span class="command">"Have database-architect analyze what data could be exposed if the SQL injection vulnerability is exploited."</span></div>
+                                    <div class="command-line"><span class="comment"># Phase 4: Secure Implementation</span></div>
+                                    <div class="command-line"><span class="prompt">4.</span> <span class="command">"Have modular-builder implement secure parameterized queries and input validation for all search functionality."</span></div>
+                                </div>
+
+                                <div class="collapsible-section">
+                                    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                                        <h4>Detailed Security Assessment Steps</h4>
+                                        <span>+</span>
+                                    </div>
+                                    <div class="collapsible-content">
+                                        <div class="step-detail">
+                                            <h4>Vulnerability Verification</h4>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                                "Security-guardian: Test the user search with these payloads to confirm vulnerability: [basic SQL injection tests]. Check if any of these return unexpected data or error messages."
+                                            </div>
+                                        </div>
+
+                                        <div class="step-detail">
+                                            <h4>Code Review & Pattern Analysis</h4>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                                "Security-guardian: Review all database query patterns in the codebase. Identify any other locations using string concatenation instead of parameterized queries."
+                                            </div>
+                                        </div>
+
+                                        <div class="step-detail">
+                                            <h4>Data Exposure Assessment</h4>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                                "Database-architect: Map out all tables accessible through the vulnerable query path. Identify sensitive data (PII, credentials, financial) that could be exposed."
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="verification-steps">
+                                    <h5>🧪 Security Fix Verification</h5>
+                                    <ol>
+                                        <li><strong>Automated Testing:</strong> Run security scanner again to confirm fix</li>
+                                        <li><strong>Manual Penetration Testing:</strong> Test with various SQL injection payloads</li>
+                                        <li><strong>Code Review:</strong> Verify all queries use parameterized statements</li>
+                                        <li><strong>Input Validation:</strong> Test with malicious input patterns</li>
+                                        <li><strong>Error Handling:</strong> Ensure no sensitive info in error messages</li>
+                                    </ol>
+                                </div>
+
+                                <div class="troubleshooting">
+                                    <h5>🚨 Security Incident Checklist</h5>
+                                    <ul>
+                                        <li><strong>Document everything:</strong> Keep detailed logs of assessment and fixes</li>
+                                        <li><strong>Notify stakeholders:</strong> Inform security team and management</li>
+                                        <li><strong>Check for exploitation:</strong> Review logs for attack attempts</li>
+                                        <li><strong>Update security policies:</strong> Learn from the incident</li>
+                                        <li><strong>Implement monitoring:</strong> Add alerts for similar attack patterns</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Knowledge-Driven Scenarios -->
+                <div id="knowledge-scenario" class="scenario-content">
+                    <div class="workflow-container">
+                        <!-- Knowledge-Driven Development -->
+                        <div class="workflow">
+                            <div class="workflow-header">
+                                <div class="workflow-icon">🧠</div>
+                                <div>
+                                    <div class="workflow-title">Knowledge-Driven Development</div>
+                                    <div class="workflow-subtitle">Transform documentation into actionable intelligence</div>
+                                </div>
+                            </div>
+                            <div class="workflow-body">
+                                <div class="copy-paste-banner">
+                                    <h3>📚 From Docs to Intelligence in 3 Commands</h3>
+                                    <p>Turn your scattered documentation into a queryable knowledge base that guides development decisions.</p>
+                                    <div class="quick-start-commands">
+                                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy All</button>
+                                        <div>make knowledge-update</div>
+                                        <div>make knowledge-query Q="authentication patterns"</div>
+                                        <div>make knowledge-export FORMAT=markdown</div>
+                                    </div>
+                                </div>
+
+                                <div class="step-detail">
+                                    <h4>Step 1: Extract Knowledge from Documentation</h4>
+                                    <p>Process all your docs, README files, and code comments into structured knowledge:</p>
+                                    <div class="code-block">
+                                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                        make knowledge-update
+                                    </div>
+                                    <div class="expected-output">
+                                        <h5>✅ What gets processed:</h5>
+                                        • All Markdown files in docs/, README.md, and subdirectories<br>
+                                        • Code comments and docstrings<br>
+                                        • API specifications and architectural decisions<br>
+                                        • Issue descriptions and pull request discussions<br>
+                                        • Configuration files and deployment guides
+                                    </div>
+                                    <div class="verification-steps">
+                                        <h5>🧪 Verify Processing</h5>
+                                        <div class="code-block">
+                                            <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                            # Check what was processed
+                                            ls .data/knowledge/  # Should see extracted concepts
+                                            make knowledge-stats # Shows processing summary
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="step-detail">
+                                    <h4>Step 2: Query Your Knowledge Base</h4>
+                                    <p>Ask specific questions to get targeted insights:</p>
+                                    <div class="command-sequence">
+                                        <h5>📋 Example Queries (Copy Any)</h5>
+                                        <div class="command-line"><span class="command">make knowledge-query Q="error handling patterns"</span> <span class="comment"># Find error handling approaches</span></div>
+                                        <div class="command-line"><span class="command">make knowledge-query Q="database migration strategies"</span> <span class="comment"># Schema evolution patterns</span></div>
+                                        <div class="command-line"><span class="command">make knowledge-query Q="authentication implementation"</span> <span class="comment"># Auth system designs</span></div>
+                                        <div class="command-line"><span class="command">make knowledge-query Q="performance optimization"</span> <span class="comment"># Speed improvement techniques</span></div>
+                                        <div class="command-line"><span class="command">make knowledge-query Q="testing strategies"</span> <span class="comment"># Test approaches and patterns</span></div>
+                                    </div>
+                                    <div class="expected-output">
+                                        <h5>✅ Query results include:</h5>
+                                        • Relevant concepts and their relationships<br>
+                                        • Code examples and implementation patterns<br>
+                                        • Design decisions with rationale<br>
+                                        • Links to source documents<br>
+                                        • Related concepts and alternatives
+                                    </div>
+                                </div>
+
+                                <div class="step-detail">
+                                    <h4>Step 3: Apply Knowledge with Agents</h4>
+                                    <p>Use insights to guide implementation decisions:</p>
+                                    <div class="code-block">
+                                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                        "Use insight-synthesizer to apply the error handling patterns from our knowledge base to the new payment processing module. Focus on retry strategies and circuit breaker patterns."
+                                    </div>
+                                    <div class="code-block">
+                                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                        "Have content-researcher find all authentication-related patterns in our knowledge base and suggest the best approach for implementing OAuth 2.0 integration."
+                                    </div>
+                                </div>
+
+                                <div class="step-detail">
+                                    <h4>Step 4: Document New Learnings</h4>
+                                    <p>Capture new insights for future reference:</p>
+                                    <div class="code-block">
+                                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                        # Document what you learned
+                                        echo "## Payment Processing Lessons\n\n- Stripe webhooks require idempotency keys\n- Always validate webhook signatures\n- Use exponential backoff for retries" >> docs/lessons-learned.md
+
+                                        # Update knowledge base
+                                        make knowledge-update
+                                    </div>
+                                </div>
+
+                                <div class="troubleshooting">
+                                    <h5>🚨 Knowledge Base Issues</h5>
+                                    <ul>
+                                        <li><strong>No results from queries:</strong> Run <code>make knowledge-update</code> first to process docs</li>
+                                        <li><strong>Outdated information:</strong> Re-run knowledge update after doc changes</li>
+                                        <li><strong>Irrelevant results:</strong> Make queries more specific ("React authentication" vs "authentication")</li>
+                                        <li><strong>Processing errors:</strong> Check .data/knowledge/ for error logs</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Research and Discovery -->
+                        <div class="workflow">
+                            <div class="workflow-header">
+                                <div class="workflow-icon">🔍</div>
+                                <div>
+                                    <div class="workflow-title">Deep Research & Discovery</div>
+                                    <div class="workflow-subtitle">Uncover hidden connections and insights</div>
+                                </div>
+                            </div>
+                            <div class="workflow-body">
+                                <div class="real-world-example">
+                                    <h4>🎯 Discovery Mission: "Why do our microservices keep having the same problems?"</h4>
+                                    <p>Use knowledge archaeology and concept extraction to identify recurring patterns and systemic issues across your architecture.</p>
+                                </div>
+
+                                <div class="collapsible-section">
+                                    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                                        <h4>Phase 1: Concept Extraction from System Documentation</h4>
+                                        <span>+</span>
+                                    </div>
+                                    <div class="collapsible-content">
+                                        <div class="code-block">
+                                            <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                            "Use concept-extractor to analyze all our microservice documentation, incident reports, and architectural decision records. Extract recurring concepts, failure patterns, and design decisions."
+                                        </div>
+                                        <div class="expected-output">
+                                            <h5>✅ Concepts identified might include:</h5>
+                                            • Service communication patterns (sync vs async)<br>
+                                            • Failure modes and recovery strategies<br>
+                                            • Data consistency approaches<br>
+                                            • Deployment and scaling patterns<br>
+                                            • Monitoring and observability strategies
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="collapsible-section">
+                                    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                                        <h4>Phase 2: Connection Discovery</h4>
+                                        <span>+</span>
+                                    </div>
+                                    <div class="collapsible-content">
+                                        <div class="code-block">
+                                            <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                            "Have insight-synthesizer find hidden connections between our service failures, deployment patterns, and team organization. Look for correlations we might have missed."
+                                        </div>
+                                        <div class="code-block">
+                                            <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                            "Use pattern-emergence to identify system-level patterns from our incident reports. What commonalities exist across different service failures?"
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="collapsible-section">
+                                    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                                        <h4>Phase 3: Evolution Analysis</h4>
+                                        <span>+</span>
+                                    </div>
+                                    <div class="collapsible-content">
+                                        <div class="code-block">
+                                            <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                            "Use knowledge-archaeologist to trace how our microservice architecture evolved. Which decisions led to current pain points? What alternatives were considered but abandoned?"
+                                        </div>
+                                        <div class="expected-output">
+                                            <h5>✅ Evolutionary insights:</h5>
+                                            • Decision timeline and rationale<br>
+                                            • Abandoned approaches and why<br>
+                                            • Evolution of complexity over time<br>
+                                            • Recurring decision points<br>
+                                            • Lessons from architecture changes
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="step-detail">
+                                    <h4>Step 4: Synthesis & Actionable Insights</h4>
+                                    <p>Turn discoveries into concrete improvements:</p>
+                                    <div class="code-block">
+                                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                        "Have insight-synthesizer create an actionable improvement plan based on the discovered patterns. Focus on the top 3 recurring issues and practical solutions."
+                                    </div>
+                                    <div class="code-block">
+                                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                        "Use visualization-architect to create a visual map of the discovered connections and patterns for team discussion and planning."
+                                    </div>
+                                </div>
+
+                                <div class="verification-steps">
+                                    <h5>🧪 Research Validation</h5>
+                                    <ol>
+                                        <li><strong>Pattern Verification:</strong> Validate discovered patterns with team members</li>
+                                        <li><strong>Historical Accuracy:</strong> Cross-check findings with incident timelines</li>
+                                        <li><strong>Actionability:</strong> Ensure insights lead to concrete next steps</li>
+                                        <li><strong>Documentation:</strong> Capture discoveries in architectural decision records</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Optimization Scenarios -->
+                <div id="optimization-scenario" class="scenario-content">
+                    <div class="workflow-container">
+                        <div class="workflow">
+                            <div class="workflow-header">
+                                <div class="workflow-icon">⚡</div>
+                                <div>
+                                    <div class="workflow-title">Performance Optimization</div>
+                                    <div class="workflow-subtitle">Data-driven approach to eliminating bottlenecks</div>
+                                </div>
+                            </div>
+                            <div class="workflow-body">
+                                <div class="real-world-example">
+                                    <h4>🎯 Performance Crisis: "Checkout takes 15+ seconds, users are abandoning carts"</h4>
+                                    <p>E-commerce site seeing 40% cart abandonment during checkout. Need systematic performance analysis and optimization.</p>
+                                </div>
+
+                                <div class="step-detail">
+                                    <h4>Step 1: Performance Profiling & Baseline</h4>
+                                    <p>Get concrete data on where time is being spent:</p>
+                                    <div class="code-block">
+                                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                        "Use performance-optimizer to profile the entire checkout flow. Measure database query times, API response times, and frontend rendering. Identify the top 5 bottlenecks by impact."
+                                    </div>
+                                    <div class="expected-output">
+                                        <h5>✅ Performance analysis will show:</h5>
+                                        • Request timeline with precise timing breakdown<br>
+                                        • Database queries ranked by execution time<br>
+                                        • External API calls and their response times<br>
+                                        • Memory usage and potential leaks<br>
+                                        • Frontend performance metrics and bottlenecks
+                                    </div>
+                                </div>
+
+                                <div class="step-detail">
+                                    <h4>Step 2: Database Query Optimization</h4>
+                                    <p>Often the biggest performance wins come from database optimization:</p>
+                                    <div class="code-block">
+                                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                        "Have database-architect analyze all checkout-related queries. Focus on the product inventory check, payment processing, and order creation queries. Add indexes and optimize query plans."
+                                    </div>
+                                    <div class="command-sequence">
+                                        <h5>📋 Common Database Optimizations</h5>
+                                        <div class="command-line"><span class="comment"># Check current performance</span></div>
+                                        <div class="command-line"><span class="command">"Database-architect: Show query execution plans for checkout process"</span></div>
+                                        <div class="command-line"><span class="comment"># Optimize slow queries</span></div>
+                                        <div class="command-line"><span class="command">"Add indexes for inventory.product_id, orders.user_id, payments.status"</span></div>
+                                        <div class="command-line"><span class="comment"># Connection pool tuning</span></div>
+                                        <div class="command-line"><span class="command">"Optimize database connection pool size for checkout load"</span></div>
+                                    </div>
+                                </div>
+
+                                <div class="step-detail">
+                                    <h4>Step 3: Caching Strategy Implementation</h4>
+                                    <p>Add strategic caching to reduce repeated expensive operations:</p>
+                                    <div class="code-block">
+                                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                        "Have modular-builder implement a multi-tier caching strategy: Redis for session data, application-level cache for product info, and CDN for static assets. Focus on checkout flow optimization."
+                                    </div>
+                                    <div class="collapsible-section">
+                                        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                                            <h4>Detailed Caching Implementation</h4>
+                                            <span>+</span>
+                                        </div>
+                                        <div class="collapsible-content">
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                                # Session & Cart Caching
+                                                "Cache user cart contents in Redis with 1-hour TTL"
+                                                "Implement cart persistence across browser sessions"
+
+                                                # Product Information Caching
+                                                "Cache product details and pricing for 10 minutes"
+                                                "Use cache warming for popular products"
+
+                                                # Payment & Inventory Caching
+                                                "Cache inventory counts with real-time invalidation"
+                                                "Implement payment method validation caching"
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="step-detail">
+                                    <h4>Step 4: Frontend Performance Optimization</h4>
+                                    <p>Optimize the user experience with frontend improvements:</p>
+                                    <div class="code-block">
+                                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                        "Use performance-optimizer to analyze frontend checkout performance. Implement lazy loading, optimize bundle sizes, and add progressive loading indicators."
+                                    </div>
+                                    <div class="expected-output">
+                                        <h5>✅ Frontend optimizations:</h5>
+                                        • Bundle size reduction through code splitting<br>
+                                        • Progressive loading with skeleton screens<br>
+                                        • Image optimization and lazy loading<br>
+                                        • Critical CSS inlining<br>
+                                        • Service worker for caching static assets
+                                    </div>
+                                </div>
+
+                                <div class="step-detail">
+                                    <h4>Step 5: Performance Testing & Monitoring</h4>
+                                    <p>Ensure optimizations work and stay optimized:</p>
+                                    <div class="code-block">
+                                        <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                        "Deploy test-coverage to add performance tests for checkout flow. Include load testing scenarios, response time assertions, and performance regression detection."
+                                    </div>
+                                    <div class="verification-steps">
+                                        <h5>🧪 Performance Verification</h5>
+                                        <ol>
+                                            <li><strong>Baseline Comparison:</strong> Measure before/after performance</li>
+                                            <li><strong>Load Testing:</strong> Test with 100+ concurrent users</li>
+                                            <li><strong>Real User Monitoring:</strong> Track actual user experience</li>
+                                            <li><strong>Alerting:</strong> Set up alerts for performance degradation</li>
+                                        </ol>
+                                    </div>
+                                </div>
+
+                                <div class="troubleshooting">
+                                    <h5>🚨 Common Performance Optimization Pitfalls</h5>
+                                    <ul>
+                                        <li><strong>Premature optimization:</strong> Optimize based on data, not assumptions</li>
+                                        <li><strong>Cache invalidation issues:</strong> Stale data causing user confusion</li>
+                                        <li><strong>Over-caching:</strong> Memory usage growing out of control</li>
+                                        <li><strong>Database index bloat:</strong> Too many indexes slowing writes</li>
+                                        <li><strong>Network latency ignored:</strong> Focusing only on server performance</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Performance Techniques -->
+                        <div class="workflow">
+                            <div class="workflow-header">
+                                <div class="workflow-icon">📈</div>
+                                <div>
+                                    <div class="workflow-title">Advanced Performance Engineering</div>
+                                    <div class="workflow-subtitle">Scaling and optimization at enterprise level</div>
+                                </div>
+                            </div>
+                            <div class="workflow-body">
+                                <div class="command-sequence">
+                                    <h5>📋 Enterprise Performance Workflow</h5>
+                                    <div class="command-line"><span class="comment"># Multi-agent performance analysis</span></div>
+                                    <div class="command-line"><span class="prompt">1.</span> <span class="command">"Use performance-optimizer to establish comprehensive performance baselines across all services"</span></div>
+                                    <div class="command-line"><span class="prompt">2.</span> <span class="command">"Have database-architect design sharding strategy for high-volume tables"</span></div>
+                                    <div class="command-line"><span class="prompt">3.</span> <span class="command">"Use integration-specialist to optimize microservice communication patterns"</span></div>
+                                    <div class="command-line"><span class="prompt">4.</span> <span class="command">"Have zen-architect design auto-scaling architecture with predictive scaling"</span></div>
+                                    <div class="command-line"><span class="comment"># Continuous optimization loop</span></div>
+                                    <div class="command-line"><span class="prompt">5.</span> <span class="command">"Deploy test-coverage to add automated performance regression testing"</span></div>
+                                    <div class="command-line"><span class="prompt">6.</span> <span class="command">"Use visualization-architect to create performance dashboards and alerts"</span></div>
+                                </div>
+
+                                <div class="collapsible-section">
+                                    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                                        <h4>Scaling Strategy: Handling 10x Growth</h4>
+                                        <span>+</span>
+                                    </div>
+                                    <div class="collapsible-content">
+                                        <div class="real-world-example">
+                                            <h4>Scenario: Black Friday Traffic Spike</h4>
+                                            <p>Prepare system to handle 10x normal traffic during peak shopping events. Need automatic scaling, graceful degradation, and zero downtime.</p>
+                                        </div>
+                                        <div class="code-block">
+                                            <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                                            "Use zen-architect to design auto-scaling architecture that can handle 10x traffic spikes. Include circuit breakers, graceful degradation, and automatic failover mechanisms."
+                                        </div>
+                                        <p><strong>Key scaling components:</strong></p>
+                                        <ul>
+                                            <li>Horizontal auto-scaling based on metrics</li>
+                                            <li>Database read replicas and connection pooling</li>
+                                            <li>CDN and edge caching for static content</li>
+                                            <li>Queue-based async processing for non-critical tasks</li>
+                                            <li>Circuit breakers for external service calls</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parallel Development Scenarios -->
+                <div id="parallel-scenario" class="scenario-content">
+                    <div class="workflow-container">
+                        <div class="workflow">
+                            <div class="workflow-header">
+                                <div class="workflow-icon">🌳</div>
+                                <div>
+                                    <div class="workflow-title">Parallel Development</div>
+                                    <div class="workflow-subtitle">Explore multiple approaches simultaneously</div>
+                                </div>
+                            </div>
+                            <div class="workflow-body">
+                                <p style="color: var(--text-secondary); margin-bottom: 2rem; line-height: 1.6;">
+                                    Stop wondering "what if" — build multiple solutions simultaneously and pick the winner.
+                                    Each worktree is completely isolated with its own branch, environment, and context.
+                                </p>
+
+                                <div class="parallel-demo">
+                                    <h4>Example: Authentication System Comparison</h4>
+                                    <div class="terminal-session">
+                                        <div><span class="command-prompt">$</span> <span class="command">make worktree feature-jwt</span></div>
+                                        <div class="comment"># Creates isolated JWT authentication approach</div><br>
+
+                                        <div><span class="command-prompt">$</span> <span class="command">make worktree feature-oauth</span></div>
+                                        <div class="comment"># Creates parallel OAuth 2.0 approach</div><br>
+
+                                        <div><span class="command-prompt">$</span> <span class="command">make worktree feature-session</span></div>
+                                        <div class="comment"># Creates third approach with session-based auth</div><br>
+
+                                        <div><span class="command-prompt">$</span> <span class="command">make worktree-list</span></div>
+                                        <div class="comment"># Compare all approaches</div>
+                                        <div class="output">
+                                        • main (current)
+                                        • feature-jwt (JWT tokens + refresh)
+                                        • feature-oauth (OAuth 2.0 + PKCE)
+                                        • feature-session (server sessions + Redis)
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="workflow-steps">
+                                    <div class="workflow-step">
+                                        <div class="step-number">1</div>
+                                        <div class="step-content">
+                                            <h4>Create Parallel Branches</h4>
+                                            <p>Set up isolated environments for each approach.</p>
+                                            <div class="step-command">
+                                                make worktree approach-1<br>
+                                                make worktree approach-2<br>
+                                                make worktree approach-3
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="workflow-step">
+                                        <div class="step-number">2</div>
+                                        <div class="step-content">
+                                            <h4>Develop in Parallel</h4>
+                                            <p>Use different agents or approaches in each worktree.</p>
+                                            <div class="step-command">
+                                                <span class="command-prompt">Worktree 1:</span> "Use zen-architect for microservices approach"<br>
+                                                <span class="command-prompt">Worktree 2:</span> "Use modular-builder for monolithic approach"<br>
+                                                <span class="command-prompt">Worktree 3:</span> "Use api-contract-designer for serverless approach"
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="workflow-step">
+                                        <div class="step-number">3</div>
+                                        <div class="step-content">
+                                            <h4>Compare and Evaluate</h4>
+                                            <p>Test and compare all approaches to find the best solution.</p>
+                                            <div class="step-command">
+                                                make worktree-list  # Review all approaches<br>
+                                                <span class="command-prompt">></span> "Compare the performance and maintainability of all three approaches"
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="workflow-step">
+                                        <div class="step-number">4</div>
+                                        <div class="step-content">
+                                            <h4>Choose and Clean Up</h4>
+                                            <p>Select the best approach and remove the others.</p>
+                                            <div class="step-command">
+                                                git merge feature-jwt  # Merge the winning approach<br>
+                                                make worktree-rm approach-2<br>
+                                                make worktree-rm approach-3
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Reference -->
+        <section class="section section-alt">
+            <div class="container">
+                <h2 class="section-title">Quick Reference Commands</h2>
+                <div class="quick-examples">
+                    <div class="quick-example">
+                        <h4>🏗️ Architecture & Design</h4>
+                        <div class="command">"Use zen-architect to design my user management system"</div>
+                    </div>
+                    <div class="quick-example">
+                        <h4>🐛 Bug Investigation</h4>
+                        <div class="command">"Deploy bug-hunter to find why login is failing"</div>
+                    </div>
+                    <div class="quick-example">
+                        <h4>🔒 Security Review</h4>
+                        <div class="command">"Have security-guardian audit my API endpoints"</div>
+                    </div>
+                    <div class="quick-example">
+                        <h4>⚡ Performance Optimization</h4>
+                        <div class="command">"Use performance-optimizer to speed up database queries"</div>
+                    </div>
+                    <div class="quick-example">
+                        <h4>📝 API Design</h4>
+                        <div class="command">"Have api-contract-designer create REST endpoints for orders"</div>
+                    </div>
+                    <div class="quick-example">
+                        <h4>🧪 Testing</h4>
+                        <div class="command">"Deploy test-coverage to add comprehensive test suite"</div>
+                    </div>
+                    <div class="quick-example">
+                        <h4>🧠 Knowledge Query</h4>
+                        <div class="command">make knowledge-query Q="authentication patterns"</div>
+                    </div>
+                    <div class="quick-example">
+                        <h4>🌳 Parallel Development</h4>
+                        <div class="command">make worktree feature-name</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pro Tips -->
+        <section class="section">
+            <div class="container">
+                <h2 class="section-title">Pro Tips</h2>
+                <div class="tips-grid">
+                    <div class="tip-item">
+                        <div class="tip-icon">🎯</div>
+                        <h4>Be Specific</h4>
+                        <p>The more specific your request, the better the agent can help. Include context about your goals, constraints, and requirements.</p>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">🔄</div>
+                        <h4>Chain Agents</h4>
+                        <p>Use multiple agents in sequence. Start with zen-architect for design, then modular-builder for implementation, then test-coverage for testing.</p>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">📚</div>
+                        <h4>Build Knowledge</h4>
+                        <p>Regularly run 'make knowledge-update' to keep your knowledge base current. The more knowledge you have, the better the insights.</p>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">🌟</div>
+                        <h4>Experiment Freely</h4>
+                        <p>Use parallel worktrees to try different approaches without risk. You can always discard experiments that don't work out.</p>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">🔍</div>
+                        <h4>Leverage Context</h4>
+                        <p>Agents have access to your entire codebase context. They can understand existing patterns and maintain consistency.</p>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">⚡</div>
+                        <h4>Iterate Quickly</h4>
+                        <p>Don't try to solve everything at once. Use agents for focused tasks and iterate based on results.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <h3>Amplifier</h3>
+                    <p>Supercharged AI Development Environment</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Documentation</h4>
+                        <a href="setup.html">Setup Guide</a>
+                        <a href="agents.html">Agent Catalog</a>
+                        <a href="knowledge.html">Knowledge Base</a>
+                        <a href="examples.html">Examples</a>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Resources</h4>
+                        <a href="https://github.com/microsoft/amplifier">GitHub</a>
+                        <a href="../AMPLIFIER_VISION.md">Vision</a>
+                        <a href="../README.md">README</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Microsoft. Licensed under MIT.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+        function showScenario(scenario, buttonElement) {
+            // Hide all scenario contents
+            document.querySelectorAll('.scenario-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Remove active class from all tabs
+            document.querySelectorAll('.scenario-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected scenario
+            const targetScenario = document.getElementById(scenario + '-scenario');
+            if (targetScenario) {
+                targetScenario.classList.add('active');
+            }
+
+            // Mark tab as active
+            const button = buttonElement || event?.target;
+            if (button) {
+                button.classList.add('active');
+            }
+        }
+
+        function showDifficulty(difficultyId, buttonElement) {
+            // Get the parent workflow body to scope the changes
+            const workflowBody = buttonElement.closest('.workflow-body');
+            if (!workflowBody) return;
+
+            // Hide all difficulty contents within this workflow
+            workflowBody.querySelectorAll('.difficulty-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Remove active class from all difficulty buttons within this workflow
+            workflowBody.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected difficulty content
+            const targetContent = document.getElementById(difficultyId);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+
+            // Mark button as active
+            buttonElement.classList.add('active');
+        }
+
+        function toggleCollapsible(headerElement) {
+            const section = headerElement.parentElement;
+            const content = section.querySelector('.collapsible-content');
+            const toggleIcon = headerElement.querySelector('span');
+
+            if (content.classList.contains('active')) {
+                content.classList.remove('active');
+                toggleIcon.textContent = '+';
+            } else {
+                content.classList.add('active');
+                toggleIcon.textContent = '−';
+            }
+        }
+
+        function copyCode(button) {
+            // Find the code content - could be in various structures
+            let codeText = '';
+            const parent = button.parentElement;
+
+            // Try different selectors based on the HTML structure
+            const codeElement = parent.querySelector('code') ||
+                               parent.querySelector('.command') ||
+                               parent.querySelector('pre') ||
+                               parent;
+
+            if (codeElement) {
+                // Get text content, excluding the button
+                const tempButton = codeElement.querySelector('.copy-btn');
+                if (tempButton) {
+                    tempButton.style.display = 'none';
+                }
+                codeText = codeElement.textContent.trim();
+                if (tempButton) {
+                    tempButton.style.display = '';
+                }
+            }
+
+            // Copy to clipboard
+            if (navigator.clipboard && codeText) {
+                navigator.clipboard.writeText(codeText).then(() => {
+                    const originalText = button.textContent;
+                    button.textContent = 'Copied!';
+                    button.style.background = 'rgba(16, 185, 129, 0.8)';
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.background = '';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                    // Fallback for older browsers
+                    fallbackCopyTextToClipboard(codeText, button);
+                });
+            } else {
+                // Fallback for older browsers
+                fallbackCopyTextToClipboard(codeText, button);
+            }
+        }
+
+        function fallbackCopyTextToClipboard(text, button) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    const originalText = button.textContent;
+                    button.textContent = 'Copied!';
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                    }, 2000);
+                }
+            } catch (err) {
+                console.error('Fallback copy failed: ', err);
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+        // Initialize all copy buttons when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up intersection observer for animations
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+
+            // Observe workflow elements for animation
+            const animatedElements = document.querySelectorAll('.workflow, .step-detail, .real-world-example');
+            animatedElements.forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                observer.observe(el);
+            });
+        });
+    </script>
+</body>
+</html>

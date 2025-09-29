@@ -1,0 +1,22 @@
+<section class="hero-section" id="hero">
+    <div class="container">
+        <div class="hero-content">
+            <h1 class="hero-title">{{ section.title }}</h1>
+            <p class="hero-tagline">{{ section.tagline }}</p>
+            <p class="hero-description">{{ section.description }}</p>
+
+            {% if section.features_preview %}
+            <div class="features-preview">
+                {% for feature in section.features_preview %}
+                <span class="feature-badge">{{ feature }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="hero-actions">
+                <a href="#setup" class="btn btn-primary">{{ section.cta_primary }}</a>
+                <a href="#examples" class="btn btn-secondary">{{ section.cta_secondary }}</a>
+            </div>
+        </div>
+    </div>
+</section>

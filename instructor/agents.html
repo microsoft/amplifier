@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Catalog - Amplifier</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* New styles for expanded content */
+        .advanced-section {
+            margin-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1rem;
+        }
+        .advanced-section summary {
+            cursor: pointer;
+            color: var(--primary-color);
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
+        }
+        .advanced-section summary:hover {
+            color: var(--accent-color);
+        }
+        .examples-container {
+            margin-top: 1rem;
+        }
+        .example-card {
+            background: var(--light-bg);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+        }
+        .example-card h5 {
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .code-block {
+            position: relative;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 0.75rem;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            margin: 0.5rem 0;
+        }
+        .code-block pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .copy-btn:hover {
+            opacity: 1;
+        }
+        .copy-btn.copied {
+            background: var(--accent-color);
+        }
+        .example-output {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+        .integration-list, .tips-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 0.75rem;
+        }
+        .integration-list li, .tips-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px dotted var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        .integration-list li:last-child, .tips-list li:last-child {
+            border-bottom: none;
+        }
+        .integration-list li strong {
+            color: var(--primary-color);
+        }
+        .workflow-example {
+            background: var(--light-bg);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-top: 0.75rem;
+        }
+        .workflow-code {
+            background: white;
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        /* Existing styles continue below */
+        .agent-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        .agent-card-detailed {
+            background: white;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+        .agent-card-detailed:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+        .agent-header {
+            background: linear-gradient(135deg, var(--primary-color), #0052a3);
+            color: var(--text-light);
+            padding: 1.5rem;
+        }
+        .agent-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .agent-category {
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--text-light);
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            display: inline-block;
+        }
+        .agent-body {
+            padding: 1.5rem;
+        }
+        .agent-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        .agent-features {
+            margin-bottom: 1.5rem;
+        }
+        .agent-features h4 {
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .agent-features ul {
+            list-style: none;
+            padding: 0;
+        }
+        .agent-features li {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+            position: relative;
+            padding-left: 1rem;
+        }
+        .agent-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+        .example-usage {
+            background: var(--light-bg);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: var(--primary-color);
+        }
+        .category-section {
+            margin-bottom: 4rem;
+        }
+        .category-title {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--primary-color);
+        }
+        .category-description {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        .filter-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 3rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .filter-btn {
+            background: white;
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+        }
+        .filter-btn.active,
+        .filter-btn:hover {
+            background: var(--primary-color);
+            color: var(--text-light);
+            border-color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-brand">
+                <h1>Amplifier</h1>
+                <span class="tagline">Agent Catalog</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="setup.html" class="nav-link">Setup</a>
+                <a href="examples.html" class="nav-link">Examples</a>
+                <a href="knowledge.html" class="nav-link">Knowledge Base</a>
+                <a href="https://github.com/microsoft/amplifier" class="nav-link">GitHub</a>
+            </div>
+            <div class="nav-mobile">
+                <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+            </div>
+        </nav>
+    </header>
+
+    <main style="padding-top: 6rem;">
+        <!-- Hero Section -->
+        <section class="section">
+            <div class="container">
+                <div class="text-center" style="text-align: center; margin-bottom: 3rem;">
+                    <h1 class="section-title">Specialized AI Agents</h1>
+                    <p style="font-size: 1.2rem; color: var(--text-secondary); max-width: 800px; margin: 0 auto;">
+                        Instead of one generalist AI, Amplifier provides 20+ specialized agents, each expert in specific domains.
+                        Each agent brings focused expertise, proven patterns, and domain-specific knowledge to accelerate your development.
+                    </p>
+                </div>
+
+                <!-- Filter Tabs -->
+                <div class="filter-tabs">
+                    <button class="filter-btn active" onclick="filterAgents('all', this)">All Agents</button>
+                    <button class="filter-btn" onclick="filterAgents('development', this)">Development</button>
+                    <button class="filter-btn" onclick="filterAgents('analysis', this)">Analysis & Optimization</button>
+                    <button class="filter-btn" onclick="filterAgents('knowledge', this)">Knowledge & Insights</button>
+                    <button class="filter-btn" onclick="filterAgents('meta', this)">Meta & Support</button>
+                </div>
+
+                <!-- Core Development Agents -->
+                <div class="category-section" data-category="development">
+                    <h2 class="category-title">🏗️ Core Development</h2>
+                    <p class="category-description">
+                        Agents focused on building, architecting, and maintaining code with best practices and proven patterns.
+                    </p>
+                    <div class="agent-grid">
+                        <div class="agent-card-detailed">
+                            <div class="agent-header">
+                                <div class="agent-name">zen-architect</div>
+                                <span class="agent-category">Architecture</span>
+                            </div>
+                            <div class="agent-body">
+                                <p class="agent-description">
+                                    The master architect who embodies ruthless simplicity and Wabi-sabi philosophy. Operates in three powerful modes:
+                                    <strong>ANALYZE</strong> for problem decomposition, <strong>ARCHITECT</strong> for system design, and <strong>REVIEW</strong> for code quality assessment.
+                                    Creates clear specifications that guide implementation, focusing on essential patterns over unnecessary abstractions.
+                                </p>
+                                <div class="agent-features">
+                                    <h4>Key Capabilities</h4>
+                                    <ul>
+                                        <li>Analysis-first development approach</li>
+                                        <li>Modular "bricks & studs" architecture</li>
+                                        <li>Clean contract specifications</li>
+                                        <li>Complexity elimination strategies</li>
+                                        <li>80/20 principle application</li>
+                                        <li>Philosophy compliance review</li>
+                                    </ul>
+                                </div>
+
+                                <details class="advanced-section">
+                                    <summary><strong>📚 Practical Examples (click to expand)</strong></summary>
+                                    <div class="examples-container">
+                                        <div class="example-card">
+                                            <h5>🎯 Simple: Design a New Feature</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"Use zen-architect to design a user notification system"</pre>
+                                            </div>
+                                            <p class="example-output">→ Returns: Problem analysis, 3 solution approaches with trade-offs, modular specification</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🔧 Intermediate: Architecture Review</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"Have zen-architect review the auth module for complexity and suggest simplifications"</pre>
+                                            </div>
+                                            <p class="example-output">→ Returns: Complexity score, philosophy alignment, specific refactoring recommendations</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🚀 Advanced: System Redesign</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"zen-architect: Analyze our monolithic app and design a modular migration strategy with clear boundaries"</pre>
+                                            </div>
+                                            <p class="example-output">→ Returns: Module boundaries, migration phases, contract specifications, dependency graph</p>
+                                        </div>
+                                    </div>
+                                </details>
+
+                                <details class="advanced-section">
+                                    <summary><strong>🤝 Works Best With</strong></summary>
+                                    <ul class="integration-list">
+                                        <li><strong>modular-builder:</strong> Implements zen-architect's specifications</li>
+                                        <li><strong>bug-hunter:</strong> Validates architectural decisions work correctly</li>
+                                        <li><strong>api-contract-designer:</strong> Detailed API design after system architecture</li>
+                                    </ul>
+                                </details>
+
+                                <details class="advanced-section">
+                                    <summary><strong>💡 Pro Tips</strong></summary>
+                                    <ul class="tips-list">
+                                        <li>Always let zen-architect analyze before implementing</li>
+                                        <li>Request REVIEW mode for existing code assessment</li>
+                                        <li>Use for "stuck" moments - finds simpler paths</li>
+                                        <li>Specifications can be regenerated if requirements change</li>
+                                    </ul>
+                                </details>
+                            </div>
+                        </div>
+
+                        <div class="agent-card-detailed">
+                            <div class="agent-header">
+                                <div class="agent-name">modular-builder</div>
+                                <span class="agent-category">Implementation</span>
+                            </div>
+                            <div class="agent-body">
+                                <p class="agent-description">
+                                    The implementation specialist that builds from specifications with precision. Creates self-contained modules with clear boundaries,
+                                    automated testing, and regeneration-ready code. Follows the "bricks & studs" philosophy where each module is a complete, replaceable unit.
+                                </p>
+                                <div class="agent-features">
+                                    <h4>Key Capabilities</h4>
+                                    <ul>
+                                        <li>Contract-first implementation</li>
+                                        <li>Self-contained module creation</li>
+                                        <li>Automated conformance testing</li>
+                                        <li>Public/private interface separation</li>
+                                        <li>Regeneration-friendly structure</li>
+                                        <li>Test-driven development</li>
+                                    </ul>
+                                </div>
+
+                                <details class="advanced-section">
+                                    <summary><strong>📚 Practical Examples</strong></summary>
+                                    <div class="examples-container">
+                                        <div class="example-card">
+                                            <h5>🎯 Simple: Build from Spec</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"modular-builder: Implement the user authentication module from zen-architect's spec"</pre>
+                                            </div>
+                                            <p class="example-output">→ Creates: Module structure, public API, tests, documentation</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🔧 Intermediate: Parallel Variants</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"Use modular-builder to create two cache implementations: Redis-based and in-memory"</pre>
+                                            </div>
+                                            <p class="example-output">→ Creates: Two parallel modules with same contract, different implementations</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🚀 Advanced: Full Workflow</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"modular-builder: Build the payment processing module with Stripe integration, including retry logic, webhook handling, and comprehensive tests"</pre>
+                                            </div>
+                                            <p class="example-output">→ Creates: Complete module with external integration, error handling, tests, fixtures</p>
+                                        </div>
+                                    </div>
+                                </details>
+
+                                <details class="advanced-section">
+                                    <summary><strong>🤝 Integration Workflow</strong></summary>
+                                    <div class="workflow-example">
+                                        <p><strong>Complete Development Flow:</strong></p>
+                                        <pre class="workflow-code">1. zen-architect analyzes and creates spec
+2. modular-builder implements from spec
+3. test-coverage verifies edge cases
+4. bug-hunter validates implementation
+5. post-task-cleanup ensures hygiene</pre>
+                                    </div>
+                                </details>
+                            </div>
+                        </div>
+
+                        <div class="agent-card-detailed">
+                            <div class="agent-header">
+                                <div class="agent-name">bug-hunter</div>
+                                <span class="agent-category">Debugging</span>
+                            </div>
+                            <div class="agent-body">
+                                <p class="agent-description">
+                                    The systematic debugger that finds root causes, not just symptoms. Uses pattern recognition, binary search debugging,
+                                    and proven methodologies. Tracks down race conditions, memory leaks, and those "impossible" bugs that only happen in production.
+                                </p>
+                                <div class="agent-features">
+                                    <h4>Key Capabilities</h4>
+                                    <ul>
+                                        <li>5-why root cause analysis</li>
+                                        <li>Pattern-based bug detection</li>
+                                        <li>Binary search debugging</li>
+                                        <li>Race condition identification</li>
+                                        <li>Memory leak detection</li>
+                                        <li>Production issue diagnosis</li>
+                                        <li>Fix verification strategies</li>
+                                    </ul>
+                                </div>
+
+                                <details class="advanced-section">
+                                    <summary><strong>📚 Practical Examples</strong></summary>
+                                    <div class="examples-container">
+                                        <div class="example-card">
+                                            <h5>🎯 Simple: API Failure</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"bug-hunter: Find why POST /api/users returns 500 errors intermittently"</pre>
+                                            </div>
+                                            <p class="example-output">→ Analyzes: Request patterns, error logs, database state, identifies root cause</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🔧 Intermediate: Performance Issue</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"Use bug-hunter to diagnose why the app slows down after 2 hours of runtime"</pre>
+                                            </div>
+                                            <p class="example-output">→ Investigates: Memory patterns, connection pools, cache behavior, finds leak</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🚀 Advanced: Race Condition</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"bug-hunter: Users report duplicate charges but we can't reproduce it locally"</pre>
+                                            </div>
+                                            <p class="example-output">→ Deploys: Timing analysis, transaction logs, identifies race window, provides fix</p>
+                                        </div>
+                                    </div>
+                                </details>
+
+                                <details class="advanced-section">
+                                    <summary><strong>⚠️ When to Use</strong></summary>
+                                    <ul class="tips-list">
+                                        <li>Intermittent failures that are hard to reproduce</li>
+                                        <li>Performance degradation over time</li>
+                                        <li>"Works on my machine" problems</li>
+                                        <li>After deployment when issues surface</li>
+                                        <li>Complex multi-component failures</li>
+                                    </ul>
+                                </details>
+                            </div>
+                        </div>
+
+                        <div class="agent-card-detailed">
+                            <div class="agent-header">
+                                <div class="agent-name">test-coverage</div>
+                                <span class="agent-category">Testing</span>
+                            </div>
+                            <div class="agent-body">
+                                <p class="agent-description">
+                                    The testing strategist that thinks like a hacker, user, and maintainer simultaneously. Identifies edge cases others miss,
+                                    builds comprehensive test pyramids (60% unit, 30% integration, 10% E2E), and ensures your code handles the unexpected gracefully.
+                                </p>
+                                <div class="agent-features">
+                                    <h4>Key Capabilities</h4>
+                                    <ul>
+                                        <li>Test pyramid strategy (60/30/10)</li>
+                                        <li>Edge case discovery</li>
+                                        <li>Mutation testing insights</li>
+                                        <li>Property-based test generation</li>
+                                        <li>Coverage gap analysis</li>
+                                        <li>Test fixture creation</li>
+                                        <li>Performance test design</li>
+                                    </ul>
+                                </div>
+
+                                <details class="advanced-section">
+                                    <summary><strong>📚 Practical Examples</strong></summary>
+                                    <div class="examples-container">
+                                        <div class="example-card">
+                                            <h5>🎯 Simple: Add Missing Tests</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"test-coverage: Add comprehensive tests for the UserService class"</pre>
+                                            </div>
+                                            <p class="example-output">→ Creates: Unit tests, edge cases, mocks, fixtures, 90%+ coverage</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🔧 Intermediate: Integration Testing</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"Have test-coverage design integration tests for our payment flow with Stripe"</pre>
+                                            </div>
+                                            <p class="example-output">→ Creates: API mocks, webhook tests, error scenarios, retry logic tests</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🚀 Advanced: Chaos Engineering</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"test-coverage: Create resilience tests simulating network failures, timeouts, and data corruption"</pre>
+                                            </div>
+                                            <p class="example-output">→ Creates: Failure injection tests, recovery verification, monitoring checks</p>
+                                        </div>
+                                    </div>
+                                </details>
+
+                                <details class="advanced-section">
+                                    <summary><strong>🎯 Edge Cases to Test</strong></summary>
+                                    <ul class="tips-list">
+                                        <li>Null, undefined, empty inputs</li>
+                                        <li>Boundary values (0, -1, MAX_INT)</li>
+                                        <li>Concurrent access scenarios</li>
+                                        <li>Network timeouts and retries</li>
+                                        <li>Malformed data handling</li>
+                                        <li>Permission and auth failures</li>
+                                    </ul>
+                                </details>
+                            </div>
+                        </div>
+
+                        <div class="agent-card-detailed">
+                            <div class="agent-header">
+                                <div class="agent-name">api-contract-designer</div>
+                                <span class="agent-category">API Design</span>
+                            </div>
+                            <div class="agent-body">
+                                <p class="agent-description">
+                                    The API architect who designs contracts developers love. Creates consistent, intuitive APIs with proper versioning,
+                                    comprehensive error handling, and evolution strategies. Follows REST principles while pragmatically breaking them when it makes sense.
+                                </p>
+                                <div class="agent-features">
+                                    <h4>Key Capabilities</h4>
+                                    <ul>
+                                        <li>RESTful design principles</li>
+                                        <li>OpenAPI/Swagger specifications</li>
+                                        <li>Semantic versioning strategies</li>
+                                        <li>Idempotency patterns</li>
+                                        <li>Rate limiting design</li>
+                                        <li>Error response standards</li>
+                                        <li>HATEOAS when appropriate</li>
+                                    </ul>
+                                </div>
+
+                                <details class="advanced-section">
+                                    <summary><strong>📚 Practical Examples</strong></summary>
+                                    <div class="examples-container">
+                                        <div class="example-card">
+                                            <h5>🎯 Simple: CRUD Endpoints</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"api-contract-designer: Design REST endpoints for user management"</pre>
+                                            </div>
+                                            <p class="example-output">→ Returns: OpenAPI spec, endpoints, status codes, request/response schemas</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🔧 Intermediate: Webhook System</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"Use api-contract-designer to create webhook contracts with retry and verification"</pre>
+                                            </div>
+                                            <p class="example-output">→ Returns: Webhook payload specs, HMAC verification, retry policies, event types</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🚀 Advanced: API Evolution</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"api-contract-designer: Migrate v1 API to v2 with backward compatibility and deprecation strategy"</pre>
+                                            </div>
+                                            <p class="example-output">→ Returns: Migration path, compatibility layer, deprecation timeline, client upgrade guide</p>
+                                        </div>
+                                    </div>
+                                </details>
+
+                                <details class="advanced-section">
+                                    <summary><strong>✅ API Best Practices</strong></summary>
+                                    <ul class="tips-list">
+                                        <li>Use consistent naming (camelCase or snake_case)</li>
+                                        <li>Version via URL path (/v1/) or headers</li>
+                                        <li>Return proper HTTP status codes</li>
+                                        <li>Include request IDs for tracing</li>
+                                        <li>Implement pagination for lists</li>
+                                        <li>Use ISO 8601 for dates</li>
+                                    </ul>
+                                </details>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analysis & Optimization Agents -->
+                <div class="category-section" data-category="analysis">
+                    <h2 class="category-title">🔍 Analysis & Optimization</h2>
+                    <p class="category-description">
+                        Agents specialized in security analysis, performance optimization, and system analysis for production-ready applications.
+                    </p>
+                    <div class="agent-grid">
+                        <div class="agent-card-detailed">
+                            <div class="agent-header">
+                                <div class="agent-name">security-guardian</div>
+                                <span class="agent-category">Security</span>
+                            </div>
+                            <div class="agent-body">
+                                <p class="agent-description">
+                                    The paranoid protector who thinks like an attacker. Performs comprehensive security audits, identifies OWASP Top 10 vulnerabilities,
+                                    and ensures defense-in-depth. Reviews authentication, authorization, data protection, and input validation with zero-trust mindset.
+                                </p>
+                                <div class="agent-features">
+                                    <h4>Key Capabilities</h4>
+                                    <ul>
+                                        <li>OWASP Top 10 vulnerability detection</li>
+                                        <li>Authentication & authorization review</li>
+                                        <li>SQL injection & XSS prevention</li>
+                                        <li>Secrets management audit</li>
+                                        <li>Encryption implementation review</li>
+                                        <li>API security assessment</li>
+                                        <li>Dependency vulnerability scanning</li>
+                                    </ul>
+                                </div>
+
+                                <details class="advanced-section">
+                                    <summary><strong>📚 Practical Examples</strong></summary>
+                                    <div class="examples-container">
+                                        <div class="example-card">
+                                            <h5>🎯 Simple: Auth Review</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"security-guardian: Review the login endpoint for security vulnerabilities"</pre>
+                                            </div>
+                                            <p class="example-output">→ Checks: Password hashing, rate limiting, session management, CSRF protection</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🔧 Intermediate: API Security</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"Have security-guardian audit our REST API for authorization bypasses and data leaks"</pre>
+                                            </div>
+                                            <p class="example-output">→ Analyzes: IDOR vulnerabilities, permission checks, data exposure, rate limits</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🚀 Advanced: Full Audit</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"security-guardian: Perform complete security audit including dependencies, secrets, and infrastructure"</pre>
+                                            </div>
+                                            <p class="example-output">→ Delivers: Vulnerability report, risk matrix, remediation priorities, security roadmap</p>
+                                        </div>
+                                    </div>
+                                </details>
+
+                                <details class="advanced-section">
+                                    <summary><strong>🛡️ Security Checklist</strong></summary>
+                                    <ul class="tips-list">
+                                        <li>✓ Input validation on all user data</li>
+                                        <li>✓ Parameterized queries (no SQL injection)</li>
+                                        <li>✓ XSS protection (output encoding)</li>
+                                        <li>✓ HTTPS everywhere</li>
+                                        <li>✓ Secure session management</li>
+                                        <li>✓ Rate limiting on all endpoints</li>
+                                        <li>✓ Secrets in environment variables</li>
+                                        <li>✓ Dependency vulnerability scanning</li>
+                                    </ul>
+                                </details>
+                            </div>
+                        </div>
+
+                        <div class="agent-card-detailed">
+                            <div class="agent-header">
+                                <div class="agent-name">performance-optimizer</div>
+                                <span class="agent-category">Performance</span>
+                            </div>
+                            <div class="agent-body">
+                                <p class="agent-description">
+                                    The speed demon who makes everything faster. Identifies bottlenecks through profiling, implements caching strategies,
+                                    optimizes algorithms from O(n²) to O(n log n), and knows when to trade memory for speed. Thinks in microseconds, not milliseconds.
+                                </p>
+                                <div class="agent-features">
+                                    <h4>Key Capabilities</h4>
+                                    <ul>
+                                        <li>CPU & memory profiling</li>
+                                        <li>Algorithm complexity analysis</li>
+                                        <li>Database query optimization</li>
+                                        <li>Caching strategy design</li>
+                                        <li>Lazy loading implementation</li>
+                                        <li>Async/parallel processing</li>
+                                        <li>Memory leak detection</li>
+                                    </ul>
+                                </div>
+
+                                <details class="advanced-section">
+                                    <summary><strong>📚 Practical Examples</strong></summary>
+                                    <div class="examples-container">
+                                        <div class="example-card">
+                                            <h5>🎯 Simple: Slow Endpoint</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"performance-optimizer: The /api/search endpoint takes 5 seconds to respond"</pre>
+                                            </div>
+                                            <p class="example-output">→ Optimizes: Adds indexes, implements caching, reduces N+1 queries</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🔧 Intermediate: Memory Issues</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"Use performance-optimizer to fix high memory usage in data processing pipeline"</pre>
+                                            </div>
+                                            <p class="example-output">→ Implements: Streaming, chunking, garbage collection optimization, memory pools</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🚀 Advanced: System-Wide</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"performance-optimizer: Achieve 10x performance improvement for real-time analytics"</pre>
+                                            </div>
+                                            <p class="example-output">→ Delivers: Architecture changes, caching layers, async processing, horizontal scaling</p>
+                                        </div>
+                                    </div>
+                                </details>
+
+                                <details class="advanced-section">
+                                    <summary><strong>⚡ Performance Targets</strong></summary>
+                                    <ul class="tips-list">
+                                        <li>API response: < 200ms (p95)</li>
+                                        <li>Database queries: < 100ms</li>
+                                        <li>Page load: < 3 seconds</li>
+                                        <li>Memory usage: < 512MB baseline</li>
+                                        <li>CPU usage: < 70% sustained</li>
+                                    </ul>
+                                </details>
+                            </div>
+                        </div>
+
+                        <div class="agent-card-detailed">
+                            <div class="agent-header">
+                                <div class="agent-name">database-architect</div>
+                                <span class="agent-category">Database</span>
+                            </div>
+                            <div class="agent-body">
+                                <p class="agent-description">
+                                    The data strategist who designs schemas that scale from 100 to 100 million records. Masters both SQL and NoSQL,
+                                    knows when to normalize vs denormalize, and creates migration strategies that work without downtime.
+                                </p>
+                                <div class="agent-features">
+                                    <h4>Key Capabilities</h4>
+                                    <ul>
+                                        <li>Schema design & normalization</li>
+                                        <li>Index optimization strategies</li>
+                                        <li>Query performance tuning</li>
+                                        <li>Sharding & partitioning</li>
+                                        <li>Migration without downtime</li>
+                                        <li>SQL vs NoSQL selection</li>
+                                        <li>Transaction design</li>
+                                    </ul>
+                                </div>
+
+                                <details class="advanced-section">
+                                    <summary><strong>📚 Practical Examples</strong></summary>
+                                    <div class="examples-container">
+                                        <div class="example-card">
+                                            <h5>🎯 Simple: Schema Design</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"database-architect: Design schema for e-commerce order system"</pre>
+                                            </div>
+                                            <p class="example-output">→ Creates: Tables, relationships, indexes, constraints, sample queries</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🔧 Intermediate: Performance Fix</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"Have database-architect optimize our slow reporting queries (taking 30+ seconds)"</pre>
+                                            </div>
+                                            <p class="example-output">→ Analyzes: Execution plans, adds indexes, rewrites queries, suggests materialized views</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🚀 Advanced: Scale Strategy</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"database-architect: Plan migration from single PostgreSQL to sharded cluster for 10x growth"</pre>
+                                            </div>
+                                            <p class="example-output">→ Designs: Sharding strategy, migration phases, zero-downtime cutover, rollback plan</p>
+                                        </div>
+                                    </div>
+                                </details>
+
+                                <details class="advanced-section">
+                                    <summary><strong>💡 When to Choose</strong></summary>
+                                    <ul class="tips-list">
+                                        <li><strong>SQL:</strong> Complex relationships, ACID requirements</li>
+                                        <li><strong>NoSQL:</strong> Flexible schema, horizontal scaling</li>
+                                        <li><strong>Time-series:</strong> Metrics, logs, IoT data</li>
+                                        <li><strong>Graph:</strong> Social networks, recommendations</li>
+                                        <li><strong>Cache:</strong> Redis for sessions, hot data</li>
+                                    </ul>
+                                </details>
+                            </div>
+                        </div>
+
+                        <div class="agent-card-detailed">
+                            <div class="agent-header">
+                                <div class="agent-name">integration-specialist</div>
+                                <span class="agent-category">Integration</span>
+                            </div>
+                            <div class="agent-body">
+                                <p class="agent-description">
+                                    The connectivity expert who makes disparate systems talk seamlessly. Masters retry logic, circuit breakers,
+                                    and graceful degradation. Handles authentication flows, webhooks, and rate limits while keeping integrations simple and maintainable.
+                                </p>
+                                <div class="agent-features">
+                                    <h4>Key Capabilities</h4>
+                                    <ul>
+                                        <li>REST/GraphQL/gRPC integration</li>
+                                        <li>OAuth/JWT authentication flows</li>
+                                        <li>Webhook implementation</li>
+                                        <li>Circuit breaker patterns</li>
+                                        <li>Exponential backoff retry</li>
+                                        <li>Rate limit handling</li>
+                                        <li>MCP server connections</li>
+                                    </ul>
+                                </div>
+
+                                <details class="advanced-section">
+                                    <summary><strong>📚 Practical Examples</strong></summary>
+                                    <div class="examples-container">
+                                        <div class="example-card">
+                                            <h5>🎯 Simple: Payment API</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"integration-specialist: Connect to Stripe for payment processing"</pre>
+                                            </div>
+                                            <p class="example-output">→ Implements: API client, webhook handler, idempotency, error handling</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🔧 Intermediate: Multi-Service</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"Use integration-specialist to orchestrate between CRM, email, and analytics services"</pre>
+                                            </div>
+                                            <p class="example-output">→ Creates: Service adapters, event bus, failure isolation, monitoring</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🚀 Advanced: MCP Setup</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"integration-specialist: Set up MCP server for knowledge base with SSE events"</pre>
+                                            </div>
+                                            <p class="example-output">→ Configures: MCP protocol, SSE streams, reconnection logic, state sync</p>
+                                        </div>
+                                    </div>
+                                </details>
+
+                                <details class="advanced-section">
+                                    <summary><strong>🔄 Resilience Patterns</strong></summary>
+                                    <ul class="tips-list">
+                                        <li>Retry with exponential backoff</li>
+                                        <li>Circuit breaker (fail fast)</li>
+                                        <li>Bulkhead (isolate failures)</li>
+                                        <li>Timeout settings per service</li>
+                                        <li>Graceful degradation</li>
+                                        <li>Health check endpoints</li>
+                                    </ul>
+                                </details>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Knowledge & Insights Agents -->
+                <div class="category-section" data-category="knowledge">
+                    <h2 class="category-title">🧠 Knowledge & Insights</h2>
+                    <p class="category-description">
+                        Agents that work with documentation, extract insights, and manage knowledge for better decision-making and learning.
+                    </p>
+                    <div class="agent-grid">
+                        <div class="agent-card-detailed">
+                            <div class="agent-header">
+                                <div class="agent-name">insight-synthesizer</div>
+                                <span class="agent-category">Analysis</span>
+                            </div>
+                            <div class="agent-body">
+                                <p class="agent-description">
+                                    The revolutionary thinker who finds breakthrough connections others miss. Discovers simplification cascades,
+                                    identifies meta-patterns across domains, and creates "collision zones" where unrelated ideas spark innovation.
+                                    Turns complexity into elegant simplicity.
+                                </p>
+                                <div class="agent-features">
+                                    <h4>Key Capabilities</h4>
+                                    <ul>
+                                        <li>Cross-domain pattern recognition</li>
+                                        <li>Simplification cascade discovery</li>
+                                        <li>Revolutionary connection finding</li>
+                                        <li>Meta-pattern identification</li>
+                                        <li>Collision-zone thinking</li>
+                                        <li>Complexity reduction strategies</li>
+                                        <li>Innovation through synthesis</li>
+                                    </ul>
+                                </div>
+
+                                <details class="advanced-section">
+                                    <summary><strong>📚 Practical Examples</strong></summary>
+                                    <div class="examples-container">
+                                        <div class="example-card">
+                                            <h5>🎯 Simple: Pattern Discovery</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"insight-synthesizer: Find patterns in our error logs and user complaints"</pre>
+                                            </div>
+                                            <p class="example-output">→ Discovers: Hidden correlations, root patterns, unexpected connections</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🔧 Intermediate: Simplification</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"Use insight-synthesizer to find ways to simplify our 15-module auth system"</pre>
+                                            </div>
+                                            <p class="example-output">→ Identifies: Redundancies, cascade opportunities, 3-module solution</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🚀 Advanced: Innovation</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"insight-synthesizer: Connect our ML failures, API design, and UI issues to find breakthrough"</pre>
+                                            </div>
+                                            <p class="example-output">→ Reveals: Meta-pattern, revolutionary approach, 10x simplification</p>
+                                        </div>
+                                    </div>
+                                </details>
+
+                                <details class="advanced-section">
+                                    <summary><strong>💡 When to Deploy</strong></summary>
+                                    <ul class="tips-list">
+                                        <li>Stuck on complex problems</li>
+                                        <li>Need fresh perspective</li>
+                                        <li>Seeking radical simplification</li>
+                                        <li>Cross-domain challenges</li>
+                                        <li>Innovation opportunities</li>
+                                        <li>Pattern recognition tasks</li>
+                                    </ul>
+                                </details>
+                            </div>
+                        </div>
+
+                        <div class="agent-card-detailed">
+                            <div class="agent-header">
+                                <div class="agent-name">knowledge-archaeologist</div>
+                                <span class="agent-category">Documentation</span>
+                            </div>
+                            <div class="agent-body">
+                                <p class="agent-description">
+                                    The time traveler who excavates the fossil record of ideas. Traces how concepts evolved, why paradigms shifted,
+                                    and which abandoned approaches might solve today's problems. Preserves institutional knowledge and prevents repeating past mistakes.
+                                </p>
+                                <div class="agent-features">
+                                    <h4>Key Capabilities</h4>
+                                    <ul>
+                                        <li>Temporal knowledge analysis</li>
+                                        <li>Decision lineage tracing</li>
+                                        <li>Paradigm shift documentation</li>
+                                        <li>Abandoned idea revival</li>
+                                        <li>Evolution pattern recognition</li>
+                                        <li>Context reconstruction</li>
+                                        <li>Institutional memory preservation</li>
+                                    </ul>
+                                </div>
+
+                                <details class="advanced-section">
+                                    <summary><strong>📚 Practical Examples</strong></summary>
+                                    <div class="examples-container">
+                                        <div class="example-card">
+                                            <h5>🎯 Simple: Decision History</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"knowledge-archaeologist: Why did we choose microservices over monolith?"</pre>
+                                            </div>
+                                            <p class="example-output">→ Traces: Original requirements, decision points, trade-offs, evolution</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🔧 Intermediate: Pattern Evolution</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"Use knowledge-archaeologist to trace how our API design patterns evolved"</pre>
+                                            </div>
+                                            <p class="example-output">→ Maps: Pattern genealogy, paradigm shifts, lessons learned, revival opportunities</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🚀 Advanced: Paradigm Analysis</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"knowledge-archaeologist: Find valuable abandoned ideas from our 5-year history"</pre>
+                                            </div>
+                                            <p class="example-output">→ Discovers: Ahead-of-time ideas, changed contexts, revival candidates</p>
+                                        </div>
+                                    </div>
+                                </details>
+
+                                <details class="advanced-section">
+                                    <summary><strong>📜 What It Preserves</strong></summary>
+                                    <ul class="tips-list">
+                                        <li>Why decisions were made</li>
+                                        <li>What alternatives were considered</li>
+                                        <li>Which constraints existed then</li>
+                                        <li>How requirements evolved</li>
+                                        <li>When paradigms shifted</li>
+                                        <li>What lessons were learned</li>
+                                    </ul>
+                                </details>
+                            </div>
+                        </div>
+
+                        <div class="agent-card-detailed">
+                            <div class="agent-header">
+                                <div class="agent-name">concept-extractor</div>
+                                <span class="agent-category">Knowledge</span>
+                            </div>
+                            <div class="agent-body">
+                                <p class="agent-description">
+                                    The knowledge miner who transforms documents into structured intelligence. Extracts atomic concepts, maps relationships,
+                                    and preserves productive tensions between conflicting viewpoints. Builds queryable knowledge bases from unstructured content.
+                                </p>
+                                <div class="agent-features">
+                                    <h4>Key Capabilities</h4>
+                                    <ul>
+                                        <li>Atomic concept extraction</li>
+                                        <li>Relationship mapping (SPO triples)</li>
+                                        <li>Tension preservation</li>
+                                        <li>Knowledge graph building</li>
+                                        <li>Multi-perspective tracking</li>
+                                        <li>Contradiction identification</li>
+                                        <li>Semantic clustering</li>
+                                    </ul>
+                                </div>
+
+                                <details class="advanced-section">
+                                    <summary><strong>📚 Practical Examples</strong></summary>
+                                    <div class="examples-container">
+                                        <div class="example-card">
+                                            <h5>🎯 Simple: Document Processing</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"concept-extractor: Process this architecture document into concepts"</pre>
+                                            </div>
+                                            <p class="example-output">→ Extracts: Key concepts, relationships, definitions, dependencies</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🔧 Intermediate: Multi-Document</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"Use concept-extractor on all microservices documentation"</pre>
+                                            </div>
+                                            <p class="example-output">→ Creates: Unified knowledge graph, service relationships, capability map</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🚀 Advanced: Conflict Analysis</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"concept-extractor: Extract and preserve tensions between these competing proposals"</pre>
+                                            </div>
+                                            <p class="example-output">→ Maps: Conflicting viewpoints, trade-offs, productive tensions, decision space</p>
+                                        </div>
+                                    </div>
+                                </details>
+
+                                <details class="advanced-section">
+                                    <summary><strong>📊 Output Formats</strong></summary>
+                                    <ul class="tips-list">
+                                        <li>Knowledge graph (NetworkX)</li>
+                                        <li>SPO triples (subject-predicate-object)</li>
+                                        <li>Concept hierarchy</li>
+                                        <li>Relationship matrix</li>
+                                        <li>Tension points documentation</li>
+                                        <li>Queryable JSON structure</li>
+                                    </ul>
+                                </details>
+                            </div>
+                        </div>
+
+                        <div class="agent-card-detailed">
+                            <div class="agent-header">
+                                <div class="agent-name">ambiguity-guardian</div>
+                                <span class="agent-category">Analysis</span>
+                            </div>
+                            <div class="agent-body">
+                                <p class="agent-description">
+                                    Preserves productive contradictions and identifies areas where ambiguity might be valuable.
+                                    Prevents premature optimization and maintains flexibility where needed.
+                                </p>
+                                <div class="agent-features">
+                                    <h4>Key Capabilities</h4>
+                                    <ul>
+                                        <li>Ambiguity identification</li>
+                                        <li>Flexibility preservation</li>
+                                        <li>Contradiction analysis</li>
+                                        <li>Decision deferral strategies</li>
+                                    </ul>
+                                </div>
+                                <div class="example-usage">
+                                    "Have ambiguity-guardian review feature requirements"
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="agent-card-detailed">
+                            <div class="agent-header">
+                                <div class="agent-name">content-researcher</div>
+                                <span class="agent-category">Research</span>
+                            </div>
+                            <div class="agent-body">
+                                <p class="agent-description">
+                                    Researches from content collection, finding relevant information and connecting ideas.
+                                    Acts as your intelligent research assistant for technical documentation and decisions.
+                                </p>
+                                <div class="agent-features">
+                                    <h4>Key Capabilities</h4>
+                                    <ul>
+                                        <li>Content research</li>
+                                        <li>Information synthesis</li>
+                                        <li>Relevance analysis</li>
+                                        <li>Reference tracking</li>
+                                    </ul>
+                                </div>
+                                <div class="example-usage">
+                                    "Use content-researcher to find database patterns"
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Meta & Support Agents -->
+                <div class="category-section" data-category="meta">
+                    <h2 class="category-title">🔧 Meta & Support</h2>
+                    <p class="category-description">
+                        Agents that help manage the development environment, create new specialized agents, and maintain codebase hygiene.
+                    </p>
+                    <div class="agent-grid">
+                        <div class="agent-card-detailed">
+                            <div class="agent-header">
+                                <div class="agent-name">subagent-architect</div>
+                                <span class="agent-category">Meta</span>
+                            </div>
+                            <div class="agent-body">
+                                <p class="agent-description">
+                                    The agent creator who designs new specialized experts for your unique needs. Analyzes your workflow,
+                                    identifies capability gaps, and creates custom agents with precise expertise. Your personal AI team builder.
+                                </p>
+                                <div class="agent-features">
+                                    <h4>Key Capabilities</h4>
+                                    <ul>
+                                        <li>Custom agent creation</li>
+                                        <li>Expertise specification</li>
+                                        <li>Workflow gap analysis</li>
+                                        <li>Tool integration design</li>
+                                        <li>Prompt engineering</li>
+                                        <li>Agent testing & validation</li>
+                                        <li>Performance optimization</li>
+                                    </ul>
+                                </div>
+
+                                <details class="advanced-section">
+                                    <summary><strong>📚 Practical Examples</strong></summary>
+                                    <div class="examples-container">
+                                        <div class="example-card">
+                                            <h5>🎯 Simple: Framework Expert</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"subagent-architect: Create a React + TypeScript specialist agent"</pre>
+                                            </div>
+                                            <p class="example-output">→ Creates: Agent with React patterns, hooks expertise, TypeScript best practices</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🔧 Intermediate: Domain Expert</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"Use subagent-architect to build a healthcare compliance agent for HIPAA"</pre>
+                                            </div>
+                                            <p class="example-output">→ Creates: Specialized agent with regulatory knowledge, audit capabilities</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🚀 Advanced: Workflow Agent</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"subagent-architect: Design multi-agent workflow for continuous deployment pipeline"</pre>
+                                            </div>
+                                            <p class="example-output">→ Creates: Agent team with build, test, deploy, monitor specializations</p>
+                                        </div>
+                                    </div>
+                                </details>
+
+                                <details class="advanced-section">
+                                    <summary><strong>🎯 Agent Design Tips</strong></summary>
+                                    <ul class="tips-list">
+                                        <li>Start with specific, narrow expertise</li>
+                                        <li>Define clear trigger conditions</li>
+                                        <li>Include concrete examples</li>
+                                        <li>Specify integration points</li>
+                                        <li>Test with real scenarios</li>
+                                        <li>Iterate based on performance</li>
+                                    </ul>
+                                </details>
+                            </div>
+                        </div>
+
+                        <div class="agent-card-detailed">
+                            <div class="agent-header">
+                                <div class="agent-name">post-task-cleanup</div>
+                                <span class="agent-category">Maintenance</span>
+                            </div>
+                            <div class="agent-body">
+                                <p class="agent-description">
+                                    The janitor who keeps your codebase pristine. Runs after tasks to remove debug code, eliminate unnecessary complexity,
+                                    update documentation, and ensure philosophy compliance. Your automated technical debt preventer.
+                                </p>
+                                <div class="agent-features">
+                                    <h4>Key Capabilities</h4>
+                                    <ul>
+                                        <li>Debug artifact removal</li>
+                                        <li>Complexity elimination</li>
+                                        <li>Documentation sync</li>
+                                        <li>Import optimization</li>
+                                        <li>Dead code removal</li>
+                                        <li>Consistency enforcement</li>
+                                        <li>Philosophy compliance</li>
+                                    </ul>
+                                </div>
+
+                                <details class="advanced-section">
+                                    <summary><strong>📚 Practical Examples</strong></summary>
+                                    <div class="examples-container">
+                                        <div class="example-card">
+                                            <h5>🎯 Simple: After Feature</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"post-task-cleanup: Clean up after implementing user registration"</pre>
+                                            </div>
+                                            <p class="example-output">→ Removes: Console.logs, TODO comments, unused imports, test artifacts</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🔧 Intermediate: Module Review</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"Use post-task-cleanup to review and simplify the payment module"</pre>
+                                            </div>
+                                            <p class="example-output">→ Simplifies: Removes abstractions, consolidates files, updates docs</p>
+                                        </div>
+
+                                        <div class="example-card">
+                                            <h5>🚀 Advanced: Codebase Audit</h5>
+                                            <div class="code-block">
+                                                <button class="copy-btn" onclick="copyToClipboard(this)">📋 Copy</button>
+                                                <pre>"post-task-cleanup: Full codebase hygiene check and philosophy compliance"</pre>
+                                            </div>
+                                            <p class="example-output">→ Delivers: Cleanup report, technical debt list, simplification opportunities</p>
+                                        </div>
+                                    </div>
+                                </details>
+
+                                <details class="advanced-section">
+                                    <summary><strong>🧹 Cleanup Checklist</strong></summary>
+                                    <ul class="tips-list">
+                                        <li>Remove console.log statements</li>
+                                        <li>Delete commented-out code</li>
+                                        <li>Remove TODO without action</li>
+                                        <li>Optimize imports</li>
+                                        <li>Delete unused variables</li>
+                                        <li>Update stale documentation</li>
+                                        <li>Enforce naming conventions</li>
+                                    </ul>
+                                </details>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Usage Instructions -->
+                <div class="section" style="background: var(--light-bg); padding: 3rem 2rem; border-radius: var(--border-radius-lg); margin-top: 4rem;">
+                    <h2 style="text-align: center; margin-bottom: 2rem;">How to Use Agents</h2>
+                    <div style="max-width: 800px; margin: 0 auto;">
+                        <div style="margin-bottom: 2rem;">
+                            <h3 style="color: var(--primary-color); margin-bottom: 1rem;">Automatic Invocation</h3>
+                            <p style="color: var(--text-secondary); line-height: 1.6;">
+                                Claude automatically selects and invokes the most appropriate agent based on your request.
+                                Simply describe your task naturally, and the system will delegate to the right specialist.
+                            </p>
+                        </div>
+                        <div style="margin-bottom: 2rem;">
+                            <h3 style="color: var(--primary-color); margin-bottom: 1rem;">Explicit Invocation</h3>
+                            <p style="color: var(--text-secondary); line-height: 1.6;">
+                                You can also explicitly request specific agents by name:
+                            </p>
+                            <div class="code-snippet" style="margin-top: 1rem;">
+                                <code>"Use zen-architect to design my user management system"<br>
+"Have bug-hunter investigate the login timeout issue"<br>
+"Deploy security-guardian to review the API endpoints"</code>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 style="color: var(--primary-color); margin-bottom: 1rem;">Creating Custom Agents</h3>
+                            <p style="color: var(--text-secondary); line-height: 1.6;">
+                                Use the subagent-architect to create specialized agents for your unique needs,
+                                or use the <code>/agents</code> command to create them interactively.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <h3>Amplifier</h3>
+                    <p>Supercharged AI Development Environment</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Documentation</h4>
+                        <a href="setup.html">Setup Guide</a>
+                        <a href="agents.html">Agent Catalog</a>
+                        <a href="knowledge.html">Knowledge Base</a>
+                        <a href="examples.html">Examples</a>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Resources</h4>
+                        <a href="https://github.com/microsoft/amplifier">GitHub</a>
+                        <a href="../AMPLIFIER_VISION.md">Vision</a>
+                        <a href="../README.md">README</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Microsoft. Licensed under MIT.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+        // Copy to clipboard function
+        function copyToClipboard(button) {
+            const codeBlock = button.parentElement;
+            const code = codeBlock.querySelector('pre').textContent;
+
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = button.textContent;
+                button.textContent = '✓ Copied!';
+                button.classList.add('copied');
+
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                button.textContent = '❌ Failed';
+                setTimeout(() => {
+                    button.textContent = '📋 Copy';
+                }, 2000);
+            });
+        }
+
+        // Initialize all details elements to be closed by default
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('details').forEach(details => {
+                details.removeAttribute('open');
+            });
+        });
+
+        // Filter function continues below
+
+        function filterAgents(category, buttonElement) {
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Use the passed button element or fallback to event.target
+            const button = buttonElement || event?.target;
+            if (button) {
+                button.classList.add('active');
+            }
+
+            // Show/hide categories
+            document.querySelectorAll('.category-section').forEach(section => {
+                if (category === 'all') {
+                    section.style.display = 'block';
+                } else {
+                    section.style.display = section.dataset.category === category ? 'block' : 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

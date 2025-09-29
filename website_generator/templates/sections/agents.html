@@ -1,0 +1,66 @@
+<section class="agents-section" id="agents">
+    <div class="container">
+        <h2 class="section-title">
+            {% if section.total_count > 20 %}
+            {{ section.total_count }}+ Specialized Agents
+            {% else %}
+            Specialized Agents
+            {% endif %}
+        </h2>
+        <p class="section-description">Expert AI agents handle every aspect of development</p>
+
+        {% if section.featured_agents %}
+        <div class="featured-agents">
+            <h3>Featured Agents</h3>
+            <div class="agent-grid">
+                {% for agent in section.featured_agents %}
+                <div class="agent-card">
+                    <div class="agent-header">
+                        <span class="agent-name">{{ agent.name }}</span>
+                        <span class="agent-badge {{ agent.name | agent_badge }}">{{ agent.category }}</span>
+                    </div>
+                    <p class="agent-description">{{ agent.description }}</p>
+                    {% if agent.capabilities %}
+                    <ul class="agent-capabilities">
+                        {% for capability in agent.capabilities %}
+                        <li>{{ capability }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if section.agent_categories %}
+        <div class="agent-categories">
+            <h3>All Agents by Category</h3>
+            <div class="category-tabs">
+                {% for category, agents in section.agent_categories.items() %}
+                <button class="tab-btn {% if loop.first %}active{% endif %}"
+                        onclick="showTab('{{ category | slug }}', this)">
+                    {{ get_icon(category | lower) }} {{ category }} ({{ agents | length }})
+                </button>
+                {% endfor %}
+            </div>
+
+            {% for category, agents in section.agent_categories.items() %}
+            <div class="tab-content {% if loop.first %}active{% endif %}" id="{{ category | slug }}">
+                <div class="agents-list">
+                    {% for agent in agents %}
+                    <div class="agent-item">
+                        <h4>{{ agent.name }}</h4>
+                        <p>{{ agent.description }}</p>
+                        {% if agent.capabilities_count %}
+                        <span class="capabilities-count">{{ agent.capabilities_count }} capabilities</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</section>

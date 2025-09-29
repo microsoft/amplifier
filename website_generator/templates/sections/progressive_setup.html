@@ -1,0 +1,50 @@
+<section class="setup-section" id="setup">
+    <div class="container">
+        <h2 class="section-title">Progressive Setup</h2>
+        <p class="section-description">Choose your learning path based on available time</p>
+
+        <div class="setup-tiers">
+            {% for tier in section.tiers %}
+            <div class="tier-card" data-tier="{{ loop.index }}">
+                <div class="tier-header">
+                    <h3 class="tier-name">{{ tier.name }}</h3>
+                    <span class="tier-duration">{{ tier.duration }}</span>
+                </div>
+                <p class="tier-description">{{ tier.description }}</p>
+                <p class="tier-focus"><strong>Focus:</strong> {{ tier.focus }}</p>
+
+                {% if tier.steps %}
+                <ol class="tier-steps">
+                    {% for step in tier.steps %}
+                    <li>{{ step }}</li>
+                    {% endfor %}
+                </ol>
+                {% endif %}
+
+                {% if tier.demo_command %}
+                <div class="tier-demo">
+                    <strong>Try this:</strong>
+                    <code>{{ tier.demo_command }}</code>
+                    {% if tier.expected_result %}
+                    <p><em>Expected: {{ tier.expected_result }}</em></p>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if tier.mastery_features %}
+                <div class="mastery-features">
+                    <strong>What you'll master:</strong>
+                    <ul>
+                        {% for feature in tier.mastery_features %}
+                        <li>{{ feature }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <button class="btn btn-outline tier-btn">Start {{ tier.name }}</button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>

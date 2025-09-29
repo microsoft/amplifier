@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Guide - Amplifier</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .setup-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .step-detailed {
+            background: white;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        .step-header {
+            background: linear-gradient(135deg, var(--primary-color), #0052a3);
+            color: var(--text-light);
+            padding: 1.5rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .step-number-large {
+            background: rgba(255, 255, 255, 0.2);
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .step-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        .step-body-detailed {
+            padding: 2rem;
+        }
+        .step-description {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        .code-block {
+            background: var(--dark-bg);
+            color: var(--text-light);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            margin: 1rem 0;
+            position: relative;
+            overflow-x: auto;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: var(--transition);
+        }
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .copy-btn.copied {
+            background: var(--accent-color);
+            color: white;
+        }
+        .platform-tabs {
+            display: flex;
+            background: var(--light-bg);
+            border-radius: var(--border-radius);
+            padding: 0.25rem;
+            margin-bottom: 1rem;
+        }
+        .platform-tab {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            text-align: center;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+            border: none;
+            background: none;
+        }
+        .platform-tab.active {
+            background: var(--primary-color);
+            color: var(--text-light);
+        }
+        .platform-content {
+            display: none;
+        }
+        .platform-content.active {
+            display: block;
+        }
+        .warning-box {
+            background: linear-gradient(135deg, #fff3cd, #fef9e7);
+            border-left: 4px solid var(--warning-color);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            margin: 1.5rem 0;
+        }
+        .warning-box h4 {
+            color: #856404;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .info-box {
+            background: linear-gradient(135deg, #d1ecf1, #b8daff);
+            border-left: 4px solid var(--primary-color);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            margin: 1.5rem 0;
+        }
+        .info-box h4 {
+            color: #155724;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .success-box {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            border-left: 4px solid var(--accent-color);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            margin: 1.5rem 0;
+        }
+        .error-box {
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            border-left: 4px solid #dc3545;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            margin: 1.5rem 0;
+        }
+        .error-box h4 {
+            color: #721c24;
+            margin-bottom: 0.5rem;
+        }
+        .prerequisite-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .prerequisite-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: var(--transition);
+        }
+        .prerequisite-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+        .prerequisite-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        .prerequisite-item h3 {
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        .prerequisite-item p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            background: var(--primary-color);
+            color: var(--text-light);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+        .download-btn:hover {
+            background: var(--primary-dark);
+            color: var(--text-light);
+        }
+        .table-responsive {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+        .table th {
+            background: var(--primary-color);
+            color: var(--text-light);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+        .table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .table tbody tr:hover {
+            background: var(--light-bg);
+        }
+        .next-steps {
+            background: white;
+            padding: 2rem;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow);
+            text-align: center;
+            margin-top: 3rem;
+        }
+        .collapsible {
+            background-color: var(--light-bg);
+            color: var(--text-primary);
+            cursor: pointer;
+            padding: 1rem 1.5rem;
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: var(--transition);
+            border-radius: var(--border-radius);
+            margin-top: 1rem;
+        }
+        .collapsible:hover {
+            background-color: var(--border-color);
+        }
+        .collapsible:after {
+            content: '\002B';
+            color: var(--primary-color);
+            font-weight: bold;
+            float: right;
+            margin-left: 5px;
+        }
+        .collapsible.active:after {
+            content: "\2212";
+        }
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease-out;
+            background-color: var(--light-bg);
+            padding: 0 1.5rem;
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+        }
+        .collapsible-content.show {
+            max-height: 2000px;
+            padding: 1.5rem;
+        }
+        .verification-check {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--accent-color);
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+        .command-output {
+            background: #f4f4f4;
+            border-left: 3px solid var(--primary-color);
+            padding: 1rem;
+            margin: 0.5rem 0;
+            font-family: monospace;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .quick-start-banner {
+            background: linear-gradient(135deg, var(--primary-color), #0052a3);
+            color: white;
+            padding: 2rem;
+            border-radius: var(--border-radius-lg);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        .quick-start-banner h2 {
+            color: white;
+            margin-bottom: 1rem;
+        }
+        .quick-commands {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-brand">
+                <h1>Amplifier</h1>
+                <span class="tagline">Setup Guide</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="agents.html" class="nav-link">Agents</a>
+                <a href="examples.html" class="nav-link">Examples</a>
+                <a href="knowledge.html" class="nav-link">Knowledge Base</a>
+                <a href="https://github.com/microsoft/amplifier" class="nav-link">GitHub</a>
+            </div>
+            <div class="nav-mobile">
+                <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+            </div>
+        </nav>
+    </header>
+
+    <main style="padding-top: 6rem;">
+        <section class="section">
+            <div class="container">
+                <div class="setup-container">
+                    <div style="text-align: center; margin-bottom: 3rem;">
+                        <h1 class="section-title">Complete Setup Guide</h1>
+                        <p style="font-size: 1.2rem; color: var(--text-secondary);">
+                            Get Amplifier running in under 5 minutes with copy-paste commands
+                        </p>
+                    </div>
+
+                    <!-- Quick Start Banner -->
+                    <div class="quick-start-banner">
+                        <h2>⚡ Quick Start (Copy-Paste-Done)</h2>
+                        <div class="quick-commands">
+                            <div class="code-block" style="background: rgba(0,0,0,0.3); text-align: left;">
+                                <button class="copy-btn" onclick="copyCode(this)">Copy All</button>
+# For most users - just run these 4 commands:
+git clone https://github.com/microsoft/amplifier.git
+cd amplifier
+make install
+claude</div>
+                        </div>
+                        <p style="margin-top: 1rem; opacity: 0.9;">That's it! Continue reading for platform-specific details and troubleshooting.</p>
+                    </div>
+
+                    <div class="warning-box">
+                        <h4>⚠️ Important Note</h4>
+                        <p>This project is a research demonstrator in early development. It may change significantly and requires careful attention to security considerations. Use with caution and careful human supervision.</p>
+                    </div>
+
+                    <!-- Prerequisites -->
+                    <div class="step-detailed">
+                        <div class="step-header">
+                            <div class="step-number-large">📋</div>
+                            <div class="step-title">Prerequisites & Pre-Installation Checks</div>
+                        </div>
+                        <div class="step-body-detailed">
+                            <p class="step-description">
+                                Before installing Amplifier, verify you have these required tools. Click each tab for platform-specific instructions:
+                            </p>
+
+                            <!-- Platform-specific prerequisite checks -->
+                            <div class="platform-tabs">
+                                <button class="platform-tab active" onclick="showPlatform('prereq-wsl', this)">Windows (WSL2)</button>
+                                <button class="platform-tab" onclick="showPlatform('prereq-mac', this)">macOS</button>
+                                <button class="platform-tab" onclick="showPlatform('prereq-linux', this)">Linux</button>
+                            </div>
+
+                            <div id="prereq-wsl-platform" class="platform-content active">
+                                <h4 style="color: var(--primary-color); margin: 1.5rem 0 1rem 0;">Windows with WSL2 Setup</h4>
+
+                                <p><strong>Step 1: Enable WSL2 (if not already enabled)</strong></p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Run in PowerShell as Administrator
+wsl --install
+# Restart your computer after this completes</div>
+
+                                <p style="margin-top: 1rem;"><strong>Step 2: Install Ubuntu (recommended distribution)</strong></p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# In PowerShell
+wsl --install -d Ubuntu-22.04</div>
+
+                                <p style="margin-top: 1rem;"><strong>Step 3: Verify Prerequisites in WSL</strong></p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Open WSL Ubuntu terminal and run:
+python3 --version
+node --version
+git --version
+
+# If any are missing, install them:
+sudo apt update && sudo apt install -y python3.11 python3-pip nodejs npm git make</div>
+
+                                <div class="command-output">
+Expected output:
+Python 3.11.0 (or higher)
+v18.17.0 (or higher)
+git version 2.34.1 (or higher)</div>
+                            </div>
+
+                            <div id="prereq-mac-platform" class="platform-content">
+                                <h4 style="color: var(--primary-color); margin: 1.5rem 0 1rem 0;">macOS Setup</h4>
+
+                                <p><strong>Step 1: Install Homebrew (if needed)</strong></p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"</div>
+
+                                <p style="margin-top: 1rem;"><strong>Step 2: Install Prerequisites</strong></p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Install all required tools
+brew install python@3.11 node git
+
+# Verify installations
+python3.11 --version
+node --version
+git --version</div>
+
+                                <div class="command-output">
+Expected output:
+Python 3.11.0 (or higher)
+v18.17.0 (or higher)
+git version 2.39.0 (or higher)</div>
+                            </div>
+
+                            <div id="prereq-linux-platform" class="platform-content">
+                                <h4 style="color: var(--primary-color); margin: 1.5rem 0 1rem 0;">Linux Setup (Ubuntu/Debian)</h4>
+
+                                <p><strong>Install all prerequisites at once:</strong></p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Update package list and install everything
+sudo apt update
+sudo apt install -y python3.11 python3-pip nodejs npm git make curl
+
+# Verify installations
+python3.11 --version
+node --version
+git --version</div>
+
+                                <div class="command-output">
+Expected output:
+Python 3.11.0 (or higher)
+v18.17.0 (or higher)
+git version 2.34.1 (or higher)</div>
+                            </div>
+
+                            <div class="prerequisite-grid" style="margin-top: 2rem;">
+                                <div class="prerequisite-item">
+                                    <div class="prerequisite-icon">🐍</div>
+                                    <h3>Python 3.11+</h3>
+                                    <p>Core runtime for all Amplifier systems</p>
+                                    <div class="verification-check">✓ Verify: <code>python3 --version</code></div>
+                                </div>
+                                <div class="prerequisite-item">
+                                    <div class="prerequisite-icon">🟢</div>
+                                    <h3>Node.js 18+</h3>
+                                    <p>Required for Claude CLI and tools</p>
+                                    <div class="verification-check">✓ Verify: <code>node --version</code></div>
+                                </div>
+                                <div class="prerequisite-item">
+                                    <div class="prerequisite-icon">📦</div>
+                                    <h3>Git</h3>
+                                    <p>Version control for repo management</p>
+                                    <div class="verification-check">✓ Verify: <code>git --version</code></div>
+                                </div>
+                                <div class="prerequisite-item">
+                                    <div class="prerequisite-icon">🔧</div>
+                                    <h3>Make</h3>
+                                    <p>Build automation tool</p>
+                                    <div class="verification-check">✓ Verify: <code>make --version</code></div>
+                                </div>
+                            </div>
+
+                            <button class="collapsible" onclick="toggleCollapsible(this)">⚠️ Troubleshooting Prerequisites</button>
+                            <div class="collapsible-content">
+                                <div class="error-box">
+                                    <h4>❌ Python version too old?</h4>
+                                    <p>If your system Python is older than 3.11, you can use pyenv to install a newer version:</p>
+                                    <div class="code-block">
+                                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Install pyenv
+curl https://pyenv.run | bash
+
+# Add to your shell configuration
+echo 'export PATH="$HOME/.pyenv/bin:$PATH"' >> ~/.bashrc
+echo 'eval "$(pyenv init -)"' >> ~/.bashrc
+source ~/.bashrc
+
+# Install Python 3.11
+pyenv install 3.11.0
+pyenv global 3.11.0</div>
+                                </div>
+
+                                <div class="error-box">
+                                    <h4>❌ Node.js version too old?</h4>
+                                    <p>Use Node Version Manager (nvm) to install the latest version:</p>
+                                    <div class="code-block">
+                                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Install nvm
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+source ~/.bashrc
+
+# Install latest Node.js
+nvm install node
+nvm use node</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 1: Clone Repository -->
+                    <div class="step-detailed">
+                        <div class="step-header">
+                            <div class="step-number-large">1</div>
+                            <div class="step-title">Clone the Repository</div>
+                        </div>
+                        <div class="step-body-detailed">
+                            <p class="step-description">
+                                Choose your preferred method to get the Amplifier code:
+                            </p>
+
+                            <div class="platform-tabs">
+                                <button class="platform-tab active" onclick="showPlatform('clone-https', this)">HTTPS (Recommended)</button>
+                                <button class="platform-tab" onclick="showPlatform('clone-ssh', this)">SSH</button>
+                                <button class="platform-tab" onclick="showPlatform('clone-gh', this)">GitHub CLI</button>
+                            </div>
+
+                            <div id="clone-https-platform" class="platform-content active">
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Clone via HTTPS (works for everyone)
+git clone https://github.com/microsoft/amplifier.git
+cd amplifier
+
+# Verify you're in the right directory
+pwd
+# Should output: /path/to/amplifier</div>
+                            </div>
+
+                            <div id="clone-ssh-platform" class="platform-content">
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Clone via SSH (requires GitHub SSH key setup)
+git clone git@github.com:microsoft/amplifier.git
+cd amplifier
+
+# Verify you're in the right directory
+pwd
+# Should output: /path/to/amplifier</div>
+                            </div>
+
+                            <div id="clone-gh-platform" class="platform-content">
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Using GitHub CLI (if installed)
+gh repo clone microsoft/amplifier
+cd amplifier
+
+# Verify you're in the right directory
+pwd
+# Should output: /path/to/amplifier</div>
+                            </div>
+
+                            <div class="success-box">
+                                <h4>✅ Verification</h4>
+                                <p>After cloning, verify the repository structure:</p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+ls -la
+# You should see: amplifier/, .claude/, Makefile, pyproject.toml, etc.</div>
+                            </div>
+
+                            <div class="info-box">
+                                <h4>💡 Best Practices for Location</h4>
+                                <ul style="margin: 0.5rem 0 0 1rem;">
+                                    <li><strong>WSL2:</strong> Clone in WSL filesystem (~/projects/), not Windows (/mnt/c/) for 10x faster performance</li>
+                                    <li><strong>Mac/Linux:</strong> Use ~/Developer/ or ~/projects/ for easy access</li>
+                                    <li><strong>Avoid:</strong> OneDrive, Dropbox, or other synced folders during development</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Run Installation -->
+                    <div class="step-detailed">
+                        <div class="step-header">
+                            <div class="step-number-large">2</div>
+                            <div class="step-title">Run the Installer</div>
+                        </div>
+                        <div class="step-body-detailed">
+                            <p class="step-description">
+                                Amplifier's intelligent installer handles everything automatically:
+                            </p>
+
+                            <div class="code-block">
+                                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Run the comprehensive installer
+make install
+
+# This automatically:
+# ✓ Installs uv (ultra-fast Python package manager)
+# ✓ Creates virtual environment
+# ✓ Installs all Python dependencies
+# ✓ Sets up Claude CLI globally
+# ✓ Configures project settings</div>
+
+                            <div class="command-output">
+Expected output during installation:
+🚀 Installing uv package manager...
+✓ uv installed successfully
+📦 Creating virtual environment...
+✓ Virtual environment created at .venv
+📚 Installing dependencies...
+✓ All dependencies installed (pydantic, claude-code-sdk, etc.)
+🤖 Installing Claude CLI...
+✓ Claude CLI available globally
+✨ Installation complete!</div>
+
+                            <div class="info-box">
+                                <h4>📦 What Gets Installed</h4>
+                                <ul style="margin: 0.5rem 0 0 1rem;">
+                                    <li><strong>uv:</strong> Lightning-fast Python package manager (10-100x faster than pip)</li>
+                                    <li><strong>Claude CLI:</strong> Command-line interface for Claude Code</li>
+                                    <li><strong>Python packages:</strong> pydantic, claude-code-sdk, asyncio, and 20+ more</li>
+                                    <li><strong>Development tools:</strong> ruff (formatter/linter), pyright (type checker), pytest</li>
+                                </ul>
+                            </div>
+
+                            <button class="collapsible" onclick="toggleCollapsible(this)">🔧 Installation Troubleshooting</button>
+                            <div class="collapsible-content">
+                                <div class="error-box">
+                                    <h4>❌ "make: command not found"</h4>
+                                    <div class="code-block">
+                                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Install make on your platform:
+# Ubuntu/Debian/WSL:
+sudo apt install make
+
+# macOS:
+xcode-select --install
+
+# Then retry:
+make install</div>
+                                </div>
+
+                                <div class="error-box">
+                                    <h4>❌ "Permission denied" errors</h4>
+                                    <div class="code-block">
+                                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Fix permissions and retry:
+chmod +x scripts/*.sh
+sudo chown -R $USER:$USER .
+make install</div>
+                                </div>
+
+                                <div class="error-box">
+                                    <h4>❌ "uv: command not found" after installation</h4>
+                                    <div class="code-block">
+                                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Manually install uv:
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source ~/.bashrc  # or ~/.zshrc on macOS
+
+# Then retry:
+make install</div>
+                                </div>
+
+                                <div class="info-box">
+                                    <h4>💡 Manual Installation Alternative</h4>
+                                    <p>If make install fails, you can install manually:</p>
+                                    <div class="code-block">
+                                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Step-by-step manual installation:
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install --upgrade pip
+pip install uv
+uv pip install -e .
+npm install -g @anthropic-ai/claude-code</div>
+                                </div>
+                            </div>
+
+                            <div class="success-box">
+                                <h4>✅ Verify Installation</h4>
+                                <p>Check that everything installed correctly:</p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Check virtual environment
+ls -la .venv/
+
+# Check uv installation
+which uv
+
+# Check Python packages
+uv pip list | grep -E "pydantic|claude"
+
+# Check Claude CLI
+which claude</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Configure Data Directories -->
+                    <div class="step-detailed">
+                        <div class="step-header">
+                            <div class="step-number-large">3</div>
+                            <div class="step-title">Configure Data Directories (Recommended)</div>
+                        </div>
+                        <div class="step-body-detailed">
+                            <p class="step-description">
+                                Set up persistent storage for your knowledge base and configurations:
+                            </p>
+
+                            <div class="info-box">
+                                <h4>🌟 Why Configure External Directories?</h4>
+                                <ul style="margin: 0.5rem 0 0 1rem;">
+                                    <li><strong>Persistent Knowledge:</strong> Survives reinstalls and repository updates</li>
+                                    <li><strong>Cross-Project Sharing:</strong> Use the same knowledge base across multiple projects</li>
+                                    <li><strong>Cloud Sync:</strong> Automatic backup via OneDrive/Dropbox/iCloud</li>
+                                    <li><strong>Team Collaboration:</strong> Share knowledge bases with your team</li>
+                                </ul>
+                            </div>
+
+                            <h4 style="color: var(--primary-color); margin-top: 1.5rem;">Quick Setup</h4>
+                            <div class="code-block">
+                                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Copy the example environment file
+cp .env.example .env
+
+# Open in your editor
+nano .env  # or vim, code, etc.</div>
+
+                            <h4 style="color: var(--primary-color); margin-top: 1.5rem;">Configuration Options</h4>
+
+                            <div class="platform-tabs">
+                                <button class="platform-tab active" onclick="showPlatform('config-cloud', this)">Cloud Sync Setup</button>
+                                <button class="platform-tab" onclick="showPlatform('config-local', this)">Local Only</button>
+                                <button class="platform-tab" onclick="showPlatform('config-team', this)">Team Setup</button>
+                            </div>
+
+                            <div id="config-cloud-platform" class="platform-content active">
+                                <p><strong>Recommended: Use cloud-synced folders for automatic backup</strong></p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# OneDrive (Windows/Mac)
+AMPLIFIER_DATA_DIR=~/OneDrive/amplifier/data
+AMPLIFIER_CONTENT_DIRS=ai_context,~/OneDrive/amplifier/content
+
+# Dropbox
+AMPLIFIER_DATA_DIR=~/Dropbox/amplifier/data
+AMPLIFIER_CONTENT_DIRS=ai_context,~/Dropbox/amplifier/content
+
+# iCloud (Mac)
+AMPLIFIER_DATA_DIR=~/Library/Mobile\ Documents/com~apple~CloudDocs/amplifier/data
+AMPLIFIER_CONTENT_DIRS=ai_context,~/Library/Mobile\ Documents/com~apple~CloudDocs/amplifier/content</div>
+                            </div>
+
+                            <div id="config-local-platform" class="platform-content">
+                                <p><strong>Keep everything local for maximum performance</strong></p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Local storage only
+AMPLIFIER_DATA_DIR=~/.amplifier/data
+AMPLIFIER_CONTENT_DIRS=ai_context,~/.amplifier/content
+
+# Or use a dedicated drive
+AMPLIFIER_DATA_DIR=/data/amplifier/knowledge
+AMPLIFIER_CONTENT_DIRS=ai_context,/data/amplifier/content</div>
+                            </div>
+
+                            <div id="config-team-platform" class="platform-content">
+                                <p><strong>Share knowledge bases with your team</strong></p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Shared network drive
+AMPLIFIER_DATA_DIR=/mnt/shared/team/amplifier/data
+AMPLIFIER_CONTENT_DIRS=ai_context,/mnt/shared/team/docs
+
+# Git-based sharing (commit knowledge)
+AMPLIFIER_DATA_DIR=./team-knowledge/data
+AMPLIFIER_CONTENT_DIRS=ai_context,./team-knowledge/content</div>
+                            </div>
+
+                            <h4 style="color: var(--primary-color); margin-top: 1.5rem;">Environment Variables Explained</h4>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Variable</th>
+                                            <th>Purpose</th>
+                                            <th>Example</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><code>AMPLIFIER_DATA_DIR</code></td>
+                                            <td>Stores extracted knowledge, memory, and cache</td>
+                                            <td>~/OneDrive/amplifier/data</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>AMPLIFIER_CONTENT_DIRS</code></td>
+                                            <td>Source documents for knowledge extraction</td>
+                                            <td>ai_context,~/docs</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>ANTHROPIC_API_KEY</code></td>
+                                            <td>Your Claude API key (if using API mode)</td>
+                                            <td>sk-ant-api03-...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="warning-box">
+                                <h4>⚠️ Cloud Sync Performance Note</h4>
+                                <p>If using OneDrive/Dropbox, enable "Always keep on this device" for the amplifier folders to avoid I/O delays during knowledge extraction.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Activate Environment -->
+                    <div class="step-detailed">
+                        <div class="step-header">
+                            <div class="step-number-large">4</div>
+                            <div class="step-title">Activate the Environment</div>
+                        </div>
+                        <div class="step-body-detailed">
+                            <p class="step-description">
+                                If the virtual environment isn't already active, activate it manually:
+                            </p>
+
+                            <div class="platform-tabs">
+                                <button class="platform-tab active" onclick="showPlatform('unix')">Linux/Mac/WSL</button>
+                                <button class="platform-tab" onclick="showPlatform('windows')">Windows</button>
+                            </div>
+
+                            <div id="unix-platform" class="platform-content active">
+                                <div class="code-block">
+source .venv/bin/activate</div>
+                            </div>
+
+                            <div id="windows-platform" class="platform-content">
+                                <div class="code-block">
+.venv\Scripts\activate</div>
+                            </div>
+
+                            <div class="success-box">
+                                <h4>✅ Verification</h4>
+                                <p>When activated, you should see <code>(.venv)</code> at the beginning of your command prompt.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 5: First Launch -->
+                    <div class="step-detailed">
+                        <div class="step-header">
+                            <div class="step-number-large">5</div>
+                            <div class="step-title">Launch Amplifier</div>
+                        </div>
+                        <div class="step-body-detailed">
+                            <p class="step-description">
+                                With everything installed, you can now launch Claude with all Amplifier enhancements:
+                            </p>
+                            <div class="code-block">
+claude</div>
+                            <p style="margin-top: 1rem; color: var(--text-secondary);">
+                                That's it! You now have access to:
+                            </p>
+                            <ul style="color: var(--text-secondary); margin-left: 1.5rem; margin-top: 0.5rem;">
+                                <li>20+ specialized agents</li>
+                                <li>Pre-loaded context and patterns</li>
+                                <li>Knowledge extraction system</li>
+                                <li>Modular builder workflows</li>
+                                <li>Enhanced status line</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Configuration -->
+                    <div class="step-detailed">
+                        <div class="step-header">
+                            <div class="step-number-large">⚙️</div>
+                            <div class="step-title">Advanced Configuration</div>
+                        </div>
+                        <div class="step-body-detailed">
+                            <h3 style="color: var(--primary-color); margin-bottom: 1rem;">Enhanced Status Line</h3>
+                            <p class="step-description">
+                                See costs, model, and session info at a glance in your terminal:
+                            </p>
+                            <div class="code-block">
+/statusline use the script at .claude/tools/statusline-example.sh</div>
+                            <p style="margin-top: 1rem; color: var(--text-secondary);">
+                                Example output: <code>~/repos/amplifier (main → origin) Opus 4.1 💰$4.67 ⏱18m</code>
+                            </p>
+
+                            <h3 style="color: var(--primary-color); margin-bottom: 1rem; margin-top: 2rem;">Development Commands</h3>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Command</th>
+                                            <th>Purpose</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><code>make check</code></td>
+                                            <td>Format, lint, and type-check code</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>make test</code></td>
+                                            <td>Run the test suite</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>make knowledge-update</code></td>
+                                            <td>Extract knowledge from documentation</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>make knowledge-query Q="topic"</code></td>
+                                            <td>Query your knowledge base</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>make worktree name</code></td>
+                                            <td>Create parallel development branch</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Using with Your Projects -->
+                    <div class="step-detailed">
+                        <div class="step-header">
+                            <div class="step-number-large">🚀</div>
+                            <div class="step-title">Using with Your Own Projects</div>
+                        </div>
+                        <div class="step-body-detailed">
+                            <p class="step-description">
+                                Want Amplifier's power on your own code? Here's how:
+                            </p>
+
+                            <h4 style="color: var(--primary-color); margin-bottom: 1rem;">Method 1: Add Directory</h4>
+                            <div class="code-block">
+claude --add-dir /path/to/your/project</div>
+
+                            <h4 style="color: var(--primary-color); margin-bottom: 1rem; margin-top: 2rem;">Method 2: Set Context</h4>
+                            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                                After launching Claude, paste this as your first message:
+                            </p>
+                            <div class="code-block">
+I'm working in /path/to/your/project which doesn't have Amplifier files.
+Please cd to that directory and work there.
+Do NOT update any issues or PRs in the Amplifier repo.</div>
+
+                            <h4 style="color: var(--primary-color); margin-bottom: 1rem; margin-top: 2rem;">Example Usage</h4>
+                            <div class="code-block">
+"Use the zen-architect agent to design my application's caching layer"
+"Deploy bug-hunter to find why my login system is failing"
+"Have security-guardian review my API implementation"</div>
+                        </div>
+                    </div>
+
+                    <!-- Troubleshooting -->
+                    <div class="step-detailed">
+                        <div class="step-header">
+                            <div class="step-number-large">🔧</div>
+                            <div class="step-title">Comprehensive Troubleshooting Guide</div>
+                        </div>
+                        <div class="step-body-detailed">
+                            <p class="step-description">
+                                Click on any issue below for detailed solutions:
+                            </p>
+
+                            <!-- Installation Issues -->
+                            <h4 style="color: var(--primary-color); margin: 1.5rem 0 1rem 0;">Installation Issues</h4>
+
+                            <button class="collapsible" onclick="toggleCollapsible(this)">❌ "make: command not found"</button>
+                            <div class="collapsible-content">
+                                <p>The make command is not installed on your system.</p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Ubuntu/Debian/WSL:
+sudo apt update && sudo apt install make
+
+# macOS:
+xcode-select --install
+
+# Fedora/RHEL:
+sudo dnf install make
+
+# Verify installation:
+make --version</div>
+                            </div>
+
+                            <button class="collapsible" onclick="toggleCollapsible(this)">❌ "Python version 3.x is not supported"</button>
+                            <div class="collapsible-content">
+                                <p>Your Python version is too old. You need Python 3.11 or higher.</p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Check current version:
+python3 --version
+
+# Ubuntu/Debian - Add deadsnakes PPA for newer Python:
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt update
+sudo apt install python3.11 python3.11-venv
+
+# macOS - Use Homebrew:
+brew install python@3.11
+brew link python@3.11
+
+# Alternative - Use pyenv (all platforms):
+curl https://pyenv.run | bash
+pyenv install 3.11.7
+pyenv global 3.11.7</div>
+                            </div>
+
+                            <button class="collapsible" onclick="toggleCollapsible(this)">❌ "uv: command not found" after installation</button>
+                            <div class="collapsible-content">
+                                <p>The uv package manager didn't install correctly.</p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Manual uv installation:
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Add to PATH (bash):
+echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# Add to PATH (zsh):
+echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+
+# Verify:
+uv --version</div>
+                            </div>
+
+                            <button class="collapsible" onclick="toggleCollapsible(this)">❌ "Permission denied" errors</button>
+                            <div class="collapsible-content">
+                                <p>File permission issues preventing installation.</p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Fix ownership:
+sudo chown -R $USER:$USER .
+
+# Fix permissions:
+chmod -R u+rwX .
+find . -type f -name "*.sh" -exec chmod +x {} \;
+
+# If in WSL with Windows files:
+# Move to Linux filesystem instead:
+cp -r /mnt/c/path/to/amplifier ~/amplifier
+cd ~/amplifier
+make install</div>
+                            </div>
+
+                            <!-- Runtime Issues -->
+                            <h4 style="color: var(--primary-color); margin: 2rem 0 1rem 0;">Runtime Issues</h4>
+
+                            <button class="collapsible" onclick="toggleCollapsible(this)">❌ "claude: command not found"</button>
+                            <div class="collapsible-content">
+                                <p>The Claude CLI isn't in your PATH or didn't install correctly.</p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Check if Claude is installed:
+which claude
+
+# Reinstall Claude CLI globally:
+npm install -g @anthropic-ai/claude-code
+
+# If npm isn't working, try with node directly:
+npx @anthropic-ai/claude-code
+
+# Add npm global bin to PATH:
+export PATH="$PATH:$(npm config get prefix)/bin"
+echo 'export PATH="$PATH:$(npm config get prefix)/bin"' >> ~/.bashrc</div>
+                            </div>
+
+                            <button class="collapsible" onclick="toggleCollapsible(this)">❌ "No module named 'amplifier'"</button>
+                            <div class="collapsible-content">
+                                <p>The virtual environment isn't activated or packages aren't installed.</p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Activate virtual environment:
+source .venv/bin/activate  # Linux/Mac/WSL
+# or
+.venv\Scripts\activate     # Windows
+
+# Reinstall packages:
+uv pip install -e .
+
+# Or if uv isn't available:
+pip install -e .
+
+# Verify installation:
+python -c "import amplifier; print('Success!')"</div>
+                            </div>
+
+                            <button class="collapsible" onclick="toggleCollapsible(this)">❌ Knowledge extraction hangs or times out</button>
+                            <div class="collapsible-content">
+                                <p>This usually happens when the Claude Code SDK can't connect to the Claude CLI.</p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Check if Claude CLI is accessible:
+which claude
+claude --version
+
+# Reinstall Claude CLI:
+npm uninstall -g @anthropic-ai/claude-code
+npm install -g @anthropic-ai/claude-code
+
+# Run a simple test:
+echo "test" | claude
+
+# If still hanging, run without SDK:
+python -m amplifier.knowledge_synthesis.cli extract --no-sdk</div>
+                            </div>
+
+                            <!-- Platform-Specific Issues -->
+                            <h4 style="color: var(--primary-color); margin: 2rem 0 1rem 0;">Platform-Specific Issues</h4>
+
+                            <button class="collapsible" onclick="toggleCollapsible(this)">🪟 WSL2: Slow file operations</button>
+                            <div class="collapsible-content">
+                                <p>Files in /mnt/c are 10x slower than native Linux filesystem.</p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Move project to WSL filesystem:
+cp -r /mnt/c/path/to/amplifier ~/projects/amplifier
+cd ~/projects/amplifier
+
+# For best performance, avoid:
+# ❌ /mnt/c/Users/...
+# ❌ /mnt/d/...
+
+# Use instead:
+# ✅ ~/projects/...
+# ✅ /home/username/...</div>
+                            </div>
+
+                            <button class="collapsible" onclick="toggleCollapsible(this)">🪟 WSL2: "Command not found" in VS Code terminal</button>
+                            <div class="collapsible-content">
+                                <p>VS Code may be using Windows Python instead of WSL Python.</p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# In VS Code:
+# 1. Open command palette (Ctrl+Shift+P)
+# 2. Type: "Remote-WSL: Reopen in WSL"
+# 3. Select your WSL distribution
+
+# Or from terminal:
+code . # This opens VS Code in WSL context
+
+# Verify you're in WSL:
+uname -a  # Should show Linux, not Windows</div>
+                            </div>
+
+                            <button class="collapsible" onclick="toggleCollapsible(this)">🍎 macOS: "SSL certificate verify failed"</button>
+                            <div class="collapsible-content">
+                                <p>Certificate issues on macOS, especially with corporate networks.</p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Install/update certificates:
+brew install ca-certificates
+brew install certifi
+
+# For Python:
+pip install --upgrade certifi
+
+# If behind corporate proxy:
+export REQUESTS_CA_BUNDLE=/path/to/corporate/cert.pem
+export SSL_CERT_FILE=/path/to/corporate/cert.pem</div>
+                            </div>
+
+                            <!-- Performance Issues -->
+                            <h4 style="color: var(--primary-color); margin: 2rem 0 1rem 0;">Performance Optimization</h4>
+
+                            <button class="collapsible" onclick="toggleCollapsible(this)">🐌 Slow knowledge extraction</button>
+                            <div class="collapsible-content">
+                                <p>Optimize your setup for faster knowledge extraction.</p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Use local storage instead of cloud-synced folders:
+AMPLIFIER_DATA_DIR=~/.amplifier/data  # Not OneDrive/Dropbox
+
+# Process fewer files at once:
+make knowledge-update BATCH_SIZE=5
+
+# Use parallel processing:
+make knowledge-update PARALLEL=true
+
+# For OneDrive users - enable offline mode:
+# Right-click folder → "Always keep on this device"</div>
+                            </div>
+
+                            <div class="success-box" style="margin-top: 2rem;">
+                                <h4>💡 Quick Diagnostic Command</h4>
+                                <p>Run this command to check your entire setup:</p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+# Run comprehensive diagnostic:
+make diagnose
+
+# Or manually check each component:
+python3 --version && \
+node --version && \
+make --version && \
+which uv && \
+which claude && \
+echo "✅ All components installed!"</div>
+                            </div>
+
+                            <div class="warning-box">
+                                <h4>🆘 Still Need Help?</h4>
+                                <p>If you're still experiencing issues:</p>
+                                <ul style="margin: 0.5rem 0 0 1rem;">
+                                    <li>Check <a href="https://github.com/microsoft/amplifier/issues" style="color: var(--primary-color);">GitHub Issues</a> for similar problems</li>
+                                    <li>Review <a href="https://github.com/microsoft/amplifier/blob/main/DISCOVERIES.md" style="color: var(--primary-color);">DISCOVERIES.md</a> for known issues and solutions</li>
+                                    <li>Join our <a href="https://discord.gg/amplifier" style="color: var(--primary-color);">Discord community</a> for real-time help</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Next Steps -->
+                    <div class="next-steps">
+                        <h2 style="color: var(--primary-color); margin-bottom: 1rem;">🎉 You're All Set!</h2>
+                        <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 1.1rem;">
+                            Amplifier is now ready to supercharge your development workflow.
+                        </p>
+                        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                            <a href="agents.html" class="btn btn-primary">Explore Agents</a>
+                            <a href="examples.html" class="btn btn-outline">View Examples</a>
+                            <a href="knowledge.html" class="btn btn-outline">Learn About Knowledge Base</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <h3>Amplifier</h3>
+                    <p>Supercharged AI Development Environment</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Documentation</h4>
+                        <a href="setup.html">Setup Guide</a>
+                        <a href="agents.html">Agent Catalog</a>
+                        <a href="knowledge.html">Knowledge Base</a>
+                        <a href="examples.html">Examples</a>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Resources</h4>
+                        <a href="https://github.com/microsoft/amplifier">GitHub</a>
+                        <a href="../AMPLIFIER_VISION.md">Vision</a>
+                        <a href="../README.md">README</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Microsoft. Licensed under MIT.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+        function showPlatform(platform, button) {
+            // Find the parent container of the button
+            const container = button.closest('.step-body-detailed') || button.closest('.platform-tabs').parentElement;
+
+            // Hide all platform contents in this container
+            container.querySelectorAll('.platform-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Remove active class from all tabs in this container
+            container.querySelectorAll('.platform-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected platform and mark tab as active
+            const targetPlatform = container.querySelector('#' + platform + '-platform');
+            if (targetPlatform) {
+                targetPlatform.classList.add('active');
+            }
+            button.classList.add('active');
+        }
+
+        function toggleCollapsible(button) {
+            button.classList.toggle('active');
+            const content = button.nextElementSibling;
+            content.classList.toggle('show');
+        }
+
+        function copyCode(button) {
+            const codeBlock = button.parentElement;
+            const code = codeBlock.textContent.replace('Copy', '').replace('Copy All', '').trim();
+
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = button.textContent;
+                button.textContent = '✓ Copied!';
+                button.classList.add('copied');
+
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                button.textContent = '❌ Copy failed';
+            });
+        }
+    </script>
+</body>
+</html>
