@@ -30,6 +30,7 @@ Architecture (Codex-inspired):
 
 import json
 import logging
+import re
 import shutil
 import sys
 from collections import defaultdict
@@ -38,11 +39,19 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo  # type: ignore
+
 import click
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
+
+# Default timezone
+TIMEZONE_DEFAULT = "America/Los_Angeles"
 
 
 def write_with_retry(content: str, filepath: Path, max_retries: int = 3, initial_delay: float = 0.5) -> None:
@@ -131,6 +140,8 @@ class SessionParser:
         self.task_calls: list[dict] = []  # All Task tool calls with results
         self.sidechain_agent_map: dict[str, str] = {}  # Map session IDs to agent names
         self.session_file_map: dict[str, Path] = {}  # Map session IDs to source files
+        self.tool_id_to_name: dict[str, str] = {}  # Maps tool IDs to tool names (across all messages)
+        self.tool_id_to_info: dict[str, dict] = {}  # Maps tool IDs to tool info (across all messages)
 
     def parse_all_files(self, session_files: list[Path]) -> None:
         """Parse all JSONL files into a unified message pool."""
@@ -167,55 +178,94 @@ class SessionParser:
                     continue
 
                 # Extract message content and tool info
-                msg_content = data.get("message", {})
+                # System messages have content directly, not in a 'message' field
+                if data.get("type") == "system":
+                    content = data.get("content", "")
+                    msg_content = content
+                else:
+                    msg_content = data.get("message", {})
+
                 tool_name = None
                 tool_arguments = None
                 tool_result = None
                 sidechain_agent = None
-                task_info = None  # Track current Task call
 
                 if isinstance(msg_content, dict):
+                    # Handle both message formats:
+                    # 1. Assistant messages: {"id": "...", "content": [...]}
+                    # 2. User messages with tool results: {"role": "user", "content": [...]}
                     content = msg_content.get("content", "")
-                    # Extract tool information from structured content
+
+                    # First pass: collect all tool_use items and build ID mapping
                     if isinstance(content, list):
                         for item in content:
-                            if isinstance(item, dict):
-                                if item.get("type") == "tool_use":
-                                    tool_name = item.get("name")
-                                    tool_arguments = item.get("input", {})
-                                    # Track Task tool invocations
-                                    if tool_name == "Task":
-                                        task_info = {
+                            if isinstance(item, dict) and item.get("type") == "tool_use":
+                                tool_id = item.get("id")
+                                tool_name_item = item.get("name")
+                                if tool_id and tool_name_item:
+                                    self.tool_id_to_name[tool_id] = tool_name_item
+                                    self.tool_id_to_info[tool_id] = {
+                                        "name": tool_name_item,
+                                        "arguments": item.get("input", {}),
+                                    }
+
+                                    # Handle Task tool specifically
+                                    if tool_name_item == "Task":
+                                        tool_args = item.get("input", {})
+                                        task_info_item = {
                                             "timestamp": data.get("timestamp", ""),
                                             "session_id": data.get("sessionId", ""),
-                                            "subagent_type": tool_arguments.get("subagent_type", "unknown"),
-                                            "prompt": tool_arguments.get("prompt", "")[:100]
-                                            if tool_arguments.get("prompt")
+                                            "subagent_type": tool_args.get("subagent_type", "unknown"),
+                                            "prompt": tool_args.get("prompt", "")[:100]
+                                            if tool_args.get("prompt")
                                             else "",
                                             "uuid": data["uuid"],
                                             "source_file": session_file.name,
                                             "spawned_session_id": None,  # Will be filled from result
                                         }
-                                        self.task_calls.append(task_info)  # Add immediately
-                                        # Map for sidechain labeling
-                                        if "subagent_type" in tool_arguments:
-                                            sidechain_agent = tool_arguments["subagent_type"]
-                                elif item.get("type") == "tool_result":
-                                    tool_result = item.get("content")
-                                    # Debug: log structure of tool results
-                                    if tool_name == "Task" and line_num <= 10:  # Log first few
-                                        logger.debug(
-                                            f"DEBUG: Task tool_result structure: type={type(tool_result)}, len={len(str(tool_result)) if tool_result else 0}"
-                                        )
-                                    # If this is a Task result, extract the spawned session ID
-                                    if task_info and isinstance(tool_result, str):
-                                        # Look for session ID pattern in the result
-                                        import re
+                                        self.tool_id_to_info[tool_id]["task_info"] = task_info_item
+                                        self.task_calls.append(task_info_item)
 
-                                        session_pattern = r"session[_\s]?id[:\s]+([a-f0-9\-]+)"
-                                        match = re.search(session_pattern, tool_result, re.IGNORECASE)
-                                        if match:
-                                            task_info["spawned_session_id"] = match.group(1)
+                        # Second pass: process content and correlate tool results
+                        for item in content:
+                            if isinstance(item, dict):
+                                if item.get("type") == "tool_use":
+                                    # Set tool_name for this specific tool use
+                                    tool_name = item.get("name")
+                                    tool_arguments = item.get("input", {})
+                                    # Track Task tool invocations and map for sidechain labeling
+                                    if tool_name == "Task" and "subagent_type" in tool_arguments:
+                                        sidechain_agent = tool_arguments["subagent_type"]
+                                elif item.get("type") == "tool_result":
+                                    # Correlate tool result to tool name via ID
+                                    tool_use_id = item.get("tool_use_id")
+                                    if tool_use_id and tool_use_id in self.tool_id_to_name:
+                                        # Found the correct tool name via ID correlation
+                                        result_tool_name = self.tool_id_to_name[tool_use_id]
+                                        tool_result = item.get("content")
+
+                                        # Debug: log structure of tool results
+                                        if result_tool_name == "Task" and line_num <= 10:  # Log first few
+                                            logger.debug(
+                                                f"DEBUG: Task tool_result structure: type={type(tool_result)}, len={len(str(tool_result)) if tool_result else 0}"
+                                            )
+                                        # If this is a Task result, extract the spawned session ID
+                                        if result_tool_name == "Task" and tool_use_id in self.tool_id_to_info:
+                                            task_info_for_result = self.tool_id_to_info[tool_use_id].get("task_info")
+                                            if task_info_for_result and isinstance(tool_result, str):
+                                                # Look for session ID pattern in the result
+                                                session_pattern = r"session[_\s]?id[:\s]+([a-f0-9\-]+)"
+                                                match = re.search(session_pattern, tool_result, re.IGNORECASE)
+                                                if match:
+                                                    task_info_for_result["spawned_session_id"] = match.group(1)
+
+                                        # Set the tool_name to the correctly correlated name for the result
+                                        # This ensures the Message object gets the right tool_name for results
+                                        if not tool_name:  # Only set if we haven't set a tool_name yet
+                                            tool_name = result_tool_name
+                                    else:
+                                        # No ID correlation found, keep tool_result but no tool_name
+                                        tool_result = item.get("content")
                 elif isinstance(msg_content, str):
                     content = msg_content
                 else:
@@ -805,11 +855,13 @@ class TranscriptGenerator:
             if first_msg_timestamp:
                 break
 
-        # Parse timestamp for directory name
+        # Parse timestamp for directory name with timezone conversion
         if first_msg_timestamp:
             try:
                 dt = datetime.fromisoformat(first_msg_timestamp.replace("Z", "+00:00"))
-                timestamp_str = dt.strftime("%Y-%m-%d-%I-%M-%p").lower()
+                tz = ZoneInfo(TIMEZONE_DEFAULT)
+                local_dt = dt.astimezone(tz)
+                timestamp_str = local_dt.strftime("%Y-%m-%d-%I-%M-%p").lower()
             except Exception:
                 timestamp_str = "unknown-time"
         else:
@@ -932,11 +984,13 @@ class TranscriptGenerator:
             else:
                 lines.append(f"## 🧠 {agent_name.upper()}")
 
-            # Add timestamp
+            # Add timestamp in codex format
             if msg.timestamp:
                 try:
                     dt = datetime.fromisoformat(msg.timestamp.replace("Z", "+00:00"))
-                    lines.append(f"*{dt.strftime('%Y-%m-%d %H:%M:%S')}*\n")
+                    tz = ZoneInfo(TIMEZONE_DEFAULT)
+                    local_dt = dt.astimezone(tz)
+                    lines.append(f"*{local_dt.strftime('%Y-%m-%d %I:%M %p %Z')}*\n")
                 except Exception:
                     pass
 
@@ -1026,8 +1080,8 @@ class TranscriptGenerator:
 
         # Add messages (skip sidechains in simplified main transcript)
         for msg in path.messages:
-            # Skip deleted messages and sidechains in simplified view
-            if msg.is_deleted:
+            # Skip deleted messages, meta messages, and sidechains in simplified view
+            if msg.is_deleted or msg.is_meta:
                 continue
             if simplified and msg.is_sidechain:
                 # Add a marker for sidechain in simplified view
@@ -1052,26 +1106,41 @@ class TranscriptGenerator:
                 lines.append("")
                 continue
 
-            # Format message header
-            role_emoji, role_label = self._get_role_info(msg)
+            # Format message with codex-style headers
+            role_label = self._get_codex_role_label(msg)
 
-            if msg.tool_name and not simplified:
-                lines.append(f"\n## {role_emoji} {role_label} [🔧 {msg.tool_name}]")
-            else:
-                lines.append(f"\n## {role_emoji} {role_label}")
-
-            # Add timestamp if available
+            # Add timestamp in codex format
             if msg.timestamp:
                 try:
                     dt = datetime.fromisoformat(msg.timestamp.replace("Z", "+00:00"))
-                    lines.append(f"*{dt.strftime('%Y-%m-%d %H:%M:%S')}*\n")
+                    tz = ZoneInfo(TIMEZONE_DEFAULT)
+                    local_dt = dt.astimezone(tz)
+                    time_str = local_dt.strftime("%Y-%m-%d %I:%M %p %Z")
                 except Exception:
-                    lines.append(f"*{msg.timestamp}*\n")
+                    time_str = msg.timestamp
+            else:
+                time_str = "unknown time"
 
-            # Format content
+            # Format header in codex style
+            # Always use role_label which handles tool results correctly
+            if msg.tool_name and msg.tool_result is None:
+                # Special case for tool calls (not results)
+                lines.append(f"\n- **Tool Call** · {time_str}")
+            else:
+                # Use role_label for everything else (includes tool results with names)
+                lines.append(f"\n- **{role_label}** · {time_str}")
+
+            # Format content with indentation (codex style)
             content_str = self._format_content(msg, simplified)
-            lines.append(content_str)
-            lines.append("\n---")
+            # Indent content lines
+            indented_lines = []
+            for line in content_str.split("\n"):
+                if line:  # Only indent non-empty lines
+                    indented_lines.append(f"  {line}")
+                else:
+                    indented_lines.append("")  # Keep empty lines
+            lines.append("\n".join(indented_lines))
+            lines.append("")  # Empty line after content
 
         return "\n".join(lines)
 
@@ -1086,6 +1155,44 @@ class TranscriptGenerator:
         if msg.msg_type == "system":
             return "⚙️", "SYSTEM"
         return "🤖", "ASSISTANT"
+
+    def _get_codex_role_label(self, msg: Message) -> str:
+        """Get codex-style role label for a message with correct attribution."""
+        # System-generated messages
+        if msg.subtype == "compact_boundary" or msg.compact_metadata:
+            return "System [Compact]"
+
+        if msg.is_meta:
+            return "System [Metadata]"
+
+        if msg.is_error:
+            return "System [Error]"
+
+        if msg.tool_result is not None:
+            tool_name = msg.tool_name or "unknown"
+            return f"Tool Result [{tool_name}]"
+
+        # Sidechain messages
+        if msg.is_sidechain:
+            if msg.msg_type == "user":
+                return "Claude [as user]"
+            agent_name = msg.sidechain_agent if msg.sidechain_agent else "sub-agent"
+            return f"Agent [{agent_name}]"
+
+        # Regular messages
+        if msg.msg_type == "user":
+            # Verify this is actually from a human user
+            if msg.user_type == "external":
+                return "User [external]"
+            return "User"
+
+        if msg.msg_type == "assistant":
+            return "Assistant"
+
+        if msg.msg_type == "system":
+            return "System"
+
+        return "Assistant"
 
     def _format_content(self, msg: Message, simplified: bool = False) -> str:
         """Format message content based on type and simplification level."""
@@ -1106,22 +1213,70 @@ class TranscriptGenerator:
                         tool_input = item.get("input", {})
 
                         if simplified:
-                            # Simplified tool display
-                            lines.append(f"\n🔧 **Tool: {tool_name}**")
-                            if tool_name in ["Write", "Edit", "MultiEdit"]:
+                            # Simplified tool display with user-friendly formatting
+                            if tool_name == "Write":
                                 if "file_path" in tool_input:
-                                    lines.append(f"File: `{tool_input['file_path']}`")
+                                    lines.append(f"\n📝 **Writing file**: `{tool_input['file_path']}`")
+                                else:
+                                    lines.append("\n📝 **Tool: Write**")
+                            elif tool_name == "Edit" or tool_name == "MultiEdit":
+                                if "file_path" in tool_input:
+                                    lines.append(f"\n✏️ **Editing file**: `{tool_input['file_path']}`")
+                                else:
+                                    lines.append(f"\n✏️ **Tool: {tool_name}**")
                             elif tool_name == "Read":
                                 if "file_path" in tool_input:
-                                    lines.append(f"Reading: `{tool_input['file_path']}`")
+                                    fp = tool_input["file_path"]
+                                    limit = tool_input.get("limit")
+                                    offset = tool_input.get("offset")
+                                    if limit or offset:
+                                        range_str = []
+                                        if offset:
+                                            range_str.append(f"from line {offset}")
+                                        if limit:
+                                            range_str.append(f"{limit} lines")
+                                        lines.append(f"\n📖 **Reading**: `{fp}` ({', '.join(range_str)})")
+                                    else:
+                                        lines.append(f"\n📖 **Reading file**: `{fp}`")
+                                else:
+                                    lines.append("\n📖 **Tool: Read**")
                             elif tool_name == "Bash":
+                                lines.append("\n💻 **Running command**")
                                 if "command" in tool_input:
                                     cmd = tool_input["command"]
-                                    if len(cmd) > 100:
-                                        cmd = cmd[:100] + "..."
-                                    lines.append(f"```\n{cmd}\n```")
-                            elif tool_name == "Task" and "agent" in tool_input:
-                                lines.append(f"Calling agent: {tool_input['agent']}")
+                                    desc = tool_input.get("description", "")
+                                    if desc:
+                                        lines.append(f"  {desc}")
+                                    if len(cmd) > 80 or "\n" in cmd:
+                                        if len(cmd) > 100:
+                                            cmd = cmd[:100] + "..."
+                                        lines.append(f"```bash\n{cmd}\n```")
+                                    else:
+                                        lines.append(f"  `$ {cmd}`")
+                            elif tool_name == "Task":
+                                agent = tool_input.get("subagent_type", tool_input.get("agent", "unknown"))
+                                desc = tool_input.get("description", "")
+                                if desc:
+                                    lines.append(f"\n🤖 **Delegating to {agent}**: {desc}")
+                                else:
+                                    lines.append(f"\n🤖 **Calling agent**: {agent}")
+                            elif tool_name == "Grep":
+                                pattern = tool_input.get("pattern", "")
+                                path = tool_input.get("path", ".")
+                                lines.append(f"\n🔍 **Searching for**: `{pattern}` in `{path}`")
+                            elif tool_name == "TodoWrite":
+                                todos = tool_input.get("todos", [])
+                                lines.append(f"\n📋 **Updating todo list** ({len(todos)} items)")
+                            elif tool_name == "WebFetch" or tool_name == "WebSearch":
+                                if tool_name == "WebFetch":
+                                    url = tool_input.get("url", "")
+                                    lines.append(f"\n🌐 **Fetching**: {url}")
+                                else:
+                                    query = tool_input.get("query", "")
+                                    lines.append(f"\n🔎 **Web search**: {query}")
+                            else:
+                                # Generic tool with emoji
+                                lines.append(f"\n🔧 **Tool: {tool_name}**")
                         else:
                             # Full tool display
                             lines.append(f"\n### 🔧 TOOL: {tool_name}")
@@ -1139,20 +1294,24 @@ class TranscriptGenerator:
                             lines.append(f"```\n{result}\n```")
 
                     elif item_type == "thinking":
-                        thinking = item.get("text", "")
-                        if not simplified:
+                        # Extract thinking content from 'thinking' field, not 'text'
+                        thinking_content = item.get("thinking", "")
+                        if thinking_content:  # Only add if there's content
+                            # Show full thinking content in both modes (user requested this)
                             lines.append("\n💭 **Thinking:**")
-                            for think_line in thinking.split("\n"):
+                            for think_line in thinking_content.split("\n"):
                                 lines.append("> " + think_line)
-                        # Skip thinking in simplified mode
 
                     else:
                         lines.append(str(item))
                 else:
                     lines.append(str(item))
         else:
-            # Simple text content
-            lines.append(str(content))
+            # Simple text content - clean ANSI codes for system messages
+            content_str = str(content)
+            # Remove ANSI escape sequences
+            content_str = re.sub(r"\x1b\[[0-9;]*m", "", content_str)
+            lines.append(content_str)
 
         return "\n".join(lines)
 
