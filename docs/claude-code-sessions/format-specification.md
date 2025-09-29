@@ -2,7 +2,7 @@
 
 ## Overview
 
-Claude Code session logs use JSONL (JSON Lines) format where each line contains a complete JSON object representing a single message or event in the conversation.
+Claude Code session logs use JSONL (JSON Lines) format. Each line contains one JSON object representing a message or event.
 
 ## File Structure
 
@@ -212,7 +212,7 @@ msg-001 (user: "Analyze my project")
 
 ### Orphaned Messages
 
-Messages with non-existent `parentUuid` values are common and expected:
+Messages with non-existent `parentUuid` values:
 
 ```json
 {
@@ -225,17 +225,11 @@ Messages with non-existent `parentUuid` values are common and expected:
 }
 ```
 
-**Production Statistics**:
-- 15-20% of messages in compacted sessions are orphaned
-- Sessions average 8+ compact operations
-- Orphans cluster at compact boundaries
-- Most orphans maintain `logicalParentUuid` for continuity tracking
-
-**Important**: Orphaned messages should be treated as conversation roots, not errors. They commonly occur:
-- After compact operations (preserved messages lose their parent references)
-- When referencing messages from previous sessions
-- During session restoration after crashes
-- At the beginning of resumed conversations
+Orphaned messages are conversation roots. They occur:
+- After compact operations
+- When referencing previous sessions
+- During session restoration
+- At conversation resumption
 
 ### Logical Parent UUID Pattern
 
@@ -320,9 +314,9 @@ The task prompt in parent assistant message matches first sidechain message:
 ]
 ```
 
-### Compact Mode Boundaries
+### Compact Boundaries
 
-Compact operations create special boundaries:
+Compact operations create boundaries:
 
 ```json
 [
@@ -332,12 +326,12 @@ Compact operations create special boundaries:
 ]
 ```
 
-**Compact Operation Flow**:
-1. `conversation_compacting` - Marks the start of compact operation
-2. Messages become orphaned as their parents are removed
-3. `conversation_compacted` - Marks successful completion
-4. Preserved messages may include `logicalParentUuid` for continuity
-5. `conversation_restored` - Marks return to normal mode
+**Flow**:
+1. `conversation_compacting` - Start of compact
+2. Messages orphaned as parents removed
+3. `conversation_compacted` - Completion
+4. `logicalParentUuid` preserves continuity
+5. `conversation_restored` - Normal mode resumed
 
 ### Aborted Operations
 
@@ -410,31 +404,18 @@ Soft deletion preserves message structure while marking content as removed:
 
 ## Validation Rules
 
-1. Every message must have `type`, `uuid`, `timestamp`, `sessionId`
-2. `parentUuid` may reference non-existent messages (orphans are valid)
-3. `logicalParentUuid` preserves original parent across compacts
-4. `isSidechain` only appears on sidechain messages
-5. `userType: "external"` implies sidechain context (Claude as user)
-6. Timestamps must be chronologically ordered within chains
-7. Tool use messages must have `toolName` when `subtype: "tool_use"`
-8. `toolArguments` must be valid JSON object when present
-9. Orphaned messages (15-20% typical) should be treated as roots
-10. Multiple compact operations per session are normal (8+ average)
+1. Required fields: `type`, `uuid`, `timestamp`, `sessionId`
+2. `parentUuid` may reference non-existent messages
+3. `logicalParentUuid` preserves parent across compacts
+4. `isSidechain` only on sidechain messages
+5. `userType: "external"` indicates sidechain context
+6. Timestamps chronologically ordered within chains
+7. Tool use messages require `toolName` when `subtype: "tool_use"`
+8. `toolArguments` must be valid JSON object
+9. Orphaned messages are roots
+10. Multiple compact operations per session
 
-## Production-Validated Patterns
-
-### Typical Session Characteristics
-
-Based on production data analysis:
-
-- **Message volume**: Sessions range from hundreds to thousands of messages
-- **Compact frequency**: Average 8+ compacts per long session
-- **Orphan rate**: 15-20% of messages post-compact
-- **Sidechain depth**: Often 3-6 exchanges per delegation
-- **Tool usage**: Heavy use of Read, Edit, Bash, Task tools
-- **Parent chain depth**: Can exceed 100+ messages in active sessions
-
-### Message Flow Examples
+## Message Flow Examples
 
 #### Standard Development Flow
 ```json
@@ -480,9 +461,9 @@ Based on production data analysis:
 ]
 ```
 
-## Future Compatibility
+## Compatibility
 
 - New fields may be added
 - Existing field semantics preserved
-- Parsers should handle unknown fields gracefully
-- The `logicalParentUuid` pattern enables future DAG reconstruction
+- Parsers must handle unknown fields
+- `logicalParentUuid` enables DAG reconstruction

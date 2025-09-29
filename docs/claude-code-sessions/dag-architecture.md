@@ -1,65 +1,58 @@
-# Claude Code Message DAG Architecture
+# Message DAG Architecture Specification
 
-## Overview
+## Structure Definition
 
-Claude Code messages form a Directed Acyclic Graph (DAG) structure that captures the complete conversation flow, including linear progressions, branches from edits, and parallel sidechains. Understanding this architecture is essential for properly parsing and reconstructing conversations.
+Claude Code messages form a Directed Acyclic Graph (DAG) with the following properties:
 
-## DAG Fundamentals
-
-### Core Structure
-
-Every message contains:
-- `uuid`: Unique identifier
+### Core Components
+- `uuid`: Unique message identifier
 - `parentUuid`: Reference to parent message (optional)
-- `timestamp`: Creation time
-- `sessionId`: Session grouping
+- `timestamp`: Message creation time
+- `sessionId`: Session grouping identifier
 
-The parent-child relationships create a directed graph where:
-- Messages flow from parent to child
-- No cycles exist (acyclic property)
-- Multiple roots are possible
-- Branches represent alternative paths
+### Graph Properties
+- Directed edges flow from parent to child
+- No cycles exist (acyclic constraint)
+- Multiple roots permitted
+- Branches represent conversation alternatives
 
-### Visual Representation
+### Visual Structure
 
 ```
-Root Message (uuid: msg-001, parentUuid: null)
-├── Assistant Response (uuid: msg-002, parentUuid: msg-001)
-│   ├── User Continue (uuid: msg-003, parentUuid: msg-002) [ACTIVE]
-│   │   └── Assistant Reply (uuid: msg-004, parentUuid: msg-003)
-│   └── User Edit (uuid: msg-005, parentUuid: msg-002) [ABANDONED]
-│       └── Assistant Alt Reply (uuid: msg-006, parentUuid: msg-005)
-└── User Retry (uuid: msg-007, parentUuid: msg-001) [ABANDONED]
+Root (uuid: msg-001, parentUuid: null)
+├── Response (uuid: msg-002, parentUuid: msg-001)
+│   ├── Continue (uuid: msg-003, parentUuid: msg-002) [ACTIVE]
+│   │   └── Reply (uuid: msg-004, parentUuid: msg-003)
+│   └── Edit (uuid: msg-005, parentUuid: msg-002) [ABANDONED]
+│       └── Alt Reply (uuid: msg-006, parentUuid: msg-005)
+└── Retry (uuid: msg-007, parentUuid: msg-001) [ABANDONED]
 ```
 
-## Key Patterns
+## DAG Patterns
 
-### 1. Linear Conversation
+### Linear Conversation Pattern
 
-The simplest pattern - sequential message flow:
+Sequential message flow without branches:
 
 ```python
-def is_linear_conversation(messages):
-    """Check if conversation has no branches"""
+def is_linear(messages):
+    """Determine if conversation has no branches"""
     parent_counts = {}
     for msg in messages:
         parent = msg.get('parentUuid')
         if parent:
             parent_counts[parent] = parent_counts.get(parent, 0) + 1
-
-    # Linear if no parent has multiple children
     return all(count == 1 for count in parent_counts.values())
 ```
 
-### 2. Branching from Edits
+### Branch Point Identification
 
-"Redo from here" creates branches:
+Messages with multiple children create branches:
 
 ```python
-def identify_branch_points(messages):
-    """Find messages where conversation branches"""
+def identify_branches(messages):
+    """Find branch points in conversation"""
     children_map = {}
-
     for msg in messages:
         parent = msg.get('parentUuid')
         if parent:
@@ -73,44 +66,38 @@ def identify_branch_points(messages):
             branch_points.append({
                 'parent': parent,
                 'branches': children,
-                'branch_count': len(children)
+                'count': len(children)
             })
-
     return branch_points
 ```
 
-### 3. Orphaned Messages as Roots
+### Root Message Identification
 
-Messages with non-existent parents become roots:
+Messages without parents or with non-existent parents are roots:
 
 ```python
-def find_all_roots(messages):
-    """Find all root messages including orphans"""
+def find_roots(messages):
+    """Identify all root messages including orphans"""
     messages_by_uuid = {msg['uuid']: msg for msg in messages}
     roots = []
 
     for msg in messages:
         parent_uuid = msg.get('parentUuid')
-
         if not parent_uuid:
-            # Explicit root (no parent specified)
             roots.append({'uuid': msg['uuid'], 'type': 'explicit'})
-
         elif parent_uuid not in messages_by_uuid:
-            # Orphaned root (parent doesn't exist)
-            roots.append({'uuid': msg['uuid'], 'type': 'orphan', 'missing_parent': parent_uuid})
+            roots.append({'uuid': msg['uuid'], 'type': 'orphan'})
 
     return roots
 ```
 
-### 4. Active vs Abandoned Branches
+### Active Branch Determination
 
-File position determines the active branch:
+File position determines active vs abandoned branches:
 
 ```python
-def determine_active_paths(messages):
-    """Determine active vs abandoned branches"""
-    # Build parent-child map with file positions
+def determine_active(messages):
+    """Identify active branches by file position"""
     children_by_parent = {}
     message_positions = {msg['uuid']: i for i, msg in enumerate(messages)}
 
@@ -121,23 +108,19 @@ def determine_active_paths(messages):
                 children_by_parent[parent] = []
             children_by_parent[parent].append(msg['uuid'])
 
-    # For each branch point, last child is active
     branch_status = {}
     for parent, children in children_by_parent.items():
         if len(children) > 1:
-            # Sort by file position
             children.sort(key=lambda x: message_positions[x])
-
             for i, child in enumerate(children):
-                is_active = (i == len(children) - 1)
-                branch_status[child] = 'active' if is_active else 'abandoned'
+                branch_status[child] = 'active' if i == len(children) - 1 else 'abandoned'
 
     return branch_status
 ```
 
 ## DAG Construction
 
-### Complete DAG Builder
+### Complete DAG Implementation
 
 ```python
 class MessageDAG:
@@ -146,84 +129,69 @@ class MessageDAG:
         self.children_by_parent = {}
         self.roots = []
         self.orphans = []
-        self.build_dag(messages)
+        self.build(messages)
 
-    def build_dag(self, messages):
-        """Build complete DAG structure"""
+    def build(self, messages):
+        """Construct DAG structure"""
         for msg in messages:
             uuid = msg['uuid']
             parent_uuid = msg.get('parentUuid')
 
             if not parent_uuid:
-                # Explicit root
                 self.roots.append(uuid)
             elif parent_uuid not in self.messages_by_uuid:
-                # Orphaned message - treat as root
                 self.orphans.append(uuid)
                 self.roots.append(uuid)
             else:
-                # Normal parent-child relationship
                 if parent_uuid not in self.children_by_parent:
                     self.children_by_parent[parent_uuid] = []
                 self.children_by_parent[parent_uuid].append(uuid)
 
     def get_children(self, uuid):
-        """Get immediate children of a message"""
+        """Get immediate children"""
         return self.children_by_parent.get(uuid, [])
 
     def get_descendants(self, uuid):
-        """Get all descendants of a message"""
+        """Get all descendants"""
         descendants = []
-        to_visit = [uuid]
-
-        while to_visit:
-            current = to_visit.pop(0)
+        queue = [uuid]
+        while queue:
+            current = queue.pop(0)
             children = self.get_children(current)
             descendants.extend(children)
-            to_visit.extend(children)
-
+            queue.extend(children)
         return descendants
 
     def get_ancestors(self, uuid):
-        """Get all ancestors of a message"""
+        """Get all ancestors"""
         ancestors = []
         current = uuid
-
         while current:
             msg = self.messages_by_uuid.get(current)
             if not msg:
                 break
-
             parent = msg.get('parentUuid')
             if parent and parent in self.messages_by_uuid:
                 ancestors.append(parent)
                 current = parent
             else:
                 break
-
         return list(reversed(ancestors))
-
-    def get_path_to_root(self, uuid):
-        """Get complete path from root to message"""
-        path = self.get_ancestors(uuid)
-        path.append(uuid)
-        return path
 ```
 
-## Traversal Strategies
+## Traversal Methods
 
-### 1. Depth-First Traversal
+### Depth-First Traversal
 
 ```python
-def depth_first_traverse(dag, start_uuid=None):
-    """Traverse DAG depth-first from start or all roots"""
+def depth_first(dag, start_uuid=None):
+    """DFS traversal from start or all roots"""
     visited = set()
     traversal = []
 
     def dfs(uuid, depth=0):
         if uuid in visited:
             return
-
         visited.add(uuid)
         msg = dag.messages_by_uuid.get(uuid)
         if msg:
@@ -232,7 +200,6 @@ def depth_first_traverse(dag, start_uuid=None):
                 'depth': depth,
                 'message': msg
             })
-
         for child in dag.get_children(uuid):
             dfs(child, depth + 1)
 
@@ -245,21 +212,19 @@ def depth_first_traverse(dag, start_uuid=None):
     return traversal
 ```
 
-### 2. Breadth-First Traversal
+### Breadth-First Traversal
 
 ```python
-def breadth_first_traverse(dag):
-    """Traverse DAG breadth-first from all roots"""
+def breadth_first(dag):
+    """BFS traversal from all roots"""
     visited = set()
     traversal = []
     queue = [(root, 0) for root in dag.roots]
 
     while queue:
         uuid, depth = queue.pop(0)
-
         if uuid in visited:
             continue
-
         visited.add(uuid)
         msg = dag.messages_by_uuid.get(uuid)
         if msg:
@@ -268,7 +233,6 @@ def breadth_first_traverse(dag):
                 'depth': depth,
                 'message': msg
             })
-
         for child in dag.get_children(uuid):
             if child not in visited:
                 queue.append((child, depth + 1))
@@ -276,18 +240,17 @@ def breadth_first_traverse(dag):
     return traversal
 ```
 
-### 3. Active Path Traversal
+### Active Path Traversal
 
 ```python
-def traverse_active_path(dag, branch_status):
-    """Traverse only the active conversation path"""
+def traverse_active(dag, branch_status):
+    """Follow only active conversation paths"""
     visited = set()
     active_path = []
 
-    def follow_active(uuid, depth=0):
+    def follow(uuid, depth=0):
         if uuid in visited:
             return
-
         visited.add(uuid)
         msg = dag.messages_by_uuid.get(uuid)
         if msg:
@@ -299,48 +262,40 @@ def traverse_active_path(dag, branch_status):
 
         children = dag.get_children(uuid)
         if children:
-            # Choose active child or last child
             active_child = None
             for child in children:
                 if branch_status.get(child) == 'active':
                     active_child = child
                     break
-
             if not active_child:
-                # Default to last child if no explicit active
                 active_child = children[-1]
-
-            follow_active(active_child, depth + 1)
+            follow(active_child, depth + 1)
 
     for root in dag.roots:
-        follow_active(root)
+        follow(root)
 
     return active_path
 ```
 
 ## Cycle Detection
 
-### Defensive Programming
+### Implementation
 
 ```python
 def detect_cycles(messages):
-    """Detect cycles in message DAG (should never happen)"""
+    """Detect cycles in DAG (should not exist)"""
     graph = {}
 
-    # Build adjacency list
     for msg in messages:
         uuid = msg['uuid']
         parent = msg.get('parentUuid')
-
         if uuid not in graph:
             graph[uuid] = []
-
         if parent:
             if parent not in graph:
                 graph[parent] = []
             graph[parent].append(uuid)
 
-    # DFS cycle detection
     WHITE, GRAY, BLACK = 0, 1, 2
     color = {node: WHITE for node in graph}
     cycles = []
@@ -351,7 +306,6 @@ def detect_cycles(messages):
 
         for neighbor in graph.get(node, []):
             if color[neighbor] == GRAY:
-                # Found cycle
                 cycle_start = path.index(neighbor)
                 cycle = path[cycle_start:]
                 cycles.append(cycle)
@@ -369,11 +323,11 @@ def detect_cycles(messages):
 
 ## Path Extraction
 
-### All Paths from Root to Leaves
+### All Paths Extraction
 
 ```python
-def extract_all_paths(dag):
-    """Extract all complete paths from roots to leaves"""
+def extract_paths(dag):
+    """Extract all paths from roots to leaves"""
     paths = []
 
     def find_paths(uuid, current_path):
@@ -381,10 +335,8 @@ def extract_all_paths(dag):
         children = dag.get_children(uuid)
 
         if not children:
-            # Leaf node - complete path
             paths.append(current_path)
         else:
-            # Continue to children
             for child in children:
                 find_paths(child, current_path)
 
@@ -394,18 +346,15 @@ def extract_all_paths(dag):
     return paths
 ```
 
-### Longest Path
+### Longest Path Identification
 
 ```python
-def find_longest_path(dag):
-    """Find the longest path in the DAG"""
-    all_paths = extract_all_paths(dag)
-
+def find_longest(dag):
+    """Find longest path in DAG"""
+    all_paths = extract_paths(dag)
     if not all_paths:
         return []
-
-    longest = max(all_paths, key=len)
-    return longest
+    return max(all_paths, key=len)
 ```
 
 ## Sidechain Integration
@@ -419,66 +368,56 @@ class SidechainDAG(MessageDAG):
         self.sidechains = self.identify_sidechains()
 
     def identify_sidechains(self):
-        """Identify sidechain boundaries in DAG"""
+        """Identify sidechain boundaries"""
         sidechains = []
-        current_sidechain = None
+        current = None
 
         for msg in self.messages_by_uuid.values():
             is_sidechain = msg.get('isSidechain', False)
 
             if is_sidechain:
-                if not current_sidechain:
-                    # Start new sidechain
-                    current_sidechain = {
+                if not current:
+                    current = {
                         'start': msg['uuid'],
                         'messages': [msg['uuid']]
                     }
                 else:
-                    # Continue sidechain
-                    current_sidechain['messages'].append(msg['uuid'])
+                    current['messages'].append(msg['uuid'])
             else:
-                if current_sidechain:
-                    # End sidechain
-                    current_sidechain['end'] = current_sidechain['messages'][-1]
-                    sidechains.append(current_sidechain)
-                    current_sidechain = None
+                if current:
+                    current['end'] = current['messages'][-1]
+                    sidechains.append(current)
+                    current = None
 
         return sidechains
 
     def get_main_thread(self):
-        """Extract main conversation excluding sidechains"""
+        """Extract main conversation thread"""
         main_thread = []
-
-        for uuid in self.traverse_all():
-            msg = self.messages_by_uuid[uuid]
+        for uuid, msg in self.messages_by_uuid.items():
             if not msg.get('isSidechain', False):
                 main_thread.append(uuid)
-
         return main_thread
 ```
 
-## Visualization
+## Visualization Formats
 
-### DAG to Graphviz
+### Graphviz DOT Format
 
 ```python
-def dag_to_graphviz(dag):
+def to_graphviz(dag):
     """Convert DAG to Graphviz DOT format"""
-    lines = ['digraph conversation {']
-    lines.append('  rankdir=TB;')
+    lines = ['digraph conversation {', '  rankdir=TB;']
 
-    # Add nodes
     for uuid, msg in dag.messages_by_uuid.items():
-        label = msg.get('type', 'unknown')
+        msg_type = msg.get('type', 'unknown')
         color = {
             'user': 'lightblue',
             'assistant': 'lightgreen',
             'system': 'lightgray'
-        }.get(label, 'white')
+        }.get(msg_type, 'white')
+        lines.append(f'  "{uuid}" [label="{msg_type}", fillcolor={color}, style=filled];')
 
-        lines.append(f'  "{uuid}" [label="{label}", fillcolor={color}, style=filled];')
-
-    # Add edges
     for parent, children in dag.children_by_parent.items():
         for child in children:
             lines.append(f'  "{parent}" -> "{child}";')
@@ -487,16 +426,15 @@ def dag_to_graphviz(dag):
     return '\n'.join(lines)
 ```
 
-### ASCII Tree
+### ASCII Tree Format
 
 ```python
-def print_dag_tree(dag, uuid=None, prefix="", is_last=True):
+def print_tree(dag, uuid=None, prefix="", is_last=True):
     """Print DAG as ASCII tree"""
     if uuid is None:
-        # Start from roots
         for i, root in enumerate(dag.roots):
             is_last = (i == len(dag.roots) - 1)
-            print_dag_tree(dag, root, "", is_last)
+            print_tree(dag, root, "", is_last)
         return
 
     msg = dag.messages_by_uuid.get(uuid, {})
@@ -510,7 +448,7 @@ def print_dag_tree(dag, uuid=None, prefix="", is_last=True):
 
     for i, child in enumerate(children):
         is_last_child = (i == len(children) - 1)
-        print_dag_tree(dag, child, prefix + extension, is_last_child)
+        print_tree(dag, child, prefix + extension, is_last_child)
 ```
 
 ## Performance Optimizations
@@ -519,7 +457,7 @@ def print_dag_tree(dag, uuid=None, prefix="", is_last=True):
 
 ```python
 class LazyDAG:
-    """DAG with lazy evaluation for large sessions"""
+    """DAG with lazy evaluation"""
 
     def __init__(self, message_generator):
         self.message_generator = message_generator
@@ -545,51 +483,46 @@ class LazyDAG:
         return self._messages_cache.get(uuid)
 ```
 
-### Index-Based Lookups
+### Indexed Lookups
 
 ```python
 class IndexedDAG(MessageDAG):
-    """DAG with multiple indexes for fast lookups"""
+    """DAG with multiple indexes"""
 
     def __init__(self, messages):
         super().__init__(messages)
         self.build_indexes()
 
     def build_indexes(self):
-        """Build additional indexes for performance"""
+        """Build performance indexes"""
         self.by_type = {}
         self.by_session = {}
         self.by_timestamp = []
 
         for msg in self.messages_by_uuid.values():
-            # Index by type
             msg_type = msg.get('type')
             if msg_type not in self.by_type:
                 self.by_type[msg_type] = []
             self.by_type[msg_type].append(msg['uuid'])
 
-            # Index by session
             session = msg.get('sessionId')
             if session:
                 if session not in self.by_session:
                     self.by_session[session] = []
                 self.by_session[session].append(msg['uuid'])
 
-            # Index by timestamp
             timestamp = msg.get('timestamp')
             if timestamp:
                 self.by_timestamp.append((timestamp, msg['uuid']))
 
-        # Sort timestamp index
         self.by_timestamp.sort()
 ```
 
-## Key Takeaways
+## Key Specifications
 
-1. **DAG structure is fundamental**: All parsing must respect parent-child relationships
-2. **Orphans are roots**: Messages with missing parents start new trees
-3. **File position matters**: Later children represent active branches
-4. **Cycles shouldn't exist**: But implement detection for safety
-5. **Multiple traversal strategies**: Choose based on use case
-6. **Sidechains complicate traversal**: Filter or handle separately
-7. **Performance matters**: Use appropriate data structures and caching
+- DAG structure enforced: No cycles permitted
+- Orphaned messages treated as roots
+- File position determines active branches
+- Multiple traversal strategies supported
+- Sidechains identified by `isSidechain` flag
+- Performance optimizations for large sessions

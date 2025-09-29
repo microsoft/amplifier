@@ -1,20 +1,17 @@
-# Claude Code Session Logs Documentation
+# Claude Code Session Logs
 
 ## Overview
 
-Claude Code generates comprehensive session logs that capture every interaction between users, Claude, and specialized sub-agents. These logs are stored as JSONL (JSON Lines) files and contain rich metadata about conversations, tool usage, and AI-to-AI communication patterns through an advanced multi-agent architecture.
+Claude Code generates session logs in JSONL (JSON Lines) format that record all interactions between users, Claude, and sub-agents. Each log file contains structured message data, tool invocations, and multi-agent communication through the sidechain architecture.
 
-This documentation provides the definitive specification for understanding, parsing, and working with Claude Code session logs, based on extensive analysis of production session data including validation against 18 real compact operations and thousands of messages.
+## Documentation
 
-## Documentation Structure
-
-### Core Specifications
-
-- **[Format Specification](format-specification.md)** - Complete JSONL format, field definitions, data structures, and validation rules
-- **[Message Types](message-types.md)** - All message types, their purposes, structures, and common patterns
-- **[Sidechain Architecture](sidechain-architecture.md)** - Complete documentation of the sidechain mechanism for multi-agent communication
-- **[Parsing Guide](parsing-guide.md)** - Practical implementation guidance with production-ready code examples
-- **[Troubleshooting](troubleshooting.md)** - Common issues, solutions, and edge cases from production
+- **[Format Specification](format-specification.md)** - JSONL format, field definitions, and data structures
+- **[Message Types](message-types.md)** - Message type definitions and structures
+- **[Message Attribution](message-attribution.md)** - Attribution system specification
+- **[Sidechain Architecture](sidechain-architecture.md)** - Multi-agent communication mechanism
+- **[Parsing Guide](parsing-guide.md)** - Implementation reference
+- **[Troubleshooting](troubleshooting.md)** - Error handling and edge cases
 
 ## Quick Start
 
@@ -52,86 +49,84 @@ Messages form a directed acyclic graph (DAG) through `parentUuid` references, en
 - Inline sidechains for sub-agent delegation
 - Complex multi-agent orchestration
 
-### Critical Concepts
+### Key Concepts
 
-1. **Message DAG**: Messages link via `uuid`/`parentUuid` to form conversation trees. File position determines active vs abandoned branches.
+1. **Message DAG**: Messages form a directed acyclic graph through `uuid`/`parentUuid` references. File position determines active branches.
 
-2. **Orphaned Messages**: Messages with non-existent `parentUuid` are treated as conversation roots. This is common and expected, not an error condition. These typically occur after compact operations or when referencing messages from previous sessions.
+2. **Orphaned Messages**: Messages with non-existent `parentUuid` values become conversation roots. These occur after compact operations or when referencing previous sessions.
 
-3. **Sidechains**: Inline sub-conversations where Claude delegates tasks to specialized agents. Marked with `isSidechain: true` and `userType: "external"`. The agent name comes from the Task tool's `subagent_type` parameter - track Task invocations to identify which agent is being used.
+3. **Sidechains**: Inline sub-conversations marked with `isSidechain: true` and `userType: "external"`. Agent identification requires correlating Task tool invocations with sidechain messages.
 
-4. **Compact Operations**: Context management that creates new conversation roots while maintaining logical flow through `logicalParentUuid`. Occurs manually via `/compact` (39% of cases) or automatically (~155k tokens, 61% of cases). Sessions commonly have 8+ compacts.
+4. **Compact Operations**: Context management operations that create new conversation roots. The `logicalParentUuid` field maintains continuity. Triggered manually via `/compact` or automatically at token thresholds.
 
-5. **Agent Identification**: Sub-agent names are found in the Task tool's `subagent_type` parameter, not in sidechain messages. Correlate Task tool invocations with subsequent sidechains using session IDs and timestamps.
+5. **Agent Identification**: Sub-agent names appear in the Task tool's `subagent_type` parameter. Match Task invocations with subsequent sidechain messages using session IDs and timestamps.
 
-## Understanding Sidechains
+## Sidechains
 
-Sidechains are the architectural foundation of Claude Code's multi-agent system:
+Sidechains implement multi-agent communication within session logs:
 
-- They are **inline** within the same session file (not separate files)
-- Marked with `isSidechain: true` on messages
-- The parent assistant message becomes the "user" in the sidechain context
-- Enable Claude to delegate tasks to specialized sub-agents
-- Support multi-turn conversations between Claude and sub-agents
+- Inline within the same session file
+- Marked with `isSidechain: true`
+- Parent assistant message becomes the "user" in sidechain context
+- Support multi-turn sub-agent conversations
 
-For complete details, see [Sidechain Architecture](sidechain-architecture.md).
+See [Sidechain Architecture](sidechain-architecture.md) for specifications.
 
-## Common Use Cases
+## Processing Patterns
 
-### Extracting User-Claude Conversations
+### Main Conversation Extraction
 
-Filter messages where `isSidechain` is false or undefined to get the main conversation thread.
+Filter messages where `isSidechain` is false or undefined.
 
-### Analyzing Sub-Agent Usage
+### Sub-Agent Analysis
 
-1. Look for Task tool invocations with `subagent_type` parameter to identify agent names
-2. Find subsequent messages with `isSidechain: true` to see the delegation
+1. Locate Task tool invocations with `subagent_type` parameter
+2. Match subsequent messages with `isSidechain: true`
 3. Correlate using session IDs and timestamps
 
-### Reconstructing Full Context
+### Full Context Reconstruction
 
-Build the complete message DAG to see all interactions, including sidechains and edits.
+Build complete message DAG including sidechains and branches.
 
-### Understanding Tool Usage
+### Tool Usage Tracking
 
-Examine `subtype` fields to track tool invocations, file operations, and command execution.
+Examine `subtype` fields for tool invocations.
 
-## Implementation Considerations
+## Parser Implementation
 
-### Parser Requirements
+### Requirements
 
-- **Streaming**: Parse files line by line for memory efficiency
-- **DAG Building**: Create `uuid`/`parentUuid` mapping with cycle detection
-- **Orphan Handling**: Treat messages with missing parents as new roots
-- **Deletion Respect**: Honor `isDeleted` flags when reconstructing
-- **Metadata Separation**: Handle `isMeta` messages as metadata, not content
+- Stream parsing for memory efficiency
+- DAG construction with cycle detection
+- Orphaned message handling as roots
+- Respect for `isDeleted` flags
+- Separation of `isMeta` messages
 
-### Critical Edge Cases
+### Edge Cases
 
-1. **Orphaned Messages**: Common after compacts - treat as roots, not errors
-2. **Circular References**: Implement defensive cycle detection in DAG building
-3. **Cloud Sync I/O Errors**: Implement retry logic with exponential backoff for OSError errno 5
-4. **Multiple Compacts**: Sessions can have 8+ compact operations
-5. **Branch Management**: File position determines active branch in "redo from here" scenarios
+1. **Orphaned Messages**: Treat as conversation roots
+2. **Circular References**: Implement cycle detection
+3. **I/O Errors**: Retry with exponential backoff for errno 5
+4. **Multiple Compacts**: Handle sequential compact operations
+5. **Branch Management**: Use file position for active branch determination
 
-### Performance Optimization
+### Performance
 
-- Use dictionaries for O(1) UUID lookups
-- Index messages by multiple keys (parent, timestamp, session)
-- Stream process for files > 100MB
-- Cache frequently accessed message chains
+- O(1) UUID lookups via dictionaries
+- Multi-key indexing (parent, timestamp, session)
+- Stream processing for large files
+- Message chain caching
 
-## File I/O Considerations
+## File I/O
 
-When working with session files in cloud-synced directories (OneDrive, Dropbox, iCloud):
+Cloud-synced directories require retry logic:
 
 ```python
 import time
 import json
-from pathlib import Path
 
 def read_session_with_retry(file_path, max_retries=3):
-    """Read session file with retry logic for cloud sync issues"""
+    """Read session file with retry logic"""
     retry_delay = 0.1
 
     for attempt in range(max_retries):
@@ -141,42 +136,27 @@ def read_session_with_retry(file_path, max_retries=3):
             return [json.loads(line) for line in lines if line.strip()]
         except OSError as e:
             if e.errno == 5 and attempt < max_retries - 1:
-                if attempt == 0:
-                    print(f"Cloud sync delay detected. Retrying...")
                 time.sleep(retry_delay)
                 retry_delay *= 2
             else:
                 raise
 ```
 
-## Version Compatibility
+## Format Version
 
-This documentation covers the current Claude Code session format. Key features:
+Current session format features:
 
-- **Sidechain Support**: `isSidechain` field for multi-agent conversations
-- **User Type Distinction**: `userType: "external"` for non-human users
-- **Session Grouping**: `sessionId` for message correlation
-- **Logical Parent Links**: `logicalParentUuid` for compact continuity
-- **Task Tool Integration**: Agent identification via `subagent_type` parameter
+- `isSidechain`: Multi-agent conversation marking
+- `userType`: User type identification ("external" for non-human)
+- `sessionId`: Message correlation
+- `logicalParentUuid`: Compact continuity
+- `subagent_type`: Agent identification in Task tool
 
-## Production Statistics
 
-Based on analysis of production session logs:
+## References
 
-- **Compact Frequency**: Manual (39%) via `/compact`, Automatic (61%) at ~155k tokens
-- **Compact Count**: Sessions commonly have 8+ compact operations
-- **Orphan Rate**: ~15-20% of messages after compacts
-- **Sidechain Depth**: Up to 20+ turns in complex delegations
-- **Tool Diversity**: 15+ different tool types in active sessions
-
-## Next Steps
-
-1. Review [Format Specification](format-specification.md) for complete field definitions
-2. Study [Sidechain Architecture](sidechain-architecture.md) for multi-agent patterns
-3. Check [Troubleshooting](troubleshooting.md) for common issues and solutions
-4. Use [Parsing Guide](parsing-guide.md) to build production-ready parsers
-5. Examine real session logs at `~/.claude/projects/` for practical examples
-
----
-
-_This documentation represents the definitive specification for Claude Code session logs, validated against thousands of production messages and extensive real-world usage._
+1. [Format Specification](format-specification.md) - Field definitions
+2. [Sidechain Architecture](sidechain-architecture.md) - Multi-agent patterns
+3. [Troubleshooting](troubleshooting.md) - Error handling
+4. [Parsing Guide](parsing-guide.md) - Implementation reference
+5. Session logs location: `~/.claude/projects/`

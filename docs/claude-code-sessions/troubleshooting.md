@@ -1,18 +1,16 @@
-# Claude Code Sessions Troubleshooting Guide
+# Error Handling Reference
 
-This guide addresses common issues encountered when processing Claude Code session logs and provides working solutions.
+## Error Conditions and Handling
 
-## Common Issues and Solutions
+### OSError Errno 5 - Cloud Sync Delays
 
-### 1. Cloud Sync I/O Errors
+**Condition**: File I/O operations on cloud-synced directories (OneDrive, Dropbox, Google Drive) in WSL2 environments.
 
-**Symptom**: `OSError: [Errno 5] Input/output error` when reading files, especially in WSL2 with OneDrive/Dropbox.
+**Behavior**: Operations fail with `OSError: [Errno 5] Input/output error` when accessing files not locally cached.
 
-**Cause**: Cloud sync services (OneDrive, Dropbox, Google Drive) delay file access while fetching from cloud.
+**Required Handling**: Exponential backoff retry with 0.5s initial delay, doubling on each retry, maximum 3 attempts.
 
-**Solution**: Implement retry logic with exponential backoff and informative warnings.
-
-**Code Example**:
+**Implementation**:
 ```python
 import time
 import logging
@@ -40,15 +38,15 @@ def read_json_with_retry(filepath: Path, max_retries: int = 3) -> Dict[str, Any]
                 raise
 ```
 
-### 2. Missing Agent Names (All "unknown")
+### Undefined Agent Names in Sidechains
 
-**Symptom**: All sidechain conversations show agent name as "unknown".
+**Condition**: Sidechain messages without corresponding Task tool invocations.
 
-**Cause**: Not extracting agent type from Task tool's `subagent_type` parameter.
+**Data Source**: Agent names are stored in Task tool's `subagent_type` parameter, not in message fields.
 
-**Solution**: Track Task tool invocations and correlate with sidechains.
+**Required Processing**: Extract `subagent_type` from Task tool invocations and correlate with subsequent sidechains.
 
-**Code Example**:
+**Implementation**:
 ```python
 def extract_agent_name(message: Dict[str, Any]) -> str:
     """Extract agent name from Task tool invocation."""
@@ -68,15 +66,15 @@ def extract_agent_name(message: Dict[str, Any]) -> str:
     return "unknown"
 ```
 
-### 3. Empty Conversation Paths
+### Orphaned Message Handling
 
-**Symptom**: Extracted conversation paths contain no messages.
+**Condition**: Messages with `parentUuid` referencing non-existent messages.
 
-**Cause**: Not treating orphaned messages (parentUuid points to non-existent message) as conversation roots.
+**Occurrence Rate**: 15-20% of messages after compact operations.
 
-**Solution**: Check for orphaned messages and treat them as roots.
+**Required Behavior**: Orphaned messages must be treated as DAG roots for traversal.
 
-**Code Example**:
+**Implementation**:
 ```python
 def find_conversation_roots(messages: List[Dict]) -> List[str]:
     """Find all conversation root messages including orphans."""
@@ -95,15 +93,15 @@ def find_conversation_roots(messages: List[Dict]) -> List[str]:
     return roots
 ```
 
-### 4. Incomplete Sidechain Extraction
+### Sidechain Message Identification
 
-**Symptom**: Sub-agent conversations not being extracted.
+**Condition**: Messages with `isSidechain: true` flag.
 
-**Cause**: Not properly checking the `isSidechain` flag.
+**Structure**: Sidechains group sequentially by `parentUuid` reference.
 
-**Solution**: Filter messages by `isSidechain: true` and group by parent.
+**Required Processing**: Filter by `isSidechain` flag and maintain grouping by parent UUID.
 
-**Code Example**:
+**Implementation**:
 ```python
 def extract_sidechains(messages: List[Dict]) -> Dict[str, List[Dict]]:
     """Extract all sidechain conversations grouped by parent."""
@@ -123,15 +121,15 @@ def extract_sidechains(messages: List[Dict]) -> Dict[str, List[Dict]]:
     return sidechains
 ```
 
-### 5. Lost Compact Continuity
+### Compact Operation Continuity
 
-**Symptom**: Conversation appears broken at compact boundaries.
+**Condition**: Messages following compact operations with `logicalParentUuid` field.
 
-**Cause**: Not following `logicalParentUuid` to connect across compacts.
+**Structure**: `logicalParentUuid` maintains conversation flow across compact boundaries.
 
-**Solution**: Track both physical and logical parent relationships.
+**Required Processing**: Prioritize `logicalParentUuid` over `parentUuid` when present.
 
-**Code Example**:
+**Implementation**:
 ```python
 def get_message_parent(msg: Dict, messages_by_uuid: Dict) -> Optional[str]:
     """Get the effective parent, considering logical parents for compacts."""
@@ -148,15 +146,15 @@ def get_message_parent(msg: Dict, messages_by_uuid: Dict) -> Optional[str]:
     return None
 ```
 
-### 6. Memory Issues with Large Files
+### Large File Processing
 
-**Symptom**: Out of memory errors on files > 100MB.
+**Condition**: Session files exceeding 100MB.
 
-**Cause**: Loading entire file into memory at once.
+**Memory Constraint**: Full file loading causes out-of-memory errors.
 
-**Solution**: Stream process line by line.
+**Required Approach**: Line-by-line streaming with immediate processing.
 
-**Code Example**:
+**Implementation**:
 ```python
 def stream_parse_jsonl(filepath: Path):
     """Stream parse JSONL file line by line."""
@@ -172,15 +170,15 @@ def stream_parse_jsonl(filepath: Path):
                 continue
 ```
 
-### 7. Incorrect Branch Detection
+### Branch Active Path Determination
 
-**Symptom**: Wrong identification of active vs abandoned branches.
+**Condition**: Multiple children for a single parent message.
 
-**Cause**: Not using file position to determine the active branch.
+**Determination Rule**: Last child by file position represents the active branch.
 
-**Solution**: The last child by file position is the active branch.
+**Required Processing**: Sort children by file position and select the last entry.
 
-**Code Example**:
+**Implementation**:
 ```python
 def identify_active_branch(parent_uuid: str, messages: List[Dict]) -> Optional[str]:
     """Identify the active branch (last by file position)."""
@@ -197,15 +195,15 @@ def identify_active_branch(parent_uuid: str, messages: List[Dict]) -> Optional[s
     return children[-1]["uuid"]
 ```
 
-### 8. Circular Reference Crashes
+### Circular Reference Detection
 
-**Symptom**: Infinite loop when traversing message DAG.
+**Condition**: Malformed parent references creating cycles in DAG.
 
-**Cause**: Malformed parent references creating cycles.
+**Detection Method**: Visited node tracking during traversal.
 
-**Solution**: Track visited nodes to detect cycles.
+**Required Behavior**: Terminate traversal upon cycle detection and log warning.
 
-**Code Example**:
+**Implementation**:
 ```python
 def traverse_conversation(root_uuid: str, messages_by_uuid: Dict) -> List[Dict]:
     """Safely traverse conversation with cycle detection."""
@@ -230,15 +228,15 @@ def traverse_conversation(root_uuid: str, messages_by_uuid: Dict) -> List[Dict]:
     return path
 ```
 
-### 9. Missing Project Directory
+### Project Log Directory Resolution
 
-**Symptom**: Can't find current project's conversation logs.
+**Condition**: Project paths require transformation to log directory names.
 
-**Cause**: Directory name transformation rules not applied correctly.
+**Transformation Rules**: Replace `/` with `_`, replace `.` with `_`, remove leading underscore.
 
-**Solution**: Convert project path to Claude's directory naming convention.
+**Base Path**: `~/.claude/conversations/`
 
-**Code Example**:
+**Implementation**:
 ```python
 def get_project_log_dir(project_path: Path) -> Path:
     """Convert project path to Claude's log directory name."""
@@ -253,15 +251,15 @@ def get_project_log_dir(project_path: Path) -> Path:
     return base_dir / dir_name
 ```
 
-### 10. Tool Result Correlation Failures
+### Tool Invocation-Result Correlation
 
-**Symptom**: Can't match tool results to their invocations.
+**Condition**: Tool results require matching to their invocations.
 
-**Cause**: Not tracking tool invocation UUIDs.
+**Correlation Method**: Match tool result's `parentUuid` to invocation's `uuid`.
 
-**Solution**: Map tool UUIDs to their results.
+**Required Structure**: Map tool invocations by UUID for O(1) result matching.
 
-**Code Example**:
+**Implementation**:
 ```python
 def correlate_tool_results(messages: List[Dict]) -> Dict[str, Dict]:
     """Correlate tool invocations with their results."""
@@ -283,9 +281,9 @@ def correlate_tool_results(messages: List[Dict]) -> Dict[str, Dict]:
     return tool_map
 ```
 
-## Performance Optimization Tips
+## Performance Requirements
 
-### Index for Fast Lookups
+### Index Construction
 ```python
 # Build multiple indices for O(1) lookups
 messages_by_uuid = {msg["uuid"]: msg for msg in messages}
@@ -296,7 +294,7 @@ for msg in messages:
         messages_by_parent[parent].append(msg)
 ```
 
-### Use Generators for Large Datasets
+### Memory-Efficient Processing
 ```python
 def process_large_session(filepath: Path):
     """Process large files without loading all into memory."""
@@ -305,7 +303,7 @@ def process_large_session(filepath: Path):
         yield transform_message(msg)
 ```
 
-### Cache Frequently Accessed Paths
+### Path Caching
 ```python
 from functools import lru_cache
 
@@ -315,7 +313,7 @@ def get_conversation_path(root_uuid: str) -> List[str]:
     return traverse_conversation(root_uuid, messages_by_uuid)
 ```
 
-### Batch File Operations
+### Batch I/O Operations
 ```python
 def save_results_batch(results: List[Dict], output_dir: Path):
     """Batch write operations for better performance."""
@@ -329,33 +327,29 @@ def save_results_batch(results: List[Dict], output_dir: Path):
     output_file.write_text("\n".join(all_data))
 ```
 
-## Validation Checklist
+## Required Implementation Behaviors
 
-Before considering your transcript builder complete, verify:
+- Orphaned messages (non-existent `parentUuid`) become DAG roots
+- Agent names extracted from Task tool `subagent_type` parameter
+- Compact continuity maintained via `logicalParentUuid` field
+- Cloud sync I/O errors handled with exponential backoff retry
+- Sidechain messages identified by `isSidechain: true` flag
+- Active branches determined by last child in file position order
+- Circular references detected using visited node tracking
+- Large files processed via line-by-line streaming
+- Tool results correlated via `parentUuid` to invocation UUID mapping
+- Project paths transformed to log directories using underscore replacement
 
-- [ ] **Handles orphaned messages**: Messages with non-existent parents become roots
-- [ ] **Extracts agent names**: Correctly identifies agents from Task tool parameters
-- [ ] **Processes compacts correctly**: Follows logicalParentUuid for continuity
-- [ ] **Handles cloud sync errors**: Implements retry logic for I/O errors
-- [ ] **Identifies sidechains**: Extracts all isSidechain=true conversations
-- [ ] **Determines active branches**: Uses file position to identify active path
-- [ ] **Avoids circular references**: Detects and breaks cycles in message graph
-- [ ] **Manages memory efficiently**: Streams large files instead of loading all
-- [ ] **Correlates tools correctly**: Matches invocations with results
-- [ ] **Finds project logs**: Correctly transforms project paths to log directories
+## Test Requirements
 
-## Testing Patterns
-
-### Essential Test Scenarios
-
-1. **Multi-Compact Sessions**
+### Multi-Compact Sessions
    ```python
    # Test with sessions having 8+ compacts
    test_file = "conversation_2025_01_27_with_8_compacts.jsonl"
    assert count_compacts(test_file) >= 8
    ```
 
-2. **Orphaned Messages**
+### Orphaned Message Handling
    ```python
    # Create test data with orphan
    messages = [
@@ -366,7 +360,7 @@ Before considering your transcript builder complete, verify:
    assert "msg1" in roots  # Orphan should be root
    ```
 
-3. **Sidechain Extraction**
+### Sidechain Grouping
    ```python
    # Test sidechain grouping
    messages = [
@@ -378,7 +372,7 @@ Before considering your transcript builder complete, verify:
    assert len(sidechains["main1"]) == 2
    ```
 
-4. **Cloud Sync Simulation**
+### Cloud Sync Error Simulation
    ```python
    # Simulate cloud sync delay
    import errno
@@ -391,7 +385,7 @@ Before considering your transcript builder complete, verify:
        return actual_read()
    ```
 
-5. **Large File Handling**
+### Large File Streaming
    ```python
    # Test with 100MB+ file
    large_file = create_test_file(size_mb=100)
@@ -401,10 +395,9 @@ Before considering your transcript builder complete, verify:
    assert message_count > 0
    ```
 
-## Quick Fixes Reference
+## Error Code Reference
 
-| Issue | Quick Fix |
-|-------|-----------|
+| Error | Resolution |
 | OSError errno 5 | Add retry with 0.5s exponential backoff |
 | Unknown agents | Check Task tool's subagent_type param |
 | Empty paths | Include orphaned messages as roots |
@@ -438,14 +431,10 @@ logger.debug(f"Found {len(roots)} conversation roots")
 logger.debug(f"Extracted {len(sidechains)} sidechains")
 ```
 
-## Recovery Strategies
+## Failure Recovery Behaviors
 
-When encountering corrupt or incomplete data:
-
-1. **Skip malformed messages**: Log and continue
-2. **Use partial results**: Better than nothing
-3. **Save progress frequently**: Write after each conversation
-4. **Provide recovery mode**: Allow resuming from checkpoint
-5. **Report issues clearly**: Show what succeeded and what failed
-
-Remember: The goal is to extract as much useful information as possible, even from imperfect data.
+- **Malformed JSON lines**: Skip line, log error with line number, continue processing
+- **Partial results**: Save successfully processed data before failure point
+- **Progress persistence**: Write results after each complete conversation path
+- **Checkpoint recovery**: Resume from last successfully written position
+- **Error reporting**: Include line numbers, error types, and affected message UUIDs
