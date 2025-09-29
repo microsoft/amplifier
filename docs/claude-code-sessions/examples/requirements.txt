@@ -1,0 +1,6 @@
+# Minimal dependencies for Claude Code session parsing examples
+# No external dependencies required - uses only Python standard library
+
+# Optional: For enhanced functionality (not required for basic examples)
+# pydantic>=2.0  # For data validation in production parsers
+# rich>=13.0     # For prettier console output
