@@ -1,162 +1,132 @@
-# Claude Code Session Logs
+# Claude Code Sessions Documentation
 
 ## Overview
 
-Claude Code generates session logs in JSONL (JSON Lines) format that record all interactions between users, Claude, and sub-agents. Each log file contains structured message data, tool invocations, and multi-agent communication through the sidechain architecture.
+Claude Code generates session logs in JSONL format that capture the complete conversation history, including messages, tool invocations, and results. This documentation provides technical specifications for parsing and working with these session files.
 
-## Documentation
-
-- **[Format Specification](format-specification.md)** - JSONL format, field definitions, and data structures
-- **[Message Types](message-types.md)** - Message type definitions and structures
-- **[Message Attribution](message-attribution.md)** - Attribution system specification
-- **[Sidechain Architecture](sidechain-architecture.md)** - Multi-agent communication mechanism
-- **[Parsing Guide](parsing-guide.md)** - Implementation reference
-- **[Troubleshooting](troubleshooting.md)** - Error handling and edge cases
-
-## Quick Start
-
-### Finding Session Files
+## Session File Location
 
 Session logs are stored in:
-
 ```
-~/.claude/projects/{project-name}/*.jsonl
+~/.claude/conversations/{project-name}/*.jsonl
 ```
 
-Where `{project-name}` is derived from your working directory path with `/` replaced by `-`.
+Where `{project-name}` is derived from your working directory path with `/` replaced by `_` and `.` replaced by `_`.
 
-Example: Working in `/home/user/repos/myproject` creates logs in `~/.claude/projects/-home-user-repos-myproject/`
+Example: Working in `/home/user/repos/my.project` creates logs in `~/.claude/conversations/home_user_repos_my_project/`
 
-### Basic Structure
+## Documentation Structure
 
-Each line in a JSONL file is a complete JSON object representing one message:
+### Core Specifications
 
-```json
-{
-  "type": "user",
-  "uuid": "msg-123",
-  "parentUuid": "msg-122",
-  "timestamp": "2025-01-27T10:15:30Z",
-  "sessionId": "session-456",
-  "message": "Hello Claude"
+- **[Message Format](core/MESSAGE-FORMAT.md)** - JSONL structure and field definitions
+- **[DAG Specification](core/DAG-SPECIFICATION.md)** - Directed Acyclic Graph structure of conversations
+- **[Operations Reference](reference/OPERATIONS-REFERENCE.md)** - Session operations (compact, fork, rewind, clear, sidechains)
+
+### Implementation Guides
+
+- **[Parsing Implementation](implementation/PARSING-IMPLEMENTATION.md)** - Building parsers for session files
+- **[Building Systems](implementation/BUILDING-SYSTEMS.md)** - Creating tools that work with sessions
+
+### Resources
+
+- **[Examples](examples/)** - Working code examples and reference implementations
+- **[Troubleshooting](troubleshooting.md)** - Common issues and solutions
+
+## Quick Start for Developers
+
+### Basic Session Structure
+
+Each line in a JSONL session file represents one message:
+
+```python
+import json
+
+# Read session file
+with open("session.jsonl", "r") as f:
+    messages = [json.loads(line) for line in f]
+
+# Each message has these core fields
+for msg in messages:
+    uuid = msg["uuid"]           # Unique message identifier
+    parent = msg["parentUuid"]    # Parent message UUID (creates DAG)
+    type = msg["type"]            # Message type (human, assistant, etc.)
+    timestamp = msg["timestamp"]  # Unix timestamp in milliseconds
+```
+
+### Tool Correlation
+
+Tool invocations and results are correlated via IDs:
+
+```python
+# Tool invocation (in assistant message)
+tool_use = {
+    "type": "tool_use",
+    "id": "toolu_01abc123...",  # Unique tool use ID
+    "name": "Read",
+    "input": {"file_path": "/path/to/file.py"}
+}
+
+# Corresponding tool result (separate message)
+tool_result = {
+    "type": "tool_result",
+    "tool_use_id": "toolu_01abc123...",  # References tool_use.id
+    "content": "File contents..."
 }
 ```
 
-Messages form a directed acyclic graph (DAG) through `parentUuid` references, enabling:
+### DAG Navigation
 
-- Linear conversation flows
-- Branching for edits and "redo from here" operations
-- Inline sidechains for sub-agent delegation
-- Complex multi-agent orchestration
-
-### Key Concepts
-
-1. **Message DAG**: Messages form a directed acyclic graph through `uuid`/`parentUuid` references. File position determines active branches.
-
-2. **Orphaned Messages**: Messages with non-existent `parentUuid` values become conversation roots. These occur after compact operations or when referencing previous sessions.
-
-3. **Sidechains**: Inline sub-conversations marked with `isSidechain: true` and `userType: "external"`. Agent identification requires correlating Task tool invocations with sidechain messages.
-
-4. **Compact Operations**: Context management operations that create new conversation roots. The `logicalParentUuid` field maintains continuity. Triggered manually via `/compact` or automatically at token thresholds.
-
-5. **Agent Identification**: Sub-agent names appear in the Task tool's `subagent_type` parameter. Match Task invocations with subsequent sidechain messages using session IDs and timestamps.
-
-## Sidechains
-
-Sidechains implement multi-agent communication within session logs:
-
-- Inline within the same session file
-- Marked with `isSidechain: true`
-- Parent assistant message becomes the "user" in sidechain context
-- Support multi-turn sub-agent conversations
-
-See [Sidechain Architecture](sidechain-architecture.md) for specifications.
-
-## Processing Patterns
-
-### Main Conversation Extraction
-
-Filter messages where `isSidechain` is false or undefined.
-
-### Sub-Agent Analysis
-
-1. Locate Task tool invocations with `subagent_type` parameter
-2. Match subsequent messages with `isSidechain: true`
-3. Correlate using session IDs and timestamps
-
-### Full Context Reconstruction
-
-Build complete message DAG including sidechains and branches.
-
-### Tool Usage Tracking
-
-Examine `subtype` fields for tool invocations.
-
-## Parser Implementation
-
-### Requirements
-
-- Stream parsing for memory efficiency
-- DAG construction with cycle detection
-- Orphaned message handling as roots
-- Respect for `isDeleted` flags
-- Separation of `isMeta` messages
-
-### Edge Cases
-
-1. **Orphaned Messages**: Treat as conversation roots
-2. **Circular References**: Implement cycle detection
-3. **I/O Errors**: Retry with exponential backoff for errno 5
-4. **Multiple Compacts**: Handle sequential compact operations
-5. **Branch Management**: Use file position for active branch determination
-
-### Performance
-
-- O(1) UUID lookups via dictionaries
-- Multi-key indexing (parent, timestamp, session)
-- Stream processing for large files
-- Message chain caching
-
-## File I/O
-
-Cloud-synced directories require retry logic:
+Messages form a Directed Acyclic Graph through parent-child relationships:
 
 ```python
-import time
-import json
+# Build parent-child index
+children_by_parent = {}
+for msg in messages:
+    parent_uuid = msg["parentUuid"]
+    if parent_uuid not in children_by_parent:
+        children_by_parent[parent_uuid] = []
+    children_by_parent[parent_uuid].append(msg)
 
-def read_session_with_retry(file_path, max_retries=3):
-    """Read session file with retry logic"""
-    retry_delay = 0.1
+# Find active conversation path
+def get_active_path(messages):
+    path = []
+    current = find_root_message(messages)
 
-    for attempt in range(max_retries):
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                lines = f.readlines()
-            return [json.loads(line) for line in lines if line.strip()]
-        except OSError as e:
-            if e.errno == 5 and attempt < max_retries - 1:
-                time.sleep(retry_delay)
-                retry_delay *= 2
-            else:
-                raise
+    while current:
+        path.append(current)
+        children = children_by_parent.get(current["uuid"], [])
+        # Active child is typically the last one by file position
+        # All branches remain valid in the DAG
+        current = children[-1] if children else None
+
+    return path
 ```
 
-## Format Version
+## Key Concepts
 
-Current session format features:
+### Message Types
 
-- `isSidechain`: Multi-agent conversation marking
-- `userType`: User type identification ("external" for non-human)
-- `sessionId`: Message correlation
-- `logicalParentUuid`: Compact continuity
-- `subagent_type`: Agent identification in Task tool
+- **human**: User messages
+- **assistant**: Claude's responses
+- **tool_result**: Results from tool executions
+- **compact_prelude**: Messages preserved during compaction
+- **compact_recap**: Summary of compacted messages
 
+### Operations
 
-## References
+- **Compact**: Reduces context size by summarizing older messages
+- **Fork**: Creates conversation branches when regenerating responses
+- **Clear**: Resets the conversation
+- **Sidechain**: Task-spawned sub-conversations with role reversal
 
-1. [Format Specification](format-specification.md) - Field definitions
-2. [Sidechain Architecture](sidechain-architecture.md) - Multi-agent patterns
-3. [Troubleshooting](troubleshooting.md) - Error handling
-4. [Parsing Guide](parsing-guide.md) - Implementation reference
-5. Session logs location: `~/.claude/projects/`
+### Performance Considerations
+
+- **Small sessions** (<1MB): Load entire file into memory
+- **Large sessions** (>100MB): Stream process line-by-line
+- **Build indices** for UUID lookups (O(1) access)
+- **Cache computed paths** to avoid recalculation
+
+## See Also
+
+- [Claude Code Desktop](https://claude.ai/download) - The Claude Code application
