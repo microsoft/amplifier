@@ -1,0 +1,45 @@
+# Principle #05 - Conversation-Driven Development
+
+## Plain-Language Definition
+
+Conversation-Driven Development means developing software through natural language dialogue with AI, where specifications emerge through iterative conversation rather than formal documentation. Implementation happens through conversational refinement, clarification, and collaborative exploration.
+
+## Why This Matters for AI-First Development
+
+Traditional development requires translating human intent into formal specifications, then into code. This translation layer creates friction and misalignment. AI-first development eliminates this gap: you express intent conversationally, and AI generates implementation directly from that dialogue.
+
+Conversation-driven development provides three transformative advantages:
+
+1. **Immediate feedback loops**: Instead of writing specifications and waiting for implementation, you describe what you want and see results instantly. If the result doesn't match your intent, you refine through conversation. This tight loop dramatically accelerates development and reduces misunderstandings.
+
+2. **Natural requirement discovery**: Conversations reveal edge cases, constraints, and requirements organically. When you describe a feature conversationally, AI asks clarifying questions, surfaces assumptions, and identifies gaps in requirements. This interactive discovery prevents costly rework later.
+
+3. **Evolutionary specifications**: Traditional specs freeze requirements at a point in time. Conversational development allows specifications to evolve naturally as understanding deepens. Each conversation builds on previous context, refining and adapting specifications without the overhead of formal documentation updates.
+
+Without conversation-driven development, AI systems become rigid translators of formal specs rather than collaborative partners. You lose the ability to think through problems interactively, miss opportunities to refine requirements in real-time, and create artificial barriers between thought and implementation. Conversation-driven development treats AI as a thinking partner, not just a code generator.
+
+## Implementation Approaches
+
+### 1. **Natural Language Specifications**
+
+Express requirements in plain language, not formal notation:
+
+```
+Human: "I need a function that validates email addresses. It should check for basic format, but also verify the domain has MX records."
+
+AI: "I'll create an email validator with two levels of validation:
+1. Format check using regex
+2. DNS MX record verification
+
+Should this be async since DNS lookups can be slow? And how should we handle temporary DNS failures?"
+```
+
+The conversation naturally surfaces design decisions and constraints. Natural language specifications work best for exploratory development where requirements aren't fully formed.
+
+### 2. **Interactive Refinement**
+
+Start with a basic version, then refine through conversation:
+
+```
+Human: "Create a user registration endpoint."
+AI: [Generates basic registration with email/password]
