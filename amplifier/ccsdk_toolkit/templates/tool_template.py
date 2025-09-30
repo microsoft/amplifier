@@ -21,13 +21,13 @@ from pathlib import Path
 from typing import Any
 
 import click
+from amplifier.utils.logger import get_logger
 
 from amplifier.ccsdk_toolkit import ClaudeSession
 from amplifier.ccsdk_toolkit import SessionOptions
 from amplifier.ccsdk_toolkit.defensive import parse_llm_json
 from amplifier.ccsdk_toolkit.defensive.file_io import read_json_with_retry
 from amplifier.ccsdk_toolkit.defensive.file_io import write_json_with_retry
-from amplifier.utils.logger import get_logger
 
 logger = get_logger(__name__)
 

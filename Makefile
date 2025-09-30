@@ -20,7 +20,7 @@ endef
 default: ## Show essential commands
 	@echo ""
 	@echo "Quick Start:"
-	@echo "  make install         Install all dependencies"
+	@echo "  make install         Install everything (dependencies + global command)"
 	@echo ""
 	@echo "Knowledge Base:"
 	@echo "  make knowledge-update        Full pipeline: extract & synthesize"
@@ -53,7 +53,7 @@ help: ## Show ALL available commands
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo ""
 	@echo "QUICK START:"
-	@echo "  make install         Install all dependencies"
+	@echo "  make install         Install everything (dependencies + global command)"
 	@echo ""
 	@echo "KNOWLEDGE BASE:"
 	@echo "  make knowledge-update        Full pipeline: extract & synthesize"
@@ -116,11 +116,11 @@ help: ## Show ALL available commands
 	@echo ""
 
 # Installation
-install: ## Install all dependencies
-	@echo "Installing workspace dependencies..."
+install: ## Install everything: dependencies, Claude CLI, and global amplifier command
+	@echo "📦 Installing Python dependencies..."
 	uv sync --group dev
 	@echo ""
-	@echo "Installing npm packages globally..."
+	@echo "🌐 Installing Claude CLI globally..."
 	@command -v pnpm >/dev/null 2>&1 || { echo "❌ pnpm required. Install: curl -fsSL https://get.pnpm.io/install.sh | sh -"; exit 1; }
 	@# Ensure pnpm global directory exists and is configured (handles non-interactive shells)
 	@PNPM_HOME=$$(pnpm bin -g 2>/dev/null || echo "$$HOME/.local/share/pnpm"); \
@@ -138,14 +138,101 @@ install: ## Install all dependencies
 		exit 1; \
 	}
 	@echo ""
-	@echo "✅ All dependencies installed!"
+	@echo "🚀 Installing global 'amplifier' command..."
+	@$(MAKE) install-global
 	@echo ""
-	@if [ -n "$$VIRTUAL_ENV" ]; then \
-		echo "✓ Virtual environment already active"; \
-	elif [ -f .venv/bin/activate ]; then \
-		echo "→ Run this command: source .venv/bin/activate"; \
+	@echo "✅ Installation complete! The 'amplifier' command is now available globally."
+	@echo ""
+	@echo "🎉 You can now use Amplifier from anywhere:"
+	@echo "   amplifier                    # Launch in current directory"
+	@echo "   amplifier ~/my-project       # Launch in any project"
+	@echo ""
+	@if echo "$$PATH" | grep -q "$$HOME/bin"; then \
+		echo "✓ Your PATH is configured correctly"; \
 	else \
-		echo "✗ No virtual environment found. Run 'make install' first."; \
+		echo "⚠️  Add ~/bin to your PATH for the amplifier command to work:"; \
+		echo '   export PATH="$$HOME/bin:$$PATH"'; \
+		echo "   (Add this to your ~/.bashrc or ~/.zshrc)"; \
+	fi
+
+# Global installation
+install-global: ## Install global 'amplifier' command for system-wide access
+	@echo "Installing global Amplifier command..."
+	@if [ ! -f .venv/bin/activate ]; then \
+		echo "❌ Please run 'make install' first to create the virtual environment"; \
+		exit 1; \
+	fi
+	@mkdir -p ~/bin
+	@echo "Installing Python CLI..."
+	@if [ ! -f .venv/bin/amplifier ]; then \
+		echo "  Installing package..."; \
+		uv pip install -e . > /dev/null 2>&1; \
+	fi
+	@if [ -f .venv/bin/amplifier ]; then \
+		ln -sf "$(PWD)/.venv/bin/amplifier" ~/bin/amplifier; \
+		echo "✅ Python CLI installed as global command"; \
+	else \
+		echo "❌ Failed to install Python CLI"; \
+		exit 1; \
+	fi
+	@echo "✅ Global 'amplifier' command installed"
+	@echo ""
+	@if echo "$$PATH" | grep -q "$$HOME/bin"; then \
+		echo "✓ ~/bin is already in your PATH"; \
+	else \
+		echo "⚠️  Add ~/bin to your PATH. Add this line to your shell config:"; \
+		echo '   export PATH="$$HOME/bin:$$PATH"'; \
+	fi
+	@echo ""
+	@echo "Usage:"
+	@echo "  amplifier doctor            # Run diagnostics"
+	@echo "  amplifier claude            # Start Claude Code in current directory"
+	@echo "  amplifier claude ~/project  # Start Claude Code in a project"
+	@echo "  amplifier --version         # Show version"
+	@echo ""
+	@echo "Legacy compatibility:"
+	@echo "  amplifier ~/project         # Still works (routes to claude command)"
+
+install-global-system: ## Install global 'amplifier' command system-wide (requires sudo)
+	@echo "Installing system-wide Amplifier command..."
+	@if [ ! -f .venv/bin/activate ]; then \
+		echo "❌ Please run 'make install' first to create the virtual environment"; \
+		exit 1; \
+	fi
+	@echo "This will install to /usr/local/bin and requires sudo privileges."
+	@read -p "Continue? [y/N] " -n 1 -r; echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		sudo cp bin/amplifier /usr/local/bin/amplifier; \
+		sudo chmod +x /usr/local/bin/amplifier; \
+		echo "✅ Global 'amplifier' command installed to /usr/local/bin/amplifier"; \
+	else \
+		echo "Installation cancelled."; \
+	fi
+
+uninstall-global: ## Remove global 'amplifier' command
+	@echo "Removing global Amplifier command..."
+	@if [ -f ~/bin/amplifier ]; then \
+		rm ~/bin/amplifier; \
+		echo "✅ Removed ~/bin/amplifier"; \
+	else \
+		echo "✓ ~/bin/amplifier not found"; \
+	fi
+	@# Clean up legacy files
+	@if [ -f ~/bin/amplifier-cli ]; then \
+		rm ~/bin/amplifier-cli; \
+		echo "✅ Removed legacy ~/bin/amplifier-cli"; \
+	fi
+	@if [ -f ~/bin/amplifier-unified ]; then \
+		rm ~/bin/amplifier-unified; \
+		echo "✅ Removed legacy ~/bin/amplifier-unified"; \
+	fi
+	@if [ -f /usr/local/bin/amplifier ]; then \
+		echo "System-wide installation found at /usr/local/bin/amplifier"; \
+		read -p "Remove it? (requires sudo) [y/N] " -n 1 -r; echo; \
+		if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+			sudo rm /usr/local/bin/amplifier; \
+			echo "✅ Removed /usr/local/bin/amplifier"; \
+		fi; \
 	fi
 
 # Code quality
@@ -177,6 +264,12 @@ smoke-test: ## Run quick smoke tests to verify basic functionality
 	@echo "Running smoke tests..."
 	@PYTHONPATH=. python -m amplifier.smoke_tests
 	@echo "Smoke tests complete!"
+
+validate: ## Validate Amplifier installation and features (quick)
+	@python validate_installation.py
+
+validate-full: ## Validate Amplifier with full smoke tests (takes 2-3 minutes)
+	@python validate_installation.py --full
 
 # Git worktree management
 worktree: ## Create a git worktree with .data copy. Usage: make worktree feature-name
