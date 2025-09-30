@@ -192,26 +192,28 @@ class TestPrincipleBuilder(unittest.TestCase):
 
     def test_dry_run_mode(self):
         """Test dry-run mode doesn't create files."""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            patch("principle_builder_improved.get_project_root") as mock_root,
+        ):
             # Mock the project root
-            with patch("principle_builder_improved.get_project_root") as mock_root:
-                mock_root.return_value = Path(temp_dir)
+            mock_root.return_value = Path(temp_dir)
 
-                # Create mock template
-                template_path = Path(temp_dir) / "TEMPLATE.md"
-                template_path.write_text(
-                    "# Principle #{number} - {Full Name}\n"
-                    "**Category**: {People | Process | Technology | Governance}\n"
-                    "**Status**: {Draft | Review | Complete}\n"
-                    "**Date**: {YYYY-MM-DD}\n"
-                    "**Version**: {1.0, 1.1, etc.}\n"
-                )
+            # Create mock template
+            template_path = Path(temp_dir) / "TEMPLATE.md"
+            template_path.write_text(
+                "# Principle #{number} - {Full Name}\n"
+                "**Category**: {People | Process | Technology | Governance}\n"
+                "**Status**: {Draft | Review | Complete}\n"
+                "**Date**: {YYYY-MM-DD}\n"
+                "**Version**: {1.0, 1.1, etc.}\n"
+            )
 
-                # Run create in dry-run mode
-                output_path = pb.create_principle_stub(number=1, name="test-principle", dry_run=True)
+            # Run create in dry-run mode
+            output_path = pb.create_principle_stub(number=1, name="test-principle", dry_run=True)
 
-                # File should NOT exist
-                self.assertFalse(output_path.exists())
+            # File should NOT exist
+            self.assertFalse(output_path.exists())
 
 
 class TestSanitization(unittest.TestCase):

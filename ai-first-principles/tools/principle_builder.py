@@ -18,7 +18,8 @@ import json
 import logging
 import re
 import sys
-from datetime import date
+from datetime import UTC
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -350,6 +351,13 @@ def check_quality(number: int) -> dict[str, Any]:
         return validation
 
     path = get_principle_path(number)
+    if path is None:
+        return {
+            "valid": False,
+            "errors": ["Could not determine principle path"],
+            "warnings": [],
+            "quality_score": 0,
+        }
     try:
         content = safe_read_file(path)
     except Exception as e:
@@ -429,7 +437,7 @@ def create_principle_stub(
     stub = stub.replace("{People | Process | Technology | Governance}", category.title())
     stub = stub.replace("{1-44}", str(number))
     stub = stub.replace("{Draft | Review | Complete}", "Draft")
-    stub = stub.replace("{YYYY-MM-DD}", date.today().isoformat())
+    stub = stub.replace("{YYYY-MM-DD}", datetime.now(UTC).date().isoformat())
     stub = stub.replace("{1.0, 1.1, etc.}", "1.0")
 
     # Create file
