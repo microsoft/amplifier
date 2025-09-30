@@ -2,6 +2,8 @@
 
 This document outlines the core implementation philosophy and guidelines for software development projects. It serves as a central reference for decision-making and development approach throughout the project.
 
+**Context**: This is part of Amplifier's self-improvement architecture. See `AMPLIFIER_SELF_IMPROVEMENT_PHILOSOPHY.md` for the broader AI-first development principles that govern how Amplifier improves itself. This document focuses specifically on implementation practices and simplicity principles.
+
 ## Core Philosophy
 
 Embodies a Zen-like minimalism that values simplicity and clarity above all. This approach reflects:
