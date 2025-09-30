@@ -89,6 +89,7 @@ print(f"Session contains {len(messages)} messages")
 A parser that analyzes Claude Code sessions and saves comprehensive analysis.
 
 **Features:**
+
 - Auto-discovers Claude Code projects in `~/.claude/projects/`
 - Context-aware: automatically uses sessions from your current project directory
 - Parses the most recent session by default (with smart project matching)
@@ -98,6 +99,7 @@ A parser that analyzes Claude Code sessions and saves comprehensive analysis.
 - Supports fuzzy matching for project names
 
 **Usage:**
+
 ```bash
 # Default: parse most recent session, save to ./output/
 python example_parser.py
@@ -124,6 +126,7 @@ python example_parser.py /path/to/session.jsonl
 Builds readable transcripts from Claude Code session files.
 
 **Features:**
+
 - Converts DAG structure to linear transcript
 - Context-aware: automatically uses sessions from your current project directory
 - Saves transcript to `{output}/{project}/{session}/transcript.md`
@@ -134,6 +137,7 @@ Builds readable transcripts from Claude Code session files.
 - Configurable preview length
 
 **Usage:**
+
 ```bash
 # Default: build transcript for most recent session, save to ./output/
 python example_transcript_builder.py
@@ -329,6 +333,7 @@ The actual Claude Code session format has some differences from the documented f
 ### Session File Locations
 
 Claude Code sessions are stored at:
+
 ```
 ~/.claude/projects/<project-name>/<session-uuid>.jsonl
 ```
@@ -344,6 +349,7 @@ Project names are sanitized versions of the working directory path with `-` sepa
 ## Dependencies
 
 Install required packages:
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -396,6 +402,7 @@ for session_file in project_dir.glob("*.jsonl"):
 ## Contributing
 
 These examples are designed to be simple and educational. Feel free to:
+
 - Extend them for your specific use cases
 - Add new analysis capabilities
 - Contribute improvements back to the documentation
