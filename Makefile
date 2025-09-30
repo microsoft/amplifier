@@ -142,7 +142,7 @@ install: ## Install all dependencies
 	@echo ""
 	@echo "✅ All dependencies installed!"
 	@echo ""
-	@echo "💡 For global access to Amplifier from any directory:"
+	@echo "💡 To use auto-healing globally from any directory:"
 	@echo "   make install-global"
 	@echo ""
 	@if [ -n "$$VIRTUAL_ENV" ]; then \
@@ -155,7 +155,7 @@ install: ## Install all dependencies
 
 # Global installation
 install-global: ## Install global 'amplifier' command for system-wide access
-	@echo "Installing global Amplifier command..."
+	@echo "Installing global amplifier CLI command..."
 	@if [ ! -f .venv/bin/activate ]; then \
 		echo "❌ Please run 'make install' first to create the virtual environment"; \
 		exit 1; \

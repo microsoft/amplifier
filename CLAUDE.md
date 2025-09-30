@@ -9,6 +9,7 @@ This file is reserved for Claude Code-specific instructions.
 # import the following files (using the `@` syntax):
 
 - @AGENTS.md
+- @REPOSITORY_GUIDELINES.md
 - @DISCOVERIES.md
 - @ai_context/IMPLEMENTATION_PHILOSOPHY.md
 - @ai_context/MODULAR_DESIGN_PHILOSOPHY.md

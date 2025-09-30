@@ -150,9 +150,75 @@ source .venv/bin/activate
 claude --add-dir /path/to/your/project
 ```
 
+### Auto-Healing: Automated Code Quality Improvement
+
+Amplifier includes an auto-healing system that automatically improves code quality by analyzing complexity, type errors, and code patterns.
+
+#### Quick Start
+
+```bash
+# Check module health without making changes
+amplifier heal --check-only
+
+# Heal up to 3 unhealthy modules (with confirmation)
+amplifier heal
+
+# Heal up to 5 modules automatically
+amplifier heal --max 5 --yes
+
+# Custom health threshold (default: 70)
+amplifier heal --threshold 80
+```
+
+#### How It Works
+
+The auto-healer:
+1. **Analyzes** Python modules for:
+   - Cyclomatic complexity
+   - Lines of code
+   - Type errors (via pyright)
+2. **Calculates** health scores (0-100)
+3. **Identifies** modules below the threshold
+4. **Uses Claude** to refactor and simplify code
+5. **Validates** improvements before committing
+6. **Creates git branches** for safe, trackable changes
+
+#### Health Score Calculation
+
+- **Complexity penalty**: Each control flow statement (if/while/for) reduces score
+- **LOC penalty**: Modules over 200 lines are penalized
+- **Type errors**: Each type error significantly reduces score
+
+**Score range**: 0-100 (100 = perfect health)
+
+#### Safety Features
+
+- **Git branches**: Each healing creates a timestamped branch
+- **Atomic writes**: File corruption prevented
+- **Validation**: Changes are checked before committing
+- **Confirmation**: Prompts before making changes (unless --yes)
+
+#### Limitations
+
+- **File size limit**: Modules larger than 400 lines are skipped to prevent timeouts
+- **Critical files**: Files matching patterns like `__init__`, `setup`, `config`, `settings`, or `test_` are skipped
+- Skipped files show: `⏭️ filename.py: File too large (692 lines, limit: 400)`
+
+#### From Claude Code
+
+The auto-healing feature is also available as a slash command:
+
+```bash
+/heal                    # Check and heal up to 3 modules
+/heal --check-only       # Only check, don't heal
+/heal --max 5 --yes     # Heal 5 modules without confirmation
+```
+
+---
+
 #### Usage Template
 
-**Important**: When Claude starts, always begin with this message template:
+**Important**: When using Amplifier on external projects, always begin with this message template:
 
 ```
 I'm working in [YOUR_PROJECT_PATH] which doesn't have Amplifier files.

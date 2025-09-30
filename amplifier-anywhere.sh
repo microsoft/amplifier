@@ -118,8 +118,11 @@ echo "🚀 Starting Amplifier for project: $PROJECT_DIR"
 echo "📁 Amplifier location: $AMPLIFIER_DIR"
 
 # Set up pnpm paths
-export PNPM_HOME="$HOME/.local/share/pnpm"
+export PNPM_HOME="$HOME/Library/pnpm"
 export PATH="$PNPM_HOME:$PATH"
+
+# Enable thinking mode (default: 8000 tokens)
+export MAX_THINKING_TOKENS="${MAX_THINKING_TOKENS:-8000}"
 
 # Check Claude availability
 if ! command -v claude >/dev/null 2>&1; then

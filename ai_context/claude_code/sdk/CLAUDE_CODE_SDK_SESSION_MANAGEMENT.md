@@ -168,7 +168,7 @@ let sessionId: string | undefined
 const response = query({
 prompt: "Help me build a web application",
 options: {
-model: "claude-sonnet-4-20250514"
+model: "claude-sonnet-4-5-20250929"
 }
 })
 
@@ -205,7 +205,7 @@ session_id = None
 async for message in query(
     prompt="Help me build a web application",
     options=ClaudeCodeOptions(
-        model="claude-sonnet-4-20250514"
+        model="claude-sonnet-4-5-20250929"
     )
 ):
     # The first message is a system init message with the session ID
@@ -254,7 +254,7 @@ const response = query({
 prompt: "Continue implementing the authentication system from where we left off",
 options: {
 resume: "session-xyz", // Session ID from previous conversation
-model: "claude-sonnet-4-20250514",
+model: "claude-sonnet-4-5-20250929",
 allowedTools: ["Read", "Edit", "Write", "Glob", "Grep", "Bash"]
 }
 })
@@ -274,7 +274,7 @@ async for message in query(
     prompt="Continue implementing the authentication system from where we left off",
     options=ClaudeCodeOptions(
         resume="session-xyz",  # Session ID from previous conversation
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-5-20250929",
         allowed_tools=["Read", "Edit", "Write", "Glob", "Grep", "Bash"]
     )
 ):

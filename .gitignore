@@ -55,6 +55,7 @@ ai_working/tmp
 
 # Default data directory
 .data/
+.amplifier/
 
 # .claude-trace Logs
 .claude-trace
