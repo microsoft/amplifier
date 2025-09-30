@@ -425,13 +425,13 @@ def analyze_content_all_stages(content_files: list[Path], output_dir: Path):
 
 - **[Principle #11 - Continuous Validation with Fast Feedback](11-continuous-validation-fast-feedback.md)** - Incremental processing enables continuous validation by providing partial results to validate immediately instead of waiting for complete execution
 
-- **[Principle #24 - Observable Operations as Default](../technology/24-observable-operations-default.md)** - Checkpoints and progress tracking make operations observable, providing visibility into what's happening and how far along the process has progressed
+- **[Principle #24 - Long-Running Agent Processes](../technology/24-observable-operations-default.md)** - Checkpoints and progress tracking make operations observable, providing visibility into what's happening and how far along the process has progressed
 
-- **[Principle #28 - Graceful Degradation Throughout](../technology/28-graceful-degradation-throughout.md)** - Incremental processing enables graceful degradation by allowing partial completion; some progress is better than no progress
+- **[Principle #28 - CLI-First Design](../technology/28-graceful-degradation-throughout.md)** - Incremental processing enables graceful degradation by allowing partial completion; some progress is better than no progress
 
-- **[Principle #30 - Asynchronous Communication Default](../technology/30-asynchronous-communication-default.md)** - Long-running incremental operations naturally fit asynchronous patterns, communicating progress updates without blocking
+- **[Principle #30 - Observability Baked In](../technology/30-asynchronous-communication-default.md)** - Long-running incremental operations naturally fit asynchronous patterns, communicating progress updates without blocking
 
-- **[Principle #19 - Test in Small Batches](19-test-in-small-batches.md)** - Incremental processing enables testing smaller batches rather than waiting for complete execution, accelerating feedback and iteration
+- **[Principle #19 - Cost and Token Budgeting](19-test-in-small-batches.md)** - Incremental processing enables testing smaller batches rather than waiting for complete execution, accelerating feedback and iteration
 
 ## Common Pitfalls
 

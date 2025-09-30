@@ -574,13 +574,13 @@ async def generate_code(spec: str) -> str:
 
 ## Related Principles
 
-- **[Principle #30 - Observable by Default](30-observable-by-default.md)** - Metrics require observability infrastructure; this principle provides the foundation for measurement
+- **[Principle #30 - Observability Baked In](30-observable-by-default.md)** - Metrics require observability infrastructure; this principle provides the foundation for measurement
 
-- **[Principle #19 - Version Everything with Visibility](../process/19-version-everything-visibility.md)** - Versioning enables tracking how metrics change across versions; you can correlate quality/cost with specific model or prompt versions
+- **[Principle #19 - Cost and Token Budgeting](../process/19-version-everything-visibility.md)** - Versioning enables tracking how metrics change across versions; you can correlate quality/cost with specific model or prompt versions
 
-- **[Principle #13 - Context as Structured Input](../process/13-context-as-structured-input.md)** - Structured context makes evaluation easier; you can measure how well outputs match structured specs
+- **[Principle #13 - Parallel Exploration by Default](../process/13-context-as-structured-input.md)** - Structured context makes evaluation easier; you can measure how well outputs match structured specs
 
-- **[Principle #17 - Async First, Parallel Always](../technology/17-async-first-parallel-always.md)** - Parallel execution of evaluations speeds up feedback loops; you can evaluate multiple outputs simultaneously
+- **[Principle #17 - Prompt Versioning and Testing](../technology/17-async-first-parallel-always.md)** - Parallel execution of evaluations speeds up feedback loops; you can evaluate multiple outputs simultaneously
 
 - **[Principle #11 - Continuous Validation with Fast Feedback](../process/11-continuous-validation-fast-feedback.md)** - Metrics enable continuous validation; fast feedback loops require fast measurement
 

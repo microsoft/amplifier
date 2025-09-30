@@ -617,13 +617,13 @@ class SinglePointHealthCheck:
 
 - **[Principle #32 - Error Recovery Patterns Built In](32-error-recovery-patterns.md)** - The healing kernel implements systematic error recovery patterns. Recovery isn't ad-hoc; it follows established patterns (circuit breakers, retries, fallbacks) that are proven to work.
 
-- **[Principle #22 - Read-Only System Introspection](22-read-only-system-introspection.md)** - Health checks must observe system state without modifying it. The kernel needs accurate system information to make healing decisions, requiring robust read-only introspection capabilities.
+- **[Principle #22 - Separation of Concerns Through Layered Virtualization](22-read-only-system-introspection.md)** - Health checks must observe system state without modifying it. The kernel needs accurate system information to make healing decisions, requiring robust read-only introspection capabilities.
 
-- **[Principle #20 - Observable AI Behavior](20-observable-ai-behavior.md)** - When AI agents trigger deployments that cause health check failures, the kernel's healing actions must be observable. Teams need visibility into what the kernel detected and how it recovered.
+- **[Principle #20 - Self-Modifying AI-First Codebase](20-observable-ai-behavior.md)** - When AI agents trigger deployments that cause health check failures, the kernel's healing actions must be observable. Teams need visibility into what the kernel detected and how it recovered.
 
-- **[Principle #44 - Executable Architecture Documentation](../governance/44-executable-architecture-documentation.md)** - The healing kernel enforces architectural invariants. If AI deployments violate architectural constraints, health checks catch it and trigger recovery.
+- **[Principle #44 - Self-Serve Recovery with Known-Good Snapshots](../governance/44-executable-architecture-documentation.md)** - The healing kernel enforces architectural invariants. If AI deployments violate architectural constraints, health checks catch it and trigger recovery.
 
-- **[Principle #41 - Living Style Guides](../governance/41-living-style-guides.md)** - Health checks can validate that deployed code follows project standards. The kernel can reject deployments that violate style guides or architectural patterns.
+- **[Principle #41 - Adaptive Sandboxing with Explicit Approvals](../governance/41-living-style-guides.md)** - Health checks can validate that deployed code follows project standards. The kernel can reject deployments that violate style guides or architectural patterns.
 
 ## Common Pitfalls
 

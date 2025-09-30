@@ -972,13 +972,13 @@ class UserService:
 
 - **[Principle #23 - Protected Self-Healing Kernel](23-protected-self-healing-kernel.md)** - Layered virtualization enables isolation between the healing kernel and application code. The kernel operates at a lower layer with its own virtual interface.
 
-- **[Principle #20 - Progressive Complexity](20-progressive-complexity.md)** - Layered virtualization implements progressive complexity by hiding details in lower layers and exposing simple interfaces at higher layers.
+- **[Principle #20 - Self-Modifying AI-First Codebase](20-progressive-complexity.md)** - Layered virtualization implements progressive complexity by hiding details in lower layers and exposing simple interfaces at higher layers.
 
 - **[Principle #27 - Disposable Components Everywhere](27-disposable-components.md)** - Virtual layers enable disposability because components depend on abstractions. You can dispose of and recreate implementations without affecting dependents.
 
 - **[Principle #25 - Simple Interfaces by Design](25-simple-interfaces-design.md)** - Virtual layer interfaces must be simple to serve their purpose. Complex interfaces defeat the virtualization by exposing underlying complexity.
 
-- **[Principle #35 - Composable System Design](35-composable-system-design.md)** - Virtualization layers compose cleanly. Each layer's abstraction can be combined with others without understanding their implementations.
+- **[Principle #35 - Least-Privilege Automation with Scoped Permissions](35-composable-system-design.md)** - Virtualization layers compose cleanly. Each layer's abstraction can be combined with others without understanding their implementations.
 
 ## Common Pitfalls
 

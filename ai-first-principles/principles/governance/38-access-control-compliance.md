@@ -595,17 +595,17 @@ def process_old_data(data_id: str):
 
 ## Related Principles
 
-- **[Principle #35 - Graceful Degradation Through Circuit Breakers](35-graceful-degradation-circuit-breakers.md)** - Access control failures should degrade gracefully rather than exposing systems. Circuit breakers prevent cascading authorization failures.
+- **[Principle #35 - Least-Privilege Automation with Scoped Permissions](35-graceful-degradation-circuit-breakers.md)** - Access control failures should degrade gracefully rather than exposing systems. Circuit breakers prevent cascading authorization failures.
 
-- **[Principle #42 - Introspection and Runtime Analysis](42-introspection-runtime-analysis.md)** - Runtime analysis can detect access pattern anomalies and potential security violations. Introspection tools help audit who has access to what.
+- **[Principle #42 - Data Governance and Privacy Controls](42-introspection-runtime-analysis.md)** - Runtime analysis can detect access pattern anomalies and potential security violations. Introspection tools help audit who has access to what.
 
-- **[Principle #41 - Feedback Loops with Monitoring](41-feedback-loops-monitoring.md)** - Monitoring access patterns and compliance violations provides feedback that improves security policies. Failed authorization attempts signal potential attacks.
+- **[Principle #41 - Adaptive Sandboxing with Explicit Approvals](41-feedback-loops-monitoring.md)** - Monitoring access patterns and compliance violations provides feedback that improves security policies. Failed authorization attempts signal potential attacks.
 
-- **[Principle #39 - Safety Constraints That Prevent Harm](39-safety-constraints-prevent-harm.md)** - Access control IS a safety constraint that prevents unauthorized harm. Compliance policies encode organizational safety requirements.
+- **[Principle #39 - Metrics and Evaluation Everywhere](39-safety-constraints-prevent-harm.md)** - Access control IS a safety constraint that prevents unauthorized harm. Compliance policies encode organizational safety requirements.
 
-- **[Principle #36 - Safe Concurrency Without Race Conditions](36-safe-concurrency-race-conditions.md)** - Access control checks must be race-condition-free. TOCTOU (Time Of Check Time Of Use) vulnerabilities in authorization are critical security bugs.
+- **[Principle #36 - Dependency Pinning and Security Scanning](36-safe-concurrency-race-conditions.md)** - Access control checks must be race-condition-free. TOCTOU (Time Of Check Time Of Use) vulnerabilities in authorization are critical security bugs.
 
-- **[Principle #15 - Git-Tracked Declarative Configuration](../process/15-git-tracked-declarative-config.md)** - Access policies and role definitions should be in version control. Changes to authorization rules require review and create audit trails through Git history.
+- **[Principle #15 - Git-Based Everything](../process/15-git-tracked-declarative-config.md)** - Access policies and role definitions should be in version control. Changes to authorization rules require review and create audit trails through Git history.
 
 ## Common Pitfalls
 

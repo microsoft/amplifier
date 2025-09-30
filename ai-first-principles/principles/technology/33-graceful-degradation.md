@@ -475,13 +475,13 @@ class ConfigLoader:
 
 - **[Principle #32 - Error Recovery Patterns Built In](32-error-recovery-patterns.md)** - Graceful degradation is a specific form of error recovery that maintains partial functionality rather than failing completely
 
-- **[Principle #34 - Observable System Behavior](34-observable-system-behavior.md)** - Degraded mode needs to be observable so operators and AI agents can detect and respond to reduced functionality
+- **[Principle #34 - Feature Flags as Deployment Strategy](34-observable-system-behavior.md)** - Degraded mode needs to be observable so operators and AI agents can detect and respond to reduced functionality
 
 - **[Principle #26 - Stateless by Default](26-stateless-by-default.md)** - Stateless components degrade more gracefully because they don't accumulate corrupted state during partial failures
 
 - **[Principle #27 - Disposable Components Everywhere](27-disposable-components.md)** - Disposable components enable graceful degradation by allowing quick replacement of failed components with fresh instances
 
-- **[Principle #24 - Test in Production Safely](24-test-in-production-safely.md)** - Graceful degradation provides safety boundaries for production testing by ensuring experiments fail gracefully
+- **[Principle #24 - Long-Running Agent Processes](24-test-in-production-safely.md)** - Graceful degradation provides safety boundaries for production testing by ensuring experiments fail gracefully
 
 - **[Principle #11 - Continuous Validation with Fast Feedback](../process/11-continuous-validation-fast-feedback.md)** - Fast feedback loops help detect when systems enter degraded mode so recovery can begin quickly
 

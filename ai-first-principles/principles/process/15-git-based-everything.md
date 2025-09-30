@@ -337,15 +337,15 @@ def downgrade():
 
 - **[Principle #10 - Git as Safety Net](10-git-as-safety-net.md)** - Git-Based Everything is the foundation that makes Git as Safety Net possible; you can only roll back what's tracked in Git
 
-- **[Principle #16 - Everything as Code](16-everything-as-code.md)** - Git-Based Everything enables Everything as Code by providing version control for all code artifacts (infrastructure, configuration, documentation)
+- **[Principle #16 - Docs Define, Not Describe](16-everything-as-code.md)** - Git-Based Everything enables Everything as Code by providing version control for all code artifacts (infrastructure, configuration, documentation)
 
-- **[Principle #18 - Agent Task Summaries as Historical Memory](18-agent-task-summaries.md)** - Git commits serve as the storage mechanism for agent task summaries, creating a searchable history of AI agent work
+- **[Principle #18 - Contract Evolution with Migration Paths](18-agent-task-summaries.md)** - Git commits serve as the storage mechanism for agent task summaries, creating a searchable history of AI agent work
 
-- **[Principle #40 - Test-Driven Generation](../technology/40-test-driven-generation.md)** - Tests stored in Git provide the specifications that guide AI code generation and validate outputs
+- **[Principle #40 - Knowledge Stewardship and Institutional Memory](../technology/40-test-driven-generation.md)** - Tests stored in Git provide the specifications that guide AI code generation and validate outputs
 
-- **[Principle #44 - Immutable Production Deployments](../governance/44-immutable-production-deployments.md)** - Immutable deployments require exact reproduction of a specific Git commit in production
+- **[Principle #44 - Self-Serve Recovery with Known-Good Snapshots](../governance/44-immutable-production-deployments.md)** - Immutable deployments require exact reproduction of a specific Git commit in production
 
-- **[Principle #13 - CCSDK Recipes Capture Workflows](13-ccsdk-recipes-capture-workflows.md)** - Recipes stored in Git enable repeatable AI-driven workflows across team members and time
+- **[Principle #13 - Parallel Exploration by Default](13-ccsdk-recipes-capture-workflows.md)** - Recipes stored in Git enable repeatable AI-driven workflows across team members and time
 
 ## Common Pitfalls
 

@@ -679,11 +679,11 @@ async def shutdown():
 
 - **[Principle #26 - Stateless by Default](26-stateless-by-default.md)** - Stateless components are naturally disposable because they store no local state
 
-- **[Principle #24 - Everything in Containers](24-everything-in-containers.md)** - Containers are inherently disposable, making this principle practical to implement
+- **[Principle #24 - Long-Running Agent Processes](24-everything-in-containers.md)** - Containers are inherently disposable, making this principle practical to implement
 
-- **[Principle #28 - Infrastructure as Code](28-infrastructure-as-code.md)** - IaC enables disposable infrastructure by making it easy to destroy and recreate components
+- **[Principle #28 - CLI-First Design](28-infrastructure-as-code.md)** - IaC enables disposable infrastructure by making it easy to destroy and recreate components
 
-- **[Principle #33 - Declarative Configuration Everywhere](33-declarative-configuration.md)** - Declarative config describes desired state, making components disposable because they can be recreated from specifications
+- **[Principle #33 - Graceful Degradation by Design](33-declarative-configuration.md)** - Declarative config describes desired state, making components disposable because they can be recreated from specifications
 
 ## Common Pitfalls
 

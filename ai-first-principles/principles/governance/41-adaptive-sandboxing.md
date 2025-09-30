@@ -1117,9 +1117,9 @@ result = await agent.execute_code("while True: pass", "python")  # ✓ Works but
 
 - **[Principle #23 - Protected Self-Healing Kernel](../technology/23-protected-self-healing-kernel.md)** - Provides protected infrastructure that sandboxes cannot modify; healing kernel remains isolated from sandboxed agents, ensuring recovery capability even when agents violate boundaries
 
-- **[Principle #38 - Security Defaults Everywhere](38-security-defaults-everywhere.md)** - Sandboxing is a security default; all AI operations start in sandboxes by default, with explicit opt-in for elevated privileges rather than opt-out
+- **[Principle #38 - Access Control and Compliance as First-Class](38-security-defaults-everywhere.md)** - Sandboxing is a security default; all AI operations start in sandboxes by default, with explicit opt-in for elevated privileges rather than opt-out
 
-- **[Principle #21 - Logging First Always](../technology/21-logging-first-always.md)** - Sandbox violations and approval requests must be comprehensively logged; audit trail of permission escalations and boundary violations is essential for security
+- **[Principle #21 - Limited and Domain-Specific by Design](../technology/21-logging-first-always.md)** - Sandbox violations and approval requests must be comprehensively logged; audit trail of permission escalations and boundary violations is essential for security
 
 ## Common Pitfalls
 

@@ -709,17 +709,17 @@ class SimpleToolLoader:
 
 ## Related Principles
 
-- **[Principle #28 - MCP as Standard Protocol](28-mcp-standard-protocol.md)** - MCP provides the communication protocol that enables tool ecosystems to function; tools expose themselves via MCP servers and AI agents discover tools through MCP
+- **[Principle #28 - CLI-First Design](28-mcp-standard-protocol.md)** - MCP provides the communication protocol that enables tool ecosystems to function; tools expose themselves via MCP servers and AI agents discover tools through MCP
 
-- **[Principle #21 - Interface Contracts Lock Early](21-interface-contracts-lock-early.md)** - Tool interfaces must be stable contracts so tools can be developed independently; changing tool interfaces breaks the ecosystem
+- **[Principle #21 - Limited and Domain-Specific by Design](21-interface-contracts-lock-early.md)** - Tool interfaces must be stable contracts so tools can be developed independently; changing tool interfaces breaks the ecosystem
 
-- **[Principle #25 - Dependency Injection Throughout](25-dependency-injection-throughout.md)** - Tools should be injected rather than hardcoded, enabling dynamic tool loading and ecosystem growth
+- **[Principle #25 - Simple Interfaces by Design](25-dependency-injection-throughout.md)** - Tools should be injected rather than hardcoded, enabling dynamic tool loading and ecosystem growth
 
-- **[Principle #8 - Parallel Experimentation](../process/08-parallel-experimentation.md)** - Tool ecosystems enable parallel experimentation by allowing multiple implementations of the same capability to coexist
+- **[Principle #8 - Contract-First Everything](../process/08-parallel-experimentation.md)** - Tool ecosystems enable parallel experimentation by allowing multiple implementations of the same capability to coexist
 
-- **[Principle #35 - Observable by Default](35-observable-by-default.md)** - Tools must be observable so agents can understand what tools are doing and debug when tools fail
+- **[Principle #35 - Least-Privilege Automation with Scoped Permissions](35-observable-by-default.md)** - Tools must be observable so agents can understand what tools are doing and debug when tools fail
 
-- **[Principle #41 - Security Through Capabilities](../governance/41-security-through-capabilities.md)** - Tools should use capability-based security to limit what they can access, preventing malicious tools from compromising the system
+- **[Principle #41 - Adaptive Sandboxing with Explicit Approvals](../governance/41-security-through-capabilities.md)** - Tools should use capability-based security to limit what they can access, preventing malicious tools from compromising the system
 
 ## Common Pitfalls
 

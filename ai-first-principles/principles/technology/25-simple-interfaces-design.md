@@ -475,17 +475,17 @@ if result:  # Wait, True means valid or True means error dict?
 
 ## Related Principles
 
-- **[Principle #8 - Module Boundaries as API Contracts](../process/08-module-boundaries-api-contracts.md)** - Simple interfaces form the foundation of stable module boundaries; complex interfaces create fragile contracts that break easily
+- **[Principle #8 - Contract-First Everything](../process/08-module-boundaries-api-contracts.md)** - Simple interfaces form the foundation of stable module boundaries; complex interfaces create fragile contracts that break easily
 
 - **[Principle #7 - Regenerate, Don't Edit](../process/07-regenerate-dont-edit.md)** - Simple interfaces enable confident regeneration because they're easier to implement correctly from scratch
 
-- **[Principle #21 - Clear Component Boundaries](21-clear-component-boundaries.md)** - Simple interfaces define clean boundaries between components, making the system easier to understand and modify
+- **[Principle #21 - Limited and Domain-Specific by Design](21-clear-component-boundaries.md)** - Simple interfaces define clean boundaries between components, making the system easier to understand and modify
 
-- **[Principle #28 - Self-Documenting Systems](28-self-documenting-systems.md)** - Simple interfaces with clear names are self-documenting; complex interfaces require extensive documentation that AI agents may misinterpret
+- **[Principle #28 - CLI-First Design](28-self-documenting-systems.md)** - Simple interfaces with clear names are self-documenting; complex interfaces require extensive documentation that AI agents may misinterpret
 
-- **[Principle #3 - Context-Appropriate Specifications](../process/03-context-appropriate-specifications.md)** - Simple interfaces reduce the specification burden because correct usage is obvious from the interface itself
+- **[Principle #3 - Prompt Engineering as Core Skill](../process/03-context-appropriate-specifications.md)** - Simple interfaces reduce the specification burden because correct usage is obvious from the interface itself
 
-- **[Principle #16 - Parallel Development Streams](../process/16-parallel-development-streams.md)** - Simple interfaces enable parallel work because teams don't need extensive coordination to use them correctly
+- **[Principle #16 - Docs Define, Not Describe](../process/16-parallel-development-streams.md)** - Simple interfaces enable parallel work because teams don't need extensive coordination to use them correctly
 
 ## Common Pitfalls
 

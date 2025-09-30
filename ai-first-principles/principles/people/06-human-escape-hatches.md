@@ -366,13 +366,13 @@ async def execute_task(task: Task):
 
 - **[Principle #02 - Humans in the Driver Seat Always](02-humans-in-driver-seat.md)** - Escape hatches are the mechanism that keeps humans in control; they provide the technical implementation of human authority over AI decisions
 
-- **[Principle #35 - Audit Trails Always On](../governance/35-audit-trails-always-on.md)** - Escape hatches need audit trails to show what was stopped, when, and by whom; audit logs provide the information needed to decide when to intervene
+- **[Principle #35 - Least-Privilege Automation with Scoped Permissions](../governance/35-audit-trails-always-on.md)** - Escape hatches need audit trails to show what was stopped, when, and by whom; audit logs provide the information needed to decide when to intervene
 
-- **[Principle #41 - Graceful Degradation Under Load](../technology/41-graceful-degradation.md)** - Escape hatches are a form of graceful degradation; they allow systems to fall back to human control when automation encounters problems
+- **[Principle #41 - Adaptive Sandboxing with Explicit Approvals](../technology/41-graceful-degradation.md)** - Escape hatches are a form of graceful degradation; they allow systems to fall back to human control when automation encounters problems
 
 - **[Principle #32 - Error Recovery Patterns Built In](../technology/32-error-recovery-patterns.md)** - Escape hatches enable error recovery by giving humans the ability to stop failing operations and trigger recovery procedures
 
-- **[Principle #34 - Monitoring and Observability First](../technology/34-monitoring-observability-first.md)** - Good monitoring helps humans know when to use escape hatches by surfacing problems early, before they become critical
+- **[Principle #34 - Feature Flags as Deployment Strategy](../technology/34-monitoring-observability-first.md)** - Good monitoring helps humans know when to use escape hatches by surfacing problems early, before they become critical
 
 - **[Principle #23 - Protected Self-Healing Kernel](../technology/23-protected-self-healing-kernel.md)** - Escape hatches protect the kernel by ensuring humans can stop self-healing operations that go wrong
 

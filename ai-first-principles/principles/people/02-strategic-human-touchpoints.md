@@ -374,11 +374,11 @@ class BugTriageSystem:
 
 - **[Principle #06 - Asynchronous Collaboration as Default](06-asynchronous-collaboration.md)** - Strategic touchpoints work asynchronously, allowing AI to progress without blocking on human availability
 
-- **[Principle #41 - Automated Quality Gates](../governance/41-automated-quality-gates.md)** - Quality gates determine which work proceeds automatically vs. requires human review
+- **[Principle #41 - Adaptive Sandboxing with Explicit Approvals](../governance/41-automated-quality-gates.md)** - Quality gates determine which work proceeds automatically vs. requires human review
 
 - **[Principle #05 - Rapid Feedback Loops for Agents](05-rapid-feedback-loops.md)** - Touchpoints provide feedback without creating bottlenecks
 
-- **[Principle #39 - Test-Driven Development at AI Speed](../governance/39-test-driven-development-ai-speed.md)** - Automated tests reduce need for human review of routine changes
+- **[Principle #39 - Metrics and Evaluation Everywhere](../governance/39-test-driven-development-ai-speed.md)** - Automated tests reduce need for human review of routine changes
 
 ## Common Pitfalls
 

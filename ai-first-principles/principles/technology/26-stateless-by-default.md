@@ -394,11 +394,11 @@ class TaskWorker:
 
 - **[Principle #27 - Disposable Components Everywhere](27-disposable-components.md)** - Stateless components are inherently disposable. You can kill and restart them at any time without losing data or breaking functionality, making them perfect for fault-tolerant systems.
 
-- **[Principle #24 - Configuration as Immutable Artifacts](24-configuration-as-immutable-artifacts.md)** - Stateless components read configuration from immutable artifacts rather than accumulating configuration state over time, ensuring consistent behavior across restarts.
+- **[Principle #24 - Long-Running Agent Processes](24-configuration-as-immutable-artifacts.md)** - Stateless components read configuration from immutable artifacts rather than accumulating configuration state over time, ensuring consistent behavior across restarts.
 
 - **[Principle #32 - Error Recovery Patterns Built In](32-error-recovery-patterns.md)** - Stateless components simplify error recovery—just restart the component. No need to restore complex internal state or handle partially-updated state.
 
-- **[Principle #33 - Observable Operations by Default](33-observable-operations-by-default.md)** - Stateless operations are easier to observe because their behavior depends only on observable inputs, not hidden internal state.
+- **[Principle #33 - Graceful Degradation by Design](33-observable-operations-by-default.md)** - Stateless operations are easier to observe because their behavior depends only on observable inputs, not hidden internal state.
 
 - **[Principle #7 - Regenerate, Don't Edit](../process/07-regenerate-dont-edit.md)** - Stateless components can be safely regenerated because there's no complex internal state to preserve. AI agents can regenerate the entire component without worrying about state migration.
 

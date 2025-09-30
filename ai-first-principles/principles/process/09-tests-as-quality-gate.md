@@ -476,7 +476,7 @@ def test_pagination():
 
 - **[Principle #11 - Continuous Validation with Fast Feedback](11-continuous-validation-fast-feedback.md)** - Tests provide the fastest feedback mechanism for validating AI-generated code. They run in seconds, enabling rapid iteration cycles.
 
-- **[Principle #17 - Observable Behavior Over Implementation](../process/17-observable-behavior-over-implementation.md)** - Tests focus on observable behavior (inputs/outputs, state changes) rather than implementation details. This allows AI to regenerate implementations freely as long as behavior remains stable.
+- **[Principle #17 - Prompt Versioning and Testing](../process/17-observable-behavior-over-implementation.md)** - Tests focus on observable behavior (inputs/outputs, state changes) rather than implementation details. This allows AI to regenerate implementations freely as long as behavior remains stable.
 
 ## Common Pitfalls
 

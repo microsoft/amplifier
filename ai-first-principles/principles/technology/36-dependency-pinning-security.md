@@ -444,13 +444,13 @@ jobs:
 
 - **[Principle #31 - Idempotency by Design](31-idempotency-by-design.md)** - Pinned dependencies make builds idempotent; running install twice produces the same environment
 
-- **[Principle #18 - Automated Testing as Specification](../process/18-automated-testing-as-specification.md)** - Tests validate that pinned versions work correctly; updating dependencies requires test validation
+- **[Principle #18 - Contract Evolution with Migration Paths](../process/18-automated-testing-as-specification.md)** - Tests validate that pinned versions work correctly; updating dependencies requires test validation
 
-- **[Principle #15 - Branch-Per-Task Workflow](../process/15-branch-per-task-workflow.md)** - Dependency updates happen in dedicated branches with full CI validation before merging
+- **[Principle #15 - Git-Based Everything](../process/15-branch-per-task-workflow.md)** - Dependency updates happen in dedicated branches with full CI validation before merging
 
-- **[Principle #38 - Container-Native Deployment](38-container-native-deployment.md)** - Containers bundle pinned dependencies, making the entire environment reproducible
+- **[Principle #38 - Access Control and Compliance as First-Class](38-container-native-deployment.md)** - Containers bundle pinned dependencies, making the entire environment reproducible
 
-- **[Principle #42 - Infrastructure as Code](../governance/42-infrastructure-as-code.md)** - Infrastructure dependencies (Terraform providers, Ansible modules) must be pinned like application dependencies
+- **[Principle #42 - Data Governance and Privacy Controls](../governance/42-infrastructure-as-code.md)** - Infrastructure dependencies (Terraform providers, Ansible modules) must be pinned like application dependencies
 
 - **[Principle #11 - Continuous Validation with Fast Feedback](../process/11-continuous-validation-fast-feedback.md)** - Security scanning provides fast feedback on vulnerable dependencies before they reach production
 

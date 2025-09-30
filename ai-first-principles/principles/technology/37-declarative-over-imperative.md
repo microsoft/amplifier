@@ -561,15 +561,15 @@ print(f"Total: ${cart.total:.2f}")
 
 - **[Principle #31 - Idempotency by Design](31-idempotency-by-design.md)** - Declarative operations are naturally idempotent because they describe desired state rather than change sequences. Running a declarative specification multiple times produces the same result.
 
-- **[Principle #8 - Context-First Architecture](../process/08-context-first-architecture.md)** - Declarative specifications are the most efficient form of context for AI agents. Instead of explaining step-by-step procedures, you declare "this is what the system should look like" and let the AI implement it.
+- **[Principle #8 - Contract-First Everything](../process/08-context-first-architecture.md)** - Declarative specifications are the most efficient form of context for AI agents. Instead of explaining step-by-step procedures, you declare "this is what the system should look like" and let the AI implement it.
 
-- **[Principle #16 - Generation Over Accumulation](../process/16-generation-over-accumulation.md)** - Declarative specifications enable clean regeneration. Rather than accumulating patches to imperative code, you update the declaration and regenerate the implementation.
+- **[Principle #16 - Docs Define, Not Describe](../process/16-generation-over-accumulation.md)** - Declarative specifications enable clean regeneration. Rather than accumulating patches to imperative code, you update the declaration and regenerate the implementation.
 
-- **[Principle #21 - Simple Over Perfect](21-simple-over-perfect.md)** - Declarative code is inherently simpler because it eliminates complex control flow. The implementation handles the "how" while you focus on the "what."
+- **[Principle #21 - Limited and Domain-Specific by Design](21-simple-over-perfect.md)** - Declarative code is inherently simpler because it eliminates complex control flow. The implementation handles the "how" while you focus on the "what."
 
-- **[Principle #25 - Fail-Fast with Clear Errors](25-fail-fast-clear-errors.md)** - Declarative specifications make validation straightforward: compare actual state to desired state. Mismatches are immediately obvious and easy to report.
+- **[Principle #25 - Simple Interfaces by Design](25-fail-fast-clear-errors.md)** - Declarative specifications make validation straightforward: compare actual state to desired state. Mismatches are immediately obvious and easy to report.
 
-- **[Principle #28 - Composable Building Blocks](28-composable-building-blocks.md)** - Declarative components compose naturally because they describe interfaces and contracts rather than implementation details. You can nest declarative specifications to build complex systems.
+- **[Principle #28 - CLI-First Design](28-composable-building-blocks.md)** - Declarative components compose naturally because they describe interfaces and contracts rather than implementation details. You can nest declarative specifications to build complex systems.
 
 ## Common Pitfalls
 

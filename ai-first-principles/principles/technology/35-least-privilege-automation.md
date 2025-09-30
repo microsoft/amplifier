@@ -374,17 +374,17 @@ agent.delete_secret("prod_database_password")  # ✓ Works but CATASTROPHIC
 
 ## Related Principles
 
-- **[Principle #21 - Logging First Always](21-logging-first-always.md)** - Comprehensive logging becomes essential with least-privilege automation to track what each scoped agent does and identify when permissions need adjustment
+- **[Principle #21 - Limited and Domain-Specific by Design](21-logging-first-always.md)** - Comprehensive logging becomes essential with least-privilege automation to track what each scoped agent does and identify when permissions need adjustment
 
-- **[Principle #29 - Isolated Testing Environments](29-isolated-testing-environments.md)** - Isolated environments work synergistically with least privilege; each environment enforces its own permission boundaries, preventing test agents from affecting production
+- **[Principle #29 - Tool Ecosystems as Extensions](29-isolated-testing-environments.md)** - Isolated environments work synergistically with least privilege; each environment enforces its own permission boundaries, preventing test agents from affecting production
 
-- **[Principle #38 - Security Defaults Everywhere](38-security-defaults-everywhere.md)** - Least privilege is a foundational security default; starting with minimal permissions and explicitly granting more aligns with security-first design
+- **[Principle #38 - Access Control and Compliance as First-Class](38-security-defaults-everywhere.md)** - Least privilege is a foundational security default; starting with minimal permissions and explicitly granting more aligns with security-first design
 
-- **[Principle #41 - Versioned Model Behavior Tracking](41-versioned-model-behavior-tracking.md)** - When tracking AI model behavior, least privilege ensures agents can only access the metrics and logs they need to analyze, not sensitive training data or model weights
+- **[Principle #41 - Adaptive Sandboxing with Explicit Approvals](41-versioned-model-behavior-tracking.md)** - When tracking AI model behavior, least privilege ensures agents can only access the metrics and logs they need to analyze, not sensitive training data or model weights
 
-- **[Principle #42 - Human-in-Loop for Critical Actions](42-human-in-loop-critical-actions.md)** - Least privilege determines which actions are "critical" requiring human approval; operations that exceed an agent's permissions trigger human review
+- **[Principle #42 - Data Governance and Privacy Controls](42-human-in-loop-critical-actions.md)** - Least privilege determines which actions are "critical" requiring human approval; operations that exceed an agent's permissions trigger human review
 
-- **[Principle #6 - Fail Fast with Clear Signals](../process/06-fail-fast-clear-signals.md)** - Permission denials should fail immediately with clear error messages, helping developers understand what permissions are needed without security risks
+- **[Principle #6 - Human Escape Hatches Always Available](../process/06-fail-fast-clear-signals.md)** - Permission denials should fail immediately with clear error messages, helping developers understand what permissions are needed without security risks
 
 ## Common Pitfalls
 

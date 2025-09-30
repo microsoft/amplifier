@@ -378,13 +378,13 @@ def test_user_complete_workflow():
 
 - **[Principle #31 - Idempotency by Design](../technology/31-idempotency-by-design.md)** - Idempotent operations can be validated repeatedly without side effects, enabling safe test reruns and watch mode
 
-- **[Principle #30 - Observable State Changes](../technology/30-observable-state-changes.md)** - Observable systems provide the metrics and logs needed for continuous monitoring and production validation
+- **[Principle #30 - Observability Baked In](../technology/30-observable-state-changes.md)** - Observable systems provide the metrics and logs needed for continuous monitoring and production validation
 
-- **[Principle #13 - Modular with Clear Contracts](13-modular-with-clear-contracts.md)** - Clear module contracts enable focused, fast unit tests that validate boundaries without complex setup
+- **[Principle #13 - Parallel Exploration by Default](13-modular-with-clear-contracts.md)** - Clear module contracts enable focused, fast unit tests that validate boundaries without complex setup
 
-- **[Principle #19 - Test Specifications Not Implementation](19-test-specifications-not-implementation.md)** - Specification-focused tests remain valid through refactoring, reducing validation maintenance burden
+- **[Principle #19 - Cost and Token Budgeting](19-test-specifications-not-implementation.md)** - Specification-focused tests remain valid through refactoring, reducing validation maintenance burden
 
-- **[Principle #39 - Automated Guardrails Everywhere](../governance/39-automated-guardrails-everywhere.md)** - Guardrails are a form of continuous validation, catching policy violations before they reach production
+- **[Principle #39 - Metrics and Evaluation Everywhere](../governance/39-automated-guardrails-everywhere.md)** - Guardrails are a form of continuous validation, catching policy violations before they reach production
 
 ## Common Pitfalls
 

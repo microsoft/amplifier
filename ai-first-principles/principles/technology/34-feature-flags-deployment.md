@@ -328,17 +328,17 @@ class RecommendationService:
 
 ## Related Principles
 
-- **[Principle #33 - Blue-Green and Canary Deployments](33-blue-green-canary-deployments.md)** - Feature flags enable canary deployments by controlling which users see new features, complementing infrastructure-level traffic routing with application-level control
+- **[Principle #33 - Graceful Degradation by Design](33-blue-green-canary-deployments.md)** - Feature flags enable canary deployments by controlling which users see new features, complementing infrastructure-level traffic routing with application-level control
 
-- **[Principle #13 - Incremental Complexity with Escape Hatches](../process/13-incremental-complexity-escape-hatches.md)** - Feature flags are escape hatches that allow instant rollback without code changes, essential for managing complexity in AI-generated systems
+- **[Principle #13 - Parallel Exploration by Default](../process/13-incremental-complexity-escape-hatches.md)** - Feature flags are escape hatches that allow instant rollback without code changes, essential for managing complexity in AI-generated systems
 
-- **[Principle #18 - Clear Component Contracts](../process/18-clear-component-contracts.md)** - Feature flags must respect component contracts; toggling a flag shouldn't violate interface guarantees or break dependent systems
+- **[Principle #18 - Contract Evolution with Migration Paths](../process/18-clear-component-contracts.md)** - Feature flags must respect component contracts; toggling a flag shouldn't violate interface guarantees or break dependent systems
 
 - **[Principle #7 - Regenerate, Don't Edit](../process/07-regenerate-dont-edit.md)** - Feature flags allow AI agents to regenerate features without risk because new code can be deployed disabled and gradually enabled
 
-- **[Principle #39 - Observable System Behavior](39-observable-system-behavior.md)** - Feature flags must be observable; you need metrics showing which flags are enabled, for whom, and what impact they have on system behavior
+- **[Principle #39 - Metrics and Evaluation Everywhere](39-observable-system-behavior.md)** - Feature flags must be observable; you need metrics showing which flags are enabled, for whom, and what impact they have on system behavior
 
-- **[Principle #41 - Audit Trails for AI Actions](41-audit-trails-ai-actions.md)** - Feature flag changes should be logged with who changed them, when, and why, creating an audit trail of feature activation decisions
+- **[Principle #41 - Adaptive Sandboxing with Explicit Approvals](41-audit-trails-ai-actions.md)** - Feature flag changes should be logged with who changed them, when, and why, creating an audit trail of feature activation decisions
 
 ## Common Pitfalls
 

@@ -552,13 +552,13 @@ def handle_user_created(event: dict):
 
 - **[Principle #31 - Idempotency by Design](../technology/31-idempotency-by-design.md)** - Idempotent migration operations allow safe retries and rollbacks during contract transitions
 
-- **[Principle #34 - Contract Testing First](../technology/34-contract-testing-first.md)** - Contract tests must evolve with contracts to verify backward compatibility during transitions
+- **[Principle #34 - Feature Flags as Deployment Strategy](../technology/34-contract-testing-first.md)** - Contract tests must evolve with contracts to verify backward compatibility during transitions
 
-- **[Principle #15 - Automated Verification Gates](15-automated-verification-gates.md)** - Verification gates should check contract compatibility before allowing breaking changes to deploy
+- **[Principle #15 - Git-Based Everything](15-automated-verification-gates.md)** - Verification gates should check contract compatibility before allowing breaking changes to deploy
 
-- **[Principle #40 - Testing in Production Safely](../governance/40-testing-in-production-safely.md)** - New contract versions can be tested in production using canary releases and feature flags
+- **[Principle #40 - Knowledge Stewardship and Institutional Memory](../governance/40-testing-in-production-safely.md)** - New contract versions can be tested in production using canary releases and feature flags
 
-- **[Principle #36 - Self-Documenting Systems](../technology/36-self-documenting-systems.md)** - Contracts should include their version, deprecation status, and migration guides in their documentation
+- **[Principle #36 - Dependency Pinning and Security Scanning](../technology/36-self-documenting-systems.md)** - Contracts should include their version, deprecation status, and migration guides in their documentation
 
 ## Common Pitfalls
 

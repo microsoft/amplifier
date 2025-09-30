@@ -455,13 +455,13 @@ team_satisfaction:
 
 - **[Principle #05 - Async-First Communication](05-async-first-communication.md)** - Small teams can work asynchronously with AI assistance (automated summaries, status updates, documentation). This reduces meeting overhead and enables global distributed teams while maintaining small, autonomous groups.
 
-- **[Principle #14 - Continuous Learning Loops](../process/14-continuous-learning-loops.md)** - Small teams with AI can iterate and learn faster than large teams. AI provides immediate feedback on code quality, test coverage, and performance, accelerating the learning cycle without requiring senior engineers to review every change.
+- **[Principle #14 - Context Management as Discipline](../process/14-continuous-learning-loops.md)** - Small teams with AI can iterate and learn faster than large teams. AI provides immediate feedback on code quality, test coverage, and performance, accelerating the learning cycle without requiring senior engineers to review every change.
 
 - **[Principle #08 - Visible Progress Through Working Software](../process/08-visible-progress-working-software.md)** - Small AI-assisted teams ship working software faster, making progress visible early and often. AI handles boilerplate, testing, and documentation, letting teams focus on delivering value rather than managing process.
 
-- **[Principle #21 - Disposable Feature Branches](../process/21-disposable-feature-branches.md)** - Small teams can experiment freely when AI helps them create and test multiple feature branches in parallel. This enables exploration without the coordination overhead of large teams managing complex branching strategies.
+- **[Principle #21 - Limited and Domain-Specific by Design](../process/21-disposable-feature-branches.md)** - Small teams can experiment freely when AI helps them create and test multiple feature branches in parallel. This enables exploration without the coordination overhead of large teams managing complex branching strategies.
 
-- **[Principle #39 - Cost Transparency and Optimization](../governance/39-cost-transparency-optimization.md)** - Small teams with AI tooling have clear cost structures (team size + AI tooling costs). This is easier to optimize than large teams with hidden costs in coordination overhead, delayed decisions, and reduced velocity.
+- **[Principle #39 - Metrics and Evaluation Everywhere](../governance/39-cost-transparency-optimization.md)** - Small teams with AI tooling have clear cost structures (team size + AI tooling costs). This is easier to optimize than large teams with hidden costs in coordination overhead, delayed decisions, and reduced velocity.
 
 ## Common Pitfalls
 

@@ -712,7 +712,7 @@ class AppConfig:
 
 - **[Principle #09 - Tests as Quality Gate](09-tests-as-quality-gate.md)** - Tests are executable definitive documentation. They prescribe required behavior that code must satisfy.
 
-- **[Principle #17 - Test Intent, Not Implementation](17-test-intent-not-implementation.md)** - Tests document intent (what must happen) not implementation (how it happens), making them definitive rather than descriptive.
+- **[Principle #17 - Prompt Versioning and Testing](17-test-intent-not-implementation.md)** - Tests document intent (what must happen) not implementation (how it happens), making them definitive rather than descriptive.
 
 - **[Principle #03 - Embrace Regeneration](../mindset/03-embrace-regeneration.md)** - Regeneration requires definitive docs as stable specifications. Without them, each regeneration drifts from original intent.
 

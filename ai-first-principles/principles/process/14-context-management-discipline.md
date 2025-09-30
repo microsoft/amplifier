@@ -383,17 +383,17 @@ Rate Limiting Requirements:
 
 ## Related Principles
 
-- **[Principle #8 - Specifications as Source of Truth](08-specifications-source-of-truth.md)** - Well-structured specifications enable better context management by providing clear, retrievable documentation sections
+- **[Principle #8 - Contract-First Everything](08-specifications-source-of-truth.md)** - Well-structured specifications enable better context management by providing clear, retrievable documentation sections
 
-- **[Principle #16 - Modular Architecture as AI Scaffolding](16-modular-architecture-ai-scaffolding.md)** - Modular architecture naturally supports context management by creating clear boundaries that limit what context is needed
+- **[Principle #16 - Docs Define, Not Describe](16-modular-architecture-ai-scaffolding.md)** - Modular architecture naturally supports context management by creating clear boundaries that limit what context is needed
 
-- **[Principle #19 - Sub-Agent Orchestration Patterns](19-sub-agent-orchestration.md)** - Context management enables effective sub-agent orchestration by ensuring each agent receives focused, relevant context for its specific task
+- **[Principle #19 - Cost and Token Budgeting](19-sub-agent-orchestration.md)** - Context management enables effective sub-agent orchestration by ensuring each agent receives focused, relevant context for its specific task
 
-- **[Principle #40 - Knowledge Base as Dynamic Context](../governance/40-knowledge-base-dynamic-context.md)** - Dynamic knowledge bases provide the infrastructure for semantic retrieval and context assembly
+- **[Principle #40 - Knowledge Stewardship and Institutional Memory](../governance/40-knowledge-base-dynamic-context.md)** - Dynamic knowledge bases provide the infrastructure for semantic retrieval and context assembly
 
-- **[Principle #3 - Parallel Exploration Over Sequential Perfection](03-parallel-exploration-sequential-perfection.md)** - Context management enables parallel work by ensuring each parallel agent has focused context without overlap
+- **[Principle #3 - Prompt Engineering as Core Skill](03-parallel-exploration-sequential-perfection.md)** - Context management enables parallel work by ensuring each parallel agent has focused context without overlap
 
-- **[Principle #25 - Continuous Learning & Adaptation Systems](../governance/25-continuous-learning-adaptation.md)** - Learning systems improve context management by tracking what context works best for different task types
+- **[Principle #25 - Simple Interfaces by Design](../governance/25-continuous-learning-adaptation.md)** - Learning systems improve context management by tracking what context works best for different task types
 
 ## Common Pitfalls
 

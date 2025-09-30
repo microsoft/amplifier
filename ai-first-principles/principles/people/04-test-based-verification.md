@@ -656,9 +656,9 @@ def test_bulk_operations_work():
 
 - **[Principle #07 - Regenerate, Don't Edit](../process/07-regenerate-dont-edit.md)** - Tests enable safe regeneration by verifying behavior is preserved regardless of implementation changes.
 
-- **[Principle #17 - AI Agents as First-Class Developers](17-ai-agents-as-first-class-developers.md)** - Test-based verification treats AI agents as developers whose output is validated the same way: through automated tests, not manual review.
+- **[Principle #17 - Prompt Versioning and Testing](17-ai-agents-as-first-class-developers.md)** - Test-based verification treats AI agents as developers whose output is validated the same way: through automated tests, not manual review.
 
-- **[Principle #39 - Ruthless Automation of Repetitive Tasks](../governance/39-ruthless-automation.md)** - Test-based verification automates the repetitive task of validating code correctness, replacing manual review with systematic verification.
+- **[Principle #39 - Metrics and Evaluation Everywhere](../governance/39-ruthless-automation.md)** - Test-based verification automates the repetitive task of validating code correctness, replacing manual review with systematic verification.
 
 ## Common Pitfalls
 

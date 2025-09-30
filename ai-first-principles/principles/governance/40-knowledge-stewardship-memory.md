@@ -284,17 +284,17 @@ document.querySelectorAll('img').forEach(img => {
 
 ## Related Principles
 
-- **[Principle #16 - Design for Learning and Adaptation](16-design-learning-adaptation.md)** - Knowledge stewardship is how learning persists; captured lessons enable adaptation over time
+- **[Principle #16 - Docs Define, Not Describe](16-design-learning-adaptation.md)** - Knowledge stewardship is how learning persists; captured lessons enable adaptation over time
 
-- **[Principle #15 - Quality Gates and Testing Standards](15-quality-gates-testing.md)** - Quality gates should enforce knowledge contribution; major changes require documentation updates
+- **[Principle #15 - Git-Based Everything](15-quality-gates-testing.md)** - Quality gates should enforce knowledge contribution; major changes require documentation updates
 
-- **[Principle #14 - Continuous Feedback Mechanisms](14-continuous-feedback-mechanisms.md)** - Feedback loops generate insights that must be captured; stewardship turns feedback into institutional knowledge
+- **[Principle #14 - Context Management as Discipline](14-continuous-feedback-mechanisms.md)** - Feedback loops generate insights that must be captured; stewardship turns feedback into institutional knowledge
 
 - **[Principle #05 - Design System as Skeleton](../process/05-design-system-as-skeleton.md)** - Design systems are institutional memory for UI decisions; document patterns, rationale, and evolution
 
-- **[Principle #18 - Human in the Loop at Decision Points](18-human-in-loop-decisions.md)** - Humans make key decisions; stewardship captures those decisions so AI can reference them later
+- **[Principle #18 - Contract Evolution with Migration Paths](18-human-in-loop-decisions.md)** - Humans make key decisions; stewardship captures those decisions so AI can reference them later
 
-- **[Principle #43 - Ethical AI Development Standards](43-ethical-ai-development.md)** - Ethics decisions must be documented and accessible; stewardship ensures ethical reasoning is transparent and persistent
+- **[Principle #43 - Model Lifecycle Management](43-ethical-ai-development.md)** - Ethics decisions must be documented and accessible; stewardship ensures ethical reasoning is transparent and persistent
 
 ## Common Pitfalls
 

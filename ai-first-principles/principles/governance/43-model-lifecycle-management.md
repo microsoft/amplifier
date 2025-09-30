@@ -608,17 +608,17 @@ def generate_text(prompt: str):
 
 ## Related Principles
 
-- **[Principle #18 - Observable Everything](18-observable-everything.md)** - Model performance tracking requires comprehensive observability of model calls, costs, latencies, and outcomes. You can't manage what you can't measure.
+- **[Principle #18 - Contract Evolution with Migration Paths](18-observable-everything.md)** - Model performance tracking requires comprehensive observability of model calls, costs, latencies, and outcomes. You can't manage what you can't measure.
 
-- **[Principle #19 - AI Performance Testing](19-ai-performance-testing.md)** - Model upgrades need performance validation before rollout. Testing frameworks must compare new models against baseline models across multiple dimensions.
+- **[Principle #19 - Cost and Token Budgeting](19-ai-performance-testing.md)** - Model upgrades need performance validation before rollout. Testing frameworks must compare new models against baseline models across multiple dimensions.
 
-- **[Principle #39 - Cost Transparency](39-cost-transparency.md)** - Model lifecycle management must track costs per model to enable cost-optimized model selection. Without cost visibility, you can't make intelligent model routing decisions.
+- **[Principle #39 - Metrics and Evaluation Everywhere](39-cost-transparency.md)** - Model lifecycle management must track costs per model to enable cost-optimized model selection. Without cost visibility, you can't make intelligent model routing decisions.
 
-- **[Principle #34 - Contract-Based AI Integration](../technology/34-contract-based-ai-integration.md)** - Model substitution requires stable contracts between application code and model interfaces. Contract testing validates that replacement models honor expected behaviors.
+- **[Principle #34 - Feature Flags as Deployment Strategy](../technology/34-contract-based-ai-integration.md)** - Model substitution requires stable contracts between application code and model interfaces. Contract testing validates that replacement models honor expected behaviors.
 
-- **[Principle #33 - Graceful Degradation](../technology/33-graceful-degradation.md)** - Fallback chains and multi-model strategies implement graceful degradation when primary models fail or are unavailable.
+- **[Principle #33 - Graceful Degradation by Design](../technology/33-graceful-degradation.md)** - Fallback chains and multi-model strategies implement graceful degradation when primary models fail or are unavailable.
 
-- **[Principle #17 - Fast Feedback Loops](17-fast-feedback-loops.md)** - Model performance tracking provides fast feedback on quality degradation, allowing rapid response to issues before they affect many users.
+- **[Principle #17 - Prompt Versioning and Testing](17-fast-feedback-loops.md)** - Model performance tracking provides fast feedback on quality degradation, allowing rapid response to issues before they affect many users.
 
 ## Common Pitfalls
 

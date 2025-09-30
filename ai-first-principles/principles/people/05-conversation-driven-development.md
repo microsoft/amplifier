@@ -100,15 +100,15 @@ Human asks "Should I use microservices?" AI responds "Yes, microservices are mod
 
 - **[Principle #03 - Rapid Feedback Loops](03-rapid-feedback-loops.md)** - Conversation provides immediate feedback on requirements and implementation, accelerating the development cycle
 
-- **[Principle #16 - Show, Dont Just Tell](../process/16-show-dont-just-tell.md)** - Conversational development generates working examples and prototypes that can be refined through dialogue
+- **[Principle #16 - Docs Define, Not Describe](../process/16-show-dont-just-tell.md)** - Conversational development generates working examples and prototypes that can be refined through dialogue
 
 - **[Principle #02 - Progressive Disclosure of Complexity](02-progressive-disclosure-complexity.md)** - Conversations naturally start simple and add complexity only when needed through iterative refinement
 
-- **[Principle #14 - Documentation as Conversation](../process/14-documentation-as-conversation.md)** - Documentation emerges from development conversations rather than being created separately
+- **[Principle #14 - Context Management as Discipline](../process/14-documentation-as-conversation.md)** - Documentation emerges from development conversations rather than being created separately
 
-- **[Principle #17 - Specification Through Examples](../process/17-specification-through-examples.md)** - Conversations use concrete examples to clarify abstract requirements
+- **[Principle #17 - Prompt Versioning and Testing](../process/17-specification-through-examples.md)** - Conversations use concrete examples to clarify abstract requirements
 
-- **[Principle #40 - Natural Language as Primary Interface](../technology/40-natural-language-primary-interface.md)** - Conversation-driven development relies on natural language as the main development interface
+- **[Principle #40 - Knowledge Stewardship and Institutional Memory](../technology/40-natural-language-primary-interface.md)** - Conversation-driven development relies on natural language as the main development interface
 
 ## Common Pitfalls
 

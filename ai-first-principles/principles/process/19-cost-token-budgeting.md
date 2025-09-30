@@ -494,15 +494,15 @@ def track_request(cost: float):
 
 ## Related Principles
 
-- **[Principle #14 - Explicit Constraints Always](14-explicit-constraints-always.md)** - Cost limits are explicit constraints that prevent unbounded resource consumption. Token budgets and spending caps enforce boundaries on AI operations.
+- **[Principle #14 - Context Management as Discipline](14-explicit-constraints-always.md)** - Cost limits are explicit constraints that prevent unbounded resource consumption. Token budgets and spending caps enforce boundaries on AI operations.
 
-- **[Principle #39 - Real-Time Monitoring and Observability](../technology/39-real-time-monitoring-observability.md)** - Cost tracking is a form of observability that enables real-time awareness of resource consumption and immediate response to budget anomalies.
+- **[Principle #39 - Metrics and Evaluation Everywhere](../technology/39-real-time-monitoring-observability.md)** - Cost tracking is a form of observability that enables real-time awareness of resource consumption and immediate response to budget anomalies.
 
-- **[Principle #12 - Fail Fast with Clear Error Messages](12-fail-fast-clear-errors.md)** - Budget limits should fail fast with clear messages about what limit was exceeded, how much was spent, and what operation triggered the failure.
+- **[Principle #12 - Incremental Processing as Default](12-fail-fast-clear-errors.md)** - Budget limits should fail fast with clear messages about what limit was exceeded, how much was spent, and what operation triggered the failure.
 
-- **[Principle #13 - Defensive Code by Default](13-defensive-code-default.md)** - Cost budgeting is defensive programming for AI operations, protecting against runaway expenses through validation, limits, and monitoring.
+- **[Principle #13 - Parallel Exploration by Default](13-defensive-code-default.md)** - Cost budgeting is defensive programming for AI operations, protecting against runaway expenses through validation, limits, and monitoring.
 
-- **[Principle #43 - Performance Budgets and Optimization](../technology/43-performance-budgets-optimization.md)** - Token budgets are performance budgets for AI operations. Optimizing context windows and model selection improves both speed and cost.
+- **[Principle #43 - Model Lifecycle Management](../technology/43-performance-budgets-optimization.md)** - Token budgets are performance budgets for AI operations. Optimizing context windows and model selection improves both speed and cost.
 
 - **[Principle #03 - Documentation as Code](../people/03-documentation-as-code.md)** - Cost budgets should be documented in code through constants, configuration files, and inline comments explaining budget rationale.
 

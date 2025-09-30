@@ -568,11 +568,11 @@ def test_snapshot_recovery_process():
 
 - **[Principle #32 - Error Recovery Patterns Built In](../technology/32-error-recovery-patterns.md)** - Snapshots are the foundational recovery pattern that enables other recovery strategies
 
-- **[Principle #15 - Continuous Deployment Safety](../process/15-continuous-deployment-safety.md)** - Snapshots enable safe continuous deployment by providing instant rollback capability
+- **[Principle #15 - Git-Based Everything](../process/15-continuous-deployment-safety.md)** - Snapshots enable safe continuous deployment by providing instant rollback capability
 
 - **[Principle #31 - Idempotency by Design](../technology/31-idempotency-by-design.md)** - Snapshot restoration must be idempotent; restoring the same snapshot multiple times should produce identical results
 
-- **[Principle #6 - Parallel Experimentation](../process/06-parallel-experimentation.md)** - Snapshots enable fearless parallel experimentation because any experiment can be abandoned instantly without affecting other variants
+- **[Principle #6 - Human Escape Hatches Always Available](../process/06-parallel-experimentation.md)** - Snapshots enable fearless parallel experimentation because any experiment can be abandoned instantly without affecting other variants
 
 ## Common Pitfalls
 

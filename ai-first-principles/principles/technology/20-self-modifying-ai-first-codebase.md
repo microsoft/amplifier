@@ -667,13 +667,13 @@ def optimize_component_bad(component: str):
 
 - **[Principle #7 - Regenerate, Don't Edit](../process/07-regenerate-dont-edit.md)** - Core enabler of self-modification; AI regenerates components from specifications rather than editing code line-by-line
 
-- **[Principle #9 - Continuous Integration](../process/09-continuous-integration.md)** - Validates self-modifications through automated testing; ensures changed code meets quality gates before deployment
+- **[Principle #9 - Tests as the Quality Gate](../process/09-continuous-integration.md)** - Validates self-modifications through automated testing; ensures changed code meets quality gates before deployment
 
 - **[Principle #10 - Git as Safety Net](../process/10-git-as-safety-net.md)** - Provides version control and rollback capability for self-modifications; enables instant recovery from failed changes
 
-- **[Principle #22 - Specification-Driven Architecture](22-specification-driven-architecture.md)** - Foundation for safe self-modification; AI modifies specifications while kernel generates implementations
+- **[Principle #22 - Separation of Concerns Through Layered Virtualization](22-specification-driven-architecture.md)** - Foundation for safe self-modification; AI modifies specifications while kernel generates implementations
 
-- **[Principle #41 - Meta-Programming for Code Generation](41-meta-programming-code-generation.md)** - Enables self-modification through code generation from templates and specifications; maintains consistency across AI-generated code
+- **[Principle #41 - Adaptive Sandboxing with Explicit Approvals](41-meta-programming-code-generation.md)** - Enables self-modification through code generation from templates and specifications; maintains consistency across AI-generated code
 
 ## Common Pitfalls
 

@@ -309,17 +309,17 @@ Document the orders API endpoint. Include all the usual stuff like parameters, r
 
 ## Related Principles
 
-- **[Principle #17 - AI Tool Selection Matters](../technology/17-ai-tool-selection.md)** - Different AI tools respond differently to prompts; effective prompt engineering requires understanding each tool's strengths and prompt styles
+- **[Principle #17 - Prompt Versioning and Testing](../technology/17-ai-tool-selection.md)** - Different AI tools respond differently to prompts; effective prompt engineering requires understanding each tool's strengths and prompt styles
 
-- **[Principle #14 - Specification Before Implementation](../process/14-specification-before-implementation.md)** - Good specifications are effectively detailed prompts; writing specs trains prompt engineering skills
+- **[Principle #14 - Context Management as Discipline](../process/14-specification-before-implementation.md)** - Good specifications are effectively detailed prompts; writing specs trains prompt engineering skills
 
-- **[Principle #16 - Human Review at Decision Points](../process/16-human-review-decision-points.md)** - Effective prompts include review checkpoints; telling AI when to pause for human validation prevents wasted work
+- **[Principle #16 - Docs Define, Not Describe](../process/16-human-review-decision-points.md)** - Effective prompts include review checkpoints; telling AI when to pause for human validation prevents wasted work
 
-- **[Principle #25 - Contract-First API Design](../technology/25-contract-first-api-design.md)** - API contracts are prompts for implementation; learning to write clear contracts improves prompt engineering
+- **[Principle #25 - Simple Interfaces by Design](../technology/25-contract-first-api-design.md)** - API contracts are prompts for implementation; learning to write clear contracts improves prompt engineering
 
 - **[Principle #05 - AI Agents as Team Members](05-ai-agents-as-team-members.md)** - Treating AI as team members means writing prompts like you'd write tickets for developers - clear, complete, actionable
 
-- **[Principle #21 - Decomposition Discipline](../process/21-decomposition-discipline.md)** - Breaking work into small pieces is prompt engineering; each piece becomes a focused, effective prompt
+- **[Principle #21 - Limited and Domain-Specific by Design](../process/21-decomposition-discipline.md)** - Breaking work into small pieces is prompt engineering; each piece becomes a focused, effective prompt
 
 ## Common Pitfalls
 

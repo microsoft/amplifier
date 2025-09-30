@@ -567,15 +567,15 @@ def health_check():
 
 - **[Principle #11 - Continuous Validation with Fast Feedback](../process/11-continuous-validation-fast-feedback.md)** - Observability provides the feedback data that enables continuous validation; you can't validate what you can't observe
 
-- **[Principle #39 - Progressive Enhancement](39-progressive-enhancement.md)** - Observability enables progressive enhancement by providing data on what's actually being used and where improvements are needed
+- **[Principle #39 - Metrics and Evaluation Everywhere](39-progressive-enhancement.md)** - Observability enables progressive enhancement by providing data on what's actually being used and where improvements are needed
 
 - **[Principle #32 - Error Recovery Patterns Built In](32-error-recovery-patterns.md)** - Error recovery depends on observability to detect failures, understand their context, and validate recovery success
 
 - **[Principle #23 - Protected Self-Healing Kernel](23-protected-self-healing-kernel.md)** - Self-healing systems require observability to detect issues, trigger healing actions, and verify healing worked
 
-- **[Principle #12 - Specification-Driven Iteration](../process/12-specification-driven-iteration.md)** - Observability data informs specification refinement by showing actual system behavior versus intended behavior
+- **[Principle #12 - Incremental Processing as Default](../process/12-specification-driven-iteration.md)** - Observability data informs specification refinement by showing actual system behavior versus intended behavior
 
-- **[Principle #19 - Context-Aware Communication](../people/19-context-aware-communication.md)** - Observability provides the context needed for effective communication about system behavior and issues
+- **[Principle #19 - Cost and Token Budgeting](../people/19-context-aware-communication.md)** - Observability provides the context needed for effective communication about system behavior and issues
 
 ## Common Pitfalls
 

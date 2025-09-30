@@ -383,9 +383,9 @@ git checkout HEAD~5 -- database.py  # Guessing now
 
 - **[Principle #07 - Regenerate, Don't Edit](07-regenerate-dont-edit.md)** - Git enables fearless regeneration by making all changes reversible. Without Git safety net, regeneration would be too risky.
 
-- **[Principle #15 - Checkpoint Frequently](15-checkpoint-frequently.md)** - Git commits implement the checkpoint pattern, creating frequent savepoints during development and regeneration workflows.
+- **[Principle #15 - Git-Based Everything](15-checkpoint-frequently.md)** - Git commits implement the checkpoint pattern, creating frequent savepoints during development and regeneration workflows.
 
-- **[Principle #11 - Parallel Exploration by Default](11-parallel-exploration.md)** - Git branches enable parallel exploration where AI agents can try multiple approaches simultaneously without interference.
+- **[Principle #11 - Continuous Validation with Fast Feedback](11-parallel-exploration.md)** - Git branches enable parallel exploration where AI agents can try multiple approaches simultaneously without interference.
 
 - **[Principle #27 - Disposable Components Everywhere](../technology/27-disposable-components.md)** - Git makes components disposable by ensuring you can always recover the old version if the new one fails.
 

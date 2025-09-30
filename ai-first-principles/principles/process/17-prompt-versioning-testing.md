@@ -607,15 +607,15 @@ def review_code(code):
 
 - **[Principle #09 - Tests as the Quality Gate](09-tests-as-quality-gate.md)** - Just as code requires tests, prompts require validation. Tests serve as quality gates for both traditional code and prompt-generated code.
 
-- **[Principle #15 - Output Validation and Feedback Loops](15-output-validation-feedback.md)** - Prompt testing is output validation. This principle provides the feedback mechanisms that detect when prompts produce incorrect or unexpected results.
+- **[Principle #15 - Git-Based Everything](15-output-validation-feedback.md)** - Prompt testing is output validation. This principle provides the feedback mechanisms that detect when prompts produce incorrect or unexpected results.
 
 - **[Principle #03 - LLM as Reasoning Engine](../architecture/03-llm-as-reasoning-engine.md)** - Prompts are the instructions to the reasoning engine. Version-controlled, tested prompts ensure the reasoning engine receives clear, consistent instructions.
 
-- **[Principle #13 - Prompt Libraries as Infrastructure](../architecture/13-prompt-libraries-infrastructure.md)** - This principle defines the infrastructure for storing prompts; version control and testing make that infrastructure reliable and maintainable.
+- **[Principle #13 - Parallel Exploration by Default](../architecture/13-prompt-libraries-infrastructure.md)** - This principle defines the infrastructure for storing prompts; version control and testing make that infrastructure reliable and maintainable.
 
-- **[Principle #39 - Deterministic LLM Patterns](../quality/39-deterministic-llm-patterns.md)** - Testing prompts identifies non-deterministic behaviors. Versioning allows rolling back to prompts that had better consistency.
+- **[Principle #39 - Metrics and Evaluation Everywhere](../quality/39-deterministic-llm-patterns.md)** - Testing prompts identifies non-deterministic behaviors. Versioning allows rolling back to prompts that had better consistency.
 
-- **[Principle #43 - Prompt Injection Defense](../quality/43-prompt-injection-defense.md)** - Prompt testing should include security tests for injection attacks. Version control tracks when security improvements were added to prompts.
+- **[Principle #43 - Model Lifecycle Management](../quality/43-prompt-injection-defense.md)** - Prompt testing should include security tests for injection attacks. Version control tracks when security improvements were added to prompts.
 
 ## Common Pitfalls
 

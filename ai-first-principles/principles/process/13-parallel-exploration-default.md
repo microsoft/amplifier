@@ -471,13 +471,13 @@ def design_error_handling(service_spec: dict):
 
 - **[Principle #10 - Git as Safety Net](10-git-as-safety-net.md)** - Parallel branches for exploring alternatives require git worktrees or similar mechanisms for managing multiple implementations safely
 
-- **[Principle #15 - Test-Driven Context](15-test-driven-context.md)** - Tests enable objective comparison of parallel implementations; the same test suite validates all variants
+- **[Principle #15 - Git-Based Everything](15-test-driven-context.md)** - Tests enable objective comparison of parallel implementations; the same test suite validates all variants
 
 - **[Principle #26 - Stateless by Default](../technology/26-stateless-by-default.md)** - Stateless components are easier to generate in parallel and compare because they don't have hidden state dependencies
 
 - **[Principle #27 - Disposable Components Everywhere](../technology/27-disposable-components.md)** - Disposable components make parallel exploration cheap; variants can be created and discarded without investment anxiety
 
-- **[Principle #39 - Measurement-Driven Decisions](../governance/39-measurement-driven-decisions.md)** - Parallel exploration produces data for measurement-driven decisions; comparing variants provides concrete metrics instead of speculation
+- **[Principle #39 - Metrics and Evaluation Everywhere](../governance/39-measurement-driven-decisions.md)** - Parallel exploration produces data for measurement-driven decisions; comparing variants provides concrete metrics instead of speculation
 
 ## Common Pitfalls
 

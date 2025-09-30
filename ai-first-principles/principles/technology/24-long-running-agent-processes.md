@@ -584,17 +584,17 @@ class MemoryHogAgent:
 
 ## Related Principles
 
-- **[Principle #12 - Incremental by Default](../process/12-incremental-by-default.md)** - Long-running processes must be incremental to save progress and resume after interruption
+- **[Principle #12 - Incremental Processing as Default](../process/12-incremental-by-default.md)** - Long-running processes must be incremental to save progress and resume after interruption
 
 - **[Principle #26 - Stateless by Default](26-stateless-by-default.md)** - While processes are long-running, components should still be stateless; state lives in durable storage, not process memory
 
-- **[Principle #30 - Infrastructure as Throwaway Code](30-infrastructure-as-throwaway-code.md)** - Long-running agents must survive infrastructure changes; containerization and orchestration enable this
+- **[Principle #30 - Observability Baked In](30-infrastructure-as-throwaway-code.md)** - Long-running agents must survive infrastructure changes; containerization and orchestration enable this
 
 - **[Principle #32 - Error Recovery Patterns Built In](32-error-recovery-patterns.md)** - Long-running processes need robust error recovery because they'll encounter more failure modes over time
 
 - **[Principle #27 - Disposable Components Everywhere](27-disposable-components.md)** - Long-running agents should be disposable despite their duration; they can be stopped and restarted without data loss
 
-- **[Principle #28 - Observable Internals Required](28-observable-internals.md)** - Long-running processes must expose progress, health, and internal state for monitoring and debugging
+- **[Principle #28 - CLI-First Design](28-observable-internals.md)** - Long-running processes must expose progress, health, and internal state for monitoring and debugging
 
 ## Common Pitfalls
 

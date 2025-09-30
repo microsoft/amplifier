@@ -239,6 +239,37 @@ This tool demonstrates several AI-first principles:
 - **#16 Docs Define, Not Describe**: Template defines what specs should contain
 - **#37 Declarative Over Imperative**: Declare what to validate, not how
 
+### Search for Principles
+
+Find relevant principles based on keywords, concepts, or relationships:
+
+```bash
+# Search for principles mentioning "test"
+python3 tools/principle_search.py keyword test
+
+# Search with more context lines
+python3 tools/principle_search.py keyword "error handling" --context 5
+
+# Search for principles related to multiple concepts
+python3 tools/principle_search.py concepts "error handling" "recovery" "resilience"
+
+# Find principles related to principle #31
+python3 tools/principle_search.py related 31
+
+# List all technology principles
+python3 tools/principle_search.py category technology
+
+# Search for principles with specific code patterns
+python3 tools/principle_search.py examples "async def"
+```
+
+**Search Modes:**
+- **keyword**: Find principles containing specific terms with context
+- **concepts**: Search for principles related to multiple concepts (ranked by relevance)
+- **related**: Discover principles cross-referenced by a specific principle
+- **category**: List all principles in a category (people/process/technology/governance)
+- **examples**: Find principles with specific code patterns in examples
+
 ## Future Enhancements
 
 Potential additions:

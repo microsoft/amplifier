@@ -583,15 +583,15 @@ class SQLExecutor:
 
 ## Related Principles
 
-- **[Principle #25 - Minimize Blast Radius](25-minimize-blast-radius.md)** - Limited tools naturally minimize blast radius by constraining what can be affected when things go wrong. Domain-specific operations can only impact their specific domain, preventing cascading failures.
+- **[Principle #25 - Simple Interfaces by Design](25-minimize-blast-radius.md)** - Limited tools naturally minimize blast radius by constraining what can be affected when things go wrong. Domain-specific operations can only impact their specific domain, preventing cascading failures.
 
-- **[Principle #14 - Context-Aware Guardrails](../governance/14-context-aware-guardrails.md)** - Domain-specific design is a form of guardrail. By limiting what's possible at the interface level, you create automatic constraints that don't require AI to make safety decisions.
+- **[Principle #14 - Context Management as Discipline](../governance/14-context-aware-guardrails.md)** - Domain-specific design is a form of guardrail. By limiting what's possible at the interface level, you create automatic constraints that don't require AI to make safety decisions.
 
-- **[Principle #29 - Safe Defaults, Explicit Overrides](29-safe-defaults-explicit-overrides.md)** - Domain-specific tools embody safe defaults. The interface only exposes safe operations; dangerous operations aren't available even as overrides.
+- **[Principle #29 - Tool Ecosystems as Extensions](29-safe-defaults-explicit-overrides.md)** - Domain-specific tools embody safe defaults. The interface only exposes safe operations; dangerous operations aren't available even as overrides.
 
-- **[Principle #35 - Automation with Human Checkpoints](35-automation-human-checkpoints.md)** - Limited tools make automated operations safer and reduce the number of human checkpoints needed. When tools can only perform safe operations, more automation can proceed without human review.
+- **[Principle #35 - Least-Privilege Automation with Scoped Permissions](35-automation-human-checkpoints.md)** - Limited tools make automated operations safer and reduce the number of human checkpoints needed. When tools can only perform safe operations, more automation can proceed without human review.
 
-- **[Principle #41 - Verifiable Constraints Everywhere](../governance/41-verifiable-constraints.md)** - Domain-specific interfaces are verifiable constraints. You can prove that certain operations are impossible by examining the tool's interface rather than auditing all usage.
+- **[Principle #41 - Adaptive Sandboxing with Explicit Approvals](../governance/41-verifiable-constraints.md)** - Domain-specific interfaces are verifiable constraints. You can prove that certain operations are impossible by examining the tool's interface rather than auditing all usage.
 
 - **[Principle #03 - Small, Focused Agents Over God Mode](../people/03-small-focused-agents.md)** - This principle applies to tools what Principle #3 applies to agents. Just as focused agents are more reliable than general-purpose ones, focused tools are safer and more predictable than general-purpose ones.
 

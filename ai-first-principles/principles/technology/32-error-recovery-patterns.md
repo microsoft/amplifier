@@ -549,11 +549,11 @@ async def get_product_page(product_id: str) -> dict:
 
 - **[Principle #31 - Idempotency by Design](31-idempotency-by-design.md)** - Foundation for error recovery; operations must be idempotent to be safely retried. Without idempotency, retry patterns can cause duplicate actions, corrupted state, and cascading failures.
 
-- **[Principle #33 - Observable Operations](33-observable-operations.md)** - Error recovery requires visibility into what went wrong. Observability enables detecting failures, understanding their causes, and validating that recovery mechanisms worked correctly.
+- **[Principle #33 - Graceful Degradation by Design](33-observable-operations.md)** - Error recovery requires visibility into what went wrong. Observability enables detecting failures, understanding their causes, and validating that recovery mechanisms worked correctly.
 
 - **[Principle #11 - Continuous Validation with Fast Feedback](../process/11-continuous-validation-fast-feedback.md)** - Fast feedback loops detect failures quickly, enabling rapid recovery. Without fast feedback, recovery patterns trigger too late or on the wrong failures.
 
-- **[Principle #30 - Defense in Depth](30-defense-in-depth.md)** - Error recovery is one layer of defense. Combine it with input validation, resource limits, and security controls to create resilient systems that survive multiple failure modes.
+- **[Principle #30 - Observability Baked In](30-defense-in-depth.md)** - Error recovery is one layer of defense. Combine it with input validation, resource limits, and security controls to create resilient systems that survive multiple failure modes.
 
 - **[Principle #23 - Protected Self-Healing Kernel](23-protected-self-healing-kernel.md)** - Self-healing systems depend on error recovery patterns to automatically correct failures without human intervention. Recovery patterns are the mechanisms that enable self-healing.
 

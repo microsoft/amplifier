@@ -475,17 +475,17 @@ $ echo $?
 
 ## Related Principles
 
-- **[Principle #29 - Machine-Readable Everything](29-machine-readable-everything.md)** - CLI-first design produces machine-readable output, enabling AI agents to parse and process command results reliably.
+- **[Principle #29 - Tool Ecosystems as Extensions](29-machine-readable-everything.md)** - CLI-first design produces machine-readable output, enabling AI agents to parse and process command results reliably.
 
-- **[Principle #12 - Composable Tool Chains](../process/12-composable-tool-chains.md)** - CLIs are naturally composable through pipes and scripts, allowing AI agents to build sophisticated workflows from simple commands.
+- **[Principle #12 - Incremental Processing as Default](../process/12-composable-tool-chains.md)** - CLIs are naturally composable through pipes and scripts, allowing AI agents to build sophisticated workflows from simple commands.
 
 - **[Principle #31 - Idempotency by Design](31-idempotency-by-design.md)** - CLI commands should be idempotent, allowing AI agents to safely retry operations without side effects or state tracking.
 
-- **[Principle #25 - APIs as First-Class Citizens](25-apis-as-first-class-citizens.md)** - CLI tools often wrap APIs, providing a scriptable interface to programmatic services.
+- **[Principle #25 - Simple Interfaces by Design](25-apis-as-first-class-citizens.md)** - CLI tools often wrap APIs, providing a scriptable interface to programmatic services.
 
-- **[Principle #30 - Explicit State Management](30-explicit-state-management.md)** - CLI commands that query and modify state explicitly enable AI agents to understand and manage system state.
+- **[Principle #30 - Observability Baked In](30-explicit-state-management.md)** - CLI commands that query and modify state explicitly enable AI agents to understand and manage system state.
 
-- **[Principle #13 - Automation as Default Path](../process/13-automation-as-default-path.md)** - CLI-first design makes automation the natural default, as every operation is scriptable from day one.
+- **[Principle #13 - Parallel Exploration by Default](../process/13-automation-as-default-path.md)** - CLI-first design makes automation the natural default, as every operation is scriptable from day one.
 
 ## Common Pitfalls
 

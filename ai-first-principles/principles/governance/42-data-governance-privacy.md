@@ -495,17 +495,17 @@ def delete_user(user_id: str):
 
 ## Related Principles
 
-- **[Principle #38 - Compliance-as-Code Validation](38-compliance-as-code.md)** - Data governance policies should be encoded and automatically validated, enabling AI agents to verify compliance
+- **[Principle #38 - Access Control and Compliance as First-Class](38-compliance-as-code.md)** - Data governance policies should be encoded and automatically validated, enabling AI agents to verify compliance
 
-- **[Principle #35 - Security-First API Design](../technology/35-security-first-api-design.md)** - Privacy controls must be enforced at the API layer, ensuring all data access goes through proper authorization
+- **[Principle #35 - Least-Privilege Automation with Scoped Permissions](../technology/35-security-first-api-design.md)** - Privacy controls must be enforced at the API layer, ensuring all data access goes through proper authorization
 
-- **[Principle #36 - Audit Trails on Everything](36-audit-trails-everything.md)** - Comprehensive audit logging is essential for demonstrating privacy compliance and investigating breaches
+- **[Principle #36 - Dependency Pinning and Security Scanning](36-audit-trails-everything.md)** - Comprehensive audit logging is essential for demonstrating privacy compliance and investigating breaches
 
-- **[Principle #14 - Version Control for Everything](../process/14-version-control-everything.md)** - Privacy policies and data governance rules should be versioned to track changes and maintain compliance history
+- **[Principle #14 - Context Management as Discipline](../process/14-version-control-everything.md)** - Privacy policies and data governance rules should be versioned to track changes and maintain compliance history
 
-- **[Principle #19 - Documentation Lives with Code](../process/19-documentation-lives-with-code.md)** - Data handling practices should be documented alongside code to ensure developers understand privacy requirements
+- **[Principle #19 - Cost and Token Budgeting](../process/19-documentation-lives-with-code.md)** - Data handling practices should be documented alongside code to ensure developers understand privacy requirements
 
-- **[Principle #43 - Explainability Requirements](43-explainability-requirements.md)** - AI systems processing personal data must be explainable to comply with GDPR's right to explanation
+- **[Principle #43 - Model Lifecycle Management](43-explainability-requirements.md)** - AI systems processing personal data must be explainable to comply with GDPR's right to explanation
 
 ## Common Pitfalls
 
