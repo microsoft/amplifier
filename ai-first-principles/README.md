@@ -118,19 +118,79 @@ When debugging issues:
 3. Review Related Principles for systemic issues
 4. Update the principle spec if you discover new pitfalls
 
+## Principle Builder Tool
+
+The specification library includes a CLI tool for managing and maintaining principles.
+
+### Quick Start
+
+```bash
+# List all principles
+cd ai-first-principles
+python3 tools/principle_builder.py list
+
+# Validate a principle
+python3 tools/principle_builder.py validate 31
+
+# Check quality score
+python3 tools/principle_builder.py check-quality 31
+
+# Update progress statistics
+python3 tools/principle_builder.py update-progress
+```
+
+### Common Operations
+
+**Validate all specifications:**
+```bash
+for i in {1..44}; do python3 tools/principle_builder.py validate $i; done
+```
+
+**Quality check high-priority principles:**
+```bash
+for i in 7 8 9 26 31 32; do python3 tools/principle_builder.py check-quality $i; done
+```
+
+**List incomplete specifications:**
+```bash
+python3 tools/principle_builder.py list --status incomplete
+```
+
+### Tool Features
+
+- **Validation**: Check specifications against quality standards
+- **Quality Scoring**: Comprehensive quality metrics (structure, examples, cross-references)
+- **Progress Tracking**: Automatic completion statistics by category
+- **Listing**: Filter by category, status, or view all
+- **Stub Generation**: Create new principle specifications from template
+
+See [tools/README.md](tools/README.md) for complete documentation.
+
+### Principles Demonstrated
+
+The tool itself demonstrates AI-first principles:
+- **#28 - CLI-First Design**: Command-line interface for automation
+- **#29 - Tool Ecosystems**: Extends library functionality through tools
+- **#25 - Simple Interfaces**: Clear, focused commands
+- **#31 - Idempotency**: Validation operations are repeatable
+- **#09 - Tests as Quality Gate**: Automated quality checking
+
 ## File Structure
 
 ```
 ai-first-principles/
 ├── README.md                          # This file
 ├── TEMPLATE.md                        # Template for creating new specs
-├── PROGRESS.md                        # Tracking completion status
+├── PROGRESS.md                        # Tracking completion status (44/44 complete)
 ├── cross-reference-index.md           # Map of principle relationships
+├── tools/                             # Principle management tools
+│   ├── README.md                      # Tool documentation
+│   └── principle_builder.py           # CLI for validation, quality checks, listing
 └── principles/
-    ├── people/                        # Human-focused principles
-    ├── process/                       # Workflow and methodology principles
-    ├── technology/                    # Technical implementation principles
-    └── governance/                    # Policy and operations principles
+    ├── people/                        # Human-focused principles (6 specs)
+    ├── process/                       # Workflow and methodology principles (13 specs)
+    ├── technology/                    # Technical implementation principles (18 specs)
+    └── governance/                    # Policy and operations principles (7 specs)
 ```
 
 ## Contributing
