@@ -2,7 +2,7 @@
 name = "workspace"
 version = "0.1.0"
 description = "Workspace project"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
     "claude-code-sdk>=0.0.20",
     "click>=8.2.1",
@@ -16,6 +16,7 @@ dependencies = [
     "pyvis>=0.3.2",
     "rapidfuzz>=3.13.0",
     "requests>=2.32.4",
+    "terminal-bench>=0.2.18",
     "tiktoken>=0.11.0",
     "tqdm>=4.67.1",
 ]
