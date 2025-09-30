@@ -111,6 +111,7 @@ help: ## Show ALL available commands
 	@echo "  make clean           Clean build artifacts"
 	@echo "  make clean-wsl-files Clean WSL-related files"
 	@echo "  make workspace-info  Show workspace information"
+	@echo "  make dot-to-mermaid INPUT=\"path\"  Convert DOT files to Mermaid"
 	@echo ""
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo ""
@@ -483,3 +484,15 @@ workspace-info: ## Show workspace information
 	@echo ""
 	$(call list_projects)
 	@echo ""
+
+# DOT to Mermaid Converter
+dot-to-mermaid: ## Convert DOT files to Mermaid format. Usage: make dot-to-mermaid INPUT="path/to/dot/files"
+	@if [ -z "$(INPUT)" ]; then \
+		echo "Error: Please provide an input path. Usage: make dot-to-mermaid INPUT=\"path/to/dot/files\""; \
+		exit 1; \
+	fi
+	@DATA_DIR=$$(python -c "from amplifier.config.paths import paths; print(paths.data_dir)"); \
+	SESSION_DIR="$$DATA_DIR/dot_to_mermaid"; \
+	mkdir -p "$$SESSION_DIR"; \
+	echo "Converting DOT files to Mermaid format..."; \
+	uv run python -m ai_working.dot_to_mermaid.cli "$(INPUT)" --session-file "$$SESSION_DIR/session.json"
