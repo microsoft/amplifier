@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """
-Example transcript builder for Claude Code sessions.
+Example transcript builder for Claude Code sessions with auto-discovery.
 
 This demonstrates how to project a DAG structure into a linear transcript
-that can be displayed or analyzed.
+from real Claude Code sessions.
 """
 
+import argparse
 import json
+import shutil
+import sys
+from datetime import UTC
+from datetime import datetime
 from pathlib import Path
 
 
@@ -170,8 +175,12 @@ class TranscriptBuilder:
             return text
         return text[:max_len] + "..."
 
-    def build_transcript(self) -> str:
-        """Build a complete transcript from loaded messages."""
+    def build_transcript(self, include_system: bool = False) -> str:
+        """Build a complete transcript from loaded messages.
+
+        Args:
+            include_system: Whether to include system messages (tool results, etc.)
+        """
         lines = []
         lines.append("=" * 60)
         lines.append("CLAUDE CODE SESSION TRANSCRIPT")
@@ -179,6 +188,11 @@ class TranscriptBuilder:
         lines.append("")
 
         for msg in self.messages:
+            # Skip system messages if not included
+            attribution = self.get_attribution(msg)
+            if not include_system and attribution == "System":
+                continue
+
             lines.append(self.format_message(msg))
 
         # Add summary
@@ -195,42 +209,263 @@ class TranscriptBuilder:
 
         return "\n".join(lines)
 
-    def save_transcript(self, output_path: Path):
-        """Save transcript to a text file."""
-        transcript = self.build_transcript()
+    def save_transcript(self, output_path: Path, include_system: bool = False):
+        """Save transcript to a file."""
+        transcript = self.build_transcript(include_system)
         output_path.write_text(transcript, encoding="utf-8")
         print(f"✅ Transcript saved to: {output_path}")
 
 
+def find_claude_projects_dir():
+    """Find the Claude Code projects directory."""
+    claude_dir = Path.home() / ".claude" / "projects"
+    if not claude_dir.exists():
+        return None
+    return claude_dir
+
+
+def list_projects(projects_dir: Path):
+    """List all available projects."""
+    projects = []
+    for project_dir in projects_dir.iterdir():
+        if project_dir.is_dir() and project_dir.name.startswith("-"):
+            project_name = project_dir.name[1:].replace("-", "/")
+            projects.append((project_dir.name, project_name))
+    return sorted(projects, key=lambda x: x[1])
+
+
+def list_sessions(project_dir: Path):
+    """List all sessions in a project with their modification times."""
+    sessions = []
+    for session_file in project_dir.glob("*.jsonl"):
+        mtime = session_file.stat().st_mtime
+        sessions.append((session_file, mtime))
+    return sorted(sessions, key=lambda x: x[1], reverse=True)
+
+
+def find_default_session(projects_dir: Path):
+    """Find the default session using context-aware selection.
+
+    First tries to find a session from the current working directory's project.
+    Falls back to the most recent session across all projects if no match.
+    """
+    import os
+
+    # Get current working directory
+    cwd = os.getcwd()
+
+    # Convert CWD to Claude Code project directory format
+    # Replace / with - and add leading -
+    # Also replace dots with - as Claude Code does
+    cwd_encoded = cwd.replace("/", "-").replace(".", "-")
+    if not cwd_encoded.startswith("-"):
+        cwd_encoded = "-" + cwd_encoded
+
+    # Try to find the best matching project
+    best_match = None
+    best_match_score = 0
+
+    for project_dir in projects_dir.iterdir():
+        if project_dir.is_dir() and project_dir.name.startswith("-") and cwd_encoded.startswith(project_dir.name):
+            # Check if the encoded CWD starts with this project directory name
+            # This handles both exact matches and parent directories
+            # Score based on the length of the match (longer = more specific)
+            score = len(project_dir.name)
+            if score > best_match_score:
+                best_match = project_dir
+                best_match_score = score
+
+    # If we found a matching project, use its most recent session
+    if best_match:
+        sessions = list_sessions(best_match)
+        if sessions:
+            session_file = sessions[0][0]  # Most recent session
+            # Try to reconstruct the path for display (may not be perfect due to ambiguity)
+            display_path = best_match.name[1:].replace("-", "/")
+            if not display_path.startswith("/"):
+                display_path = "/" + display_path
+            print(f"📍 Using session from current project directory: {display_path}")
+            return session_file
+
+    # Fallback: find most recent session across all projects
+    most_recent = None
+    most_recent_time = 0
+
+    for project_dir in projects_dir.iterdir():
+        if project_dir.is_dir():
+            for session_file in project_dir.glob("*.jsonl"):
+                mtime = session_file.stat().st_mtime
+                if mtime > most_recent_time:
+                    most_recent = session_file
+                    most_recent_time = mtime
+
+    return most_recent
+
+
 def main():
-    """Example usage."""
-    import sys
+    """Main entry point with CLI argument parsing."""
+    parser = argparse.ArgumentParser(
+        description="Build transcripts from Claude Code session files",
+        epilog="Examples:\n"
+        "  %(prog)s                     # Build transcript for most recent session\n"
+        "  %(prog)s --list              # List all projects and sessions\n"
+        "  %(prog)s --project amplifier  # Use most recent from project\n"
+        "  %(prog)s session.jsonl output.md  # Specific input/output files\n"
+        "  %(prog)s --include-system    # Include system messages in transcript\n",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
 
-    if len(sys.argv) < 2:
-        print("Usage: python example_transcript_builder.py <session.jsonl> [output.txt]")
+    parser.add_argument("input_file", nargs="?", help="Path to session file (optional)")
+
+    parser.add_argument("output_file", nargs="?", help="Output transcript file (optional)")
+
+    parser.add_argument("--project", "-p", help="Project name or directory (fuzzy match supported)")
+
+    parser.add_argument("--list", "-l", action="store_true", help="List available projects and sessions")
+
+    parser.add_argument("--session", "-s", help="Session UUID or filename within project")
+
+    parser.add_argument(
+        "--include-system",
+        action="store_true",
+        help="Include system messages (tool results) in transcript",
+    )
+
+    parser.add_argument(
+        "--preview-lines",
+        type=int,
+        default=30,
+        help="Number of preview lines to show (default: 30)",
+    )
+
+    parser.add_argument(
+        "--output",
+        "-o",
+        type=Path,
+        default=Path("./output"),
+        help="Output directory for transcript and session files (default: ./output)",
+    )
+
+    args = parser.parse_args()
+
+    # Find Claude projects directory
+    projects_dir = find_claude_projects_dir()
+    if not projects_dir:
+        print("Error: Claude Code projects directory not found at ~/.claude/projects")
         sys.exit(1)
 
-    input_file = Path(sys.argv[1])
-    if not input_file.exists():
-        print(f"Error: File not found: {input_file}")
-        sys.exit(1)
+    # Handle --list flag
+    if args.list:
+        print("📁 Available Claude Code Projects:\n")
+        projects = list_projects(projects_dir)
 
-    # Determine output file
-    if len(sys.argv) > 2:
-        output_file = Path(sys.argv[2])
+        if not projects:
+            print("No projects found")
+            return
+
+        for dir_name, readable_name in projects:
+            project_path = projects_dir / dir_name
+            sessions = list_sessions(project_path)
+            print(f"  📂 {readable_name}")
+
+            if sessions:
+                print(f"     Sessions: {len(sessions)}")
+                # Show most recent 2 sessions
+                for session_file, mtime in sessions[:2]:
+                    dt = datetime.fromtimestamp(mtime, tz=UTC)
+                    size_kb = session_file.stat().st_size / 1024
+                    print(f"       - {session_file.name} ({dt.strftime('%Y-%m-%d %H:%M')}, {size_kb:.1f}KB)")
+                if len(sessions) > 2:
+                    print(f"       ... and {len(sessions) - 2} more")
+            print()
+        return
+
+    # Determine input file
+    input_file = None
+
+    if args.input_file:
+        # Explicit file provided
+        input_file = Path(args.input_file)
+        if not input_file.exists():
+            print(f"Error: File not found: {input_file}")
+            sys.exit(1)
+
+    elif args.project:
+        # Find project by name
+        project_query = args.project.lower()
+        matched_project = None
+
+        for project_dir in projects_dir.iterdir():
+            if project_dir.is_dir():
+                project_name = project_dir.name.lower()
+                if project_query in project_name:
+                    matched_project = project_dir
+                    break
+
+        if not matched_project:
+            print(f"Error: No project found matching '{args.project}'")
+            sys.exit(1)
+
+        # Find session within project
+        if args.session:
+            for sf in matched_project.glob("*.jsonl"):
+                if args.session in sf.name:
+                    input_file = sf
+                    break
+            if not input_file:
+                print(f"Error: No session matching '{args.session}' in project")
+                sys.exit(1)
+        else:
+            sessions = list_sessions(matched_project)
+            if not sessions:
+                print("Error: No sessions found in project")
+                sys.exit(1)
+            input_file = sessions[0][0]
+
     else:
-        output_file = input_file.with_suffix(".transcript.txt")
+        # Default: use context-aware session selection
+        input_file = find_default_session(projects_dir)
+        if not input_file:
+            print("Error: No sessions found in any project")
+            sys.exit(1)
 
     # Build transcript
+    print(f"📄 Reading: {input_file}")
+    project_dir_name = input_file.parent.name  # e.g., "-home-user-repos-amplifier"
+    project_name = project_dir_name[1:].replace("-", "/") if project_dir_name.startswith("-") else project_dir_name
+    print(f"📂 Project: {project_name}")
+
+    file_size = input_file.stat().st_size
+    print(f"📏 Size: {file_size:,} bytes")
+
     builder = TranscriptBuilder()
     builder.load_session(input_file)
-    builder.save_transcript(output_file)
+
+    # Determine output location
+    if args.output_file:
+        # Legacy: explicit output file provided
+        output_file = Path(args.output_file)
+        builder.save_transcript(output_file, include_system=args.include_system)
+    else:
+        # New structure: save to organized directory
+        session_id = input_file.stem  # UUID part before .jsonl
+        output_dir = args.output / project_dir_name / session_id
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Save transcript as .md
+        output_file = output_dir / "transcript.md"
+        builder.save_transcript(output_file, include_system=args.include_system)
+
+        # Copy source JSONL
+        session_copy = output_dir / "session.jsonl"
+        shutil.copy2(input_file, session_copy)
+        print(f"✅ Session copied to: {session_copy}")
 
     # Show preview
-    print("\n📄 Preview (first 30 lines):")
+    print(f"\n📄 Preview (first {args.preview_lines} lines):")
     print("-" * 40)
-    transcript = builder.build_transcript()
-    preview_lines = transcript.split("\n")[:30]
+    transcript = builder.build_transcript(args.include_system)
+    preview_lines = transcript.split("\n")[: args.preview_lines]
     for line in preview_lines:
         print(line)
     print("-" * 40)
