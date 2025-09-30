@@ -464,7 +464,9 @@ We're building toward a future where:
 
 The patterns, knowledge base, and workflows in Amplifier are designed to be portable and tool-agnostic, ready to evolve with the best available AI technologies.
 
-See [AMPLIFIER_VISION.md](AMPLIFIER_VISION.md) for details.
+**Amplifier is designed to improve itself**: See [AMPLIFIER_SELF_IMPROVEMENT_PHILOSOPHY.md](AMPLIFIER_SELF_IMPROVEMENT_PHILOSOPHY.md) for the 44 core principles that guide how AI agents work on Amplifier's own codebase, including regeneration-first development, contract-driven architecture, and self-healing systems.
+
+See [AMPLIFIER_VISION.md](AMPLIFIER_VISION.md) for additional vision details.
 
 ## Current Limitations
 
