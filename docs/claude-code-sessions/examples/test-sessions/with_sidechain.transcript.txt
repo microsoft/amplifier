@@ -1,0 +1,32 @@
+============================================================
+CLAUDE CODE SESSION TRANSCRIPT
+============================================================
+
+[   1] User
+Can you analyze this code for bugs?
+
+[   2] Claude
+I'll analyze the code for bugs using a specialized agent.
+  🔧 Tool: Task [task-001...]
+
+[   3] Claude (SIDECHAIN)
+Starting bug analysis...
+
+[   4] Sub-agent (SIDECHAIN)
+I found 3 potential issues in the code:
+1. Uninitialized variable on line 15
+2. Missing error handling in database connection
+3. Possible race condition in thread pool
+
+[   5] System
+  ✅ Result [task-001...]: Analysis complete: 3 bugs found
+
+[   6] Claude
+The bug analysis found 3 issues that need attention. Would you like me to fix them?
+
+============================================================
+SUMMARY
+============================================================
+Total messages: 6
+Tool invocations: 1
+Sidechain messages: 2

@@ -63,6 +63,10 @@ class WorktreeManager:
     def resolve_worktree_path(self, feature_name: str) -> Path | None:
         """Resolve worktree path from feature name.
 
+        Args:
+            feature_name: The feature name without username prefix
+                         (e.g., 'my-feature' not 'username/my-feature')
+
         Checks for existing worktrees with dot separator first, then hyphen.
         Returns the resolved path or None if not found.
         """
@@ -109,7 +113,14 @@ class WorktreeManager:
         return None
 
     def stash_by_name(self, feature_name: str) -> None:
-        """Stash a worktree by feature name."""
+        """Stash a worktree by feature name or branch name.
+
+        If a branch name with username prefix is provided (e.g., 'username/feature'),
+        it will be stripped to just the feature name.
+        """
+        # Strip username prefix if present (part after last '/')
+        feature_name = feature_name.split("/")[-1] if "/" in feature_name else feature_name
+
         path = self.resolve_worktree_path(feature_name)
         if not path:
             print(f"Error: Worktree not found for feature: {feature_name}")
@@ -119,7 +130,14 @@ class WorktreeManager:
         self.stash(str(path))
 
     def unstash_by_name(self, feature_name: str) -> None:
-        """Unstash a worktree by feature name."""
+        """Unstash a worktree by feature name or branch name.
+
+        If a branch name with username prefix is provided (e.g., 'username/feature'),
+        it will be stripped to just the feature name.
+        """
+        # Strip username prefix if present (part after last '/')
+        feature_name = feature_name.split("/")[-1] if "/" in feature_name else feature_name
+
         path = self.resolve_worktree_path(feature_name)
         if not path:
             print(f"Error: Worktree not found for feature: {feature_name}")
@@ -294,9 +312,9 @@ class WorktreeManager:
                 repo_name = "repo"
 
             # Create directory name with dot separator
-            # Replace slashes in branch name with dots
-            safe_branch = local_branch.replace("/", ".")
-            dir_name = f"{repo_name}.{safe_branch}"
+            # Extract feature name (part after last '/' if present, otherwise full name)
+            feature_name = local_branch.split("/")[-1] if "/" in local_branch else local_branch
+            dir_name = f"{repo_name}.{feature_name}"
 
         # Create worktree path (sibling to main repo)
         main_repo = Path.cwd()
