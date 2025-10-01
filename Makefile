@@ -44,6 +44,9 @@ default: ## Show essential commands
 	@echo "Blog Writing:"
 	@echo "  make blog-write      Create a blog post from your ideas"
 	@echo ""
+	@echo "Article Illustration:"
+	@echo "  make illustrate      Generate AI illustrations for article"
+	@echo ""
 	@echo "Other:"
 	@echo "  make clean          Clean build artifacts"
 	@echo "  make help           Show ALL available commands"
@@ -113,6 +116,11 @@ help: ## Show ALL available commands
 	@echo "BLOG WRITING:"
 	@echo "  make blog-write IDEA=<file> WRITINGS=<dir> [INSTRUCTIONS=\"...\"]  Create blog"
 	@echo "  make blog-resume       Resume most recent blog writing session"
+	@echo ""
+	@echo "ARTICLE ILLUSTRATION:"
+	@echo "  make illustrate INPUT=<file> [OUTPUT=<path>] [STYLE=\"...\"] [APIS=\"...\"] [RESUME=true]  Generate illustrations"
+	@echo "  make illustrate-example  Run illustrator with example article"
+	@echo "  make illustrate-prompts-only INPUT=<file>  Preview prompts without generating"
 	@echo ""
 	@echo "UTILITIES:"
 	@echo "  make clean           Clean build artifacts"
@@ -513,6 +521,44 @@ blog-write-example: ## Run blog writer with example data
 	@uv run python -m scenarios.blog_writer \
 		--idea scenarios/blog_writer/tests/sample_brain_dump.md \
 		--writings-dir scenarios/blog_writer/tests/sample_writings/
+
+# Article Illustration
+illustrate: ## Generate AI illustrations for markdown article. Usage: make illustrate INPUT=article.md [OUTPUT=path] [STYLE="..."] [APIS="..."] [RESUME=true]
+	@if [ -z "$(INPUT)" ]; then \
+		echo "Error: Please provide an input file. Usage: make illustrate INPUT=article.md"; \
+		exit 1; \
+	fi
+	@echo "🎨 Generating illustrations for article..."
+	@echo "  Input: $(INPUT)"
+	@if [ -n "$(OUTPUT)" ]; then echo "  Output: $(OUTPUT)"; fi
+	@if [ -n "$(STYLE)" ]; then echo "  Style: $(STYLE)"; fi
+	@if [ -n "$(APIS)" ]; then echo "  APIs: $(APIS)"; fi
+	@if [ -n "$(RESUME)" ]; then echo "  Mode: Resume"; fi
+	@echo ""
+	@CMD="uv run python -m scenarios.article_illustrator \"$(INPUT)\""; \
+	if [ -n "$(OUTPUT)" ]; then CMD="$$CMD --output-dir \"$(OUTPUT)\""; fi; \
+	if [ -n "$(STYLE)" ]; then CMD="$$CMD --style \"$(STYLE)\""; fi; \
+	if [ -n "$(APIS)" ]; then \
+		for api in $(APIS); do \
+			CMD="$$CMD --apis $$api"; \
+		done; \
+	fi; \
+	if [ -n "$(RESUME)" ]; then CMD="$$CMD --resume"; fi; \
+	eval $$CMD
+
+illustrate-example: ## Run article illustrator with example article
+	@echo "🎨 Running article illustrator with example..."
+	@uv run python -m scenarios.article_illustrator \
+		scenarios/article_illustrator/tests/sample_article.md \
+		--max-images 3
+
+illustrate-prompts-only: ## Preview prompts without generating images. Usage: make illustrate-prompts-only INPUT=article.md
+	@if [ -z "$(INPUT)" ]; then \
+		echo "Error: Please provide an input file. Usage: make illustrate-prompts-only INPUT=article.md"; \
+		exit 1; \
+	fi
+	@echo "🎨 Generating prompts (no images)..."
+	@uv run python -m scenarios.article_illustrator "$(INPUT)" --prompts-only
 
 # Clean WSL Files
 clean-wsl-files: ## Clean up WSL-related files (Zone.Identifier, sec.endpointdlp)

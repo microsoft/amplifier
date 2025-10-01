@@ -30,6 +30,25 @@ Transform rough ideas into polished blog posts that match your personal writing 
 
 ---
 
+### 🎨 [article-illustrator](./article_illustrator/)
+
+Automatically generate contextually relevant AI illustrations for your markdown articles.
+
+**The Problem**: Finding or creating appropriate images for articles is time-consuming. Generic stock photos rarely match specific technical content.
+
+**The Solution**: A tool that illustrates articles intelligently:
+
+- Analyzes content to identify where images add value
+- Generates contextually relevant image prompts
+- Creates images using multiple AI APIs (GPT-Image-1, DALL-E, Imagen)
+- Inserts images at optimal positions with proper formatting
+
+**How it was built**: User described the thinking process - "analyze content, identify illustration points, create prompts, generate images, integrate them." Amplifier implemented the 4-stage pipeline with resumability, multi-API support, and style variations.
+
+**Status**: Ready to use (experimental)
+
+---
+
 ## What Makes a Good Scenario Tool?
 
 ### 1. Solves a Real Problem

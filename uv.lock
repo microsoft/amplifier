@@ -3155,11 +3155,14 @@ name = "workspace"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "aiohttp" },
     { name = "claude-code-sdk" },
     { name = "click" },
     { name = "langchain" },
     { name = "langchain-openai" },
     { name = "networkx" },
+    { name = "openai" },
+    { name = "pydantic" },
     { name = "pydantic-ai" },
     { name = "pydantic-settings" },
     { name = "pydot" },
@@ -3186,11 +3189,14 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aiohttp", specifier = ">=3.12.15" },
     { name = "claude-code-sdk", specifier = ">=0.0.20" },
     { name = "click", specifier = ">=8.2.1" },
     { name = "langchain", specifier = ">=0.2.1" },
     { name = "langchain-openai", specifier = ">=0.3.28" },
     { name = "networkx", specifier = ">=3.5" },
+    { name = "openai", specifier = ">=1.108.1" },
+    { name = "pydantic", specifier = ">=2.11.7" },
     { name = "pydantic-ai", specifier = ">=1.0.10" },
     { name = "pydantic-settings", specifier = ">=2.10.1" },
     { name = "pydot", specifier = ">=4.0.1" },

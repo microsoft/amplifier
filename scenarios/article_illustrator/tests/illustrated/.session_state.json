@@ -1,0 +1,95 @@
+{
+  "article_path": "scenarios/article_illustrator/tests/sample_article.md",
+  "output_dir": "scenarios/article_illustrator/tests/illustrated",
+  "style_params": {},
+  "analysis_complete": true,
+  "prompts_complete": true,
+  "images_complete": false,
+  "markdown_complete": false,
+  "illustration_points": [
+    {
+      "section_title": "What is Machine Learning?",
+      "section_index": 1,
+      "line_number": 20,
+      "context_before": "At its core, machine learning involves algorithms that improve their performance through",
+      "context_after": "The beauty of machine learning lies in its ability to handle tasks that would be impractical",
+      "importance": "high",
+      "suggested_placement": "mid_section"
+    },
+    {
+      "section_title": "Real-World Applications",
+      "section_index": 4,
+      "line_number": 50,
+      "context_before": "Machine learning is transforming healthcare by enabling early disease detection, personalized",
+      "context_after": "Robo-advisors now manage investment portfolios using machine learning algorithms that adapt",
+      "importance": "medium",
+      "suggested_placement": "after_intro"
+    }
+  ],
+  "prompts": [
+    {
+      "illustration_id": "illustration-1",
+      "point": {
+        "section_title": "What is Machine Learning?",
+        "section_index": 1,
+        "line_number": 20,
+        "context_before": "At its core, machine learning involves algorithms that improve their performance through",
+        "context_after": "The beauty of machine learning lies in its ability to handle tasks that would be impractical",
+        "importance": "high",
+        "suggested_placement": "mid_section"
+      },
+      "base_prompt": "Abstract visualization of a neural network learning process, showing interconnected nodes with flowing data patterns, algorithms transforming from simple to complex forms, glowing pathways representing pattern recognition, geometric shapes evolving and adapting, digital brain structure with luminous synaptic connections",
+      "style_modifiers": [
+        "modern tech illustration",
+        "flat design aesthetic",
+        "bold colors with gradients",
+        "isometric perspective",
+        "clean vector graphics",
+        "vibrant blue and purple tones with orange accents",
+        "minimal shadows",
+        "geometric precision",
+        "tech-forward composition"
+      ],
+      "full_prompt": "Abstract visualization of a neural network learning process, showing interconnected nodes with flowing data patterns, algorithms transforming from simple to complex forms, glowing pathways representing pattern recognition, geometric shapes evolving and adapting, digital brain structure with luminous synaptic connections, modern tech illustration, flat design aesthetic, bold colors with gradients, isometric perspective, clean vector graphics, vibrant blue and purple tones with orange accents, minimal shadows, geometric precision, tech-forward composition",
+      "metadata": {
+        "mood": "intelligent, dynamic, innovative, accessible",
+        "color_palette": "primary blues and purples with energetic orange highlights, clean white background",
+        "composition": "centered focal point with radiating elements, balanced symmetry, visual flow from simple to complex, layered depth without cluttering"
+      }
+    },
+    {
+      "illustration_id": "illustration-2",
+      "point": {
+        "section_title": "Real-World Applications",
+        "section_index": 4,
+        "line_number": 50,
+        "context_before": "Machine learning is transforming healthcare by enabling early disease detection, personalized",
+        "context_after": "Robo-advisors now manage investment portfolios using machine learning algorithms that adapt",
+        "importance": "medium",
+        "suggested_placement": "after_intro"
+      },
+      "base_prompt": "A triptych illustration showing three real-world machine learning applications: a medical diagnostic interface with scan analysis and health data visualization, a financial dashboard with stock charts and algorithmic trading indicators, and an autonomous vehicle navigation system with sensor overlays and route mapping",
+      "style_modifiers": [
+        "modern tech illustration",
+        "flat design with subtle gradients",
+        "bold colors: electric blue, vibrant purple, and coral orange",
+        "isometric perspective with clean geometric shapes",
+        "minimal line art details",
+        "professional and accessible aesthetic",
+        "balanced composition with three equal panels",
+        "soft shadows for depth",
+        "no text or labels"
+      ],
+      "full_prompt": "A triptych illustration showing three real-world machine learning applications in modern tech illustration style with flat design and bold colors. Left panel: medical diagnostic interface with stylized scan imagery and flowing health data visualization in electric blue tones. Center panel: financial dashboard with abstract stock charts, ascending trend lines, and algorithmic pattern indicators in vibrant purple. Right panel: autonomous vehicle navigation system with sensor detection rays, route pathways, and environmental mapping in coral orange. Isometric perspective, clean geometric shapes, minimal line art details, professional aesthetic, soft shadows for depth, no text or labels, seamless visual flow between panels.",
+      "metadata": {
+        "mood": "professional, innovative, optimistic",
+        "color_palette": "electric blue (#0066FF), vibrant purple (#8B3DFF), coral orange (#FF6B4A), white backgrounds with subtle gradients",
+        "composition": "horizontal triptych with three equal panels, isometric perspective, balanced visual weight across all sections, natural eye flow from left to right"
+      }
+    }
+  ],
+  "images": [],
+  "images_generated": 0,
+  "total_cost": 0.0,
+  "errors": []
+}
