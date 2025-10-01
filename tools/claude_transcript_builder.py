@@ -182,20 +182,20 @@ def process_session(
         formatter.export_sidechains(session_output_dir)
         logger.info(f"✅ Exported {tree.count_sidechains()} sidechains")
 
-    # Export v1.x legacy subagent sessions if present
+    # Export separate subagent session files if present
     if subagent_mapper:
         session_id = session_file.stem
-        v1_subagents = [
+        separate_subagents = [
             (sid, info)
             for sid, info in subagent_mapper.get_subagent_sessions(session_id)
-            if not sid.startswith(session_id + "_sidechain_")  # Exclude v2.x synthetic sidechains
+            if not sid.startswith(session_id + "_sidechain_")  # Exclude synthetic sidechain IDs
         ]
 
-        if v1_subagents:
+        if separate_subagents:
             subagents_dir = session_output_dir / "subagents"
             subagents_dir.mkdir(parents=True, exist_ok=True)
 
-            for subagent_id, subagent_info in v1_subagents:
+            for subagent_id, subagent_info in separate_subagents:
                 # Find the subagent session file
                 subagent_file = project_dir / f"{subagent_id}.jsonl"
                 if not subagent_file.exists():
@@ -223,7 +223,7 @@ def process_session(
                 transcript_file = subagent_output_dir / "transcript.md"
                 transcript_file.write_text(subagent_transcript, encoding="utf-8")
 
-            logger.info(f"✅ Exported {len(v1_subagents)} v1.x subagent sessions")
+            logger.info(f"✅ Exported {len(separate_subagents)} separate subagent sessions")
 
     # Copy original session file(s)
     if len(session_chain) > 1:
@@ -271,7 +271,7 @@ def _should_process_at_root(session_file: Path, subagent_mapper: SubagentMapper 
         if subagent_mapper.is_subagent_session(session_id):
             return False
 
-    # Still check for modern sidechain markers
+    # Still check for sidechain markers
     try:
         with open(session_file, encoding="utf-8") as f:
             # Find first user message (may not be on first line)

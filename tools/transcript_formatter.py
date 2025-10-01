@@ -55,7 +55,7 @@ class TranscriptFormatter:
                 agent_name = self.session_data.subagent_name or "Unknown Agent"
                 return f"Subagent ({agent_name})"
 
-        # Check if this specific message is part of a modern sidechain
+        # Check if this specific message is part of a sidechain
         if msg.is_sidechain:
             if msg.type == "user":
                 return "Claude (delegating)"

@@ -66,7 +66,7 @@ class SubagentMapper:
         """Get all subagent sessions spawned from a parent.
 
         Returns list of (session_id, SubagentInfo) tuples.
-        Includes both v1.x separate files and v2.x synthetic sidechain IDs.
+        Includes both separate session files and synthetic sidechain IDs.
         """
         if not self._mapping:
             self.build_mapping()
@@ -143,10 +143,10 @@ class SubagentMapper:
 
             session_id = session_path.stem
 
-            # Handle v2.x sidechains within the same file
+            # Handle sidechains within the same file
             self._process_sidechains(session_path)
 
-            # Also check for v1.x separate files (first user message matching)
+            # Also check for separate session files (first user message matching)
             first_user_msg = self._get_first_user_message(session_path, exclude_sidechains=True)
             if not first_user_msg:
                 continue
@@ -160,14 +160,14 @@ class SubagentMapper:
                 # Use the first match (could be multiple if same prompt used multiple times)
                 parent_session_id, subagent_type, task_prompt = self._task_index[prompt_hash][0]
 
-                # Don't map a session to itself (v1.x style)
+                # Don't map a session to itself
                 if parent_session_id != session_id:
                     self._mapping[session_id] = SubagentInfo(
                         parent_session_id=parent_session_id, subagent_type=subagent_type, task_prompt=task_prompt
                     )
 
     def _process_sidechains(self, session_path: Path):
-        """Process v2.x sidechains within a session file"""
+        """Process sidechains within a session file"""
         session_id = session_path.stem
 
         try:
@@ -265,7 +265,7 @@ class SubagentMapper:
         return None
 
     def _is_sidechain(self, session_path: Path) -> bool:
-        """Check if session has v2.x sidechain flag"""
+        """Check if session has sidechain messages"""
         try:
             with open(session_path, encoding="utf-8") as f:
                 for line in f:

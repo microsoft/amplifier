@@ -19,6 +19,8 @@ A comprehensive tool for building readable transcripts from Claude Code session 
 - `dag_loader.py` - Session data loader and validator
 - `dag_navigator.py` - DAG traversal and branch reconstruction
 - `transcript_formatter.py` - Markdown transcript generation
+- `compact_tracer.py` - Traces compact operation lineage across sessions
+- `subagent_mapper.py` - Maps Task tool invocations to subagent sessions
 
 **Quick Start:**
 ```bash
@@ -39,10 +41,39 @@ python tools/claude_transcript_builder.py --help
 - DAG reconstruction - Rebuilds full conversation structure
 - Branch support - Handles conversation branches and alternative paths
 - Sidechain processing - Extracts and formats sub-agent conversations
+- Compact lineage tracing - Follows session chains through compact operations
+- Subagent detection - Identifies and properly attributes subagent sessions
 - Multiple output formats - Simple and extended transcripts
 - Auto-discovery - Finds sessions from current project automatically
+- Session filtering - Excludes legacy subagent sessions from root processing
 
-For detailed documentation, see the full README in the Claude Code transcript builder files.
+**Subagent Mapping:**
+
+The `subagent_mapper.py` module identifies which sessions are subagents spawned via the Task tool:
+
+```python
+from tools.subagent_mapper import SubagentMapper
+from pathlib import Path
+
+# Create mapper and build mapping
+session_files = list(Path("/home/user/.claude/projects").glob("*.jsonl"))
+mapper = SubagentMapper(session_files)
+mapping = mapper.build_mapping()
+
+# Check if a session is a subagent
+if mapper.is_subagent_session("session-id"):
+    info = mapper.get_subagent_info("session-id")
+    print(f"Parent: {info.parent_session_id}")
+    print(f"Type: {info.subagent_type}")
+```
+
+Features:
+- Hash-based matching using SHA256 of normalized prompts
+- Supports both sidechain messages (embedded) and separate session files
+- Handles both string and structured content formats
+- Creates synthetic session IDs for sidechains (`parent-id_sidechain_uuid`)
+
+For detailed documentation, see the implementation files in this directory.
 
 ### Other Tools
 

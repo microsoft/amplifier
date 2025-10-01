@@ -26,7 +26,7 @@ class SessionType(str, Enum):
     """Type of session."""
 
     REGULAR = "regular"
-    MODERN_SIDECHAIN = "modern_sidechain"
+    SIDECHAIN = "sidechain"
     LEGACY_SUBAGENT = "legacy_subagent"
 
 
@@ -331,13 +331,13 @@ class DAGLoader:
 
     def _classify_session(self):
         """Classify session type and detect subagent name."""
-        # Check for modern sidechain (any message has isSidechain: true)
+        # Check for sidechain (any message has isSidechain: true)
         has_sidechain = any(msg.is_sidechain for msg in self.session_data.messages.values())
 
         if has_sidechain:
-            self.session_data.session_type = SessionType.MODERN_SIDECHAIN
+            self.session_data.session_type = SessionType.SIDECHAIN
             self.session_data.subagent_name = self._extract_subagent_from_task()
-            logger.info(f"Detected modern sidechain session (agent: {self.session_data.subagent_name})")
+            logger.info(f"Detected sidechain session (agent: {self.session_data.subagent_name})")
             return
 
         # Check for legacy subagent session using mapper
