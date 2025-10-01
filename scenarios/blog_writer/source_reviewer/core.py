@@ -106,8 +106,7 @@ Return JSON with:
 
         options = SessionOptions(
             system_prompt="You are a fact-checker ensuring blog accuracy.",
-            temperature=0.2,  # Low temp for accuracy checking
-            max_retries=2,
+            retry_attempts=2,
         )
 
         try:

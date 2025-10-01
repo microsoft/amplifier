@@ -88,8 +88,7 @@ Return ONLY the blog post content in markdown format, starting with # Title."""
 
         options = SessionOptions(
             system_prompt="You are an expert blog writer who can match any writing style.",
-            temperature=0.7,
-            max_retries=2,
+            retry_attempts=2,
         )
 
         try:
@@ -158,8 +157,7 @@ Return ONLY the revised blog post content in markdown format."""
 
         options = SessionOptions(
             system_prompt="You are an expert editor who improves blogs based on feedback.",
-            temperature=0.5,
-            max_retries=2,
+            retry_attempts=2,
         )
 
         try:

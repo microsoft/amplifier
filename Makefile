@@ -493,25 +493,25 @@ blog-write: ## Create a blog post from your ideas. Usage: make blog-write IDEA=i
 	if [ -n "$(INSTRUCTIONS)" ]; then echo "  Instructions: $(INSTRUCTIONS)"; fi; \
 	echo "  Output: Auto-generated from title in session directory"; \
 	if [ -n "$(INSTRUCTIONS)" ]; then \
-		uv run python -m ai_working.blog_post_writer \
+		uv run python -m scenarios.blog_writer \
 			--idea "$(IDEA)" \
 			--writings-dir "$(WRITINGS)" \
 			--instructions "$(INSTRUCTIONS)"; \
 	else \
-		uv run python -m ai_working.blog_post_writer \
+		uv run python -m scenarios.blog_writer \
 			--idea "$(IDEA)" \
 			--writings-dir "$(WRITINGS)"; \
 	fi
 
 blog-resume: ## Resume an interrupted blog writing session
 	@echo "📝 Resuming blog post writer..."
-	@uv run python -m ai_working.blog_post_writer --resume
+	@uv run python -m scenarios.blog_writer --resume
 
 blog-write-example: ## Run blog writer with example data
 	@echo "📝 Running blog writer with example data..."
-	@uv run python -m ai_working.blog_post_writer \
-		--idea ai_working/blog_post_writer/tests/sample_brain_dump.md \
-		--writings-dir ai_working/blog_post_writer/tests/sample_writings/
+	@uv run python -m scenarios.blog_writer \
+		--idea scenarios/blog_writer/tests/sample_brain_dump.md \
+		--writings-dir scenarios/blog_writer/tests/sample_writings/
 
 # Clean WSL Files
 clean-wsl-files: ## Clean up WSL-related files (Zone.Identifier, sec.endpointdlp)

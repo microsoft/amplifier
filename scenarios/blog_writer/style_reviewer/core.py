@@ -72,8 +72,7 @@ Return JSON with:
 
         options = SessionOptions(
             system_prompt="You are a style editor ensuring writing consistency.",
-            temperature=0.3,
-            max_retries=2,
+            retry_attempts=2,
         )
 
         try:

@@ -147,6 +147,7 @@ class BlogPostPipeline:
         logger.info("\n📝 Extracting author's style...")
         self.state.update_stage("extracting_style")
 
+        assert self.writings_dir is not None, "writings_dir must be set before extracting style"
         style_profile = await self.style_extractor.extract_style(self.writings_dir)
         self.state.set_style_profile(style_profile)
         self.state.update_stage("style_extracted")
@@ -289,6 +290,9 @@ class BlogPostPipeline:
         else:
             # Fallback to provided output path if no title found
             output_path = self.output_path
+            if output_path is None:
+                logger.error("No output path available - cannot save blog post")
+                return
             logger.info(f"\n💾 Saving final blog post to: {output_path}")
 
         try:
@@ -364,7 +368,7 @@ def main(
     to transform rough ideas/brain dumps into polished blog posts that match your voice.
 
     Example:
-        python -m ai_working.blog_post_writer \\
+        python -m scenarios.blog_writer \\
             --idea ideas.md \\
             --writings-dir my_posts/ \\
             --instructions "Remove any private company names mentioned"

@@ -112,8 +112,7 @@ common_phrases (list), writing_patterns (list), voice, examples (list)"""
 
         options = SessionOptions(
             system_prompt="You are an expert writing style analyst.",
-            temperature=0.3,
-            max_retries=2,
+            retry_attempts=2,
         )
 
         try:
