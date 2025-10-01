@@ -1,0 +1,1 @@
+"""Amplifier CLI module."""
