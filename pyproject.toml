@@ -9,6 +9,7 @@ dependencies = [
     "langchain>=0.2.1",
     "langchain-openai>=0.3.28",
     "networkx>=3.5",
+    "psutil>=7.1.0",
     "pydantic-ai>=1.0.10",
     "pydantic-settings>=2.10.1",
     "python-dotenv>=1.1.1",
@@ -19,12 +20,18 @@ dependencies = [
     "tqdm>=4.67.1",
 ]
 
+[tool.uv]
+package = true
+
 [tool.uv.workspace]
 # Add all projects in the workspace
 members = []
 
 [tool.uv.sources]
 # Example: my-project = { workspace = true }
+
+[project.scripts]
+amplifier-principles = "amplifier.cli.main_principles:cli"
 
 [dependency-groups]
 dev = [
@@ -38,6 +45,9 @@ dev = [
     "ruff>=0.11.10",
     "twine>=6.1.0",
 ]
+
+[tool.setuptools]
+packages = ["amplifier"]
 
 [tool.pyright]
 venvPath = "."
