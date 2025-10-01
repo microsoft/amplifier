@@ -170,6 +170,81 @@ class AmplifiedProcessor:
         return insights
 ```
 
+### Tool Organization: Where Should Your Tool Live?
+
+When building amplifier CLI tools, follow the **Progressive Maturity Model** for organizing your code:
+
+#### scenarios/[tool_name]/ - Production-Ready Tools
+
+**Use this location when your tool:**
+- ✓ Solves a real user problem (not just a demo)
+- ✓ Has a clear metacognitive recipe (structured thinking process)
+- ✓ Includes complete documentation (README.md + HOW_TO_CREATE_YOUR_OWN.md)
+- ✓ Is ready for others to use and learn from
+- ✓ Serves as both practical utility AND learning exemplar
+
+**Required structure:**
+```
+scenarios/[tool_name]/
+├── README.md                    # What it does, how to use it
+├── HOW_TO_CREATE_YOUR_OWN.md   # How it was created, patterns used
+├── __init__.py                  # Python package
+├── main.py or cli.py            # Main entry point
+├── [other modules]/             # Implementation modules
+└── tests/                       # Working examples and test cases
+    ├── sample_input.md
+    └── expected_output.json
+```
+
+**Philosophy:** @scenarios/README.md embodies "minimal input, maximum leverage" - describe what you want, get a working tool, share what you learned.
+
+**THE Exemplar:** @scenarios/blog_writer/ is THE exemplar to model after. When creating new scenario tools:
+- Study its README.md structure and content
+- Model your HOW_TO_CREATE_YOUR_OWN.md after it
+- Match its documentation quality and completeness
+- Maintain the same level of detail and learning value
+
+#### ai_working/[tool_name]/ - Experimental Tools
+
+**Use this location when:**
+- Tool is in prototype/experimental stage
+- Internal development tool not ready for users
+- Missing complete documentation
+- Rapid iteration and changes expected
+- Requirements are still being refined
+
+**Progression:** Tools should graduate from `ai_working/` to `scenarios/` after 2-3 successful uses by real users and when they meet all production-ready criteria above.
+
+#### amplifier/ - Core Library Components
+
+**Use this location for:**
+- Core library components (not standalone CLI tools)
+- Shared utilities used across multiple tools
+- Infrastructure code (sessions, logging, defensive utilities)
+- Toolkit components
+
+**Not for:** Standalone CLI tools that users invoke directly.
+
+#### When in Doubt
+
+Ask yourself: "Would this help other developers solve similar problems AND teach them the pattern?"
+- **Yes** → scenarios/
+- **Not yet** → ai_working/
+- **It's not a tool** → amplifier/
+
+#### Always Start with the Template
+
+**CRITICAL:** Begin with the proven template:
+```bash
+cp amplifier/ccsdk_toolkit/templates/tool_template.py [destination]/[tool_name].py
+```
+
+The template contains ALL defensive patterns discovered through real failures. Modify, don't start from scratch.
+
+#### Reference Code (NOT for New Tools)
+
+**amplifier/ccsdk_toolkit/examples/** - Study these for patterns, NEVER place new tools here. These are learning references only.
+
 ## Composition Strategies
 
 ### Pattern 1: Pipeline Composition
