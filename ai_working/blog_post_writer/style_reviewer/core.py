@@ -97,12 +97,28 @@ Return JSON with:
                     return self._default_review()
 
                 # Validate and structure response
+                # Handle both string and dict formats for issues/suggestions
+                issues = parsed.get("issues", [])
+                suggestions = parsed.get("suggestions", [])
+
+                # Convert dict items to strings if needed
+                if issues and isinstance(issues[0], dict):
+                    issues = [
+                        item.get("description", str(item)) if isinstance(item, dict) else str(item) for item in issues
+                    ]
+
+                if suggestions and isinstance(suggestions[0], dict):
+                    suggestions = [
+                        item.get("description", str(item)) if isinstance(item, dict) else str(item)
+                        for item in suggestions
+                    ]
+
                 review_data = {
                     "consistency_score": float(parsed.get("consistency_score", 0.8)),
                     "matches_tone": bool(parsed.get("matches_tone", True)),
                     "matches_voice": bool(parsed.get("matches_voice", True)),
-                    "issues": parsed.get("issues", []),
-                    "suggestions": parsed.get("suggestions", []),
+                    "issues": issues,
+                    "suggestions": suggestions,
                     "needs_revision": bool(parsed.get("needs_revision", False)),
                 }
 

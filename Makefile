@@ -111,8 +111,8 @@ help: ## Show ALL available commands
 	@echo "  make ai-context-files  Build AI context documentation"
 	@echo ""
 	@echo "BLOG WRITING:"
-	@echo "  make blog-write BRAIN=<file> WRITINGS=<dir>  Create blog post from ideas"
-	@echo "  make blog-resume       Resume interrupted blog writing session"
+	@echo "  make blog-write IDEA=<file> WRITINGS=<dir> [INSTRUCTIONS=\"...\"]  Create blog"
+	@echo "  make blog-resume       Resume most recent blog writing session"
 	@echo ""
 	@echo "UTILITIES:"
 	@echo "  make clean           Clean build artifacts"
@@ -478,24 +478,30 @@ ai-context-files: ## Build AI context files
 	@echo "AI context files generated"
 
 # Blog Writing
-blog-write: ## Create a blog post from your ideas. Usage: make blog-write BRAIN=ideas.md WRITINGS=my_writings/
-	@if [ -z "$(BRAIN)" ]; then \
-		echo "Error: Please provide a brain dump file. Usage: make blog-write BRAIN=ideas.md WRITINGS=my_writings/"; \
+blog-write: ## Create a blog post from your ideas. Usage: make blog-write IDEA=ideas.md WRITINGS=my_writings/ [INSTRUCTIONS="..."]
+	@if [ -z "$(IDEA)" ]; then \
+		echo "Error: Please provide an idea file. Usage: make blog-write IDEA=ideas.md WRITINGS=my_writings/"; \
 		exit 1; \
 	fi
 	@if [ -z "$(WRITINGS)" ]; then \
-		echo "Error: Please provide a writings directory. Usage: make blog-write BRAIN=ideas.md WRITINGS=my_writings/"; \
+		echo "Error: Please provide a writings directory. Usage: make blog-write IDEA=ideas.md WRITINGS=my_writings/"; \
 		exit 1; \
 	fi
-	@output="$${OUTPUT:-blog_post.md}"; \
-	echo "🚀 Starting blog post writer..."; \
-	echo "  Brain dump: $(BRAIN)"; \
+	@echo "🚀 Starting blog post writer..."; \
+	echo "  Idea: $(IDEA)"; \
 	echo "  Writings: $(WRITINGS)"; \
-	echo "  Output: $$output"; \
-	uv run python -m ai_working.blog_post_writer \
-		--brain-dump "$(BRAIN)" \
-		--writings-dir "$(WRITINGS)" \
-		--output "$$output"
+	if [ -n "$(INSTRUCTIONS)" ]; then echo "  Instructions: $(INSTRUCTIONS)"; fi; \
+	echo "  Output: Auto-generated from title in session directory"; \
+	if [ -n "$(INSTRUCTIONS)" ]; then \
+		uv run python -m ai_working.blog_post_writer \
+			--idea "$(IDEA)" \
+			--writings-dir "$(WRITINGS)" \
+			--instructions "$(INSTRUCTIONS)"; \
+	else \
+		uv run python -m ai_working.blog_post_writer \
+			--idea "$(IDEA)" \
+			--writings-dir "$(WRITINGS)"; \
+	fi
 
 blog-resume: ## Resume an interrupted blog writing session
 	@echo "📝 Resuming blog post writer..."
@@ -504,9 +510,8 @@ blog-resume: ## Resume an interrupted blog writing session
 blog-write-example: ## Run blog writer with example data
 	@echo "📝 Running blog writer with example data..."
 	@uv run python -m ai_working.blog_post_writer \
-		--brain-dump ai_working/blog_post_writer/tests/sample_brain_dump.md \
-		--writings-dir ai_working/blog_post_writer/tests/sample_writings/ \
-		--output example_blog_post.md
+		--idea ai_working/blog_post_writer/tests/sample_brain_dump.md \
+		--writings-dir ai_working/blog_post_writer/tests/sample_writings/
 
 # Clean WSL Files
 clean-wsl-files: ## Clean up WSL-related files (Zone.Identifier, sec.endpointdlp)

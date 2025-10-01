@@ -31,38 +31,78 @@ class SourceReview(BaseModel):
 class SourceReviewer:
     """Reviews blog posts for source accuracy."""
 
-    async def review_sources(self, blog_draft: str, original_brain_dump: str) -> dict[str, Any]:
+    async def review_sources(
+        self,
+        blog_draft: str,
+        original_brain_dump: str,
+        additional_instructions: str | None = None,
+        user_feedback_history: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
         """Review blog for factual accuracy.
 
         Args:
             blog_draft: Current blog draft
             original_brain_dump: Original source material
+            additional_instructions: Extra instructions to verify compliance
+            user_feedback_history: List of user feedback from all iterations
 
         Returns:
             Review results as dictionary
         """
         logger.info("Reviewing blog for source accuracy")
 
-        prompt = f"""Review this blog post for factual accuracy compared to the source:
+        # Build comprehensive source document that includes ALL valid inputs
+        source_sections = [f"=== ORIGINAL IDEA/BRAIN DUMP ===\n{original_brain_dump}"]
 
-=== ORIGINAL SOURCE ===
-{original_brain_dump}
+        if additional_instructions:
+            source_sections.append(f"\n=== ADDITIONAL INSTRUCTIONS ===\n{additional_instructions}")
+
+        # Add ALL user feedback as valid source
+        if user_feedback_history:
+            feedback_text = []
+            for i, feedback in enumerate(user_feedback_history, 1):
+                if feedback.get("specific_requests"):
+                    iteration = feedback.get("iteration", i)
+                    feedback_text.append(f"\n--- User Feedback (Iteration {iteration}) ---")
+                    for item in feedback["specific_requests"]:
+                        # Handle both old (string) and new (FeedbackItem dict) formats
+                        if isinstance(item, dict):
+                            # New format with comment field
+                            feedback_text.append(f"[{item.get('comment', str(item))}]")
+                        else:
+                            # Old string format
+                            feedback_text.append(f"[{item}]")
+
+            if feedback_text:
+                source_sections.append("\n=== USER FEEDBACK (PART OF VALID SOURCE) ===\n" + "\n".join(feedback_text))
+
+        comprehensive_source = "\n".join(source_sections)
+
+        prompt = f"""Review this blog post for factual accuracy compared to the source.
+
+IMPORTANT: ALL of the following are VALID SOURCE MATERIAL:
+- The original idea/brain dump
+- Any additional instructions provided
+- ALL user feedback from any iteration
+
+{comprehensive_source}
 
 === BLOG DRAFT ===
 {blog_draft}
 
 Check for:
-1. Factual accuracy - Are all claims supported by the source?
+1. Factual accuracy - Are claims supported by ANY part of the source (including user feedback)?
 2. Misrepresentations - Any distortions of the original ideas?
-3. Added claims - Any unsupported new claims not in source?
+3. Added claims - Claims not in source, instructions, OR user feedback?
 4. Missing context - Important context from source that's missing?
+5. Instructions compliance - If instructions provided, were they followed?
 
 Return JSON with:
 - accuracy_score: 0-1 score
 - has_issues: boolean
-- issues: list of specific problems found
+- issues: list of specific problems found (include instruction violations)
 - suggestions: list of how to fix issues
-- needs_revision: boolean (true if accuracy < 0.8)"""
+- needs_revision: boolean (true if accuracy < 0.8 or instructions not followed)"""
 
         options = SessionOptions(
             system_prompt="You are a fact-checker ensuring blog accuracy.",
@@ -91,11 +131,27 @@ Return JSON with:
                     return self._default_review()
 
                 # Validate and structure response
+                # Handle both string and dict formats for issues/suggestions
+                issues = parsed.get("issues", [])
+                suggestions = parsed.get("suggestions", [])
+
+                # Convert dict items to strings if needed
+                if issues and isinstance(issues[0], dict):
+                    issues = [
+                        item.get("description", str(item)) if isinstance(item, dict) else str(item) for item in issues
+                    ]
+
+                if suggestions and isinstance(suggestions[0], dict):
+                    suggestions = [
+                        item.get("description", str(item)) if isinstance(item, dict) else str(item)
+                        for item in suggestions
+                    ]
+
                 review_data = {
                     "accuracy_score": float(parsed.get("accuracy_score", 0.9)),
                     "has_issues": bool(parsed.get("has_issues", False)),
-                    "issues": parsed.get("issues", []),
-                    "suggestions": parsed.get("suggestions", []),
+                    "issues": issues,
+                    "suggestions": suggestions,
                     "needs_revision": bool(parsed.get("needs_revision", False)),
                 }
 

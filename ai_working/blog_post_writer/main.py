@@ -16,6 +16,8 @@ from amplifier.utils.logger import get_logger
 from .blog_writer import BlogWriter
 from .source_reviewer import SourceReviewer
 from .state import StateManager
+from .state import extract_title_from_markdown
+from .state import slugify
 from .style_extractor import StyleExtractor
 from .style_reviewer import StyleReviewer
 from .user_feedback import UserFeedbackHandler
@@ -50,34 +52,38 @@ class BlogPostPipeline:
         brain_dump_path: Path,
         writings_dir: Path,
         output_path: Path,
+        additional_instructions: str | None = None,
     ) -> bool:
         """Run the complete pipeline.
 
         Args:
-            brain_dump_path: Path to brain dump markdown
+            brain_dump_path: Path to idea/brain dump markdown
             writings_dir: Directory with author's writings
             output_path: Output path for final blog
+            additional_instructions: Optional guidance (e.g., "remove private info")
 
         Returns:
             True if successful, False otherwise
         """
-        # Store paths
+        # Store paths and instructions
         self.brain_dump_path = brain_dump_path
         self.writings_dir = writings_dir
         self.output_path = output_path
+        self.additional_instructions = additional_instructions or ""
 
         # Update state with inputs
         self.state.state.brain_dump_path = str(brain_dump_path)
         self.state.state.writings_dir = str(writings_dir)
         self.state.state.output_path = str(output_path)
+        self.state.state.additional_instructions = additional_instructions
         self.state.save()
 
-        # Load brain dump
+        # Load brain dump/idea
         try:
             self.brain_dump = brain_dump_path.read_text()
-            logger.info(f"Loaded brain dump: {brain_dump_path.name}")
+            logger.info(f"Loaded idea: {brain_dump_path.name}")
         except Exception as e:
-            logger.error(f"Could not read brain dump: {e}")
+            logger.error(f"Could not read idea: {e}")
             return False
 
         # Resume from saved stage if applicable
@@ -120,7 +126,7 @@ class BlogPostPipeline:
                     break
 
                 if feedback.get("continue_iteration"):
-                    await self._apply_user_feedback(feedback)
+                    await self._apply_user_feedback(feedback, increment_after=True)
                 else:
                     break
 
@@ -153,6 +159,7 @@ class BlogPostPipeline:
         draft = await self.blog_writer.write_blog(
             self.brain_dump,
             self.state.state.style_profile,
+            additional_instructions=self.additional_instructions,
         )
 
         # Debug: Log draft info
@@ -169,6 +176,8 @@ class BlogPostPipeline:
         review = await self.source_reviewer.review_sources(
             self.state.state.current_draft,
             self.brain_dump,
+            additional_instructions=self.additional_instructions,
+            user_feedback_history=self.state.state.user_feedback,
         )
 
         self.state.set_source_review(review)
@@ -202,6 +211,7 @@ class BlogPostPipeline:
             self.state.state.style_profile,
             previous_draft=self.state.state.current_draft,
             feedback=feedback,
+            additional_instructions=self.additional_instructions,
         )
 
         self.state.update_draft(draft)
@@ -211,8 +221,8 @@ class BlogPostPipeline:
         """Get user feedback on current draft."""
         logger.info("\n👤 Getting user feedback...")
 
-        # Get the path to the saved draft file
-        draft_file_path = self.state.state_file.parent / f"draft_iter_{self.state.state.iteration}.md"
+        # Get the path to the saved draft file in session directory
+        draft_file_path = self.state.session_dir / f"draft_iter_{self.state.state.iteration}.md"
 
         # Run in thread to handle blocking input
         loop = asyncio.get_event_loop()
@@ -229,8 +239,13 @@ class BlogPostPipeline:
 
         return feedback
 
-    async def _apply_user_feedback(self, parsed_feedback: dict) -> None:
-        """Apply user feedback to draft."""
+    async def _apply_user_feedback(self, parsed_feedback: dict, increment_after: bool = False) -> None:
+        """Apply user feedback to draft.
+
+        Args:
+            parsed_feedback: The parsed user feedback
+            increment_after: If True, increment iteration before saving draft to prevent overwriting
+        """
         if not parsed_feedback.get("has_feedback"):
             return
 
@@ -248,18 +263,40 @@ class BlogPostPipeline:
             self.state.state.style_profile,
             previous_draft=self.state.state.current_draft,
             feedback=feedback,
+            additional_instructions=self.additional_instructions,
         )
+
+        # Increment BEFORE saving so we write to next iteration
+        if increment_after and not self.state.increment_iteration():
+            logger.warning("Max iterations reached while applying user feedback")
+            return
 
         self.state.update_draft(draft)
         self.state.update_stage("revision_complete")
 
     async def _save_output(self) -> None:
-        """Save final blog post to output file."""
-        logger.info(f"\n💾 Saving final blog post to: {self.output_path}")
+        """Save final blog post to output file with slug-based filename."""
+        # Extract title from the blog post
+        title = extract_title_from_markdown(self.state.state.current_draft)
+
+        if title:
+            # Create slug from title for the filename
+            slug = slugify(title)
+            # Use the slug as filename in session directory
+            output_path = self.state.session_dir / f"{slug}.md"
+            logger.info(f"\n💾 Saving final blog post: {slug}.md")
+            logger.info(f"   Title: {title}")
+        else:
+            # Fallback to provided output path if no title found
+            output_path = self.output_path
+            logger.info(f"\n💾 Saving final blog post to: {output_path}")
 
         try:
-            self.output_path.write_text(self.state.state.current_draft)
-            logger.info("✅ Blog post saved successfully!")
+            output_path.write_text(self.state.state.current_draft)
+            logger.info(f"✅ Blog post saved to: {output_path}")
+            # Update state with actual output path
+            self.state.state.output_path = str(output_path)
+            self.state.save()
         except Exception as e:
             logger.error(f"Could not save output: {e}")
 
@@ -267,10 +304,10 @@ class BlogPostPipeline:
 # CLI Interface
 @click.command()
 @click.option(
-    "--brain-dump",
+    "--idea",
     type=click.Path(exists=True, path_type=Path),
     required=True,
-    help="Path to brain dump markdown file",
+    help="Path to idea/brain dump markdown file",
 )
 @click.option(
     "--writings-dir",
@@ -279,10 +316,16 @@ class BlogPostPipeline:
     help="Directory containing author's writings for style extraction",
 )
 @click.option(
+    "--instructions",
+    type=str,
+    default=None,
+    help="Additional instructions/context to guide the writing (e.g., 'remove private info', 'focus on X')",
+)
+@click.option(
     "--output",
     type=click.Path(path_type=Path),
-    default=Path("blog_post.md"),
-    help="Output path for final blog post",
+    default=None,
+    help="Output path for final blog post (default: auto-generated from title in session dir)",
 )
 @click.option(
     "--resume",
@@ -306,32 +349,43 @@ class BlogPostPipeline:
     help="Enable verbose logging",
 )
 def main(
-    brain_dump: Path,
+    idea: Path,
     writings_dir: Path,
-    output: Path,
+    instructions: str | None,
+    output: Path | None,
     resume: bool,
     reset: bool,
     max_iterations: int,
     verbose: bool,
 ):
-    """Blog Post Writer - Transform brain dumps into polished blog posts.
+    """Blog Post Writer - Transform ideas into polished blog posts.
 
     This tool extracts your writing style from existing writings and uses it
-    to transform rough brain dumps into polished blog posts that match your voice.
+    to transform rough ideas/brain dumps into polished blog posts that match your voice.
 
     Example:
         python -m ai_working.blog_post_writer \\
-            --brain-dump ideas.md \\
+            --idea ideas.md \\
             --writings-dir my_posts/ \\
-            --output final_blog.md
+            --instructions "Remove any private company names mentioned"
     """
     # Setup logging
     if verbose:
         logger.logger.setLevel("DEBUG")  # Access underlying logger
 
-    # Create state manager
-    state_file = Path("data/state.json")
-    state_manager = StateManager(state_file)
+    # Determine session directory
+    session_dir = None
+    if resume:
+        # Find most recent session for resume
+        base_dir = Path(".data/blog_post_writer")
+        if base_dir.exists():
+            sessions = sorted([d for d in base_dir.iterdir() if d.is_dir()], reverse=True)
+            if sessions:
+                session_dir = sessions[0]
+                logger.info(f"Resuming session: {session_dir.name}")
+
+    # Create state manager (new session if not resuming)
+    state_manager = StateManager(session_dir)
 
     # Handle reset
     if reset:
@@ -342,36 +396,49 @@ def main(
     state_manager.state.max_iterations = max_iterations
 
     # Check for resume
-    if resume and state_file.exists() and not reset:
+    if resume and state_manager.state_file.exists() and not reset:
         logger.info("Resuming from saved state")
         # Use saved paths if not provided
         if state_manager.state.brain_dump_path:
-            brain_dump = Path(state_manager.state.brain_dump_path)
+            idea = Path(state_manager.state.brain_dump_path)
         if state_manager.state.writings_dir:
             writings_dir = Path(state_manager.state.writings_dir)
-        if state_manager.state.output_path:
+        if state_manager.state.output_path and output is None:
             output = Path(state_manager.state.output_path)
+        if state_manager.state.additional_instructions and instructions is None:
+            instructions = state_manager.state.additional_instructions
 
     # Create and run pipeline
     pipeline = BlogPostPipeline(state_manager)
 
     logger.info("🚀 Starting Blog Post Writer Pipeline")
-    logger.info(f"  Brain dump: {brain_dump.name}")
+    logger.info(f"  Session: {state_manager.session_dir}")
+    logger.info(f"  Idea: {idea.name}")
     logger.info(f"  Writings dir: {writings_dir}")
-    logger.info(f"  Output: {output}")
+    if instructions:
+        logger.info(f"  Instructions: {instructions}")
+    if output:
+        logger.info(f"  Output: {output}")
+    else:
+        logger.info("  Output: Auto-generated from title")
     logger.info(f"  Max iterations: {max_iterations}")
+
+    # Use a placeholder output path (will be overridden with slug-based name)
+    output_path = output or state_manager.session_dir / "blog_post.md"
 
     success = asyncio.run(
         pipeline.run(
-            brain_dump_path=brain_dump,
+            brain_dump_path=idea,
             writings_dir=writings_dir,
-            output_path=output,
+            output_path=output_path,
+            additional_instructions=instructions,
         )
     )
 
     if success:
         logger.info("\n✨ Blog post generation complete!")
-        logger.info(f"📄 Output saved to: {output}")
+        final_output = state_manager.state.output_path
+        logger.info(f"📄 Output saved to: {final_output}")
         return 0
     logger.error("\n❌ Blog post generation failed")
     return 1

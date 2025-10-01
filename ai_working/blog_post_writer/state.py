@@ -5,6 +5,7 @@ Handles pipeline state persistence for resume capability.
 Saves state after every operation to enable interruption recovery.
 """
 
+import re
 from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
@@ -17,6 +18,45 @@ from amplifier.ccsdk_toolkit.defensive.file_io import write_json_with_retry
 from amplifier.utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+
+def extract_title_from_markdown(content: str) -> str | None:
+    """Extract the first H1 heading from markdown content.
+
+    Args:
+        content: Markdown content
+
+    Returns:
+        Title string or None if no title found
+    """
+    lines = content.strip().split("\n")
+    for line in lines:
+        line = line.strip()
+        if line.startswith("# "):
+            return line[2:].strip()
+    return None
+
+
+def slugify(text: str) -> str:
+    """Convert text to a URL-friendly slug.
+
+    Args:
+        text: Text to slugify
+
+    Returns:
+        Slugified string (lowercase, dashes for spaces, no special chars)
+    """
+    # Convert to lowercase
+    slug = text.lower()
+    # Replace spaces and underscores with dashes
+    slug = re.sub(r"[\s_]+", "-", slug)
+    # Remove special characters (keep alphanumeric and dashes)
+    slug = re.sub(r"[^a-z0-9-]", "", slug)
+    # Remove multiple consecutive dashes
+    slug = re.sub(r"-+", "-", slug)
+    # Strip leading/trailing dashes
+    slug = slug.strip("-")
+    return slug
 
 
 @dataclass
@@ -46,19 +86,27 @@ class PipelineState:
     brain_dump_path: str | None = None
     writings_dir: str | None = None
     output_path: str | None = None
+    additional_instructions: str | None = None
 
 
 class StateManager:
     """Manages pipeline state with automatic persistence."""
 
-    def __init__(self, state_file: Path | None = None):
+    def __init__(self, session_dir: Path | None = None):
         """Initialize state manager.
 
         Args:
-            state_file: Path to state file (default: data/state.json)
+            session_dir: Path to session directory (default: .data/blog_post_writer/<timestamp>/)
         """
-        self.state_file = state_file or Path("data/state.json")
-        self.state_file.parent.mkdir(parents=True, exist_ok=True)
+        if session_dir is None:
+            # Create new session directory with timestamp
+            base_dir = Path(".data/blog_post_writer")
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            session_dir = base_dir / timestamp
+
+        self.session_dir = session_dir
+        self.session_dir.mkdir(parents=True, exist_ok=True)
+        self.state_file = self.session_dir / "state.json"
         self.state = self._load_state()
 
     def _load_state(self) -> PipelineState:
@@ -126,8 +174,8 @@ class StateManager:
     def update_draft(self, draft: str) -> None:
         """Update current blog draft."""
         self.state.current_draft = draft
-        # Save draft to separate file for easy access
-        draft_file = self.state_file.parent / f"draft_iter_{self.state.iteration}.md"
+        # Save draft to separate file for easy access in session directory
+        draft_file = self.session_dir / f"draft_iter_{self.state.iteration}.md"
         try:
             draft_file.write_text(draft)
             logger.info(f"Draft saved to: {draft_file}")
