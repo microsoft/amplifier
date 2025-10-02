@@ -41,8 +41,7 @@
     "prove-plus-comm",
     "jupyter-notebook-server",
     "simple-sheets-put",
-    "swe-bench-astropy-2",
-    "create-bucket"
+    "swe-bench-astropy-2"
   ],
   "test": [
     "blind-maze-explorer-algorithm",

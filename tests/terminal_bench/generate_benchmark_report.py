@@ -13,11 +13,20 @@ from claude_code_sdk import ClaudeCodeOptions
 from claude_code_sdk import ClaudeSDKClient
 from pydantic import BaseModel
 
+if __package__ in (None, ""):
+    import sys
+
+    sys.path.append(str(Path(__file__).resolve().parents[2]))
+    __package__ = "tests.terminal_bench"
+
+from .generate_eval_dashboard import DEFAULT_DASHBOARD_TITLE
+from .generate_eval_dashboard import generate_dashboard
+
 
 class TaskResult(BaseModel):
     task_id: str
     instruction: str
-    is_resolved: bool
+    is_resolved: bool = False
     task_folder: Path
     agent_log: str | None = None
     test_log: str | None = None
@@ -53,7 +62,7 @@ def load_result_json(run_dir: Path) -> list[TaskResult]:
         task_result = TaskResult(
             task_id=result["task_id"],
             instruction=result["instruction"],
-            is_resolved=result["is_resolved"],
+            is_resolved=result["is_resolved"] if result["is_resolved"] is not None else False,
             task_folder=task_folder,
             agent_log=agent_log_content,
             test_log=test_log_content,
@@ -139,7 +148,7 @@ def load_test_files(task_result: TaskResult) -> TaskResult:
     return task_result
 
 
-async def generate_task_report(task_result: TaskResult, output_dir: Path) -> None:
+async def generate_task_report(task_result: TaskResult, run_dir: Path) -> None:
     """
     Generates a detailed report for a single task using Claude Code SDK.
     Creates a temporary workspace with task context and uses Claude to analyze the failure.
@@ -218,6 +227,7 @@ OUTPUT: Create a detailed report in `FAILURE_REPORT.md` with:
 - Root Cause Analysis (why it failed)
 - What Should Have Been Done
 
+Make sure that your report is factual and accurate. Do not make assumptions that are not supported by the logs and files provided.
 ---
 
 {context_md}"""
@@ -239,8 +249,8 @@ OUTPUT: Create a detailed report in `FAILURE_REPORT.md` with:
         # Extract the report
         report_path = temp_dir / "FAILURE_REPORT.md"
         if report_path.exists():
-            # Copy to output directory
-            output_path = output_dir / "task_reports" / f"{task_result.task_id}_report.md"
+            # Copy to run directory
+            output_path = run_dir / "task_reports" / f"{task_result.task_id}_report.md"
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(report_path.read_text())
     finally:
@@ -248,12 +258,12 @@ OUTPUT: Create a detailed report in `FAILURE_REPORT.md` with:
             shutil.rmtree(temp_dir)
 
 
-async def consolidated_report(output_dir: Path) -> None:
+async def consolidated_report(run_dir: Path) -> None:
     """
     Generate a consolidated report synthesizing all individual task failure reports.
     Uses Claude Code SDK to analyze patterns and common failure modes across all tasks.
     """
-    task_reports_dir = output_dir / "task_reports"
+    task_reports_dir = run_dir / "task_reports"
     if not task_reports_dir.exists() or not list(task_reports_dir.glob("*_report.md")):
         print("No task reports found to consolidate")
         return
@@ -272,7 +282,9 @@ async def consolidated_report(output_dir: Path) -> None:
     temp_dir.mkdir(parents=True, exist_ok=True)
 
     try:
-        system_prompt = """You are an expert at synthesizing terminal-bench failure analysis reports.
+        system_prompt = """You are an expert at synthesizing terminal-bench failure analysis reports. \
+It is critical that the report is factual and accurate based on the provided reports. \
+Do not make assumptions and inferences that are not supported by the reports.
 
 ABOUT TERMINAL-BENCH:
 Terminal-Bench is an AI agent benchmarking system that evaluates autonomous agents on real-world tasks within sandboxed terminal environments.  \
@@ -296,26 +308,29 @@ ANALYSIS APPROACH:
 - Identify agent weaknesses (e.g., poor error handling, missing validation, incorrect assumptions)
 - Group failures by type (e.g., environment setup issues, logic errors, test misunderstanding)
 
-OUTPUT: Write your consolidated analysis to `CONSOLIDATED_REPORT.md` using the Write tool."""
+OUTPUT: Write your consolidated analysis to `CONSOLIDATED_REPORT.md` using the Write tool following the structure provided in the user's message."""
 
         user_prompt = f"""Analyze the following {len(report_files)} terminal-bench task failure reports and create a consolidated analysis.
 
 Your mission: Identify patterns, common failure modes, and systemic issues across all failed tasks.
 
-OUTPUT: Create a comprehensive report in `CONSOLIDATED_REPORT.md` with:
+OUTPUT: Create a comprehensive report in `CONSOLIDATED_REPORT.md` following this structure:
 
-1. **Executive Summary** (3-5 sentences)
-   - Overall assessment of agent performance
-   - Key patterns observed
-
-2. **Failure Categories**
+Sections corresponding to failure categories
    - Group failures by type (e.g., environment issues, logic errors, test misunderstanding)
+   - Create up to 5 categories. If there are tasks that don't fit, create an "Other" category.
    - Count and list tasks in each category
+   - Include a common root cause analysis for each category as to what went wrong based on the individual reports
 
-3. **Common Root Causes**
-   - Recurring issues across multiple tasks
-   - Systemic weaknesses in the agent
+Finally, AT THE END, go back and add an executive summary (2-4 sentences) at the top of the report.
+   - Overall assessment of agent performance
+   - Key patterns observed (list of failure categories, what they are, and the amount of tasks in that category)
 
+DO NOT add:
+- A conclusion and appendix
+- Recommendations for improvement
+- An assessment of the agent's strengths
+- Anything else that does not fit the structure above
 ---
 
 # Individual Task Reports
@@ -326,7 +341,7 @@ OUTPUT: Create a comprehensive report in `CONSOLIDATED_REPORT.md` with:
             system_prompt=system_prompt,
             cwd=str(temp_dir),
             allowed_tools=["Write"],
-            max_turns=5,
+            max_turns=10,
             permission_mode="default",
         )
 
@@ -338,7 +353,7 @@ OUTPUT: Create a comprehensive report in `CONSOLIDATED_REPORT.md` with:
         # Extract the consolidated report
         report_path = temp_dir / "CONSOLIDATED_REPORT.md"
         if report_path.exists():
-            output_path = output_dir / "CONSOLIDATED_REPORT.md"
+            output_path = run_dir / "CONSOLIDATED_REPORT.md"
             output_path.write_text(report_path.read_text())
 
     finally:
@@ -346,19 +361,30 @@ OUTPUT: Create a comprehensive report in `CONSOLIDATED_REPORT.md` with:
             shutil.rmtree(temp_dir)
 
 
-async def main(run_dir: Path, output_dir: Path) -> None:
+async def main(run_dir: Path, concurrency: int = 5) -> None:
     """Main entry point for generating benchmark reports."""
     results = load_result_json(run_dir)
     failed_tasks = [r for r in results if not r.is_resolved]
 
-    # Generate reports for each failed task
-    for i, task in enumerate(failed_tasks, 1):
-        print(f"\n[{i}/{len(failed_tasks)}] Generating report for {task.task_id}")
-        await generate_task_report(task, output_dir)
-    print(f"\nAll individual reports generated in: {output_dir / 'task_reports'}")
+    # Generate reports for each failed task in parallel
+    semaphore = asyncio.Semaphore(concurrency)
 
-    await consolidated_report(output_dir)
-    print(f"Final consolidated report in: {output_dir / 'CONSOLIDATED_REPORT.md'}")
+    async def generate_with_semaphore(task: TaskResult, index: int) -> None:
+        async with semaphore:
+            print(f"[{index}/{len(failed_tasks)}] Generating report for {task.task_id}")
+            await generate_task_report(task, run_dir)
+
+    tasks = [generate_with_semaphore(task, i) for i, task in enumerate(failed_tasks, 1)]
+    await asyncio.gather(*tasks)
+    print(f"\nAll individual reports generated in: {run_dir / 'task_reports'}")
+
+    await consolidated_report(run_dir)
+    print(f"Final consolidated report in: {run_dir / 'CONSOLIDATED_REPORT.md'}")
+
+    dashboard_title = f"{DEFAULT_DASHBOARD_TITLE} — {run_dir.name}"
+    dashboard_path = run_dir / "terminal_bench_dashboard.html"
+    generate_dashboard([run_dir], dashboard_path, title=dashboard_title)
+    print(f"Dashboard written to: {dashboard_path}")
 
 
 if __name__ == "__main__":
@@ -366,15 +392,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "--run-dir",
         type=Path,
-        default=Path(__file__).parents[2] / "ai_working" / "tmp" / "2025-09-30__11-09-23",
+        default=Path(__file__).parents[2] / "ai_working" / "tmp" / "2025-10-02__11-02-44",
         help="Directory where terminal-bench run results are stored",
     )
     parser.add_argument(
-        "--output-dir",
-        type=Path,
-        default=Path(__file__).parents[2] / "ai_working" / "tmp" / "2025-09-30__11-09-23_analysis",
-        help="Directory where reports and session data will be stored",
+        "--concurrency",
+        type=int,
+        default=5,
+        help="Number of reports to generate concurrently (default: 5)",
     )
 
     args = parser.parse_args()
-    asyncio.run(main(args.run_dir, args.output_dir))
+    asyncio.run(main(args.run_dir, args.concurrency))

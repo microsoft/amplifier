@@ -18,7 +18,6 @@ def main(agent: str) -> None:
     split_data = json.loads((Path(__file__).parents[0] / "split.json").read_text())
     task_ids = split_data["train"]
 
-    # Select agent based on agent type
     agent_import_path = (
         "custom_agents:CustomAmplifierAgent" if agent == "amplifier" else "custom_agents:ClaudeCodeAgent"
     )
@@ -32,18 +31,13 @@ def main(agent: str) -> None:
         no_rebuild=False,
         cleanup=True,
         task_ids=task_ids,
-        n_concurrent_trials=1,
+        n_concurrent_trials=5,
         n_attempts=1,
-        global_timeout_multiplier=1.25,
+        global_timeout_multiplier=2,
     )
 
     results = harness.run()
     print(results)
-
-    # Save results to runs_dir
-    results_file = runs_dir / f"{run_id}_results.json"
-    results_file.write_text(json.dumps(results.model_dump(), indent=2))
-    print(f"\nResults saved to: {results_file}")
 
 
 if __name__ == "__main__":

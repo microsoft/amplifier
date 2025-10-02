@@ -78,8 +78,11 @@ curl -fsSL https://get.pnpm.io/install.sh | sh -
 export PNPM_HOME="$HOME/.local/share/pnpm"
 export PATH="$PNPM_HOME:$PATH"
 
-git clone https://github.com/microsoft/amplifier.git
-cd amplifier
+# Clone amplifier to temporary location
+git clone https://github.com/microsoft/amplifier.git /tmp/amplifier
+
+# Copy all amplifier files into current working directory
+cp -r -n /tmp/amplifier/. .
 
 make install
 
