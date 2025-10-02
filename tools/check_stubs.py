@@ -92,8 +92,8 @@ def is_legitimate_pattern(filepath, line_num, line):
         except Exception:
             pass
 
-    # Protocol definitions may have empty methods
-    if "pass" in line:
+    # Protocol definitions may have empty methods with pass or ...
+    if "pass" in line or line.strip() == "...":
         try:
             with open(filepath, encoding="utf-8") as f:
                 content = f.read()

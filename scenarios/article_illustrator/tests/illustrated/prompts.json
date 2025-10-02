@@ -1,0 +1,44 @@
+[
+  {
+    "id": "illustration-1",
+    "section": "What is Machine Learning?",
+    "full_prompt": "Abstract visualization of a neural network learning process, showing interconnected nodes with flowing data patterns, algorithms transforming from simple to complex forms, glowing pathways representing pattern recognition, geometric shapes evolving and adapting, digital brain structure with luminous synaptic connections, modern tech illustration, flat design aesthetic, bold colors with gradients, isometric perspective, clean vector graphics, vibrant blue and purple tones with orange accents, minimal shadows, geometric precision, tech-forward composition",
+    "style_modifiers": [
+      "modern tech illustration",
+      "flat design aesthetic",
+      "bold colors with gradients",
+      "isometric perspective",
+      "clean vector graphics",
+      "vibrant blue and purple tones with orange accents",
+      "minimal shadows",
+      "geometric precision",
+      "tech-forward composition"
+    ],
+    "metadata": {
+      "mood": "intelligent, dynamic, innovative, accessible",
+      "color_palette": "primary blues and purples with energetic orange highlights, clean white background",
+      "composition": "centered focal point with radiating elements, balanced symmetry, visual flow from simple to complex, layered depth without cluttering"
+    }
+  },
+  {
+    "id": "illustration-2",
+    "section": "Real-World Applications",
+    "full_prompt": "A triptych illustration showing three real-world machine learning applications in modern tech illustration style with flat design and bold colors. Left panel: medical diagnostic interface with stylized scan imagery and flowing health data visualization in electric blue tones. Center panel: financial dashboard with abstract stock charts, ascending trend lines, and algorithmic pattern indicators in vibrant purple. Right panel: autonomous vehicle navigation system with sensor detection rays, route pathways, and environmental mapping in coral orange. Isometric perspective, clean geometric shapes, minimal line art details, professional aesthetic, soft shadows for depth, no text or labels, seamless visual flow between panels.",
+    "style_modifiers": [
+      "modern tech illustration",
+      "flat design with subtle gradients",
+      "bold colors: electric blue, vibrant purple, and coral orange",
+      "isometric perspective with clean geometric shapes",
+      "minimal line art details",
+      "professional and accessible aesthetic",
+      "balanced composition with three equal panels",
+      "soft shadows for depth",
+      "no text or labels"
+    ],
+    "metadata": {
+      "mood": "professional, innovative, optimistic",
+      "color_palette": "electric blue (#0066FF), vibrant purple (#8B3DFF), coral orange (#FF6B4A), white backgrounds with subtle gradients",
+      "composition": "horizontal triptych with three equal panels, isometric perspective, balanced visual weight across all sections, natural eye flow from left to right"
+    }
+  }
+]

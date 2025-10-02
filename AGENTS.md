@@ -314,6 +314,21 @@ Every function must work or not exist. Every file must be complete or not create
 - Keep utility scripts with their related modules, not in a generic tools folder
 - The `/tools` directory is reserved for specific build and development tools chosen by the project maintainer
 
+### Amplifier CLI Tool Organization
+
+**For detailed guidance on organizing amplifier CLI tools, consult the `amplifier-cli-architect` agent.**
+
+This specialized agent has comprehensive context on:
+- Progressive Maturity Model (scenarios/ vs ai_working/ vs amplifier/)
+- Tool creation patterns and templates
+- Documentation requirements
+- Philosophy alignment (@scenarios/README.md)
+- THE exemplar to model after: @scenarios/blog_writer/
+
+When creating amplifier CLI tools:
+1. Delegate to `amplifier-cli-architect` in GUIDE mode for complete guidance
+2. When in doubt about tool organization, consult `amplifier-cli-architect` and validate against @scenarios/blog_writer/ implementation
+
 ## Dev Environment Tips
 
 - Run `make` to create a virtual environment and install dependencies.
