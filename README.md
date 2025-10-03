@@ -85,6 +85,18 @@ Before starting, you'll need:
    .venv\Scripts\activate     # Windows
    ```
 
+5. **Install global access** (Optional but recommended):
+   ```bash
+   make install-global
+   ```
+   
+   This installs the `amplifier` command globally, letting you use Amplifier on any project from anywhere:
+   
+   ```bash
+   cd ~/my-other-project
+   amplifier  # Starts Claude with Amplifier agents for this project
+   ```
+
 ## 📖 How to Use Amplifier
 
 ### Basic Usage
@@ -96,28 +108,170 @@ cd amplifier
 claude  # Everything is pre-configured and ready
 ```
 
-### Using with Your Own Projects
+### Global Usage: Amplifier on Any Project 🌍
 
-Want Amplifier's power on your own code? Easy:
+**The power of Amplifier is no longer confined to the Amplifier directory.** Use all 20+ specialized agents, knowledge extraction, and automation tools on any codebase, anywhere on your system.
 
-1. **Start Claude with both directories**:
+#### Method 1: Global Command (Recommended)
 
-   ```bash
-   claude --add-dir /path/to/your/project
-   ```
+After running `make install-global`, use Amplifier from any directory:
 
-2. **Tell Claude where to work** (paste as first message):
+```bash
+# Work on any project
+cd ~/my-web-app
+amplifier
 
-   ```
-   I'm working in /path/to/your/project which doesn't have Amplifier files.
-   Please cd to that directory and work there.
-   Do NOT update any issues or PRs in the Amplifier repo.
-   ```
+# Or specify a different project
+amplifier ~/dev/my-python-api
 
-3. **Use Amplifier's agents on your code**:
-   - "Use the zen-architect agent to design my application's caching layer"
-   - "Deploy bug-hunter to find why my login system is failing"
-   - "Have security-guardian review my API implementation for vulnerabilities"
+# Pass Claude options
+amplifier ~/my-project --model sonnet
+amplifier ~/my-app --print "Fix the authentication bug"
+```
+
+#### Method 2: From Amplifier Directory
+
+If you prefer not to install globally:
+
+```bash
+cd ~/dev/amplifier
+./amplifier-anywhere.sh ~/path/to/your/project
+
+# Or with Claude options
+./amplifier-anywhere.sh ~/my-app --model sonnet
+```
+
+#### Method 3: Manual Setup
+
+For maximum control:
+
+```bash
+cd ~/dev/amplifier
+source .venv/bin/activate
+claude --add-dir /path/to/your/project
+```
+
+### Auto-Healing: Automated Code Quality Improvement
+
+Amplifier includes an auto-healing system that automatically improves code quality by analyzing complexity, type errors, and code patterns.
+
+#### Quick Start
+
+```bash
+# Check module health without making changes
+amplifier heal --check-only
+
+# Heal up to 3 unhealthy modules (with confirmation)
+amplifier heal
+
+# Heal up to 5 modules automatically
+amplifier heal --max 5 --yes
+
+# Custom health threshold (default: 70)
+amplifier heal --threshold 80
+```
+
+#### How It Works
+
+The auto-healer:
+1. **Analyzes** Python modules for:
+   - Cyclomatic complexity
+   - Lines of code
+   - Type errors (via pyright)
+2. **Calculates** health scores (0-100)
+3. **Identifies** modules below the threshold
+4. **Uses Claude** to refactor and simplify code
+5. **Validates** improvements before committing
+6. **Creates git branches** for safe, trackable changes
+
+#### Health Score Calculation
+
+- **Complexity penalty**: Each control flow statement (if/while/for) reduces score
+- **LOC penalty**: Modules over 200 lines are penalized
+- **Type errors**: Each type error significantly reduces score
+
+**Score range**: 0-100 (100 = perfect health)
+
+#### Safety Features
+
+- **Git branches**: Each healing creates a timestamped branch
+- **Atomic writes**: File corruption prevented
+- **Validation**: Changes are checked before committing
+- **Confirmation**: Prompts before making changes (unless --yes)
+
+#### Limitations
+
+- **File size limit**: Modules larger than 400 lines are skipped to prevent timeouts
+- **Critical files**: Files matching patterns like `__init__`, `setup`, `config`, `settings`, or `test_` are skipped
+- Skipped files show: `⏭️ filename.py: File too large (692 lines, limit: 400)`
+
+#### From Claude Code
+
+The auto-healing feature is also available as a slash command:
+
+```bash
+/heal                    # Check and heal up to 3 modules
+/heal --check-only       # Only check, don't heal
+/heal --max 5 --yes     # Heal 5 modules without confirmation
+```
+
+---
+
+#### Usage Template
+
+**Important**: When using Amplifier on external projects, always begin with this message template:
+
+```
+I'm working in [YOUR_PROJECT_PATH] which doesn't have Amplifier files.
+Please cd to that directory and work there.
+Do NOT update any issues or PRs in the Amplifier repo.
+
+Use [AGENT_NAME] to [TASK_DESCRIPTION].
+```
+
+**Examples**:
+- `"Use zen-architect to design my application's caching layer"`
+- `"Deploy bug-hunter to find why my login system is failing"`
+- `"Have security-guardian review my API implementation for vulnerabilities"`
+- `"Use modular-builder to implement the user profile feature"`
+
+#### Global Benefits
+
+✅ **All 20+ specialized agents** work on your projects  
+✅ **Shared knowledge base** - insights from one project help others  
+✅ **Same powerful automation** - quality checks, parallel development  
+✅ **Project isolation** - changes only affect your target project  
+✅ **Works anywhere** - no need to copy files or modify your projects
+
+#### Troubleshooting Global Access
+
+**Command not found: `amplifier`**
+```bash
+# Check if ~/bin is in PATH
+echo $PATH | grep $HOME/bin
+
+# Add to PATH if missing
+echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc  # or ~/.bashrc
+source ~/.zshrc
+```
+
+**Cannot find Amplifier installation**
+```bash
+# The global command looks for Amplifier in these locations:
+# - ~/dev/amplifier (most common)
+# - ~/amplifier
+# - ~/repos/amplifier  
+# - ~/code/amplifier
+
+# Create a symlink if needed
+ln -s /path/to/your/amplifier ~/dev/amplifier
+```
+
+**Get help anytime**
+```bash
+amplifier --help     # Show usage help
+amplifier --version  # Show version info
+```
 
 ### Parallel Development
 
