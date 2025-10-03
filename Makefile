@@ -65,6 +65,7 @@ help: ## Show ALL available commands
 	@echo "  make knowledge-update        Full pipeline: extract & synthesize"
 	@echo "  make knowledge-sync          Extract knowledge from content"
 	@echo "  make knowledge-sync-batch N=5  Process next N articles"
+	@echo "  make knowledge-reconcile     Reconcile extraction files with JSONL"
 	@echo "  make knowledge-synthesize    Find patterns across knowledge"
 	@echo "  make knowledge-query Q=\"...\" Query your knowledge base"
 	@echo "  make knowledge-search Q=\"...\" Search extracted knowledge"
@@ -303,6 +304,13 @@ knowledge-export: ## Export all knowledge as JSON or text. Usage: make knowledge
 	echo "Exporting knowledge as $$format..."; \
 	uv run python -m amplifier.knowledge_synthesis.cli export --format $$format
 
+knowledge-reconcile: ## Reconcile JSONL with individual extraction files. Usage: make knowledge-reconcile [FORCE=true]
+	@force_flag=""; \
+	if [ "$$FORCE" = "true" ]; then force_flag="--force"; fi; \
+	echo "🔄 Reconciling extraction files..."; \
+	uv run python -m amplifier.knowledge_synthesis.cli reconcile $$force_flag; \
+	echo "✅ Reconciliation complete!"
+
 # Knowledge Pipeline Commands
 knowledge-update: ## Full pipeline: extract knowledge + synthesize patterns [NOTIFY=true]
 	@notify_flag=""; \
@@ -311,7 +319,10 @@ knowledge-update: ## Full pipeline: extract knowledge + synthesize patterns [NOT
 	echo "Step 1: Extracting knowledge..."; \
 	uv run python -m amplifier.knowledge_synthesis.cli sync $$notify_flag; \
 	echo ""; \
-	echo "Step 2: Synthesizing patterns..."; \
+	echo "Step 2: Reconciling extractions..."; \
+	uv run python -m amplifier.knowledge_synthesis.cli reconcile; \
+	echo ""; \
+	echo "Step 3: Synthesizing patterns..."; \
 	uv run python -m amplifier.knowledge_synthesis.run_synthesis $$notify_flag; \
 	echo ""; \
 	echo "✅ Knowledge pipeline complete!"
