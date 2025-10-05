@@ -1,0 +1,97 @@
+# Ruff configuration for the entire project
+# This ensures consistent formatting across all Python code
+
+# Use 120 character line length to prevent splitting Reflex lambdas
+line-length = 120
+
+# Target Python 3.11+
+target-version = "py311"
+
+# Exclude generated and build directories
+extend-exclude = [
+    ".venv",
+    "venv",
+    "__pycache__",
+    "*.pyc",
+    ".web",
+    "node_modules",
+]
+
+[format]
+# Use double quotes for strings
+quote-style = "double"
+
+# Use 4 spaces for indentation
+indent-style = "space"
+
+# Respect magic trailing commas
+skip-magic-trailing-comma = false
+
+# Use Unix line endings
+line-ending = "auto"
+
+[lint]
+# Enable specific rule sets
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings (includes W292 for newline at EOF)
+    "F",   # Pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "DTZ", # flake8-datetimez
+    "T10", # flake8-debugger
+    "RET", # flake8-return
+    "SIM", # flake8-simplify
+    "TID", # flake8-tidy-imports
+]
+
+# Ignore specific rules
+ignore = [
+    "E501",   # Line too long (handled by formatter)
+    "E712",   # Comparison to True/False (needed for SQLAlchemy)
+    "B008",   # Do not perform function calls in argument defaults
+    "B904",   # Within except clause, use raise from (not always needed)
+    "UP007",  # Use X | Y for type unions (keep Optional for clarity)
+    "SIM108", # Use ternary operator (sometimes if/else is clearer)
+    "DTZ005", # datetime.now() without tz (okay for timestamps)
+    "N999",   # Invalid module name (web-bff is valid)
+    "TID252", # Relative imports from parent (used in package structure)
+    "RET504", # Unnecessary assignment before return (sometimes clearer)
+]
+
+# Allow unused variables when prefixed with underscore
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[lint.per-file-ignores]
+# Ignore import violations in __init__ files
+"__init__.py" = ["E402", "F401", "F403"]
+
+# Ignore missing docstrings in tests
+"test_*.py" = ["D100", "D101", "D102", "D103", "D104"]
+"tests/*" = ["D100", "D101", "D102", "D103", "D104"]
+
+# Allow dynamic imports in recipe files
+"recipes/*" = ["F401", "F403"]
+
+[lint.isort]
+# Combine as imports
+combine-as-imports = true
+
+# Force single line imports
+force-single-line = true
+
+# Order imports by type
+section-order = [
+    "future",
+    "standard-library",
+    "third-party",
+    "first-party",
+    "local-folder",
+]
+
+[lint.pydocstyle]
+# Use Google docstring convention
+convention = "google"
