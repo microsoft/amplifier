@@ -187,6 +187,17 @@ MIT License - see [LICENSE](LICENSE) for details.
 - **Issues**: [GitHub Issues](https://github.com/microsoft/amplifier/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/microsoft/amplifier/discussions)
 
+## For Developers
+
+### Multi-Module Development
+
+For development across multiple Amplifier modules, use the
+[amplifier-dev](https://github.com/microsoft/amplifier-dev)
+environment which provides:
+- Synchronized multi-repo development
+- Automated cross-module testing
+- Unified development environment
+
 ---
 
 *Amplifier - Amplifying human intelligence through modular AI augmentation*

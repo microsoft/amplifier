@@ -180,5 +180,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 ## 🔗 Links
 
 - **Main CLI**: [microsoft/amplifier](https://github.com/microsoft/amplifier)
-- **Development Repo**: [microsoft/amplifier-dev](https://github.com/microsoft/amplifier-dev)
 - **Documentation**: [amplifier.microsoft.com](https://amplifier.microsoft.com) (coming soon)

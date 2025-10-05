@@ -1,8 +1,6 @@
 # Amplifier Usage Guide
 
-## ✅ EVERYTHING IS WORKING!
-
-The system is fully functional. Tools are being called and attempting to contact AI APIs. If they hang, it's because they're waiting for API responses.
+This guide covers installation, configuration, and usage of the Amplifier framework.
 
 ## Command Line Usage
 
@@ -95,10 +93,9 @@ amplifier init --name mymode \
 - **Cause**: Trying to run tool without loading a mode first
 - **Fix**: Use `amplifier run <mode> <tool> <input>` format
 
-### "'dict' object has no attribute 'type'" error
-- **Status**: FIXED
-- **Was**: Blog generator tried to access .type on dict
-- **Now**: Handles both string and dict responses properly
+### Module not found errors
+- **Cause**: Module not installed in the environment
+- **Fix**: Ensure all required modules are installed
 
 ## Available Tools
 
@@ -134,13 +131,9 @@ amp> !ultra_think "Explain quantum computing"
 amp> exit
 ```
 
-## Status Summary
+## Next Steps
 
-✅ **Command-line tool execution** - Working
-✅ **Interactive mode** - Working
-✅ **Module loading** - Working
-✅ **Tool registration** - Working
-✅ **API integration** - Working (needs valid keys)
-✅ **Error handling** - Fixed and working
-
-**The system is production-ready!** Just add your API keys and start using it.
+- Install the required modules for your use case
+- Set up your API keys for the model providers you plan to use
+- Create a mode with your preferred configuration
+- Start building and running AI-powered tools

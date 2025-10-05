@@ -1,148 +1,168 @@
-# Amplifier Development Repository
+# Amplifier Development Environment
 
-This is the development repository for the Amplifier project - a modular AI augmentation framework that amplifies human capabilities through composable tools and intelligent agents.
+The orchestrator repository for developing the Amplifier ecosystem - a modular AI-powered development platform.
 
-## 🎯 Purpose
+## Overview
 
-This repository (`amplifier-dev`) contains all Amplifier modules in a monorepo structure for development purposes. Each module will become its own GitHub repository when published, following the modular philosophy of self-contained, regeneratable components.
+`amplifier-dev` provides a unified development environment for working across multiple Amplifier modules. It orchestrates the setup, testing, and integration of the entire Amplifier ecosystem, enabling developers to work seamlessly across module boundaries.
 
-## 📦 Future GitHub Repositories
+## Architecture
 
-When published, each module will become an independent repository under the Microsoft organization:
+### Current State: Multi-Directory Development
 
-| Module | Future Repository | Description |
-|--------|------------------|-------------|
-| **amplifier** | `microsoft/amplifier` | Main CLI and orchestration framework |
-| **amplifier-core** | `microsoft/amplifier-core` | Core contracts and interfaces |
-| **amplifier-mod-agent-registry** | `microsoft/amplifier-mod-agent-registry` | Agent discovery and management |
-| **amplifier-mod-llm-claude** | `microsoft/amplifier-mod-llm-claude` | Claude LLM provider |
-| **amplifier-mod-llm-openai** | `microsoft/amplifier-mod-llm-openai` | OpenAI LLM provider |
-| **amplifier-mod-philosophy** | `microsoft/amplifier-mod-philosophy` | Philosophy extraction and application |
-| **amplifier-mod-tool-blog_generator** | `microsoft/amplifier-mod-tool-blog_generator` | Blog content generation tool |
-| **amplifier-mod-tool-ultra_think** | `microsoft/amplifier-mod-tool-ultra_think` | Deep reasoning and analysis tool |
+The development environment currently uses a multi-directory structure where each Amplifier module lives in a sibling directory:
 
-## 🚀 Development Setup
+```
+amplifier-dev/           # This repository - orchestrator and dev tools
+├── install_all.py       # Auto-discovery installer
+├── README.md           # This file
+└── ...
+
+amplifier/              # Core Amplifier package
+amplifier-core/         # Core utilities and shared components
+amplifier-**/           # Additional modules (auto-discovered)
+```
+
+## Quick Start
 
 ### Prerequisites
 
-- Python 3.11 or higher
-- uv (recommended) or pip
-- Git
+- Python 3.11+
+- uv package manager: `pip install uv`
 
-### Quick Start
+### Installation
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/microsoft/amplifier-dev.git
-   cd amplifier-dev
-   ```
-
-2. **Install all modules in development mode:**
-   ```bash
-   python install_all.py
-   ```
-
-   This will install all modules with editable links, allowing you to develop across modules seamlessly.
-
-3. **Verify installation:**
-   ```bash
-   amplifier --version
-   amplifier list-tools
-   ```
-
-### Development Workflow
-
-#### Working on a Single Module
+1. **Clone the amplifier-dev repository**:
 
 ```bash
-cd amplifier-mod-llm-claude
-# Make your changes
-pytest tests/  # Run tests
+git clone https://github.com/microsoft/amplifier-dev
+cd amplifier-dev
 ```
 
-#### Creating a New Module
-
-1. Create a new directory: `amplifier-mod-[type]-[name]`
-2. Follow the module structure:
-   ```
-   amplifier-mod-[type]-[name]/
-   ├── README.md
-   ├── pyproject.toml
-   ├── src/
-   │   └── amplifier_mod_[type]_[name]/
-   │       ├── __init__.py
-   │       └── [implementation files]
-   └── tests/
-       └── test_[module].py
-   ```
-
-3. Register the module in `amplifier-mod-agent-registry` if it's a tool or agent
-
-#### Running Tests
+2. **Run the installer** (creates virtual environment automatically):
 
 ```bash
-# Test all modules
-python -m pytest
-
-# Test specific module
-cd amplifier-core
-python -m pytest tests/
-
-# Test with coverage
-python -m pytest --cov=src tests/
+python install_all.py
 ```
 
-#### Preparing for GitHub Publishing
+The installer will:
 
-When ready to publish modules as separate repositories:
+- Create a virtual environment if needed
+- Guide you through activation
+- Auto-discover and install all amplifier modules
+- Handle dependencies automatically
+
+3. **Verify installation**:
 
 ```bash
-python prepare_for_github.py
+amplifier --version
+amplifier list-modes
 ```
 
-This script will:
-- Update all cross-module dependencies to use GitHub URLs
-- Prepare each module for standalone repository publication
-- Generate migration instructions
+4. **Set up API keys** (for AI-powered tools):
 
-## 📖 Documentation
+```bash
+export OPENAI_API_KEY="your-key-here"
+export ANTHROPIC_API_KEY="your-key-here"
+```
 
-- **User Documentation**: See [amplifier/README.md](amplifier/README.md)
-- **Developer Guide**: See [amplifier/DEVELOPMENT.md](amplifier/DEVELOPMENT.md)
-- **Architecture**: See individual module READMEs for component details
-- **Contributing**: See [CONTRIBUTING.md](CONTRIBUTING.md) (coming soon)
+5. **Test with a demo**:
 
-## 🏗️ Architecture
+```bash
+amplifier run demo ultra_think "What is consciousness?"
+```
 
-Amplifier follows a modular, brick-and-stud architecture:
+### Installation Options
 
-- **Bricks**: Self-contained modules with single responsibilities
-- **Studs**: Public contracts (interfaces) that modules connect through
-- **Regeneratable**: Any module can be rebuilt from its specification without breaking others
-- **Parallel Development**: Modules can be developed and tested independently
+```bash
+# Check what would be installed without actually installing
+python install_all.py --check-only
 
-## 🤝 Contributing
+# Install with verbose output
+python install_all.py --verbose
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) (coming soon) for details on:
-- Code style and standards
-- Testing requirements
-- Pull request process
-- Module development guidelines
+# Install independent modules in parallel
+python install_all.py --parallel
 
-## 📝 License
+# Install as non-editable packages
+python install_all.py --no-editable
+```
 
-This project is licensed under the MIT License - see individual module LICENSE files for details.
+## Development Workflow
 
-## 🔗 Links
+### Working Across Modules
 
-- **Production Repository**: [microsoft/amplifier](https://github.com/microsoft/amplifier) (future)
-- **Documentation**: [amplifier.microsoft.com](https://amplifier.microsoft.com) (future)
-- **Issues**: [GitHub Issues](https://github.com/microsoft/amplifier-dev/issues)
+The development environment enables seamless cross-module development:
 
-## 🧑‍💻 Development Team
+1. **Make changes** in any module directory
+2. **Test locally** - changes are immediately reflected (editable installs)
+3. **Run integration tests** to verify cross-module compatibility
+4. **Commit changes** in each module's repository
 
-Maintained by the Microsoft Amplifier team. For questions or support, please open an issue.
+### Adding New Modules
 
----
+New modules are automatically discovered if they follow the naming convention:
 
-**Note**: This is the development repository. For production use, install from the individual module repositories once published.
+1. Create a new directory: `amplifier-yourmodule/`
+2. Add a `pyproject.toml` file with proper metadata
+3. Run `python install_all.py` to include it in the environment
+
+### Module Dependencies
+
+Modules can depend on each other through standard Python dependencies:
+
+```toml
+# In amplifier-yourmodule/pyproject.toml
+[project]
+dependencies = [
+    "amplifier-core>=0.1.0",
+    "amplifier>=0.2.0",
+]
+
+# For local development (optional)
+[tool.uv.sources]
+amplifier-core = { path = "../amplifier-core", editable = true }
+amplifier = { path = "../amplifier", editable = true }
+```
+
+## Module Structure
+
+Each Amplifier module follows the "bricks and studs" philosophy:
+
+- **Brick**: Self-contained module with one clear responsibility
+- **Studs**: Well-defined public interfaces (the contract)
+
+### Core Modules
+
+1. **amplifier-core**: Shared utilities and base components
+2. **amplifier**: Main Amplifier CLI and framework
+
+### Extension Modules
+
+Additional `amplifier-*` modules extend functionality:
+
+- Domain-specific tools
+- Integration adapters
+- Specialized agents
+- Custom scenarios
+
+## Testing
+
+### Unit Tests
+
+Run tests within each module:
+
+```bash
+cd ../amplifier
+make test
+```
+
+## Advanced Usage
+
+### Custom Module Discovery
+
+The installer can be configured to use a different base directory:
+
+```bash
+python install_all.py --base-dir /path/to/modules
+```
