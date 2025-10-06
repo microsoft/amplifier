@@ -58,7 +58,7 @@ class KnowledgeMiningConfig(BaseSettings):
     )
 
     knowledge_mining_extraction_model: str = Field(
-        default="claude-sonnet-4-20250514", description="Model for knowledge extraction (powerful, thorough)"
+        default="claude-sonnet-4-5-20250929", description="Model for knowledge extraction (powerful, thorough)"
     )
 
     # Content limits

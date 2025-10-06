@@ -12,7 +12,7 @@ All configuration options can be set via environment variables or in a `.env` fi
 
   - Used for fast, efficient document type detection
 
-- `KNOWLEDGE_MINING_EXTRACTION_MODEL` - Model for knowledge extraction (default: `claude-sonnet-4-20250514`)
+- `KNOWLEDGE_MINING_EXTRACTION_MODEL` - Model for knowledge extraction (default: `claude-sonnet-4-5-20250929`)
   - Used for deep, thorough knowledge extraction from documents
 
 ### Content Processing
