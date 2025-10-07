@@ -105,11 +105,15 @@ source .venv/bin/activate  # Linux/Mac/WSL
 
     #### 🎨 Create A Scenario Tool
 
-    >*Reusable CLI tools that combine code structure with
-    AI intelligence for reliable, repeatable workflows you can run with
+    >*Reusable CLI tools that combine code structure with AI intelligence for reliable, repeatable workflows you can run with
     simple make commands.* **[Learn more about Scenarios →](https://microsoft.github.io/amplifier)**
     >```
-    >>  I need a @scenarios/ tool that creates multiple text-based files such as notes, specs, decisions, etc., all based on the current material in the demo directory. These files will be used to showcase Amplifier's knowledge base capabilities. The files should be diverse enough to demonstrate what the knowledge commands can do, but small enough that knowledge-update can complete within 2 minutes. Because this tool is for a demo, please keep the design compact enough that it can be implemented within 2 minutes.
+    >>  I need a @scenarios/ tool that creates multiple text-based files such as notes, specs,
+    >   decisions, etc., all based on the current material in the demo directory. These files will 
+    >   be used to showcase Amplifier's knowledge base capabilities. The files should be diverse 
+    >   enough to demonstrate what the knowledge commands can do, but small enough that knowledge-
+    >   update can complete within 2 minutes. Because this tool is for a demo, please keep the 
+    >   design compact enough that it can be implemented within 2 minutes.
     >```
     > **What you'll discover**: How simple it is to create a dependable tool
     > <br>
@@ -133,11 +137,9 @@ source .venv/bin/activate  # Linux/Mac/WSL
     >```
     >>  make knowledge-update for AMPLIFIER_CONTENT_DIRS="~/quickstart-demo"
     >```
-    > **What you'll experience**: Knowledge classification and extraction at work on the new content.
-    >> [!NOTE] This step can take ~10-15  minutes.
-    >
+    > **What you'll experience**: Knowledge classification and extraction at work on the new content. *This step can take ~10-15 minutes.*
     > <br>
-    >
+    > <br>
     >```
     >>  make knowledge-stats
     >
@@ -152,8 +154,7 @@ source .venv/bin/activate  # Linux/Mac/WSL
 
     #### 🧠 Context Management
 
-    >*Smart conversation management that compresses long sessions
-    >while preserving searchable transcripts you can restore anytime.* **[Learn more about the Context Management →](https://microsoft.github.io/amplifier)**
+    >*Smart conversation management that compresses long sessions while preserving searchable transcripts you can restore anytime.* **[Learn more about the Context Management →](https://microsoft.github.io/amplifier)**
     >
     >```
     >>  /compact
