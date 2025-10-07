@@ -46,6 +46,7 @@ default: ## Show essential commands
 	@echo ""
 	@echo "Transcription:"
 	@echo "  make transcribe      Transcribe audio/video files or YouTube URLs"
+	@echo "  make transcribe-index Generate index of all transcripts"
 	@echo ""
 	@echo "Knowledge Assistant:"
 	@echo "  make knowledge-assist  Generate research from knowledge base"
@@ -542,10 +543,10 @@ transcribe: ## Transcribe audio/video files or YouTube URLs. Usage: make transcr
 	echo "  Source: $(SOURCE)"; \
 	if [ "$(NO_ENHANCE)" = "true" ]; then \
 		echo "  Enhancement: Disabled"; \
-		uv run python -m scenarios.transcribe "$(SOURCE)" --no-enhance; \
+		uv run python -m scenarios.transcribe transcribe "$(SOURCE)" --no-enhance; \
 	else \
 		echo "  Enhancement: Enabled (summaries and quotes)"; \
-		uv run python -m scenarios.transcribe "$(SOURCE)"; \
+		uv run python -m scenarios.transcribe transcribe "$(SOURCE)"; \
 	fi
 
 transcribe-batch: ## Transcribe multiple files. Usage: make transcribe-batch SOURCES="file1.mp4 file2.mp4" [NO_ENHANCE=true]
@@ -557,15 +558,19 @@ transcribe-batch: ## Transcribe multiple files. Usage: make transcribe-batch SOU
 	echo "  Sources: $(SOURCES)"; \
 	if [ "$(NO_ENHANCE)" = "true" ]; then \
 		echo "  Enhancement: Disabled"; \
-		uv run python -m scenarios.transcribe $(SOURCES) --no-enhance; \
+		uv run python -m scenarios.transcribe transcribe $(SOURCES) --no-enhance; \
 	else \
 		echo "  Enhancement: Enabled"; \
-		uv run python -m scenarios.transcribe $(SOURCES); \
+		uv run python -m scenarios.transcribe transcribe $(SOURCES); \
 	fi
 
 transcribe-resume: ## Resume interrupted transcription session
 	@echo "🎙️ Resuming transcription..."
-	@uv run python -m scenarios.transcribe --resume
+	@uv run python -m scenarios.transcribe transcribe --resume
+
+transcribe-index: ## Generate index of all transcripts
+	@echo "📑 Generating transcript index..."
+	@uv run python -m scenarios.transcribe index
 
 # Knowledge Assistant
 knowledge-assist: ## Generate research report from knowledge base. Usage: make knowledge-assist TOPIC="subject" [QUESTION="specific aspect"] [DEPTH=quick|deep] [RESUME=session_id]

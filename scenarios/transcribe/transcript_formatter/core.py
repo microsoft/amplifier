@@ -92,11 +92,35 @@ def format_transcript(
     return "\n".join(lines)
 
 
+def _is_sentence_end(text: str) -> bool:
+    """Check if text ends at a natural sentence boundary.
+
+    Args:
+        text: Text to check
+
+    Returns:
+        True if text ends with sentence-ending punctuation
+    """
+    if not text:
+        return False
+
+    # Strip trailing whitespace
+    text = text.rstrip()
+    if not text:
+        return False
+
+    # Check for sentence-ending punctuation
+    # Handle: period, question mark, exclamation, with or without quotes
+    sentence_endings = (".", "!", "?", '."', '!"', '?"', ".'", "!'", "?'")
+
+    return text.endswith(sentence_endings)
+
+
 def _group_segments_into_paragraphs(
     segments: list[TranscriptSegment],
     target_seconds: int,
     video_url: str | None = None,
-    max_paragraph_seconds: int = 300,  # 5 minutes max
+    max_paragraph_seconds: int = 600,  # 10 minutes max (increased from 5)
 ) -> list[str]:
     """Group segments into readable paragraphs.
 
@@ -125,19 +149,26 @@ def _group_segments_into_paragraphs(
         if current_paragraph:
             paragraph_duration = segment.end - paragraph_start
 
-        # Check for natural break (pause > 1.5 seconds)
-        if i > 0:
+        # Check for natural break at sentence boundary
+        if i > 0 and current_paragraph:
             pause_duration = segment.start - segments[i - 1].end
-            if pause_duration > 1.5 and paragraph_duration >= target_seconds:
+
+            # Build current text to check sentence boundary
+            current_text = " ".join(seg.text.strip() for seg in current_paragraph)
+
+            # Break only if:
+            # 1. There's a natural pause (>1.5 seconds)
+            # 2. We've met minimum duration (target_seconds)
+            # 3. We're at a sentence boundary
+            if pause_duration > 1.5 and paragraph_duration >= target_seconds and _is_sentence_end(current_text):
                 should_break = True
 
-        # Check for target duration reached
-        if paragraph_duration >= target_seconds * 2:  # Allow up to 2x target
-            should_break = True
-
-        # Check for maximum duration
-        if paragraph_duration >= max_paragraph_seconds:
-            should_break = True
+            # Log warning if paragraph is getting very long but not at sentence boundary
+            if paragraph_duration >= max_paragraph_seconds and not _is_sentence_end(current_text):
+                logger.warning(
+                    f"Paragraph at {paragraph_duration:.1f}s exceeds max {max_paragraph_seconds}s "
+                    "but not at sentence boundary - continuing to wait for punctuation"
+                )
 
         # Start new paragraph if needed
         if should_break and current_paragraph:

@@ -220,7 +220,33 @@ class TranscriptionPipeline:
         return all_success
 
 
-@click.command()
+@click.group()
+def cli():
+    """Transcribe videos and manage transcripts."""
+    pass
+
+
+@cli.command()
+def index():
+    """Generate index.md for all transcripts."""
+    from amplifier.config.paths import paths
+
+    from .index_generator import write_index
+
+    # Get transcripts directory
+    content_dirs = paths.get_all_content_paths()
+    transcripts_dir = content_dirs[0] / "transcripts" if content_dirs else paths.data_dir / "transcripts"
+
+    if not transcripts_dir.exists():
+        logger.error(f"No transcripts directory found at {transcripts_dir}")
+        return 1
+
+    write_index(transcripts_dir)
+    logger.info(f"✓ Index generated at {transcripts_dir / 'index.md'}")
+    return 0
+
+
+@cli.command()
 @click.argument("sources", nargs=-1, required=True)
 @click.option("--resume", is_flag=True, help="Resume from last saved state")
 @click.option(
@@ -229,7 +255,7 @@ class TranscriptionPipeline:
 @click.option("--output-dir", type=click.Path(path_type=Path), help="Output directory for transcripts")
 @click.option("--no-enhance", is_flag=True, help="Skip AI enhancements (summaries/quotes)")
 @click.option("--force-download", is_flag=True, help="Skip cache and re-download audio even if it exists")
-def main(
+def transcribe(
     sources: tuple[str],
     resume: bool,
     session_dir: Path | None,
@@ -271,6 +297,11 @@ def main(
     except Exception as e:
         logger.error(f"Pipeline failed: {e}")
         return 1
+
+
+def main():
+    """Entry point for the CLI."""
+    return cli()
 
 
 if __name__ == "__main__":

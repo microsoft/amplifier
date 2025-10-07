@@ -86,12 +86,34 @@ make transcribe SOURCE="https://youtube.com/watch?v=..." --force-download
 - Audio preserved for offline listening
 - All files self-contained in one directory
 
+### Transcript Index
+
+Generate an index file to easily browse and find all your transcripts:
+
+```bash
+# Generate index.md with links to all transcripts
+make transcribe-index
+```
+
+This creates `AMPLIFIER_CONTENT_DIRS/transcripts/index.md` with:
+- Links to all transcripts and insights
+- Titles, durations, and creation dates
+- Sorted by newest first
+
+The index makes it easy to:
+- Discover what you've transcribed
+- Navigate to specific transcripts
+- See metadata at a glance
+
+Run `make transcribe-index` anytime to update the index with new transcripts.
+
 ## Output Structure
 
 Transcripts are saved in organized directories:
 
 ```
 AMPLIFIER_CONTENT_DIRS/transcripts/
+├── index.md                 # Generated index of all transcripts
 ├── [video-id]/
 │   ├── audio.mp3            # Downloaded/extracted audio (cached)
 │   ├── transcript.json      # Full structured data with segments
