@@ -24,16 +24,15 @@ def format_transcript(
     """
     Format transcript segments into readable paragraphs with timestamps.
 
-    Groups segments into paragraphs based on:
-    - Target duration (30-60 seconds)
-    - Natural pauses (>1.5 second gaps)
-    - Maximum 5 minutes per paragraph
+    Uses a two-stage approach:
+    1. Build continuous text with inline timestamps every 30 seconds
+    2. Add paragraph breaks every 4-5 sentences
 
     Args:
         transcript: Transcript object with segments
         video_info: Video information
         video_url: Optional URL for timestamp linking
-        target_paragraph_seconds: Target seconds per paragraph (default 30)
+        target_paragraph_seconds: Target seconds between timestamps (default 30)
 
     Returns:
         Formatted markdown with timestamped paragraphs
@@ -77,13 +76,18 @@ def format_transcript(
         ]
     )
 
-    # Format segments into paragraphs
+    # Format segments using two-stage approach
     if transcript.segments:
-        paragraphs = _group_segments_into_paragraphs(transcript.segments, target_paragraph_seconds, video_url)
+        # Stage 1: Build continuous text with inline timestamps
+        continuous_text = _build_continuous_text_with_timestamps(
+            transcript.segments, video_url, target_paragraph_seconds
+        )
 
-        for paragraph in paragraphs:
-            lines.append(paragraph)
-            lines.append("")
+        # Stage 2: Add paragraph breaks
+        formatted_text = _add_paragraph_breaks(continuous_text)
+
+        lines.append(formatted_text)
+        lines.append("")
     else:
         # No segments, just use plain text
         lines.append(transcript.text)
@@ -92,140 +96,128 @@ def format_transcript(
     return "\n".join(lines)
 
 
-def _is_sentence_end(text: str) -> bool:
-    """Check if text ends at a natural sentence boundary.
-
-    Args:
-        text: Text to check
-
-    Returns:
-        True if text ends with sentence-ending punctuation
-    """
-    if not text:
-        return False
-
-    # Strip trailing whitespace
-    text = text.rstrip()
-    if not text:
-        return False
-
-    # Check for sentence-ending punctuation
-    # Handle: period, question mark, exclamation, with or without quotes
-    sentence_endings = (".", "!", "?", '."', '!"', '?"', ".'", "!'", "?'")
-
-    return text.endswith(sentence_endings)
-
-
-def _group_segments_into_paragraphs(
+def _build_continuous_text_with_timestamps(
     segments: list[TranscriptSegment],
-    target_seconds: int,
-    video_url: str | None = None,
-    max_paragraph_seconds: int = 600,  # 10 minutes max (increased from 5)
-) -> list[str]:
-    """Group segments into readable paragraphs.
+    video_url: str | None,
+    timestamp_interval: int = 30,
+) -> str:
+    """Build continuous text with inline timestamps every 30 seconds.
+
+    Stage 1 of the formatting process: Creates flowing text with timestamps
+    inserted inline at regular intervals.
 
     Args:
         segments: List of transcript segments
-        target_seconds: Target duration per paragraph
-        video_url: Optional video URL for timestamp links
-        max_paragraph_seconds: Maximum seconds per paragraph
+        video_url: Optional URL for timestamp linking
+        timestamp_interval: Seconds between timestamps (default 30)
 
     Returns:
-        List of formatted paragraph strings
+        Continuous text with inline timestamps
     """
     if not segments:
-        return []
+        return ""
 
-    paragraphs = []
-    current_paragraph = []
-    paragraph_start = segments[0].start
-    paragraph_duration = 0
+    text_parts = []
+    last_timestamp_time = 0.0
 
-    for i, segment in enumerate(segments):
-        # Check if we should start a new paragraph
-        should_break = False
+    for segment in segments:
+        # Check if we need a timestamp (every interval)
+        if segment.start >= last_timestamp_time + timestamp_interval:
+            # Create timestamp link
+            timestamp_str = _format_timestamp(segment.start)
 
-        # Calculate current paragraph duration
-        if current_paragraph:
-            paragraph_duration = segment.end - paragraph_start
+            if video_url and _is_youtube_url(video_url):
+                video_id = _extract_youtube_id(video_url)
+                if video_id:
+                    link = f"https://youtube.com/watch?v={video_id}&t={int(segment.start)}"
+                    timestamp_text = f" [{timestamp_str}]({link})"
+                else:
+                    timestamp_text = f" [{timestamp_str}]"
+            else:
+                timestamp_text = f" [{timestamp_str}]"
 
-        # Check for natural break at sentence boundary
-        if i > 0 and current_paragraph:
-            pause_duration = segment.start - segments[i - 1].end
+            text_parts.append(timestamp_text)
+            last_timestamp_time = segment.start
 
-            # Build current text to check sentence boundary
-            current_text = " ".join(seg.text.strip() for seg in current_paragraph)
+        # Add segment text with space
+        text_parts.append(" " + segment.text.strip())
 
-            # Break only if:
-            # 1. There's a natural pause (>1.5 seconds)
-            # 2. We've met minimum duration (target_seconds)
-            # 3. We're at a sentence boundary
-            if pause_duration > 1.5 and paragraph_duration >= target_seconds and _is_sentence_end(current_text):
-                should_break = True
-
-            # Log warning if paragraph is getting very long but not at sentence boundary
-            if paragraph_duration >= max_paragraph_seconds and not _is_sentence_end(current_text):
-                logger.warning(
-                    f"Paragraph at {paragraph_duration:.1f}s exceeds max {max_paragraph_seconds}s "
-                    "but not at sentence boundary - continuing to wait for punctuation"
-                )
-
-        # Start new paragraph if needed
-        if should_break and current_paragraph:
-            # Format and add current paragraph
-            para_text = _format_paragraph(current_paragraph, paragraph_start, video_url)
-            paragraphs.append(para_text)
-
-            # Reset for new paragraph
-            current_paragraph = []
-            paragraph_start = segment.start
-            paragraph_duration = 0
-
-        # Add segment to current paragraph
-        current_paragraph.append(segment)
-
-    # Add final paragraph if any segments remain
-    if current_paragraph:
-        para_text = _format_paragraph(current_paragraph, paragraph_start, video_url)
-        paragraphs.append(para_text)
-
-    return paragraphs
+    return "".join(text_parts).strip()
 
 
-def _format_paragraph(
-    segments: list[TranscriptSegment],
-    start_time: float,
-    video_url: str | None = None,
-) -> str:
-    """Format a group of segments into a paragraph with timestamp.
+def _add_paragraph_breaks(text: str) -> str:
+    """Add paragraph breaks every 4-5 sentences without changing content.
+
+    Stage 2 of the formatting process: Inserts paragraph breaks (double newlines)
+    at natural boundaries without altering the text content.
 
     Args:
-        segments: List of segments in the paragraph
-        start_time: Start time in seconds
-        video_url: Optional video URL for timestamp link
+        text: Continuous text with inline timestamps
 
     Returns:
-        Formatted paragraph string
+        Text with paragraph breaks added
     """
-    # Combine segment texts
-    text = " ".join(seg.text.strip() for seg in segments)
+    import re
 
-    # Format timestamp
-    timestamp = _format_timestamp(start_time)
+    if not text:
+        return ""
 
-    # Create timestamp link if YouTube URL provided
-    if video_url and _is_youtube_url(video_url):
-        # Extract video ID and create timestamp link
-        video_id = _extract_youtube_id(video_url)
-        if video_id:
-            timestamp_link = f"https://youtube.com/watch?v={video_id}&t={int(start_time)}"
-            timestamp_prefix = f"[{timestamp}]({timestamp_link})"
-        else:
-            timestamp_prefix = f"[{timestamp}]"
-    else:
-        timestamp_prefix = f"[{timestamp}]"
+    # Split on sentence endings while preserving everything
+    # Pattern: look for . ! ? followed by space
+    sentences = re.split(r"(?<=[.!?])\s+", text)
 
-    return f"{timestamp_prefix} {text}"
+    result = []
+    sentence_count = 0
+    current_paragraph = []
+
+    for i, sentence in enumerate(sentences):
+        current_paragraph.append(sentence)
+        sentence_count += 1
+
+        # Add paragraph break after 4-5 sentences
+        if sentence_count >= 4:
+            # Check if next sentence starts with continuation word
+            if i + 1 < len(sentences):
+                next_sentence = sentences[i + 1]
+                # Get first word (ignoring timestamp links)
+                # Remove timestamp pattern first
+                clean_next = re.sub(r"\s*\[[^\]]+\](?:\([^)]+\))?\s*", " ", next_sentence).strip()
+                words = clean_next.split()
+
+                if words:
+                    first_word = words[0].lower()
+
+                    # Don't break before continuations
+                    continuation_words = [
+                        "but",
+                        "and",
+                        "so",
+                        "because",
+                        "however",
+                        "although",
+                        "while",
+                        "yet",
+                        "furthermore",
+                        "moreover",
+                        "therefore",
+                        "thus",
+                    ]
+
+                    if first_word not in continuation_words:
+                        # Join current paragraph and add to result
+                        result.append(" ".join(current_paragraph))
+                        result.append("\n\n")
+                        current_paragraph = []
+                        sentence_count = 0
+            else:
+                # Last sentence, just add it
+                result.append(" ".join(current_paragraph))
+
+    # Add any remaining sentences
+    if current_paragraph:
+        result.append(" ".join(current_paragraph))
+
+    return "".join(result)
 
 
 def _format_duration(seconds: float) -> str:
