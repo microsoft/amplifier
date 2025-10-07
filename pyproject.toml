@@ -5,10 +5,13 @@ description = "Workspace project"
 requires-python = ">=3.11"
 dependencies = [
     "aiohttp>=3.12.15",
+    "beautifulsoup4>=4.14.2",
     "claude-code-sdk>=0.0.20",
     "click>=8.2.1",
+    "httpx>=0.28.1",
     "langchain>=0.2.1",
     "langchain-openai>=0.3.28",
+    "markdownify>=1.2.0",
     "networkx>=3.5",
     "openai>=1.108.1",
     "pydantic>=2.11.7",
@@ -17,6 +20,7 @@ dependencies = [
     "pydot>=4.0.1",
     "python-dotenv>=1.1.1",
     "pyvis>=0.3.2",
+    "pyyaml>=6.0.2",
     "rapidfuzz>=3.13.0",
     "requests>=2.32.4",
     "tiktoken>=0.11.0",
@@ -49,6 +53,7 @@ venv = ".venv"
 exclude = [
     "**/__pycache__",
     ".venv/**",
+    "scenarios/*/.venv/**",
     "node_modules/**",
     ".git/**",
     ".ruff_cache/**",

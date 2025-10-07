@@ -47,6 +47,9 @@ default: ## Show essential commands
 	@echo "Article Illustration:"
 	@echo "  make illustrate      Generate AI illustrations for article"
 	@echo ""
+	@echo "Web to Markdown:"
+	@echo "  make webtomd         Convert web pages to markdown"
+	@echo ""
 	@echo "Other:"
 	@echo "  make clean          Clean build artifacts"
 	@echo "  make help           Show ALL available commands"
@@ -121,6 +124,9 @@ help: ## Show ALL available commands
 	@echo "  make illustrate INPUT=<file> [OUTPUT=<path>] [STYLE=\"...\"] [APIS=\"...\"] [RESUME=true]  Generate illustrations"
 	@echo "  make illustrate-example  Run illustrator with example article"
 	@echo "  make illustrate-prompts-only INPUT=<file>  Preview prompts without generating"
+	@echo ""
+	@echo "WEB TO MARKDOWN:"
+	@echo "  make webtomd URL=<url> [URL2=<url>] [OUTPUT=<path>]  Convert web pages to markdown (saves to content_dirs[0]/sites/)"
 	@echo ""
 	@echo "UTILITIES:"
 	@echo "  make clean           Clean build artifacts"
@@ -551,6 +557,21 @@ illustrate-prompts-only: ## Preview prompts without generating images. Usage: ma
 	fi
 	@echo "🎨 Generating prompts (no images)..."
 	@uv run python -m scenarios.article_illustrator "$(INPUT)" --prompts-only
+
+# Web to Markdown
+webtomd: ## Convert web pages to markdown. Usage: make webtomd URL=https://example.com [URL2=https://another.com] [OUTPUT=path]
+	@if [ -z "$(URL)" ]; then \
+		echo "Error: Please provide at least one URL. Usage: make webtomd URL=https://example.com"; \
+		exit 1; \
+	fi
+	@echo "🌐 Converting web page(s) to markdown..."
+	@CMD="uv run python -m scenarios.webtomd --url \"$(URL)\""; \
+	if [ -n "$(URL2)" ]; then CMD="$$CMD --url \"$(URL2)\""; fi; \
+	if [ -n "$(URL3)" ]; then CMD="$$CMD --url \"$(URL3)\""; fi; \
+	if [ -n "$(URL4)" ]; then CMD="$$CMD --url \"$(URL4)\""; fi; \
+	if [ -n "$(URL5)" ]; then CMD="$$CMD --url \"$(URL5)\""; fi; \
+	if [ -n "$(OUTPUT)" ]; then CMD="$$CMD --output \"$(OUTPUT)\""; fi; \
+	eval $$CMD
 
 # Clean WSL Files
 clean-wsl-files: ## Clean up WSL-related files (Zone.Identifier, sec.endpointdlp)
