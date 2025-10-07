@@ -88,14 +88,9 @@ make transcribe SOURCE="https://youtube.com/watch?v=..." --force-download
 
 ### Transcript Index
 
-Generate an index file to easily browse and find all your transcripts:
+The transcript index is **automatically updated** after each transcription session:
 
-```bash
-# Generate index.md with links to all transcripts
-make transcribe-index
-```
-
-This creates `AMPLIFIER_CONTENT_DIRS/transcripts/index.md` with:
+`AMPLIFIER_CONTENT_DIRS/transcripts/index.md` contains:
 - Links to all transcripts and insights
 - Titles, durations, and creation dates
 - Sorted by newest first
@@ -105,7 +100,11 @@ The index makes it easy to:
 - Navigate to specific transcripts
 - See metadata at a glance
 
-Run `make transcribe-index` anytime to update the index with new transcripts.
+**Manual update** (optional):
+```bash
+# Rebuild index manually if needed
+make transcribe-index
+```
 
 ## Output Structure
 

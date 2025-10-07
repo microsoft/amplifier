@@ -217,6 +217,15 @@ class TranscriptionPipeline:
         # Mark complete
         self.state.mark_complete()
 
+        # Auto-update index
+        try:
+            from .index_generator import write_index
+
+            logger.info("\nUpdating transcript index...")
+            write_index(self.storage.output_dir)
+        except Exception as e:
+            logger.warning(f"Failed to update index (transcripts saved successfully): {e}")
+
         return all_success
 
 
