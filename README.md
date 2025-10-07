@@ -27,6 +27,7 @@ We've taken our learnings about what works in AI-assisted development and packag
 Before starting, you'll need:
 
 - **Python 3.11+** - [Download Python](https://www.python.org/downloads/)
+- **UV** - [Install UV](https://github.com/astral-sh/uv)
 - **Node.js** - [Download Node.js](https://nodejs.org/)
 - **VS Code** (recommended) - [Download VS Code](https://code.visualstudio.com/)
 - **Git** - [Download Git](https://git-scm.com/)
@@ -308,6 +309,7 @@ Don't create them, just give me some ideas.
 ```
 
 This brainstorming session will give you ideas like:
+
 - **Documentation Quality Amplifier** - Improves docs by simulating confused readers
 - **Research Synthesis Quality Escalator** - Extracts and refines knowledge from documents
 - **Code Quality Evolution Engine** - Writes code, tests it, learns from failures
@@ -315,6 +317,7 @@ This brainstorming session will give you ideas like:
 - **Self-Debugging Error Recovery** - Learns to fix errors autonomously
 
 The magic happens when you combine:
+
 1. **Amplifier's brainstorming** - Generates diverse possibilities
 2. **Your domain knowledge** - You know your needs and opportunities
 3. **Your creativity** - Sparks recognition of what would be useful
@@ -330,6 +333,7 @@ Once you have an idea:
 5. **Share it back** - Help others by contributing to scenarios/
 
 **Example**: The blog writer tool was created with one conversation where the user described:
+
 - The goal (write blog posts in my style)
 - The thinking process (extract style → draft → review sources → review style → get feedback → refine)
 

@@ -54,6 +54,9 @@ default: ## Show essential commands
 	@echo "Article Illustration:"
 	@echo "  make illustrate      Generate AI illustrations for article"
 	@echo ""
+	@echo "Web to Markdown:"
+	@echo "  make web-to-md       Convert web pages to markdown"
+	@echo ""
 	@echo "Other:"
 	@echo "  make clean          Clean build artifacts"
 	@echo "  make help           Show ALL available commands"
@@ -132,6 +135,9 @@ help: ## Show ALL available commands
 	@echo "  make illustrate-example  Run illustrator with example article"
 	@echo "  make illustrate-prompts-only INPUT=<file>  Preview prompts without generating"
 	@echo ""
+	@echo "WEB TO MARKDOWN:"
+	@echo "  make web-to-md URL=<url> [URL2=<url>] [OUTPUT=<path>]  Convert web pages to markdown (saves to content_dirs[0]/sites/)"
+	@echo ""
 	@echo "UTILITIES:"
 	@echo "  make clean           Clean build artifacts"
 	@echo "  make clean-wsl-files Clean WSL-related files"
@@ -147,20 +153,12 @@ install: ## Install all dependencies
 	uv sync --group dev
 	@echo ""
 	@echo "Installing npm packages globally..."
-	@command -v pnpm >/dev/null 2>&1 || { echo "❌ pnpm required. Install: curl -fsSL https://get.pnpm.io/install.sh | sh -"; exit 1; }
-	@# Ensure pnpm global directory exists and is configured (handles non-interactive shells)
-	@PNPM_HOME=$$(pnpm bin -g 2>/dev/null || echo "$$HOME/.local/share/pnpm"); \
-	mkdir -p "$$PNPM_HOME" 2>/dev/null || true; \
-	PATH="$$PNPM_HOME:$$PATH" pnpm add -g @anthropic-ai/claude-code@latest || { \
-		echo "❌ Failed to install global packages. Trying pnpm setup..."; \
-		pnpm setup >/dev/null 2>&1 || true; \
-		echo "❌ Could not configure pnpm global directory automatically."; \
-		if [ -n "$$ZSH_VERSION" ] || [ "$$SHELL" = "/bin/zsh" ] || [ -f ~/.zshrc ]; then \
-			echo "   Please run: pnpm setup && source ~/.zshrc"; \
-		else \
-			echo "   Please run: pnpm setup && source ~/.bashrc"; \
-		fi; \
-		echo "   Then run: make install"; \
+	@command -v pnpm >/dev/null 2>&1 || { echo "  Installing pnpm..."; npm install -g pnpm; }
+	@pnpm add -g @anthropic-ai/claude-code@latest || { \
+		echo "❌ Failed to install global packages."; \
+		echo "   This may be a permissions issue. Try:"; \
+		echo "   1. Run: pnpm setup && source ~/.bashrc (or ~/.zshrc)"; \
+		echo "   2. Then run: make install"; \
 		exit 1; \
 	}
 	@echo ""
@@ -626,6 +624,21 @@ illustrate-prompts-only: ## Preview prompts without generating images. Usage: ma
 	fi
 	@echo "🎨 Generating prompts (no images)..."
 	@uv run python -m scenarios.article_illustrator "$(INPUT)" --prompts-only
+
+# Web to Markdown
+web-to-md: ## Convert web pages to markdown. Usage: make web-to-md URL=https://example.com [URL2=https://another.com] [OUTPUT=path]
+	@if [ -z "$(URL)" ]; then \
+		echo "Error: Please provide at least one URL. Usage: make web-to-md URL=https://example.com"; \
+		exit 1; \
+	fi
+	@echo "🌐 Converting web page(s) to markdown..."
+	@CMD="uv run python -m scenarios.web_to_md --url \"$(URL)\""; \
+	if [ -n "$(URL2)" ]; then CMD="$$CMD --url \"$(URL2)\""; fi; \
+	if [ -n "$(URL3)" ]; then CMD="$$CMD --url \"$(URL3)\""; fi; \
+	if [ -n "$(URL4)" ]; then CMD="$$CMD --url \"$(URL4)\""; fi; \
+	if [ -n "$(URL5)" ]; then CMD="$$CMD --url \"$(URL5)\""; fi; \
+	if [ -n "$(OUTPUT)" ]; then CMD="$$CMD --output \"$(OUTPUT)\""; fi; \
+	eval $$CMD
 
 # Clean WSL Files
 clean-wsl-files: ## Clean up WSL-related files (Zone.Identifier, sec.endpointdlp)

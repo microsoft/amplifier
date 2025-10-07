@@ -1,0 +1,32 @@
+[project]
+name = "web_to_md"
+version = "0.1.0"
+description = "Convert web pages to markdown with AI enhancement"
+requires-python = ">=3.11"
+dependencies = [
+    "click>=8.0",
+    "markdownify>=0.11",
+    "httpx>=0.25",
+    "beautifulsoup4>=4.12",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "black>=23.0",
+    "ruff>=0.1",
+]
+
+[project.scripts]
+web_to_md = "web_to_md.main:main"
+
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["web_to_md*"]
+
+[tool.pyright]
+exclude = [".venv", "**/__pycache__"]

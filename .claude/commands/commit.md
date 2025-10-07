@@ -32,11 +32,12 @@ Or with options:
 2. Checks which files are staged with `git status`
 3. If 0 files are staged, automatically adds all modified and new files with `git add`
 4. Performs a `git diff` to understand what changes are being committed
-5. Analyzes the diff to determine if multiple distinct logical changes are present
-6. If multiple distinct changes are detected, suggests breaking the commit into multiple smaller commits
-7. For each commit (or the single commit if not split), creates a commit message using conventional commit format and considering the available conversation history for additional context as appropriate, don't perform the commit yet, just generate the message and show it to the user for review
-8. Presents the generated commit message(s) to the user for review and editing
-9. Upon user confirmation, executes the `git commit` command with the finalized message(s)
+5. Ensures there are is no sensitive data (like passwords, API keys, personal info, secrets, etc.) in the staged changes, if so, aborts the commit and informs the user
+6. Analyzes the diff to determine if multiple distinct logical changes are present
+7. If multiple distinct changes are detected, suggests breaking the commit into multiple smaller commits
+8. For each commit (or the single commit if not split), creates a commit message using conventional commit format (ensuring there is no sensitive data within the message) and considering the available conversation history for additional context as appropriate, don't perform the commit yet, just generate the message and show it to the user for review
+9. Presents the generated commit message(s) to the user for review and editing
+10. Upon user confirmation, executes the `git commit` command with the finalized message(s)
 
 ## Best Practices for Commits
 
