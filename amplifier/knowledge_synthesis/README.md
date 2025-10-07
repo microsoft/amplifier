@@ -30,12 +30,6 @@ python -m amplifier.knowledge_synthesis.cli sync
 # Process only next 5 files
 python -m amplifier.knowledge_synthesis.cli sync --max-files 5
 
-# Reconcile JSONL with individual extraction files
-python -m amplifier.knowledge_synthesis.cli reconcile
-
-# Force reconciliation even if up-to-date
-python -m amplifier.knowledge_synthesis.cli reconcile --force
-
 # Search extracted knowledge
 python -m amplifier.knowledge_synthesis.cli search "AI agents"
 
@@ -120,7 +114,7 @@ Extractions are saved in two formats for resilience and compatibility:
    - Each line is a complete extraction
    - Optimized for batch processing
 
-The system automatically writes to both locations during extraction. The `reconcile` command can rebuild the JSONL from individual files if needed.
+The system automatically writes to both locations during extraction for resilience and compatibility.
 
 Benefits of JSON Lines:
 
