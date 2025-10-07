@@ -1,4 +1,4 @@
-"""Entry point for running webtomd as a module."""
+"""Entry point for running web_to_md as a module."""
 
 from .main import main
 

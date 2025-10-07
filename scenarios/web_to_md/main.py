@@ -1,4 +1,4 @@
-"""Main CLI entry point for webtomd tool."""
+"""Main CLI entry point for web_to_md tool."""
 
 import logging
 import sys
@@ -24,7 +24,7 @@ try:
     from amplifier.ccsdk_toolkit import ToolkitLogger  # type: ignore
     from amplifier.config.paths import paths  # type: ignore
 
-    logger = ToolkitLogger(name="webtomd")
+    logger = ToolkitLogger(name="web_to_md")
     AMPLIFIER_AVAILABLE = True
 except ImportError:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -130,10 +130,10 @@ def main(url: tuple, output: Path | None, resume: bool, verbose: bool):
     """Convert web pages to markdown with AI enhancement.
 
     Examples:
-        webtomd --url https://example.com
-        webtomd --url https://example.com --url https://another.com
-        webtomd --url https://example.com --output ./my-sites
-        webtomd --url https://example.com --resume
+        web_to_md --url https://example.com
+        web_to_md --url https://example.com --url https://another.com
+        web_to_md --url https://example.com --output ./my-sites
+        web_to_md --url https://example.com --resume
     """
     # Set up logging
     if verbose:
@@ -158,11 +158,11 @@ def main(url: tuple, output: Path | None, resume: bool, verbose: bool):
 
     # Initialize state - store in data directory if available
     if AMPLIFIER_AVAILABLE and paths is not None:
-        state_dir = paths.data_dir / "webtomd"
+        state_dir = paths.data_dir / "web_to_md"
         state_dir.mkdir(parents=True, exist_ok=True)
         state_file = state_dir / "state.json"
     else:
-        state_file = output_dir / ".webtomd_state.json"
+        state_file = output_dir / ".web_to_md_state.json"
 
     state = WebToMdState(state_file)
 

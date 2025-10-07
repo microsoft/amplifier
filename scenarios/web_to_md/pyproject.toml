@@ -1,5 +1,5 @@
 [project]
-name = "webtomd"
+name = "web_to_md"
 version = "0.1.0"
 description = "Convert web pages to markdown with AI enhancement"
 requires-python = ">=3.11"
@@ -19,14 +19,14 @@ dev = [
 ]
 
 [project.scripts]
-webtomd = "webtomd.main:main"
+web_to_md = "web_to_md.main:main"
 
 [build-system]
 requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["webtomd*"]
+include = ["web_to_md*"]
 
 [tool.pyright]
 exclude = [".venv", "**/__pycache__"]

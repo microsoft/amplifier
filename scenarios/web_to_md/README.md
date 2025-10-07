@@ -1,4 +1,4 @@
-# WebToMd - Web to Markdown Converter
+# Web To MD - Web to Markdown Converter
 
 A modular tool that converts web pages to clean, organized markdown files with AI enhancement.
 
@@ -15,8 +15,8 @@ A modular tool that converts web pages to clean, organized markdown files with A
 ## Installation
 
 ```bash
-# Navigate to the webtomd directory
-cd scenarios/webtomd
+# Navigate to the web_to_md directory
+cd scenarios/web_to_md
 
 # Install dependencies using uv
 uv add markdownify httpx beautifulsoup4 pyyaml click
@@ -27,12 +27,29 @@ pip install -e .
 
 ## Usage
 
-### Basic Usage
+### Using the Makefile (Recommended)
+
+When working in the Amplifier workspace, the easiest way to use the tool is via make:
+
+```bash
+# Convert a single page
+make web-to-md URL=https://example.com/article
+
+# Convert multiple pages
+make web-to-md URL=https://example.com/page1 URL2=https://example.com/page2
+
+# Custom output directory
+make web-to-md URL=https://example.com OUTPUT=./my-sites
+```
+
+The makefile command automatically uses your Amplifier configuration for content and data directories.
+
+### Direct Python Usage
 
 Convert a single web page:
 
 ```bash
-python -m webtomd --url https://example.com/article
+python -m web_to_md --url https://example.com/article
 ```
 
 ### Multiple URLs
@@ -40,7 +57,7 @@ python -m webtomd --url https://example.com/article
 Convert multiple pages at once:
 
 ```bash
-python -m webtomd --url https://example.com/page1 --url https://example.com/page2
+python -m web_to_md --url https://example.com/page1 --url https://example.com/page2
 ```
 
 ### Custom Output Directory
@@ -48,7 +65,7 @@ python -m webtomd --url https://example.com/page1 --url https://example.com/page
 Specify where to save the converted files:
 
 ```bash
-python -m webtomd --url https://example.com --output ./my-sites
+python -m web_to_md --url https://example.com --output ./my-sites
 ```
 
 ### Resume Interrupted Session
@@ -56,7 +73,7 @@ python -m webtomd --url https://example.com --output ./my-sites
 Continue from where you left off:
 
 ```bash
-python -m webtomd --url https://example.com/page1 --resume
+python -m web_to_md --url https://example.com/page1 --resume
 ```
 
 ### Verbose Output
@@ -64,7 +81,7 @@ python -m webtomd --url https://example.com/page1 --resume
 See detailed processing information:
 
 ```bash
-python -m webtomd --url https://example.com --verbose
+python -m web_to_md --url https://example.com --verbose
 ```
 
 ## Output Structure
@@ -73,11 +90,11 @@ The tool organizes converted pages by domain in a `sites/` subdirectory:
 
 **When Amplifier is available:**
 - Content: `<first_content_dir>/sites/` (from `AMPLIFIER_CONTENT_DIRS`)
-- State: `.data/webtomd/state.json` (from `AMPLIFIER_DATA_DIR`)
+- State: `.data/web_to_md/state.json` (from `AMPLIFIER_DATA_DIR`)
 
 **Standalone mode:**
 - Content: `./sites/` (current directory)
-- State: `./sites/.webtomd_state.json`
+- State: `./sites/.web_to_md_state.json`
 
 ```
 sites/
@@ -122,8 +139,8 @@ If the SDK is not available, basic formatting improvements are still applied.
 
 The tool saves its state for resumable processing:
 
-**Amplifier mode:** `.data/webtomd/state.json` (centralized data directory)
-**Standalone mode:** `<output_dir>/.webtomd_state.json` (alongside content)
+**Amplifier mode:** `.data/web_to_md/state.json` (centralized data directory)
+**Standalone mode:** `<output_dir>/.web_to_md_state.json` (alongside content)
 
 The state file tracks:
 - Successfully processed URLs
@@ -149,7 +166,7 @@ This allows you to resume processing if interrupted with the `--resume` flag.
 ### Convert a blog and organize by domain
 
 ```bash
-python -m webtomd \
+python -m web_to_md \
   --url https://blog.example.com/post1 \
   --url https://blog.example.com/post2 \
   --url https://news.example.com/article \
@@ -173,10 +190,10 @@ sites/
 
 ```bash
 # First run (gets interrupted)
-python -m webtomd --url https://example.com/page1 --url https://example.com/page2
+python -m web_to_md --url https://example.com/page1 --url https://example.com/page2
 
 # Resume where it left off
-python -m webtomd --url https://example.com/page1 --url https://example.com/page2 --resume
+python -m web_to_md --url https://example.com/page1 --url https://example.com/page2 --resume
 ```
 
 ## Amplifier Integration

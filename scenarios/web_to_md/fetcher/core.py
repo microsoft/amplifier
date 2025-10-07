@@ -24,7 +24,7 @@ def fetch_page(url: str, timeout: int = 30, max_retries: int = 3) -> tuple[str, 
     Raises:
         httpx.HTTPError: If all fetch attempts fail
     """
-    headers = {"User-Agent": "Mozilla/5.0 (compatible; WebToMd/1.0; +https://github.com/amplifier/webtomd)"}
+    headers = {"User-Agent": "Mozilla/5.0 (compatible; WebToMd/1.0; +https://github.com/amplifier/web_to_md)"}
 
     retry_delay = 1
     last_error = None

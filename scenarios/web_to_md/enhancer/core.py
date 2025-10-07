@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 try:
     from amplifier.ccsdk_toolkit import ToolkitLogger  # type: ignore
 
-    logger = ToolkitLogger(name="webtomd")
+    logger = ToolkitLogger(name="web_to_md")
 except ImportError:
     logger = logging.getLogger(__name__)
 

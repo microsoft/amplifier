@@ -1,4 +1,4 @@
-"""State management for webtomd tool - tracks processed URLs and supports resume."""
+"""State management for web_to_md tool - tracks processed URLs and supports resume."""
 
 import json
 import logging
@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class WebToMdState:
-    """Manages state for webtomd conversion sessions."""
+    """Manages state for web_to_md conversion sessions."""
 
     def __init__(self, state_file: Path):
         """Initialize state manager.
