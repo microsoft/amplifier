@@ -86,8 +86,9 @@ source .venv/bin/activate  # Linux/Mac/WSL
 
     >*Amplifier includes 20+ specialized AI agents, each trained for specific tasks like architecture design, bug hunting, test coverage analysis, and modular code generation. These specialists work with expert-level precision, delivering focused results without the context confusion of general-purpose AI assistants.*
     >
-    >**[Learn more about Specialists →](https://microsoft.github.io/amplifier)**
+    > **[Learn more about Specialists →](https://microsoft.github.io/amplifier)**
     >
+    > **Try it Out:**
     >```
     >>  Use zen-architect to design a CLI tool that analyzes markdown files and reports: word count, 
     >    heading count, link count, and reading time estimate
@@ -109,7 +110,9 @@ source .venv/bin/activate  # Linux/Mac/WSL
 
     >*Scenario tools are reusable CLI applications that combine Python code structure with AI intelligence for reliable, repeatable workflows. Create custom tools once, then run them anytime with simple make commands - perfect for standardizing complex multi-step processes.*
     >
-    >**[Learn more about Scenarios →](https://microsoft.github.io/amplifier)**
+    > **[Learn more about Scenarios →](https://microsoft.github.io/amplifier)**
+    >
+    > **Try it Out:**
     >```
     >>  I need a @scenarios/ tool that creates multiple text-based files such as notes, specs,
     >   decisions, etc., all based on the current material in the demo directory. These files will 
@@ -135,8 +138,9 @@ source .venv/bin/activate  # Linux/Mac/WSL
 
     >*Amplifier's knowledge system automatically extracts concepts, relationships, and insights from your documents, organizing them into a queryable knowledge graph. This enables powerful semantic search, pattern recognition, and context-aware assistance across your entire project documentation.*
     >
-    >**[Learn more about the Knowledge Base →](https://microsoft.github.io/amplifier)**
+    > **[Learn more about the Knowledge Base →](https://microsoft.github.io/amplifier)**
     >
+    > **Try it Out:**
     >```
     >>  make knowledge-update for AMPLIFIER_CONTENT_DIRS="~/quickstart-demo"
     >```
@@ -160,7 +164,8 @@ source .venv/bin/activate  # Linux/Mac/WSL
     >*Amplifier's context management intelligently compresses long conversation sessions, reducing token usage while preserving the essential information you need. All conversation history is automatically saved as searchable transcripts that you can restore anytime, ensuring no valuable context is ever lost.*
     >
     >**[Learn more about Context Management →](https://microsoft.github.io/amplifier)**
-    >
+    > 
+    > **Try it Out:**
     >```
     >>  /compact
     >```
