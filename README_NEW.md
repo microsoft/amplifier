@@ -82,21 +82,21 @@ source .venv/bin/activate  # Linux/Mac/WSL
     <details>
     <summary> Deploy Specialists</summary>
 
-    #### 💡 Deploy Specialists
+    #### 💡 Deploy Specialists 
 
-    >*20+ specialized AI agents that handle specific tasks like architecture design, testing, and code generation with expert-level precision.*
+    >*20+ specialized AI agents that handle specific tasks like architecture design, testing, and code generation with expert-level precision.* **[Learn more about Specialists →](https://microsoft.github.io/amplifier)**
     >
     >```
-    >> Use zen-architect to design a CLI tool that analyzes markdown files and reports: word count, heading count, link count, and reading time estimate
+    >>  Use zen-architect to design a CLI tool that analyzes markdown files and reports: word count, 
+    >    heading count, link count, and reading time estimate
     >```
     > **What you'll see**: A clean design spec for the module-builder to use.
-    >
+    > <br>
+    > <br>
     >```
-    >> Use modular-builder to implement the markdown analyzer
+    >>  Use modular-builder to implement the markdown analyzer
     >```
     > **What you'll experience**: An automated workflow that implements the design.
-    >
-    >**[Learn more about Specialists →](https://microsoft.github.io/amplifier)**
 
     </details>
 
@@ -107,22 +107,17 @@ source .venv/bin/activate  # Linux/Mac/WSL
 
     >*Reusable CLI tools that combine code structure with
     AI intelligence for reliable, repeatable workflows you can run with
-    simple make commands.*
-    > <br>
-    > <br>
+    simple make commands.* **[Learn more about Scenarios →](https://microsoft.github.io/amplifier)**
     >```
-    >> I need a @scenarios/ tool that creates multiple text-based files such as notes, specs, decisions, etc., all based on the current material in the demo directory. These files will be used to showcase Amplifier's knowledge base capabilities. The files should be diverse enough to demonstrate what the knowledge commands can do, but small enough that knowledge-update can complete within 2 minutes. Because this tool is for a demo, please keep the design compact enough that it can be implemented within 2 minutes.
+    >>  I need a @scenarios/ tool that creates multiple text-based files such as notes, specs, decisions, etc., all based on the current material in the demo directory. These files will be used to showcase Amplifier's knowledge base capabilities. The files should be diverse enough to demonstrate what the knowledge commands can do, but small enough that knowledge-update can complete within 2 minutes. Because this tool is for a demo, please keep the design compact enough that it can be implemented within 2 minutes.
     >```
     > **What you'll discover**: How simple it is to create a dependable tool
     > <br>
     > <br>
     >```
-    >> Run the scenario tool to create content for the ~/quickstart-demo.
+    >>  Run the scenario tool to create content for the ~/quickstart-demo.
     >```
     > **What you'll see**: Content generated for the demo using the newly created Scenario.
-    > <br>
-    > <br>
-    >**[Learn more about Scenarios →](https://microsoft.github.io/amplifier)**
 
     </details>
 
@@ -133,44 +128,43 @@ source .venv/bin/activate  # Linux/Mac/WSL
 
     >*Automated extraction and organization of concepts,
     >relationships, and insights from your documents into a queryable
-    >knowledge graph.*
+    >knowledge graph.* **[Learn more about the Knowledge Base →](https://microsoft.github.io/amplifier)**
     >
     >```
-    >> make knowledge-update for AMPLIFIER_CONTENT_DIRS="~/quickstart-demo"
+    >>  make knowledge-update for AMPLIFIER_CONTENT_DIRS="~/quickstart-demo"
     >```
     > **What you'll experience**: Knowledge classification and extraction at work on the new content.
+    >> [!NOTE] This step can take ~10-15  minutes.
     >
-    >> NOTE: This step can take ~10-15  minutes.
+    > <br>
     >
     >```
-    >> make knowledge-stats
+    >>  make knowledge-stats
     >
-    >> make knowledge-graph-viz
+    >>  make knowledge-graph-viz
     >```
     > **What you'll see**: Statistics and a visualization of the content.
-    >
-    >
-    >**[Learn more about the Knowledge Base →](https://microsoft.github.io/amplifier)**
-    >
+
     </details>
 
     <details>
     <summary>Maintain Context</summary>
 
-    #### 🧠 Maintain Context
+    #### 🧠 Context Management
 
     >*Smart conversation management that compresses long sessions
-    >while preserving searchable transcripts you can restore anytime.*
+    >while preserving searchable transcripts you can restore anytime.* **[Learn more about the Context Management →](https://microsoft.github.io/amplifier)**
     >
     >```
-    >> /compact
+    >>  /compact
     >```
     > **What you'll see**: A summary is saved but the full history is cleared.
-    >
+    > <br>
+    > <br>
     >```
-    >> What are the available transcripts?
+    >>  What are the available transcripts?
     >
-    >> /transcript
+    >>  /transcript
     >```
     > **What you'll discover**: Even compacted conversations can be restored for context.
     >
