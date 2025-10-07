@@ -42,8 +42,14 @@ default: ## Show essential commands
 	@echo "AI Context:"
 	@echo "  make ai-context-files Build AI context documentation"
 	@echo ""
-	@echo "Demos & Documentation:"
-	@echo "  make open-readmes    Open all README variants in browser"
+	@echo "Blog Writing:"
+	@echo "  make blog-write      Create a blog post from your ideas"
+	@echo ""
+	@echo "Article Illustration:"
+	@echo "  make illustrate      Generate AI illustrations for article"
+	@echo ""
+	@echo "Web to Markdown:"
+	@echo "  make web-to-md       Convert web pages to markdown"
 	@echo ""
 	@echo "Other:"
 	@echo "  make clean          Clean build artifacts"
@@ -111,14 +117,24 @@ help: ## Show ALL available commands
 	@echo "AI CONTEXT:"
 	@echo "  make ai-context-files  Build AI context documentation"
 	@echo ""
-	@echo "DEMOS & DOCUMENTATION:"
-	@echo "  make open-readmes    Open all README variants in browser"
+	@echo "BLOG WRITING:"
+	@echo "  make blog-write IDEA=<file> WRITINGS=<dir> [INSTRUCTIONS=\"...\"]  Create blog"
+	@echo "  make blog-resume       Resume most recent blog writing session"
+	@echo ""
+	@echo "ARTICLE ILLUSTRATION:"
+	@echo "  make illustrate INPUT=<file> [OUTPUT=<path>] [STYLE=\"...\"] [APIS=\"...\"] [RESUME=true]  Generate illustrations"
+	@echo "  make illustrate-example  Run illustrator with example article"
+	@echo "  make illustrate-prompts-only INPUT=<file>  Preview prompts without generating"
+	@echo ""
+	@echo "WEB TO MARKDOWN:"
+	@echo "  make web-to-md URL=<url> [URL2=<url>] [OUTPUT=<path>]  Convert web pages to markdown (saves to content_dirs[0]/sites/)"
 	@echo ""
 	@echo "UTILITIES:"
 	@echo "  make configure       Configure Claude Code statusline"
 	@echo "  make clean           Clean build artifacts"
 	@echo "  make clean-wsl-files Clean WSL-related files"
 	@echo "  make workspace-info  Show workspace information"
+	@echo "  make dot-to-mermaid INPUT=\"path\"  Convert DOT files to Mermaid"
 	@echo ""
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo ""
@@ -129,20 +145,12 @@ install: ## Install all dependencies
 	uv sync --group dev
 	@echo ""
 	@echo "Installing npm packages globally..."
-	@command -v pnpm >/dev/null 2>&1 || { echo "❌ pnpm required. Install: curl -fsSL https://get.pnpm.io/install.sh | sh -"; exit 1; }
-	@# Ensure pnpm global directory exists and is configured (handles non-interactive shells)
-	@PNPM_HOME=$$(pnpm bin -g 2>/dev/null || echo "$$HOME/.local/share/pnpm"); \
-	mkdir -p "$$PNPM_HOME" 2>/dev/null || true; \
-	PATH="$$PNPM_HOME:$$PATH" pnpm add -g @anthropic-ai/claude-code@latest || { \
-		echo "❌ Failed to install global packages. Trying pnpm setup..."; \
-		pnpm setup >/dev/null 2>&1 || true; \
-		echo "❌ Could not configure pnpm global directory automatically."; \
-		if [ -n "$$ZSH_VERSION" ] || [ "$$SHELL" = "/bin/zsh" ] || [ -f ~/.zshrc ]; then \
-			echo "   Please run: pnpm setup && source ~/.zshrc"; \
-		else \
-			echo "   Please run: pnpm setup && source ~/.bashrc"; \
-		fi; \
-		echo "   Then run: make install"; \
+	@command -v pnpm >/dev/null 2>&1 || { echo "  Installing pnpm..."; npm install -g pnpm; }
+	@pnpm add -g @anthropic-ai/claude-code@latest || { \
+		echo "❌ Failed to install global packages."; \
+		echo "   This may be a permissions issue. Try:"; \
+		echo "   1. Run: pnpm setup && source ~/.bashrc (or ~/.zshrc)"; \
+		echo "   2. Then run: make install"; \
 		exit 1; \
 	}
 	@echo ""
@@ -489,9 +497,94 @@ ai-context-files: ## Build AI context files
 	uv run python tools/build_git_collector_files.py
 	@echo "AI context files generated"
 
-# Demos & Documentation
-open-readmes: ## Open all README variants in browser
-	@./open_readmes.sh
+# Blog Writing
+blog-write: ## Create a blog post from your ideas. Usage: make blog-write IDEA=ideas.md WRITINGS=my_writings/ [INSTRUCTIONS="..."]
+	@if [ -z "$(IDEA)" ]; then \
+		echo "Error: Please provide an idea file. Usage: make blog-write IDEA=ideas.md WRITINGS=my_writings/"; \
+		exit 1; \
+	fi
+	@if [ -z "$(WRITINGS)" ]; then \
+		echo "Error: Please provide a writings directory. Usage: make blog-write IDEA=ideas.md WRITINGS=my_writings/"; \
+		exit 1; \
+	fi
+	@echo "🚀 Starting blog post writer..."; \
+	echo "  Idea: $(IDEA)"; \
+	echo "  Writings: $(WRITINGS)"; \
+	if [ -n "$(INSTRUCTIONS)" ]; then echo "  Instructions: $(INSTRUCTIONS)"; fi; \
+	echo "  Output: Auto-generated from title in session directory"; \
+	if [ -n "$(INSTRUCTIONS)" ]; then \
+		uv run python -m scenarios.blog_writer \
+			--idea "$(IDEA)" \
+			--writings-dir "$(WRITINGS)" \
+			--instructions "$(INSTRUCTIONS)"; \
+	else \
+		uv run python -m scenarios.blog_writer \
+			--idea "$(IDEA)" \
+			--writings-dir "$(WRITINGS)"; \
+	fi
+
+blog-resume: ## Resume an interrupted blog writing session
+	@echo "📝 Resuming blog post writer..."
+	@uv run python -m scenarios.blog_writer --resume
+
+blog-write-example: ## Run blog writer with example data
+	@echo "📝 Running blog writer with example data..."
+	@uv run python -m scenarios.blog_writer \
+		--idea scenarios/blog_writer/tests/sample_brain_dump.md \
+		--writings-dir scenarios/blog_writer/tests/sample_writings/
+
+# Article Illustration
+illustrate: ## Generate AI illustrations for markdown article. Usage: make illustrate INPUT=article.md [OUTPUT=path] [STYLE="..."] [APIS="..."] [RESUME=true]
+	@if [ -z "$(INPUT)" ]; then \
+		echo "Error: Please provide an input file. Usage: make illustrate INPUT=article.md"; \
+		exit 1; \
+	fi
+	@echo "🎨 Generating illustrations for article..."
+	@echo "  Input: $(INPUT)"
+	@if [ -n "$(OUTPUT)" ]; then echo "  Output: $(OUTPUT)"; fi
+	@if [ -n "$(STYLE)" ]; then echo "  Style: $(STYLE)"; fi
+	@if [ -n "$(APIS)" ]; then echo "  APIs: $(APIS)"; fi
+	@if [ -n "$(RESUME)" ]; then echo "  Mode: Resume"; fi
+	@echo ""
+	@CMD="uv run python -m scenarios.article_illustrator \"$(INPUT)\""; \
+	if [ -n "$(OUTPUT)" ]; then CMD="$$CMD --output-dir \"$(OUTPUT)\""; fi; \
+	if [ -n "$(STYLE)" ]; then CMD="$$CMD --style \"$(STYLE)\""; fi; \
+	if [ -n "$(APIS)" ]; then \
+		for api in $(APIS); do \
+			CMD="$$CMD --apis $$api"; \
+		done; \
+	fi; \
+	if [ -n "$(RESUME)" ]; then CMD="$$CMD --resume"; fi; \
+	eval $$CMD
+
+illustrate-example: ## Run article illustrator with example article
+	@echo "🎨 Running article illustrator with example..."
+	@uv run python -m scenarios.article_illustrator \
+		scenarios/article_illustrator/tests/sample_article.md \
+		--max-images 3
+
+illustrate-prompts-only: ## Preview prompts without generating images. Usage: make illustrate-prompts-only INPUT=article.md
+	@if [ -z "$(INPUT)" ]; then \
+		echo "Error: Please provide an input file. Usage: make illustrate-prompts-only INPUT=article.md"; \
+		exit 1; \
+	fi
+	@echo "🎨 Generating prompts (no images)..."
+	@uv run python -m scenarios.article_illustrator "$(INPUT)" --prompts-only
+
+# Web to Markdown
+web-to-md: ## Convert web pages to markdown. Usage: make web-to-md URL=https://example.com [URL2=https://another.com] [OUTPUT=path]
+	@if [ -z "$(URL)" ]; then \
+		echo "Error: Please provide at least one URL. Usage: make web-to-md URL=https://example.com"; \
+		exit 1; \
+	fi
+	@echo "🌐 Converting web page(s) to markdown..."
+	@CMD="uv run python -m scenarios.web_to_md --url \"$(URL)\""; \
+	if [ -n "$(URL2)" ]; then CMD="$$CMD --url \"$(URL2)\""; fi; \
+	if [ -n "$(URL3)" ]; then CMD="$$CMD --url \"$(URL3)\""; fi; \
+	if [ -n "$(URL4)" ]; then CMD="$$CMD --url \"$(URL4)\""; fi; \
+	if [ -n "$(URL5)" ]; then CMD="$$CMD --url \"$(URL5)\""; fi; \
+	if [ -n "$(OUTPUT)" ]; then CMD="$$CMD --output \"$(OUTPUT)\""; fi; \
+	eval $$CMD
 
 # Clean WSL Files
 clean-wsl-files: ## Clean up WSL-related files (Zone.Identifier, sec.endpointdlp)
@@ -506,3 +599,15 @@ workspace-info: ## Show workspace information
 	@echo ""
 	$(call list_projects)
 	@echo ""
+
+# DOT to Mermaid Converter
+dot-to-mermaid: ## Convert DOT files to Mermaid format. Usage: make dot-to-mermaid INPUT="path/to/dot/files"
+	@if [ -z "$(INPUT)" ]; then \
+		echo "Error: Please provide an input path. Usage: make dot-to-mermaid INPUT=\"path/to/dot/files\""; \
+		exit 1; \
+	fi
+	@DATA_DIR=$$(python -c "from amplifier.config.paths import paths; print(paths.data_dir)"); \
+	SESSION_DIR="$$DATA_DIR/dot_to_mermaid"; \
+	mkdir -p "$$SESSION_DIR"; \
+	echo "Converting DOT files to Mermaid format..."; \
+	uv run python -m ai_working.dot_to_mermaid.cli "$(INPUT)" --session-file "$$SESSION_DIR/session.json"

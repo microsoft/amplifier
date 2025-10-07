@@ -155,6 +155,8 @@
     "pytest",
     "pyupgrade",
     "referer",
+    "sidechain",
+    "sidechains",
     "subschema",
     "SYNTHESIST",
     "tamasfe",

@@ -153,7 +153,7 @@ def main(
     """
     # Setup logging
     if verbose:
-        logger.setLevel("DEBUG")
+        logger.logger.setLevel("DEBUG")  # Access underlying logger
 
     # Find files (recursive by default)
     files = list(input_path.glob(pattern))

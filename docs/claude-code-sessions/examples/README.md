@@ -1,11 +1,69 @@
 # Claude Code Session Examples
 
-This directory contains working examples for parsing and processing Claude Code session files.
+This directory contains working examples for parsing and processing Claude Code session files from real Claude Code sessions stored at `~/.claude/projects/`.
+
+## Context-Aware Session Selection
+
+When running the tools without arguments, they intelligently select sessions based on your current directory:
+
+1. **If you're in a project directory**: Automatically uses sessions from that specific project
+2. **Most specific match wins**: If multiple projects match your path, the most specific one is chosen
+3. **Fallback to most recent**: If not in a project directory, uses the most recent session across all projects
+
+For example, if you're working in `/home/user/repos/myproject` and have a corresponding Claude Code project, the tools will automatically use sessions from that project.
 
 ## Quick Start
 
+### Using the Command-Line Tools
+
+The example tools now work with real Claude Code sessions by default and save outputs to organized directories:
+
+```bash
+# Parse the most recent session across all projects
+python example_parser.py
+# Creates: ./output/{project}/{session}/analysis.md and session.jsonl
+
+# Build a transcript from the most recent session
+python example_transcript_builder.py
+# Creates: ./output/{project}/{session}/transcript.md and session.jsonl
+
+# Use custom output directory
+python example_parser.py --output ./my-analysis
+python example_transcript_builder.py --output ./my-transcripts
+
+# List all available projects and sessions
+python example_parser.py --list
+
+# Parse most recent session from a specific project
+python example_parser.py --project amplifier
+
+# Parse a specific session file
+python example_parser.py /path/to/session.jsonl
+
+# Build transcript with system messages included
+python example_transcript_builder.py --include-system
+```
+
+### Output Directory Structure
+
+Both tools create organized output directories:
+
+```
+./output/                             # Default, or custom via --output
+├── -home-user-repos-myproject/      # Project directory name
+│   ├── abc123-session-id/           # Session UUID
+│   │   ├── analysis.md              # Session analysis (from parser)
+│   │   ├── transcript.md            # Human-readable transcript (from builder)
+│   │   └── session.jsonl            # Copy of source JSONL file
+│   └── def456-session-id/
+│       ├── analysis.md
+│       ├── transcript.md
+│       └── session.jsonl
+```
+
+### Programmatic Usage
+
 ```python
-# Basic session parsing
 from pathlib import Path
 import json
 
@@ -19,9 +77,85 @@ def parse_session(file_path):
     return messages
 
 # Parse your session
-session_file = Path("~/.claude/conversations/project/session.jsonl")
+session_file = Path.home() / ".claude/projects/your-project/session.jsonl"
 messages = parse_session(session_file)
 print(f"Session contains {len(messages)} messages")
+```
+
+## Command-Line Tools
+
+### example_parser.py
+
+A parser that analyzes Claude Code sessions and saves comprehensive analysis.
+
+**Features:**
+
+- Auto-discovers Claude Code projects in `~/.claude/projects/`
+- Context-aware: automatically uses sessions from your current project directory
+- Parses the most recent session by default (with smart project matching)
+- Saves analysis to `{output}/{project}/{session}/analysis.md`
+- Copies source JSONL to output directory
+- Provides session statistics and tool usage analysis
+- Supports fuzzy matching for project names
+
+**Usage:**
+
+```bash
+# Default: parse most recent session, save to ./output/
+python example_parser.py
+
+# Use custom output directory
+python example_parser.py --output ./my-analysis
+
+# List all projects and sessions
+python example_parser.py --list
+
+# Parse from specific project (fuzzy match)
+python example_parser.py --project amplifier
+python example_parser.py -p "blog-writer"
+
+# Parse specific session within a project
+python example_parser.py --project amplifier --session c9153d95
+
+# Parse a specific file
+python example_parser.py /path/to/session.jsonl
+```
+
+### example_transcript_builder.py
+
+Builds readable transcripts from Claude Code session files.
+
+**Features:**
+
+- Converts DAG structure to linear transcript
+- Context-aware: automatically uses sessions from your current project directory
+- Saves transcript to `{output}/{project}/{session}/transcript.md`
+- Copies source JSONL to output directory
+- Proper attribution (User, Claude, Sub-agent, System)
+- Optional inclusion of system messages
+- Automatic output file naming
+- Configurable preview length
+
+**Usage:**
+
+```bash
+# Default: build transcript for most recent session, save to ./output/
+python example_transcript_builder.py
+
+# Use custom output directory
+python example_transcript_builder.py --output ./my-transcripts
+
+# Include system messages (tool results)
+python example_transcript_builder.py --include-system
+
+# Specify project and session
+python example_transcript_builder.py --project amplifier --session abc123
+
+# Custom input and output files (overrides directory structure)
+python example_transcript_builder.py input.jsonl specific-output.md
+
+# Adjust preview length
+python example_transcript_builder.py --preview-lines 50
 ```
 
 ## Complete Examples
@@ -58,91 +192,9 @@ def analyze_session(messages):
             stats['sidechains'] += 1
 
     return stats
-
-# Analyze your session
-stats = analyze_session(messages)
-print(f"Message types: {stats['by_type']}")
-print(f"Tools used: {stats['tools_used']}")
-print(f"Sidechain messages: {stats['sidechains']}")
 ```
 
-### 2. Transcript Builder
-
-Build a readable transcript from a session:
-
-```python
-def build_transcript(messages):
-    """Build a human-readable transcript."""
-    transcript = []
-
-    for msg in messages:
-        msg_type = msg.get('type')
-
-        if msg_type == 'human':
-            content = extract_text(msg.get('message', {}))
-            transcript.append(f"User: {content}")
-
-        elif msg_type == 'assistant':
-            content = extract_text(msg.get('message', {}))
-            transcript.append(f"Assistant: {content}")
-
-            # Note tool uses
-            tools = extract_tools(msg.get('message', {}))
-            for tool in tools:
-                transcript.append(f"  [Tool: {tool}]")
-
-        elif msg_type == 'tool_result':
-            # Show brief result
-            result = extract_result(msg.get('message', {}))
-            if result:
-                preview = result[:100] + '...' if len(result) > 100 else result
-                transcript.append(f"  [Result: {preview}]")
-
-    return '\n\n'.join(transcript)
-
-def extract_text(message):
-    """Extract text content from message structure."""
-    if isinstance(message, str):
-        return message
-
-    content = message.get('content', '')
-    if isinstance(content, str):
-        return content
-
-    if isinstance(content, list):
-        texts = []
-        for item in content:
-            if isinstance(item, dict) and item.get('type') == 'text':
-                texts.append(item.get('text', ''))
-        return ' '.join(texts)
-
-    return str(content)
-
-def extract_tools(message):
-    """Extract tool names from message."""
-    tools = []
-    content = message.get('content', [])
-    if isinstance(content, list):
-        for item in content:
-            if item.get('type') == 'tool_use':
-                tools.append(item.get('name'))
-    return tools
-
-def extract_result(message):
-    """Extract tool result content."""
-    content = message.get('content', [])
-    if isinstance(content, list):
-        for item in content:
-            if item.get('type') == 'tool_result':
-                return item.get('content', '')
-    return None
-
-# Build transcript
-transcript = build_transcript(messages)
-print(transcript[:1000])  # Print first 1000 chars
-```
-
-### 3. DAG Navigator
+### 2. DAG Navigator
 
 Navigate the conversation DAG:
 
@@ -196,14 +248,9 @@ def get_conversation_path(dag, start_uuid=None):
             current_uuid = None
 
     return path
-
-# Build DAG and get active path
-dag = build_dag(messages)
-active_path = get_conversation_path(dag)
-print(f"Active conversation has {len(active_path)} messages")
 ```
 
-### 4. Tool Correlation
+### 3. Tool Correlation
 
 Match tool invocations with their results:
 
@@ -229,7 +276,7 @@ def correlate_tools(messages):
 
     # Second pass: find results
     for msg in messages:
-        if msg.get('type') == 'tool_result':
+        if msg.get('type') == 'user':
             content = msg.get('message', {}).get('content', [])
             if isinstance(content, list):
                 for item in content:
@@ -243,21 +290,11 @@ def correlate_tools(messages):
                             })
 
     return correlations
-
-# Correlate tools
-tool_correlations = correlate_tools(messages)
-for corr in tool_correlations[:5]:  # Show first 5
-    inv = corr['invocation']
-    print(f"Tool: {inv['name']}")
-    if corr['is_error']:
-        print(f"  Error: {corr['result'][:100]}")
-    else:
-        print(f"  Success: {corr['result'][:100] if corr['result'] else 'No output'}")
 ```
 
-### 5. Sidechain Extractor
+### 4. Sidechain Extractor
 
-Extract sidechain conversations:
+Extract sidechain conversations (sub-agent interactions):
 
 ```python
 def extract_sidechains(messages):
@@ -280,70 +317,96 @@ def extract_sidechains(messages):
             current_sidechain = None
 
     return sidechains
-
-def find_sidechain_agent(sidechain_messages, all_messages):
-    """Find the agent for a sidechain."""
-    if not sidechain_messages:
-        return 'unknown'
-
-    # First sidechain message's parent should have Task tool
-    first_msg = sidechain_messages[0]
-    parent_uuid = first_msg.get('parentUuid')
-
-    # Find parent message
-    for msg in all_messages:
-        if msg.get('uuid') == parent_uuid:
-            # Look for Task tool
-            content = msg.get('message', {}).get('content', [])
-            if isinstance(content, list):
-                for item in content:
-                    if item.get('type') == 'tool_use' and item.get('name') == 'Task':
-                        return item.get('input', {}).get('subagent_type', 'unknown')
-
-    return 'unknown'
-
-# Extract sidechains
-sidechains = extract_sidechains(messages)
-for sc_id, sc_messages in sidechains.items():
-    agent = find_sidechain_agent(sc_messages, messages)
-    print(f"Sidechain with {agent}: {len(sc_messages)} messages")
 ```
 
-## Running the Examples
+## Important Notes
 
-1. Update the session file path to point to your actual session:
-   ```python
-   session_file = Path.home() / ".claude/conversations/your-project/session.jsonl"
-   ```
+### Real Session Format vs Documentation
 
-2. Run any example:
-   ```bash
-   python analyze_session.py
-   ```
+The actual Claude Code session format has some differences from the documented format:
 
-3. Combine examples for more complex analysis:
-   ```python
-   # Complete analysis
-   messages = parse_session(session_file)
-   dag = build_dag(messages)
-   stats = analyze_session(messages)
-   transcript = build_transcript(messages)
-   tools = correlate_tools(messages)
-   sidechains = extract_sidechains(messages)
+1. **Message structure**: Real sessions use nested `message` objects with `content` arrays
+2. **Tool results**: Appear as `user` messages with `tool_result` content items
+3. **Sidechains**: Sub-agent interactions are marked with `isSidechain: true`
+4. **Attribution**: Message attribution depends on context (main vs sidechain conversation)
 
-   print(f"Session overview:")
-   print(f"  Total messages: {stats['total']}")
-   print(f"  Tools used: {len(stats['tools_used'])}")
-   print(f"  Sidechains: {len(sidechains)}")
-   print(f"  Successful tool uses: {sum(1 for t in tools if not t['is_error'])}")
-   ```
+### Session File Locations
 
-## Advanced Examples
+Claude Code sessions are stored at:
 
-For more advanced examples including:
-- Performance optimization for large files
-- Real-time session monitoring
-- Export to various formats
-- Branch analysis and navigation
+```
+~/.claude/projects/<project-name>/<session-uuid>.jsonl
+```
 
-See the implementation guides in the parent documentation.
+Project names are sanitized versions of the working directory path with `-` separators.
+
+### Performance Considerations
+
+- Session files can be large (several MB for long conversations)
+- The examples use simple in-memory processing suitable for most sessions
+- For very large sessions, consider streaming processing approaches
+
+## Dependencies
+
+Install required packages:
+
+```bash
+pip install -r requirements.txt
+```
+
+The examples use only Python standard library, but the requirements file includes optional packages for enhanced functionality.
+
+## Advanced Usage
+
+### Custom Session Processing
+
+```python
+from example_parser import SimpleParser
+from example_transcript_builder import TranscriptBuilder
+
+# Parse session
+parser = SimpleParser()
+messages = parser.parse_file("session.jsonl")
+
+# Analyze tools
+tools = parser.find_tools()
+print(f"Found {len(tools)} tool invocations")
+
+# Build transcript
+builder = TranscriptBuilder()
+builder.load_session("session.jsonl")
+transcript = builder.build_transcript(include_system=True)
+
+# Save to file
+with open("transcript.txt", "w") as f:
+    f.write(transcript)
+```
+
+### Batch Processing
+
+Process all sessions in a project:
+
+```python
+from pathlib import Path
+
+project_dir = Path.home() / ".claude/projects/-home-user-myproject"
+
+for session_file in project_dir.glob("*.jsonl"):
+    print(f"Processing {session_file.name}")
+    parser = SimpleParser()
+    parser.parse_file(session_file)
+    parser.print_summary()
+    print("-" * 40)
+```
+
+## Contributing
+
+These examples are designed to be simple and educational. Feel free to:
+
+- Extend them for your specific use cases
+- Add new analysis capabilities
+- Contribute improvements back to the documentation
+
+## License
+
+These examples are provided as part of the Claude Code session documentation and are available for use in your own projects.

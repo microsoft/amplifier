@@ -27,6 +27,7 @@ We've taken our learnings about what works in AI-assisted development and packag
 Before starting, you'll need:
 
 - **Python 3.11+** - [Download Python](https://www.python.org/downloads/)
+- **UV** - [Install UV](https://github.com/astral-sh/uv)
 - **Node.js** - [Download Node.js](https://nodejs.org/)
 - **VS Code** (recommended) - [Download VS Code](https://code.visualstudio.com/)
 - **Git** - [Download Git](https://git-scm.com/)
@@ -290,6 +291,55 @@ make ai-context-files # Rebuild AI context
 1. **Extract**: `make knowledge-update` (processes your documentation)
 2. **Query**: `make knowledge-query Q="error handling patterns"`
 3. **Apply**: "Implement error handling using patterns from our knowledge base"
+
+## 🎨 Creating Your Own Scenario Tools
+
+**Want to create tools like the ones in the [scenarios/ directory](scenarios/)? You don't need to be a programmer.**
+
+### Finding Tool Ideas
+
+Not sure what to build? Ask Amplifier to brainstorm with you:
+
+```
+/ultrathink-task I'm new to the concepts of "metacognitive recipes" - what are some
+interesting tools that you could create that I might find useful, that demonstrate
+the value of "metacognitive recipes"? Especially any that would demonstrate how such
+could be used to auto evaluate and recover/improve based upon self-feedback loops.
+Don't create them, just give me some ideas.
+```
+
+This brainstorming session will give you ideas like:
+
+- **Documentation Quality Amplifier** - Improves docs by simulating confused readers
+- **Research Synthesis Quality Escalator** - Extracts and refines knowledge from documents
+- **Code Quality Evolution Engine** - Writes code, tests it, learns from failures
+- **Multi-Perspective Consensus Builder** - Simulates different viewpoints to find optimal solutions
+- **Self-Debugging Error Recovery** - Learns to fix errors autonomously
+
+The magic happens when you combine:
+
+1. **Amplifier's brainstorming** - Generates diverse possibilities
+2. **Your domain knowledge** - You know your needs and opportunities
+3. **Your creativity** - Sparks recognition of what would be useful
+
+### Creating Your Tool
+
+Once you have an idea:
+
+1. **Describe your goal** - What problem are you solving?
+2. **Describe the thinking process** - How should the tool approach it?
+3. **Let Amplifier build it** - Use `/ultrathink-task` to create the tool
+4. **Iterate to refine** - Provide feedback as you use it
+5. **Share it back** - Help others by contributing to scenarios/
+
+**Example**: The blog writer tool was created with one conversation where the user described:
+
+- The goal (write blog posts in my style)
+- The thinking process (extract style → draft → review sources → review style → get feedback → refine)
+
+No code was written by the user. Just description → Amplifier builds → feedback → refinement.
+
+For detailed guidance, see [scenarios/blog_writer/HOW_TO_CREATE_YOUR_OWN.md](scenarios/blog_writer/HOW_TO_CREATE_YOUR_OWN.md).
 
 > [!IMPORTANT] > **This is an experimental system. _We break things frequently_.**
 
