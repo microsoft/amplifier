@@ -44,6 +44,9 @@ default: ## Show essential commands
 	@echo "Blog Writing:"
 	@echo "  make blog-write      Create a blog post from your ideas"
 	@echo ""
+	@echo "Transcription:"
+	@echo "  make transcribe      Transcribe audio/video files or YouTube URLs"
+	@echo ""
 	@echo "Knowledge Assistant:"
 	@echo "  make knowledge-assist  Generate research from knowledge base"
 	@echo ""
@@ -527,6 +530,42 @@ blog-write-example: ## Run blog writer with example data
 	@uv run python -m scenarios.blog_writer \
 		--idea scenarios/blog_writer/tests/sample_brain_dump.md \
 		--writings-dir scenarios/blog_writer/tests/sample_writings/
+
+# Transcription
+transcribe: ## Transcribe audio/video files or YouTube URLs. Usage: make transcribe SOURCE="url or file" [NO_ENHANCE=true]
+	@if [ -z "$(SOURCE)" ]; then \
+		echo "Error: Please provide a source. Usage: make transcribe SOURCE=\"https://youtube.com/watch?v=...\""; \
+		echo "   Or: make transcribe SOURCE=\"video.mp4\""; \
+		exit 1; \
+	fi
+	@echo "🎙️ Starting transcription..."; \
+	echo "  Source: $(SOURCE)"; \
+	if [ "$(NO_ENHANCE)" = "true" ]; then \
+		echo "  Enhancement: Disabled"; \
+		uv run python -m scenarios.transcribe "$(SOURCE)" --no-enhance; \
+	else \
+		echo "  Enhancement: Enabled (summaries and quotes)"; \
+		uv run python -m scenarios.transcribe "$(SOURCE)"; \
+	fi
+
+transcribe-batch: ## Transcribe multiple files. Usage: make transcribe-batch SOURCES="file1.mp4 file2.mp4" [NO_ENHANCE=true]
+	@if [ -z "$(SOURCES)" ]; then \
+		echo "Error: Please provide sources. Usage: make transcribe-batch SOURCES=\"video1.mp4 video2.mp4\""; \
+		exit 1; \
+	fi
+	@echo "🎙️ Starting batch transcription..."; \
+	echo "  Sources: $(SOURCES)"; \
+	if [ "$(NO_ENHANCE)" = "true" ]; then \
+		echo "  Enhancement: Disabled"; \
+		uv run python -m scenarios.transcribe $(SOURCES) --no-enhance; \
+	else \
+		echo "  Enhancement: Enabled"; \
+		uv run python -m scenarios.transcribe $(SOURCES); \
+	fi
+
+transcribe-resume: ## Resume interrupted transcription session
+	@echo "🎙️ Resuming transcription..."
+	@uv run python -m scenarios.transcribe --resume
 
 # Knowledge Assistant
 knowledge-assist: ## Generate research report from knowledge base. Usage: make knowledge-assist TOPIC="subject" [QUESTION="specific aspect"] [DEPTH=quick|deep] [RESUME=session_id]

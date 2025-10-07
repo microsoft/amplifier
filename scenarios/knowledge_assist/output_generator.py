@@ -16,10 +16,6 @@ logger = logging.getLogger(__name__)
 class OutputGenerator:
     """Generates markdown output with citations."""
 
-    def __init__(self):
-        """Initialize output generator."""
-        pass
-
     def generate(
         self,
         topic: str,
