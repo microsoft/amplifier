@@ -18,9 +18,85 @@ Amplifier transforms AI coding assistants into force multipliers through special
 **[See how it can benefit you →](https://microsoft.github.io/amplifier)**
 
 ---
-<div style="background: linear-gradient(135deg, ); border: 2px solid #4caf50; padding: 20px; margin: 15px 0; border-radius: 10px;">
 
-## 🚀 QuickStart
+## 🎨 Style Test Section - Compare These Approaches
+
+### Approach 1: Blockquote with Emoji Header
+
+> ## 🚀 QuickStart (Approach 1)
+>
+> ### Prerequisites
+>
+> - Python 3.11+
+> - `uv` package manager
+>
+> This uses a blockquote which gives a left border naturally.
+
+### Approach 2: HTML Table with Border
+
+<table>
+<tr><td>
+
+## 🚀 QuickStart (Approach 2)
+
+### Prerequisites
+
+- Python 3.11+
+- `uv` package manager
+
+This uses an HTML table which creates a full border around content.
+
+</td></tr>
+</table>
+
+### Approach 3: GitHub Callout Blocks (With Colors!)
+
+> [!IMPORTANT]
+> ## 🚀 QuickStart (Approach 3 - Purple Border)
+>
+> ### Prerequisites
+>
+> - Python 3.11+
+> - `uv` package manager
+>
+> This uses GitHub's IMPORTANT callout (purple left border).
+
+> [!TIP]
+> ## 🚀 QuickStart (Approach 3 - Green Border)
+>
+> ### Prerequisites
+>
+> - Python 3.11+
+> - `uv` package manager
+>
+> This uses GitHub's TIP callout (green left border).
+
+> [!NOTE]
+> ## 🚀 QuickStart (Approach 3 - Blue Border)
+>
+> ### Prerequisites
+>
+> - Python 3.11+
+> - `uv` package manager
+>
+> This uses GitHub's NOTE callout (blue left border).
+
+### Approach 4: SVG Banner
+
+![QuickStart Banner](./assets/quickstart-banner.svg)
+
+**Content below the SVG banner:**
+
+### Prerequisites
+
+- Python 3.11+
+- `uv` package manager
+
+This uses a custom SVG image with full styling control (gradient borders, colors, etc.)
+
+---
+
+## 🚀 QuickStart (Original - Will Be Replaced)
 
 ### Prerequisites
 
@@ -90,15 +166,13 @@ source .venv/bin/activate  # Linux/Mac/WSL
 
 1. **Create A Scenario**
 
-    Explanation here..., which are tools that dependably execute each time.
-
     ```
     > I need a @scenarios/ tool that creates multiple text-based files such as notes, specs, 
     decisions, etc., all based on the current material in the demo directory. These files will be used to showcase Amplifier's knowledge base capabilities. 
     The files should be diverse enough to demonstrate what the knowledge commands can do, but 
     small enough that knowledge-update can complete within 2 minutes. Because this tool is for a demo, please keep the design compact enough that it can be implemented within 2 minutes.
     ```
-    > **What you'll discover**: How simple it is to create an Amplifier Scenario
+    > **What you'll discover**: How simple it is to create a dependable tool
     
     ```
     > Run the scenario tool to create content for the ~/quickstart-demo.
@@ -111,7 +185,6 @@ source .venv/bin/activate  # Linux/Mac/WSL
 
    ```
    > make knowledge-update for AMPLIFIER_CONTENT_DIRS="~/quickstart-demo"
-
    ```
    > **What you'll experience**: Knowledge classification and extraction at work on the new content.
 
