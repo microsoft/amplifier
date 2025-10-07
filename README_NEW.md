@@ -19,84 +19,7 @@ Amplifier transforms AI coding assistants into force multipliers through special
 
 ---
 
-## 🎨 Style Test Section - Compare These Approaches
-
-### Approach 1: Blockquote with Emoji Header
-
-> ## 🚀 QuickStart (Approach 1)
->
-> ### Prerequisites
->
-> - Python 3.11+
-> - `uv` package manager
->
-> This uses a blockquote which gives a left border naturally.
-
-### Approach 2: HTML Table with Border
-
-<table>
-<tr><td>
-
-## 🚀 QuickStart (Approach 2)
-
-### Prerequisites
-
-- Python 3.11+
-- `uv` package manager
-
-This uses an HTML table which creates a full border around content.
-
-</td></tr>
-</table>
-
-### Approach 3: GitHub Callout Blocks (With Colors!)
-
-> [!IMPORTANT]
-> ## 🚀 QuickStart (Approach 3 - Purple Border)
->
-> ### Prerequisites
->
-> - Python 3.11+
-> - `uv` package manager
->
-> This uses GitHub's IMPORTANT callout (purple left border).
-
-> [!TIP]
-> ## 🚀 QuickStart (Approach 3 - Green Border)
->
-> ### Prerequisites
->
-> - Python 3.11+
-> - `uv` package manager
->
-> This uses GitHub's TIP callout (green left border).
-
-> [!NOTE]
-> ## 🚀 QuickStart (Approach 3 - Blue Border)
->
-> ### Prerequisites
->
-> - Python 3.11+
-> - `uv` package manager
->
-> This uses GitHub's NOTE callout (blue left border).
-
-### Approach 4: SVG Banner
-
-![QuickStart Banner](./assets/quickstart-banner.svg)
-
-**Content below the SVG banner:**
-
-### Prerequisites
-
-- Python 3.11+
-- `uv` package manager
-
-This uses a custom SVG image with full styling control (gradient borders, colors, etc.)
-
----
-
-## 🚀 QuickStart (Original - Will Be Replaced)
+## 🚀 QuickStart 
 
 ### Prerequisites
 
@@ -125,6 +48,8 @@ source .venv/bin/activate  # Linux/Mac/WSL
 
 > **Verify installation:** `make check` and `make test`
 
+---
+
 ### Start
 
 1. **Start Claude Code**
@@ -149,22 +74,33 @@ source .venv/bin/activate  # Linux/Mac/WSL
         > I'm working in ~/quickstart-demo, and using the capabilities from amplifier.
         ```
 
-1. **Deploy Specialists**
-    
-   ```
-   > Use zen-architect to design a CLI tool that analyzes markdown files
-     and reports: word count, heading count, link count, and reading time estimate
-   ```
-   > **What you'll see**: A clean design spec for the module-builder to use.
+1. **Explore Features**
 
-   ```
-   > Use modular-builder to implement the markdown analyzer
-   ```
+    Expand the different sections below to learn more about Amplifier feature capabilities. *Recommended to progress in order.*
+    <details>
+    <summary>Deploy Specialists</summary>
+
+    #### Deploy Specialists
+        
+    ```
+    > Use zen-architect to design a CLI tool that analyzes markdown files
+        and reports: word count, heading count, link count, and reading time estimate
+    ```
+    > **What you'll see**: A clean design spec for the module-builder to use.
+
+    ```
+    > Use modular-builder to implement the markdown analyzer
+    ```
     > **What you'll experience**: An automated workflow that implements the design.
 
     **[Learn more about Specialists →](https://microsoft.github.io/amplifier)**
 
-1. **Create A Scenario**
+    </details>
+
+    <details>
+    <summary>Create a Scenario</summary>
+
+    #### Create A Scenario
 
     ```
     > I need a @scenarios/ tool that creates multiple text-based files such as notes, specs, 
@@ -181,26 +117,36 @@ source .venv/bin/activate  # Linux/Mac/WSL
     
     **[Learn more about Scenarios →](https://microsoft.github.io/amplifier)**
 
-1. **Build Knowledge Base**
+    </details>
 
-   ```
-   > make knowledge-update for AMPLIFIER_CONTENT_DIRS="~/quickstart-demo"
-   ```
-   > **What you'll experience**: Knowledge classification and extraction at work on the new content.
+    <details>
+    <summary>Build a Knowledge Base</summary>
 
-   > NOTE: This step can take ~10-15  minutes.
+    #### Build a Knowledge Base
 
-   ```
-   > make knowledge-stats
+    ```
+    > make knowledge-update for AMPLIFIER_CONTENT_DIRS="~/quickstart-demo"
+    ```
+    > **What you'll experience**: Knowledge classification and extraction at work on the new content.
 
-   > make knowledge-graph-viz
-   ```
-   > **What you'll see**: Statistics and a visualization of the content.
+    > NOTE: This step can take ~10-15  minutes.
+
+    ```
+    > make knowledge-stats
+
+    > make knowledge-graph-viz
+    ```
+    > **What you'll see**: Statistics and a visualization of the content.
 
 
     **[Learn more about the Knowledge Base →](https://microsoft.github.io/amplifier)**
 
-1. **Maintain Context**
+    </details>
+
+    <details>
+    <summary>Maintain Context</summary>
+
+    #### Maintain Context
 
     ```
     > /compact
@@ -212,11 +158,11 @@ source .venv/bin/activate  # Linux/Mac/WSL
 
     > /transcript
     ```
-   > **What you'll discover**: Even compacted conversations can be restored for context.
+    > **What you'll discover**: Even compacted conversations can be restored for context.
+
+    </details>
 
 **[View the complete guide →](https://microsoft.github.io/amplifier)**
-
-</div>
 
 
 *Experience the interactive documentation at [microsoft.github.io/amplifier](https://microsoft.github.io/amplifier)*
