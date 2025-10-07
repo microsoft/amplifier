@@ -5,7 +5,6 @@ Reads extractions.jsonl and builds a NetworkX graph for analysis and visualizati
 Following ruthless simplicity - no unnecessary abstractions.
 """
 
-import json
 import logging
 import re
 from collections import defaultdict
@@ -14,6 +13,7 @@ from pathlib import Path
 import networkx as nx
 
 from amplifier.config.paths import paths
+from amplifier.knowledge_synthesis.store import KnowledgeStore
 
 logger = logging.getLogger(__name__)
 
@@ -22,27 +22,18 @@ class GraphBuilder:
     """Simple graph builder from knowledge extractions."""
 
     def __init__(self, extractions_path: Path | None = None):
-        """Initialize with path to extractions file."""
-        if extractions_path is None:
-            extractions_path = paths.data_dir / "knowledge" / "extractions.jsonl"
-        self.extractions_path = extractions_path
+        """Initialize with path to extractions file (unused, kept for compatibility)."""
         self.graph = nx.MultiDiGraph()
         self.concept_counts = defaultdict(int)
 
     def load_extractions(self) -> list[dict]:
-        """Load all extractions from JSONL file."""
-        if not self.extractions_path.exists():
-            logger.warning(f"Extractions file not found: {self.extractions_path}")
-            return []
+        """Load all extractions using KnowledgeStore."""
+        store = KnowledgeStore()
+        extractions = store.load_all()
 
-        extractions = []
-        with open(self.extractions_path, encoding="utf-8") as f:
-            for line in f:
-                if line.strip():
-                    try:
-                        extractions.append(json.loads(line))
-                    except json.JSONDecodeError as e:
-                        logger.error(f"Failed to parse line: {e}")
+        if not extractions:
+            logger.warning("No extractions found")
+            return []
 
         logger.info(f"Loaded {len(extractions)} extractions")
         return extractions

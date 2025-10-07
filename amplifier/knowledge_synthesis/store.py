@@ -93,8 +93,32 @@ class KnowledgeStore:
         Load all extractions from storage.
 
         Returns:
-            List of extraction dicts
+            List of extraction dicts (just the 'data' field from each extraction)
         """
+        # Check both old JSONL format and new individual JSON files
+        extractions_dir = paths.data_dir / "extractions"
+
+        # Try loading from individual JSON files first (new format)
+        if extractions_dir.exists():
+            extractions = []
+            for json_file in extractions_dir.glob("*.json"):
+                try:
+                    with open(json_file, encoding="utf-8") as f:
+                        extraction = json.load(f)
+                        # Extract just the data field which contains concepts, relationships, etc.
+                        if "data" in extraction:
+                            extractions.append(extraction["data"])
+                        else:
+                            extractions.append(extraction)
+                except json.JSONDecodeError as e:
+                    self.error_stats["parse_errors"] += 1
+                    logger.warning(f"Invalid JSON in {json_file}: {e}")
+                    continue
+
+            if extractions:
+                return extractions
+
+        # Fall back to old JSONL format
         if not self.path.exists():
             return []
 

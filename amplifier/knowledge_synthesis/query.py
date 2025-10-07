@@ -10,7 +10,7 @@ import sys
 
 import click
 
-from amplifier.config.paths import paths
+from amplifier.knowledge_synthesis.store import KnowledgeStore
 
 
 @click.command()
@@ -35,27 +35,13 @@ def main(query: str, limit: int, type: str, format: str):
         knowledge-query "Claude" --type concept
         knowledge-query "uses" --type relationship --limit 20
     """
-    # Use paths.data_dir for the extractions file
-    extractions_file = paths.data_dir / "knowledge" / "extractions.jsonl"
-
-    if not extractions_file.exists():
-        click.echo(f"No extractions found at {extractions_file}")
-        click.echo("Run 'knowledge-synthesis sync' first to extract knowledge.")
-        sys.exit(1)
-
-    # Load all extractions
-    extractions = []
-    with open(extractions_file, encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                try:
-                    extractions.append(json.loads(line))
-                except json.JSONDecodeError:
-                    continue
+    # Load all extractions using KnowledgeStore
+    store = KnowledgeStore()
+    extractions = store.load_all()
 
     if not extractions:
-        click.echo("No extractions found in file.")
+        click.echo("No extractions found.")
+        click.echo("Run 'knowledge-synthesis sync' first to extract knowledge.")
         sys.exit(1)
 
     # Search for matches

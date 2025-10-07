@@ -21,6 +21,7 @@ default: ## Show essential commands
 	@echo ""
 	@echo "Quick Start:"
 	@echo "  make install         Install all dependencies"
+	@echo "  make configure       Configure Claude Code statusline"
 	@echo ""
 	@echo "Knowledge Base:"
 	@echo "  make knowledge-update        Full pipeline: extract & synthesize"
@@ -40,6 +41,9 @@ default: ## Show essential commands
 	@echo ""
 	@echo "AI Context:"
 	@echo "  make ai-context-files Build AI context documentation"
+	@echo ""
+	@echo "Demos & Documentation:"
+	@echo "  make open-readmes    Open all README variants in browser"
 	@echo ""
 	@echo "Other:"
 	@echo "  make clean          Clean build artifacts"
@@ -107,7 +111,11 @@ help: ## Show ALL available commands
 	@echo "AI CONTEXT:"
 	@echo "  make ai-context-files  Build AI context documentation"
 	@echo ""
+	@echo "DEMOS & DOCUMENTATION:"
+	@echo "  make open-readmes    Open all README variants in browser"
+	@echo ""
 	@echo "UTILITIES:"
+	@echo "  make configure       Configure Claude Code statusline"
 	@echo "  make clean           Clean build artifacts"
 	@echo "  make clean-wsl-files Clean WSL-related files"
 	@echo "  make workspace-info  Show workspace information"
@@ -147,6 +155,18 @@ install: ## Install all dependencies
 	else \
 		echo "✗ No virtual environment found. Run 'make install' first."; \
 	fi
+
+# Configuration
+configure: ## Configure Claude Code statusline
+	@echo "Configuring Claude Code statusline..."
+	@python3 -c "import json; import os; \
+	settings_path = os.path.expanduser('~/.claude/settings.json'); \
+	os.makedirs(os.path.dirname(settings_path), exist_ok=True); \
+	settings = json.load(open(settings_path)) if os.path.exists(settings_path) else {}; \
+	settings['statusLine'] = {'type': 'command', 'command': '$(CURDIR)/.claude/tools/statusline-example.sh', 'padding': 0}; \
+	json.dump(settings, open(settings_path, 'w'), indent=2)"
+	@echo "✅ Statusline configured to use $(CURDIR)/.claude/tools/statusline-example.sh"
+
 
 # Code quality
 check: ## Format, lint, and type-check all code
@@ -401,10 +421,9 @@ knowledge-graph-tensions: ## Find productive contradictions. Usage: make knowled
 
 knowledge-graph-viz: ## Create interactive visualization. Usage: make knowledge-graph-viz [NODES=50]
 	@nodes="$${NODES:-50}"; \
-	DATA_DIR=$$(python -c "from amplifier.config.paths import paths; print(paths.data_dir)"); \
 	echo "🎨 Creating interactive visualization with $$nodes nodes..."; \
-	uv run python -m amplifier.knowledge.graph_visualizer --max-nodes $$nodes --output "$$DATA_DIR/knowledge/graph.html"
-	@DATA_DIR=$$(python -c "from amplifier.config.paths import paths; print(paths.data_dir)"); \
+    uv run python -m amplifier.knowledge.graph_visualizer --max-nodes $$nodes
+    @DATA_DIR=$$(uv run python -c "from amplifier.config.paths import paths; print(paths.data_dir)"); \
 	echo "✅ Visualization saved to $$DATA_DIR/knowledge/graph.html"
 
 knowledge-graph-export: ## Export for external tools. Usage: make knowledge-graph-export [FORMAT=gexf]
@@ -469,6 +488,10 @@ ai-context-files: ## Build AI context files
 	uv run python tools/build_ai_context_files.py
 	uv run python tools/build_git_collector_files.py
 	@echo "AI context files generated"
+
+# Demos & Documentation
+open-readmes: ## Open all README variants in browser
+	@./open_readmes.sh
 
 # Clean WSL Files
 clean-wsl-files: ## Clean up WSL-related files (Zone.Identifier, sec.endpointdlp)

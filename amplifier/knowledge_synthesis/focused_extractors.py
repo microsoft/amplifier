@@ -7,11 +7,12 @@ Philosophy: "More focused asks are generally better than asking for more in sing
 """
 
 import asyncio
-import json
 import logging
 import time
 from dataclasses import dataclass
 from typing import Any
+
+from amplifier.ccsdk_toolkit.defensive.llm_parsing import parse_llm_json
 
 try:
     from claude_code_sdk import ClaudeCodeOptions
@@ -98,18 +99,9 @@ Return ONLY valid JSON, no other text."""
                                     if hasattr(block, "text"):
                                         response += getattr(block, "text", "")
 
-            # Parse response
-            cleaned_response = response.strip()
-            if cleaned_response.startswith("```json"):
-                cleaned_response = cleaned_response[7:]
-            elif cleaned_response.startswith("```"):
-                cleaned_response = cleaned_response[3:]
-            if cleaned_response.endswith("```"):
-                cleaned_response = cleaned_response[:-3]
-            cleaned_response = cleaned_response.strip()
-
-            data = json.loads(cleaned_response)
-            concepts = data.get("concepts", [])
+            # Parse response using defensive JSON parser
+            data = parse_llm_json(response, default={})
+            concepts = data.get("concepts", []) if isinstance(data, dict) else []
 
             elapsed = time.time() - start_time
             logger.debug(f"Concept extraction completed in {elapsed:.1f}s: {len(concepts)} concepts found")
@@ -198,18 +190,9 @@ Return ONLY valid JSON, no other text."""
                                     if hasattr(block, "text"):
                                         response += getattr(block, "text", "")
 
-            # Parse response
-            cleaned_response = response.strip()
-            if cleaned_response.startswith("```json"):
-                cleaned_response = cleaned_response[7:]
-            elif cleaned_response.startswith("```"):
-                cleaned_response = cleaned_response[3:]
-            if cleaned_response.endswith("```"):
-                cleaned_response = cleaned_response[:-3]
-            cleaned_response = cleaned_response.strip()
-
-            data = json.loads(cleaned_response)
-            relationships = data.get("relationships", [])
+            # Parse response using defensive JSON parser
+            data = parse_llm_json(response, default={})
+            relationships = data.get("relationships", []) if isinstance(data, dict) else []
 
             elapsed = time.time() - start_time
             logger.debug(
@@ -300,18 +283,9 @@ Return ONLY valid JSON, no other text."""
                                     if hasattr(block, "text"):
                                         response += getattr(block, "text", "")
 
-            # Parse response
-            cleaned_response = response.strip()
-            if cleaned_response.startswith("```json"):
-                cleaned_response = cleaned_response[7:]
-            elif cleaned_response.startswith("```"):
-                cleaned_response = cleaned_response[3:]
-            if cleaned_response.endswith("```"):
-                cleaned_response = cleaned_response[:-3]
-            cleaned_response = cleaned_response.strip()
-
-            data = json.loads(cleaned_response)
-            insights = data.get("insights", [])
+            # Parse response using defensive JSON parser
+            data = parse_llm_json(response, default={})
+            insights = data.get("insights", []) if isinstance(data, dict) else []
 
             elapsed = time.time() - start_time
             logger.debug(f"Insight extraction completed in {elapsed:.1f}s: {len(insights)} insights found")
@@ -400,18 +374,9 @@ Return ONLY valid JSON, no other text."""
                                     if hasattr(block, "text"):
                                         response += getattr(block, "text", "")
 
-            # Parse response
-            cleaned_response = response.strip()
-            if cleaned_response.startswith("```json"):
-                cleaned_response = cleaned_response[7:]
-            elif cleaned_response.startswith("```"):
-                cleaned_response = cleaned_response[3:]
-            if cleaned_response.endswith("```"):
-                cleaned_response = cleaned_response[:-3]
-            cleaned_response = cleaned_response.strip()
-
-            data = json.loads(cleaned_response)
-            patterns = data.get("patterns", [])
+            # Parse response using defensive JSON parser
+            data = parse_llm_json(response, default={})
+            patterns = data.get("patterns", []) if isinstance(data, dict) else []
 
             elapsed = time.time() - start_time
             logger.debug(f"Pattern extraction completed in {elapsed:.1f}s: {len(patterns)} patterns found")
