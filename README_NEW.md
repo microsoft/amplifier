@@ -83,7 +83,11 @@ source .venv/bin/activate  # Linux/Mac/WSL
     <summary> Deploy Specialists</summary>
 
     #### 💡 Deploy Specialists
-        
+
+    > [!NOTE]
+    >
+    >*20+ specialized AI agents that handle specific tasks like architecture design, testing, and code generation with expert-level precision.*
+
     ```
     > Use zen-architect to design a CLI tool that analyzes markdown files and reports: word count, heading count, link count, and reading time estimate
     ```
@@ -103,17 +107,23 @@ source .venv/bin/activate  # Linux/Mac/WSL
 
     #### 🎨 Create A Scenario Tool
 
-    ```
-    > I need a @scenarios/ tool that creates multiple text-based files such as notes, specs, decisions, etc., all based on the current material in the demo directory. These files will be used to showcase Amplifier's knowledge base capabilities. The files should be diverse enough to demonstrate what the knowledge commands can do, but small enough that knowledge-update can complete within 2 minutes. Because this tool is for a demo, please keep the design compact enough that it can be implemented within 2 minutes.
-    ```
-    > **What you'll discover**: How simple it is to create a dependable tool
-    
-    ```
-    > Run the scenario tool to create content for the ~/quickstart-demo.
-    ```
-    > **What you'll see**: Content generated for the demo using the newly created Scenario.
-    
-    **[Learn more about Scenarios →](https://microsoft.github.io/amplifier)**
+    > [!NOTE]
+    >
+    >*Reusable CLI tools that combine code structure with
+    AI intelligence for reliable, repeatable workflows you can run with
+    simple make commands.*
+    >
+    >```
+    >> I need a @scenarios/ tool that creates multiple text-based files such as notes, specs, decisions, etc., all based on the current material in the demo directory. These files will be used to showcase Amplifier's knowledge base capabilities. The files should be diverse enough to demonstrate what the knowledge commands can do, but small enough that knowledge-update can complete within 2 minutes. Because this tool is for a demo, please keep the design compact enough that it can be implemented within 2 minutes.
+    >```
+    >> **What you'll discover**: How simple it is to create a dependable tool
+    >
+    >```
+    >> Run the scenario tool to create content for the ~/quickstart-demo.
+    >```
+    >> **What you'll see**: Content generated for the demo using the newly created Scenario.
+    >
+    >**[Learn more about Scenarios →](https://microsoft.github.io/amplifier)**
 
     </details>
 
@@ -121,6 +131,10 @@ source .venv/bin/activate  # Linux/Mac/WSL
     <summary>Build a Knowledge Base</summary>
 
     #### 📚 Build a Knowledge Base
+
+    *Automated extraction and organization of concepts,
+    relationships, and insights from your documents into a queryable
+    knowledge graph.*
 
     ```
     > make knowledge-update for AMPLIFIER_CONTENT_DIRS="~/quickstart-demo"
@@ -146,6 +160,9 @@ source .venv/bin/activate  # Linux/Mac/WSL
 
     #### 🧠 Maintain Context
 
+    *Smart conversation management that compresses long sessions
+    while preserving searchable transcripts you can restore anytime.*
+    
     ```
     > /compact
     ```
