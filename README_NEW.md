@@ -50,9 +50,11 @@ source .venv/bin/activate  # Linux/Mac/WSL
 
 ---
 
-### Start
+### 📖 Get Started
 
-1. **Start Claude Code**
+**[View the complete guide →](https://microsoft.github.io/amplifier)**
+
+1. **⚡Start Claude Code**
 
     - **Option 1** - Work within the Amplifier project
         ```bash
@@ -74,13 +76,13 @@ source .venv/bin/activate  # Linux/Mac/WSL
         > I'm working in ~/quickstart-demo, and using the capabilities from amplifier.
         ```
 
-1. **Explore Features**
+1. 🎯 **Explore Features**
 
     Expand the different sections below to learn more about Amplifier feature capabilities. *Recommended to progress in order.*
     <details>
-    <summary>Deploy Specialists</summary>
+    <summary> Deploy Specialists</summary>
 
-    #### Deploy Specialists
+    #### 💡 Deploy Specialists
         
     ```
     > Use zen-architect to design a CLI tool that analyzes markdown files
@@ -98,9 +100,9 @@ source .venv/bin/activate  # Linux/Mac/WSL
     </details>
 
     <details>
-    <summary>Create a Scenario</summary>
+    <summary>Create a Scenario Tool</summary>
 
-    #### Create A Scenario
+    #### 🎨 Create A Scenario Tool
 
     ```
     > I need a @scenarios/ tool that creates multiple text-based files such as notes, specs, 
@@ -122,7 +124,7 @@ source .venv/bin/activate  # Linux/Mac/WSL
     <details>
     <summary>Build a Knowledge Base</summary>
 
-    #### Build a Knowledge Base
+    #### 📚 Build a Knowledge Base
 
     ```
     > make knowledge-update for AMPLIFIER_CONTENT_DIRS="~/quickstart-demo"
@@ -146,7 +148,7 @@ source .venv/bin/activate  # Linux/Mac/WSL
     <details>
     <summary>Maintain Context</summary>
 
-    #### Maintain Context
+    #### 🧠 Maintain Context
 
     ```
     > /compact
@@ -161,9 +163,6 @@ source .venv/bin/activate  # Linux/Mac/WSL
     > **What you'll discover**: Even compacted conversations can be restored for context.
 
     </details>
-
-**[View the complete guide →](https://microsoft.github.io/amplifier)**
-
 
 *Experience the interactive documentation at [microsoft.github.io/amplifier](https://microsoft.github.io/amplifier)*
 
