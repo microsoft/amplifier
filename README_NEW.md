@@ -44,7 +44,7 @@ make configure
 make install
 source .venv/bin/activate  # Linux/Mac/WSL
 ```
-> **Windows:** `source .venv/bin/activate`
+> **Windows PowerShell:** `.venv\Scripts\Activate.ps1`
 
 > **Verify installation:** `make check` and `make test`
 
@@ -85,8 +85,7 @@ source .venv/bin/activate  # Linux/Mac/WSL
     #### 💡 Deploy Specialists
         
     ```
-    > Use zen-architect to design a CLI tool that analyzes markdown files
-        and reports: word count, heading count, link count, and reading time estimate
+    > Use zen-architect to design a CLI tool that analyzes markdown files and reports: word count, heading count, link count, and reading time estimate
     ```
     > **What you'll see**: A clean design spec for the module-builder to use.
 
@@ -105,10 +104,7 @@ source .venv/bin/activate  # Linux/Mac/WSL
     #### 🎨 Create A Scenario Tool
 
     ```
-    > I need a @scenarios/ tool that creates multiple text-based files such as notes, specs, 
-    decisions, etc., all based on the current material in the demo directory. These files will be used to showcase Amplifier's knowledge base capabilities. 
-    The files should be diverse enough to demonstrate what the knowledge commands can do, but 
-    small enough that knowledge-update can complete within 2 minutes. Because this tool is for a demo, please keep the design compact enough that it can be implemented within 2 minutes.
+    > I need a @scenarios/ tool that creates multiple text-based files such as notes, specs, decisions, etc., all based on the current material in the demo directory. These files will be used to showcase Amplifier's knowledge base capabilities. The files should be diverse enough to demonstrate what the knowledge commands can do, but small enough that knowledge-update can complete within 2 minutes. Because this tool is for a demo, please keep the design compact enough that it can be implemented within 2 minutes.
     ```
     > **What you'll discover**: How simple it is to create a dependable tool
     
