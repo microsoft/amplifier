@@ -194,15 +194,25 @@ source .venv/bin/activate  # Linux/Mac/WSL
 ### Mac
 
 ```bash
-brew install python3 node git pnpm
+brew install python3 node git pnpm uv
+npm install -g @anthropic-ai/claude-cli
 ```
 
 ### Ubuntu/Debian/WSL
 
 ```bash
+# System packages
 sudo apt update && sudo apt install -y python3 python3-pip nodejs npm git
+
+# pnpm
 npm install -g pnpm
-pnpm setup && source ~/.bashrc  # Configure pnpm global directory
+pnpm setup && source ~/.bashrc
+
+# uv (Python package manager)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Claude Code CLI
+npm install -g @anthropic-ai/claude-cli
 ```
 
 ### Windows
@@ -216,5 +226,7 @@ pnpm setup && source ~/.bashrc  # Configure pnpm global directory
 - [Node.js](https://nodejs.org) (any recent version)
 - [pnpm](https://pnpm.io/installation) (package manager)
 - [Git](https://git-scm.com) (any version)
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) (Python package manager)
+- [Claude Code CLI](https://github.com/anthropics/claude-code) (AI assistant)
 
 </details>
