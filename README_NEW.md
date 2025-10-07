@@ -82,9 +82,11 @@ source .venv/bin/activate  # Linux/Mac/WSL
     <details>
     <summary> Deploy Specialists</summary>
 
-    #### 💡 Deploy Specialists 
+    #### 💡 Deploy Specialists
 
-    >*20+ specialized AI agents that handle specific tasks like architecture design, testing, and code generation with expert-level precision.* **[Learn more about Specialists →](https://microsoft.github.io/amplifier)**
+    >*Amplifier includes 20+ specialized AI agents, each trained for specific tasks like architecture design, bug hunting, test coverage analysis, and modular code generation. These specialists work with expert-level precision, delivering focused results without the context confusion of general-purpose AI assistants.*
+    >
+    >**[Learn more about Specialists →](https://microsoft.github.io/amplifier)**
     >
     >```
     >>  Use zen-architect to design a CLI tool that analyzes markdown files and reports: word count, 
@@ -105,8 +107,9 @@ source .venv/bin/activate  # Linux/Mac/WSL
 
     #### 🎨 Create A Scenario Tool
 
-    >*Reusable CLI tools that combine code structure with AI intelligence for reliable, repeatable workflows you can run with
-    simple make commands.* **[Learn more about Scenarios →](https://microsoft.github.io/amplifier)**
+    >*Scenario tools are reusable CLI applications that combine Python code structure with AI intelligence for reliable, repeatable workflows. Create custom tools once, then run them anytime with simple make commands - perfect for standardizing complex multi-step processes.*
+    >
+    >**[Learn more about Scenarios →](https://microsoft.github.io/amplifier)**
     >```
     >>  I need a @scenarios/ tool that creates multiple text-based files such as notes, specs,
     >   decisions, etc., all based on the current material in the demo directory. These files will 
@@ -130,9 +133,9 @@ source .venv/bin/activate  # Linux/Mac/WSL
 
     #### 📚 Build a Knowledge Base
 
-    >*Automated extraction and organization of concepts,
-    >relationships, and insights from your documents into a queryable
-    >knowledge graph.* **[Learn more about the Knowledge Base →](https://microsoft.github.io/amplifier)**
+    >*Amplifier's knowledge system automatically extracts concepts, relationships, and insights from your documents, organizing them into a queryable knowledge graph. This enables powerful semantic search, pattern recognition, and context-aware assistance across your entire project documentation.*
+    >
+    >**[Learn more about the Knowledge Base →](https://microsoft.github.io/amplifier)**
     >
     >```
     >>  make knowledge-update for AMPLIFIER_CONTENT_DIRS="~/quickstart-demo"
@@ -154,7 +157,9 @@ source .venv/bin/activate  # Linux/Mac/WSL
 
     #### 🧠 Context Management
 
-    >*Smart conversation management that compresses long sessions while preserving searchable transcripts you can restore anytime.* **[Learn more about the Context Management →](https://microsoft.github.io/amplifier)**
+    >*Amplifier's context management intelligently compresses long conversation sessions, reducing token usage while preserving the essential information you need. All conversation history is automatically saved as searchable transcripts that you can restore anytime, ensuring no valuable context is ever lost.*
+    >
+    >**[Learn more about Context Management →](https://microsoft.github.io/amplifier)**
     >
     >```
     >>  /compact
