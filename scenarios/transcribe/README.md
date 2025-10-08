@@ -108,23 +108,37 @@ make transcribe-index
 
 ## Output Structure
 
-Transcripts are saved in organized directories:
+Transcripts are saved in two locations:
+
+### User Content (AMPLIFIER_CONTENT_DIRS/transcripts/)
 
 ```
 AMPLIFIER_CONTENT_DIRS/transcripts/
 ├── index.md                 # Generated index of all transcripts
-├── [video-id]/
-│   ├── audio.mp3            # Downloaded/extracted audio (cached)
-│   ├── transcript.json      # Full structured data with segments
-│   ├── transcript.md        # Readable paragraphs with timestamps
-│   ├── insights.md          # AI summary + key quotes (if enhanced)
-│   ├── transcript.vtt       # WebVTT subtitles
-│   └── transcript.srt       # SRT subtitles
+└── [video-id]/
+    ├── audio.mp3            # Downloaded/extracted audio (cached)
+    ├── transcript.md        # Readable paragraphs with timestamps
+    └── insights.md          # AI summary + key quotes (if enhanced)
 ```
+
+### Technical Artifacts (.data/transcripts/)
+
+```
+.data/transcripts/
+└── [video-id]/
+    ├── transcript.json      # Full structured data with segments
+    ├── transcript.vtt       # WebVTT subtitles
+    └── transcript.srt       # SRT subtitles
+```
+
+**Why split storage?**
+- Content directory has only files users read/listen to
+- Technical artifacts (JSON, subtitles) in .data avoid knowledge system confusion
+- Prevents duplicate content processing
 
 **audio.mp3**: Preserved audio file (192kbps MP3). Re-used on subsequent runs - saves bandwidth and time.
 
-**transcript.md**: Formatted in readable paragraphs grouped by natural pauses, with clickable YouTube timestamps at each section break.
+**transcript.md**: Formatted in readable paragraphs (4-5 sentences each) with inline clickable YouTube timestamps.
 
 **insights.md**: Combined summary (overview, key points, themes) and notable quotes with timestamps - only created when AI enhancement is enabled.
 

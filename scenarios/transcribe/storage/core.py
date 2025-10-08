@@ -38,6 +38,10 @@ class TranscriptStorage:
                 self.output_dir = paths.data_dir / "transcripts"
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
+        # Add data dir for technical artifacts (JSON, VTT, SRT)
+        self.data_dir = paths.data_dir / "transcripts"
+        self.data_dir.mkdir(parents=True, exist_ok=True)
+
     def save(
         self,
         transcript: Transcript,
@@ -62,14 +66,21 @@ class TranscriptStorage:
         Returns:
             Path to output directory containing all files
         """
-        # Create output directory for this video
+        # Create output directories for this video
         video_id = self._sanitize_filename(video_info.id)
+
+        # User content directory (AMPLIFIER_CONTENT_DIRS)
         video_dir = self.output_dir / video_id
         video_dir.mkdir(parents=True, exist_ok=True)
 
-        logger.info(f"Saving transcript to: {video_dir}")
+        # Technical artifacts directory (.data)
+        data_video_dir = self.data_dir / video_id
+        data_video_dir.mkdir(parents=True, exist_ok=True)
 
-        # Save audio file if provided
+        logger.info(f"Saving user content to: {video_dir}")
+        logger.info(f"Saving technical artifacts to: {data_video_dir}")
+
+        # Save audio file if provided (goes to content dir)
         saved_audio_path = None
         if audio_path and audio_path.exists():
             saved_audio_path = self.save_audio(audio_path, video_dir)
@@ -78,23 +89,27 @@ class TranscriptStorage:
         saved_files = []
 
         if save_json:
-            json_path = self._save_json(transcript, video_info, video_dir, saved_audio_path)
-            saved_files.append(json_path.name)
+            # JSON goes to .data directory
+            json_path = self._save_json(transcript, video_info, data_video_dir, video_dir, saved_audio_path)
+            saved_files.append(f"JSON: {json_path.name}")
 
         if save_markdown:
+            # Markdown goes to content directory
             md_path = self._save_markdown(transcript, video_info, video_dir)
-            saved_files.append(md_path.name)
+            saved_files.append(f"MD: {md_path.name}")
 
         if save_vtt and transcript.segments:
-            vtt_path = self._save_vtt(transcript, video_dir)
-            saved_files.append(vtt_path.name)
+            # VTT goes to .data directory
+            vtt_path = self._save_vtt(transcript, data_video_dir)
+            saved_files.append(f"VTT: {vtt_path.name}")
 
         if save_srt and transcript.segments:
-            srt_path = self._save_srt(transcript, video_dir)
-            saved_files.append(srt_path.name)
+            # SRT goes to .data directory
+            srt_path = self._save_srt(transcript, data_video_dir)
+            saved_files.append(f"SRT: {srt_path.name}")
 
         logger.info(f"Saved {len(saved_files)} files: {', '.join(saved_files)}")
-        return video_dir
+        return video_dir  # Return content dir for compatibility
 
     def save_audio(self, audio_path: Path, output_dir: Path) -> Path:
         """Save audio file to output directory.
@@ -130,10 +145,15 @@ class TranscriptStorage:
         return name[:100]
 
     def _save_json(
-        self, transcript: Transcript, video_info: VideoInfo, output_dir: Path, audio_path: Path | None = None
+        self,
+        transcript: Transcript,
+        video_info: VideoInfo,
+        data_dir: Path,
+        content_dir: Path,
+        audio_path: Path | None = None,
     ) -> Path:
-        """Save transcript as JSON."""
-        json_path = output_dir / "transcript.json"
+        """Save transcript as JSON with storage location metadata."""
+        json_path = data_dir / "transcript.json"
 
         # Add audio metadata if audio file exists
         audio_metadata = None
@@ -172,6 +192,10 @@ class TranscriptStorage:
             "metadata": {
                 "transcribed_at": datetime.now().isoformat(),
                 "version": "1.0",
+                "storage": {
+                    "content_dir": str(content_dir),  # Where user content is
+                    "data_dir": str(data_dir),  # Where technical artifacts are
+                },
             },
         }
 

@@ -34,23 +34,36 @@ def extract_title_from_markdown(md_path: Path) -> str | None:
     return None
 
 
-def extract_metadata_from_json(json_path: Path) -> dict:
-    """Extract duration, date, source from transcript.json."""
-    try:
-        with open(json_path) as f:
-            data = json.load(f)
+def extract_metadata_from_json(transcript_folder: Path) -> dict:
+    """Extract duration, date, source from transcript.json.
 
-            # Handle different possible JSON structures
-            video_info = data.get("video", {})
-            metadata = data.get("metadata", {})
+    Checks .data location first for new storage pattern, then falls back
+    to content directory for backward compatibility.
+    """
+    from amplifier.config.paths import paths
 
-            return {
-                "duration": video_info.get("duration", 0),
-                "source": video_info.get("source", "Unknown"),
-                "created_at": metadata.get("transcribed_at", ""),
-            }
-    except Exception as e:
-        logger.debug(f"Could not extract metadata from {json_path}: {e}")
+    # Look for JSON in .data location (new storage pattern)
+    data_json_path = paths.data_dir / "transcripts" / transcript_folder.name / "transcript.json"
+
+    # Try new location first
+    json_path = data_json_path if data_json_path.exists() else transcript_folder / "transcript.json"
+
+    if json_path.exists():
+        try:
+            with open(json_path) as f:
+                data = json.load(f)
+
+                # Handle different possible JSON structures
+                video_info = data.get("video", {})
+                metadata = data.get("metadata", {})
+
+                return {
+                    "duration": video_info.get("duration", 0),
+                    "source": video_info.get("source", "Unknown"),
+                    "created_at": metadata.get("transcribed_at", ""),
+                }
+        except Exception as e:
+            logger.debug(f"Could not extract metadata from {json_path}: {e}")
 
     return {
         "duration": 0,
@@ -97,9 +110,8 @@ def scan_transcripts(transcripts_dir: Path) -> list[TranscriptInfo]:
         if not title:
             title = folder.name  # Fallback to folder name
 
-        # Extract metadata from JSON if exists
-        transcript_json = folder / "transcript.json"
-        metadata = extract_metadata_from_json(transcript_json)
+        # Extract metadata from JSON (checks .data and content locations)
+        metadata = extract_metadata_from_json(folder)
 
         # Check if insights exist
         has_insights = (folder / "insights.md").exists()
