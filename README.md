@@ -155,6 +155,16 @@ Enable with:
 /statusline use the script at .claude/tools/statusline-example.sh
 ```
 
+### Best Practices & Tips
+
+**Want to get the most out of Amplifier?** Check out [The Amplifier Way](docs/THIS_IS_THE_WAY.md) for battle-tested strategies including:
+
+- Understanding capability vs. context
+- Decomposition strategies for complex tasks
+- Using transcript tools to capture and improve workflows
+- Demo-driven development patterns
+- Practical tips for effective AI-assisted development
+
 ## 🎯 Key Features
 
 ### Specialized Agents
