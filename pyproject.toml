@@ -5,6 +5,7 @@ description = "Workspace project"
 requires-python = ">=3.11"
 dependencies = [
     "aiohttp>=3.12.15",
+    "anthropic>=0.69.0",
     "beautifulsoup4>=4.14.2",
     "claude-code-sdk>=0.0.20",
     "click>=8.2.1",
@@ -25,6 +26,7 @@ dependencies = [
     "requests>=2.32.4",
     "tiktoken>=0.11.0",
     "tqdm>=4.67.1",
+    "yt-dlp>=2025.9.26",
 ]
 
 [tool.uv.workspace]

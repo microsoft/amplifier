@@ -44,6 +44,10 @@ default: ## Show essential commands
 	@echo "Blog Writing:"
 	@echo "  make blog-write      Create a blog post from your ideas"
 	@echo ""
+	@echo "Transcription:"
+	@echo "  make transcribe      Transcribe audio/video files or YouTube URLs"
+	@echo "  make transcribe-index Generate index of all transcripts"
+	@echo ""
 	@echo "Article Illustration:"
 	@echo "  make illustrate      Generate AI illustrations for article"
 	@echo ""
@@ -543,6 +547,46 @@ tips-synthesizer-example: ## Run tips synthesizer with example data
 		--input-dir scenarios/tips_synthesizer/tests/sample_tips/ \
 		--output-file synthesized_tips_example.md \
 		--verbose
+
+# Transcription
+transcribe: ## Transcribe audio/video files or YouTube URLs. Usage: make transcribe SOURCE="url or file" [NO_ENHANCE=true]
+	@if [ -z "$(SOURCE)" ]; then \
+		echo "Error: Please provide a source. Usage: make transcribe SOURCE=\"https://youtube.com/watch?v=...\""; \
+		echo "   Or: make transcribe SOURCE=\"video.mp4\""; \
+		exit 1; \
+	fi
+	@echo "🎙️ Starting transcription..."; \
+	echo "  Source: $(SOURCE)"; \
+	if [ "$(NO_ENHANCE)" = "true" ]; then \
+		echo "  Enhancement: Disabled"; \
+		uv run python -m scenarios.transcribe transcribe "$(SOURCE)" --no-enhance; \
+	else \
+		echo "  Enhancement: Enabled (summaries and quotes)"; \
+		uv run python -m scenarios.transcribe transcribe "$(SOURCE)"; \
+	fi
+
+transcribe-batch: ## Transcribe multiple files. Usage: make transcribe-batch SOURCES="file1.mp4 file2.mp4" [NO_ENHANCE=true]
+	@if [ -z "$(SOURCES)" ]; then \
+		echo "Error: Please provide sources. Usage: make transcribe-batch SOURCES=\"video1.mp4 video2.mp4\""; \
+		exit 1; \
+	fi
+	@echo "🎙️ Starting batch transcription..."; \
+	echo "  Sources: $(SOURCES)"; \
+	if [ "$(NO_ENHANCE)" = "true" ]; then \
+		echo "  Enhancement: Disabled"; \
+		uv run python -m scenarios.transcribe transcribe $(SOURCES) --no-enhance; \
+	else \
+		echo "  Enhancement: Enabled"; \
+		uv run python -m scenarios.transcribe transcribe $(SOURCES); \
+	fi
+
+transcribe-resume: ## Resume interrupted transcription session
+	@echo "🎙️ Resuming transcription..."
+	@uv run python -m scenarios.transcribe transcribe --resume
+
+transcribe-index: ## Generate index of all transcripts
+	@echo "📑 Generating transcript index..."
+	@uv run python -m scenarios.transcribe index
 
 # Article Illustration
 illustrate: ## Generate AI illustrations for markdown article. Usage: make illustrate INPUT=article.md [OUTPUT=path] [STYLE="..."] [APIS="..."] [RESUME=true]

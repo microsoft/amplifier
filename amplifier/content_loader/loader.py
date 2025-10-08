@@ -141,7 +141,8 @@ class ContentLoader:
         total_files_loaded = 0
 
         for content_dir in self.content_dirs:
-            logger.info(f"Scanning directory: {content_dir}")
+            if not quiet:
+                logger.info(f"Scanning directory: {content_dir}")
 
             # First, count total files to scan for better progress indication
             dir_files_found = 0
@@ -187,7 +188,7 @@ class ContentLoader:
         if not case_sensitive:
             query = query.lower()
 
-        for item in self.load_all():
+        for item in self.load_all(quiet=True):
             search_content = item.content if case_sensitive else item.content.lower()
             search_title = item.title if case_sensitive else item.title.lower()
 
@@ -203,7 +204,7 @@ class ContentLoader:
         Returns:
             ContentItem if found, None otherwise
         """
-        for item in self.load_all():
+        for item in self.load_all(quiet=True):
             if item.content_id == content_id:
                 return item
         return None
