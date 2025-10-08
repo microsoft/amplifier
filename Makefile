@@ -41,6 +41,13 @@ default: ## Show essential commands
 	@echo "AI Context:"
 	@echo "  make ai-context-files Build AI context documentation"
 	@echo ""
+	@echo "Project Planning:"
+	@echo "  make project-init    Initialize AI-driven project planning"
+	@echo "  make project-plan    Plan project tasks with AI decomposition"
+	@echo "  make project-status  Show project status and progress"
+	@echo "  make project-execute Execute tasks with multi-agent coordination"
+	@echo "  make smart-decomposer Smart multi-agent task decomposition"
+	@echo ""
 	@echo "Blog Writing:"
 	@echo "  make blog-write      Create a blog post from your ideas"
 	@echo ""
@@ -115,6 +122,12 @@ help: ## Show ALL available commands
 	@echo ""
 	@echo "AI CONTEXT:"
 	@echo "  make ai-context-files  Build AI context documentation"
+	@echo ""
+	@echo "PROJECT PLANNING:"
+	@echo "  make project-init PROJECT_NAME=\"...\" [PROJECT_PATH=...]  Initialize project with AI planning"
+	@echo "  make project-plan [GOALS=\"...\"]  Plan project tasks with AI decomposition"
+	@echo "  make project-status              Show project status and progress"
+	@echo "  make project-execute             Execute tasks with multi-agent coordination"
 	@echo ""
 	@echo "BLOG WRITING:"
 	@echo "  make blog-write IDEA=<file> WRITINGS=<dir> [INSTRUCTIONS=\"...\"]  Create blog"
@@ -519,6 +532,48 @@ blog-write-example: ## Run blog writer with example data
 	@uv run python -m scenarios.blog_writer \
 		--idea scenarios/blog_writer/tests/sample_brain_dump.md \
 		--writings-dir scenarios/blog_writer/tests/sample_writings/
+
+# Project Planning
+project-init: ## Initialize project with AI planning. Usage: make project-init PROJECT_NAME="My Project" [PROJECT_PATH=/path/to/project]
+	@if [ -z "$(PROJECT_NAME)" ]; then \
+		echo "Error: Please provide a project name. Usage: make project-init PROJECT_NAME=\"My Project\""; \
+		exit 1; \
+	fi
+	@echo "🚀 Initializing AI-driven project planning..."; \
+	echo "  Project: $(PROJECT_NAME)"; \
+	if [ -n "$(PROJECT_PATH)" ]; then \
+		echo "  Path: $(PROJECT_PATH)"; \
+		uv run python -m scenarios.project_planner init --name "$(PROJECT_NAME)" --path "$(PROJECT_PATH)"; \
+	else \
+		uv run python -m scenarios.project_planner init --name "$(PROJECT_NAME)"; \
+	fi
+
+project-plan: ## Plan project tasks with AI decomposition. Usage: make project-plan [GOALS="Build authentication system"]
+	@echo "🧠 Planning project tasks with AI..."
+	@if [ -n "$(GOALS)" ]; then \
+		echo "  Goals: $(GOALS)"; \
+		uv run python -m scenarios.project_planner plan --goals "$(GOALS)"; \
+	else \
+		uv run python -m scenarios.project_planner plan; \
+	fi
+
+project-status: ## Show project status and progress
+	@echo "📊 Checking project status..."
+	@uv run python -m scenarios.project_planner status
+
+project-execute: ## Execute project tasks with multi-agent coordination
+	@echo "🚀 Executing project tasks with AI agents..."
+	@uv run python -m scenarios.project_planner execute
+
+smart-decomposer: ## Smart multi-agent task decomposition. Usage: make smart-decomposer ARGS="decompose 'Build API' --auto-assign"
+	@echo "🧠 Running Smart Decomposer multi-agent orchestration..."
+	@if [ -n "$(ARGS)" ]; then \
+		echo "  Args: $(ARGS)"; \
+		uv run python -m scenarios.smart_decomposer $(ARGS); \
+	else \
+		echo "  Running status check..."; \
+		uv run python -m scenarios.smart_decomposer status; \
+	fi
 
 # Article Illustration
 illustrate: ## Generate AI illustrations for markdown article. Usage: make illustrate INPUT=article.md [OUTPUT=path] [STYLE="..."] [APIS="..."] [RESUME=true]

@@ -1,0 +1,81 @@
+<section class="revolution-section" id="revolution">
+    <div class="container">
+        <div class="revolution-content">
+            <h2 class="revolution-title">{{ section.title }}</h2>
+            <h3 class="revolution-subtitle">{{ section.subtitle }}</h3>
+
+            <div class="problem-statement">
+                <p>{{ section.problem_statement }}</p>
+            </div>
+
+            {% if section.multiplier_effect %}
+            <div class="multiplier-showcase">
+                <h4>Capability Multiplication</h4>
+                <div class="metrics-grid">
+                    {% for metric in section.multiplier_effect.metrics %}
+                    <div class="metric-card">
+                        <div class="metric-name">{{ metric.name }}</div>
+                        <div class="metric-comparison">
+                            <span class="old-value">{{ metric.old_value | format_number }}</span>
+                            <span class="arrow">→</span>
+                            <span class="new-value"
+                                  {% if interactions.animated_counters %}
+                                  data-counter="{{ metric.new_value }}"
+                                  {% endif %}>
+                                {{ metric.new_value | format_number }}
+                            </span>
+                        </div>
+                        <div class="metric-unit">{{ metric.unit }}</div>
+                        <div class="metric-multiplier">{{ metric.multiplier }}x {% if metric.inverse %}faster{% else %}more{% endif %}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if section.paradigm_comparison %}
+            <div class="paradigm-comparison">
+                <h4>The Paradigm Shift</h4>
+                <div class="comparison-grid">
+                    {% for category in section.paradigm_comparison.categories %}
+                    <div class="comparison-row">
+                        <div class="category-name">{{ category.name }}</div>
+                        <div class="before">{{ category.before }}</div>
+                        <div class="after">{{ category.after }}</div>
+                        <div class="improvement">{{ category.improvement }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if section.role_transformation %}
+            <div class="role-transformation">
+                <h4>Your Role Evolution</h4>
+                <div class="transformation-grid">
+                    <div class="old-role">
+                        <h5>{{ section.role_transformation.old_role.title }}</h5>
+                        <ul>
+                            {% for char in section.role_transformation.old_role.characteristics %}
+                            <li>{{ char }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="transformation-arrow">→</div>
+                    <div class="new-role">
+                        <h5>{{ section.role_transformation.new_role.title }}</h5>
+                        <ul>
+                            {% for char in section.role_transformation.new_role.characteristics %}
+                            <li>{{ char }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% if section.role_transformation.transformation_message %}
+                <p class="transformation-message">{{ section.role_transformation.transformation_message }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>

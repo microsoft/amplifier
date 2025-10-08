@@ -1,0 +1,357 @@
+{
+  "project": {
+    "id": "complex_microservices_platform",
+    "name": "Enterprise Microservices Platform",
+    "description": "Large-scale microservices platform with 8 services, complex dependencies, and multi-team coordination",
+    "created": "2025-01-01T00:00:00Z",
+    "status": "NOT_STARTED",
+    "capabilities_required": ["python", "typescript", "devops", "qa", "database", "security"],
+    "estimated_complexity": "high",
+    "max_parallel_agents": 8
+  },
+  "tasks": [
+    {
+      "id": "platform_001",
+      "name": "User Authentication Service",
+      "description": "Centralized authentication and authorization service",
+      "parent_id": null,
+      "status": "NOT_STARTED",
+      "priority": "critical",
+      "estimated_effort": 40,
+      "capabilities_required": ["python", "security", "database"],
+      "dependencies": [],
+      "metadata": {
+        "service": "auth",
+        "type": "epic",
+        "team": "platform"
+      }
+    },
+    {
+      "id": "platform_002",
+      "name": "API Gateway Service",
+      "description": "Service mesh gateway with routing and middleware",
+      "parent_id": null,
+      "status": "NOT_STARTED",
+      "priority": "critical",
+      "estimated_effort": 35,
+      "capabilities_required": ["python", "networking", "security"],
+      "dependencies": ["platform_001"],
+      "metadata": {
+        "service": "gateway",
+        "type": "epic",
+        "team": "platform"
+      }
+    },
+    {
+      "id": "platform_003",
+      "name": "User Management Service",
+      "description": "User profiles, preferences, and account management",
+      "parent_id": null,
+      "status": "NOT_STARTED",
+      "priority": "high",
+      "estimated_effort": 30,
+      "capabilities_required": ["python", "database"],
+      "dependencies": ["platform_001"],
+      "metadata": {
+        "service": "users",
+        "type": "epic",
+        "team": "backend"
+      }
+    },
+    {
+      "id": "platform_004",
+      "name": "Payment Processing Service",
+      "description": "Secure payment processing and billing",
+      "parent_id": null,
+      "status": "NOT_STARTED",
+      "priority": "high",
+      "estimated_effort": 45,
+      "capabilities_required": ["python", "security", "fintech"],
+      "dependencies": ["platform_001", "platform_003"],
+      "metadata": {
+        "service": "payments",
+        "type": "epic",
+        "team": "fintech"
+      }
+    },
+    {
+      "id": "platform_005",
+      "name": "Notification Service",
+      "description": "Multi-channel notification delivery system",
+      "parent_id": null,
+      "status": "NOT_STARTED",
+      "priority": "medium",
+      "estimated_effort": 25,
+      "capabilities_required": ["python", "messaging"],
+      "dependencies": ["platform_003"],
+      "metadata": {
+        "service": "notifications",
+        "type": "epic",
+        "team": "backend"
+      }
+    },
+    {
+      "id": "platform_006",
+      "name": "Analytics Service",
+      "description": "Data collection, processing, and reporting",
+      "parent_id": null,
+      "status": "NOT_STARTED",
+      "priority": "medium",
+      "estimated_effort": 50,
+      "capabilities_required": ["python", "analytics", "database"],
+      "dependencies": ["platform_003"],
+      "metadata": {
+        "service": "analytics",
+        "type": "epic",
+        "team": "data"
+      }
+    },
+    {
+      "id": "platform_007",
+      "name": "Frontend Web Application",
+      "description": "React-based web interface for all services",
+      "parent_id": null,
+      "status": "NOT_STARTED",
+      "priority": "high",
+      "estimated_effort": 60,
+      "capabilities_required": ["typescript", "react", "design"],
+      "dependencies": ["platform_002"],
+      "metadata": {
+        "service": "frontend",
+        "type": "epic",
+        "team": "frontend"
+      }
+    },
+    {
+      "id": "platform_008",
+      "name": "Mobile Application",
+      "description": "React Native mobile app for iOS and Android",
+      "parent_id": null,
+      "status": "NOT_STARTED",
+      "priority": "medium",
+      "estimated_effort": 80,
+      "capabilities_required": ["typescript", "react-native", "mobile"],
+      "dependencies": ["platform_002"],
+      "metadata": {
+        "service": "mobile",
+        "type": "epic",
+        "team": "mobile"
+      }
+    },
+    {
+      "id": "auth_001",
+      "name": "JWT Authentication Implementation",
+      "description": "Implement JWT-based authentication with refresh tokens",
+      "parent_id": "platform_001",
+      "status": "NOT_STARTED",
+      "priority": "critical",
+      "estimated_effort": 8,
+      "capabilities_required": ["python", "security"],
+      "dependencies": [],
+      "metadata": {
+        "service": "auth",
+        "type": "feature"
+      }
+    },
+    {
+      "id": "auth_002",
+      "name": "OAuth2 Provider Setup",
+      "description": "Configure OAuth2 flows for third-party integrations",
+      "parent_id": "platform_001",
+      "status": "NOT_STARTED",
+      "priority": "high",
+      "estimated_effort": 12,
+      "capabilities_required": ["python", "security", "oauth"],
+      "dependencies": ["auth_001"],
+      "metadata": {
+        "service": "auth",
+        "type": "feature"
+      }
+    },
+    {
+      "id": "auth_003",
+      "name": "Multi-Factor Authentication",
+      "description": "Implement TOTP and SMS-based 2FA",
+      "parent_id": "platform_001",
+      "status": "NOT_STARTED",
+      "priority": "high",
+      "estimated_effort": 10,
+      "capabilities_required": ["python", "security", "messaging"],
+      "dependencies": ["auth_001"],
+      "metadata": {
+        "service": "auth",
+        "type": "feature"
+      }
+    },
+    {
+      "id": "auth_004",
+      "name": "Rate Limiting and Security",
+      "description": "Implement brute force protection and rate limiting",
+      "parent_id": "platform_001",
+      "status": "NOT_STARTED",
+      "priority": "critical",
+      "estimated_effort": 6,
+      "capabilities_required": ["python", "security"],
+      "dependencies": ["auth_001"],
+      "metadata": {
+        "service": "auth",
+        "type": "security"
+      }
+    },
+    {
+      "id": "gateway_001",
+      "name": "Request Routing Implementation",
+      "description": "Dynamic service discovery and request routing",
+      "parent_id": "platform_002",
+      "status": "NOT_STARTED",
+      "priority": "critical",
+      "estimated_effort": 10,
+      "capabilities_required": ["python", "networking"],
+      "dependencies": [],
+      "metadata": {
+        "service": "gateway",
+        "type": "feature"
+      }
+    },
+    {
+      "id": "gateway_002",
+      "name": "Authentication Middleware",
+      "description": "JWT validation and user context injection",
+      "parent_id": "platform_002",
+      "status": "NOT_STARTED",
+      "priority": "critical",
+      "estimated_effort": 8,
+      "capabilities_required": ["python", "security"],
+      "dependencies": ["auth_001", "gateway_001"],
+      "metadata": {
+        "service": "gateway",
+        "type": "feature"
+      }
+    },
+    {
+      "id": "gateway_003",
+      "name": "Rate Limiting Middleware",
+      "description": "Per-user and global rate limiting",
+      "parent_id": "platform_002",
+      "status": "NOT_STARTED",
+      "priority": "high",
+      "estimated_effort": 6,
+      "capabilities_required": ["python", "caching"],
+      "dependencies": ["gateway_001"],
+      "metadata": {
+        "service": "gateway",
+        "type": "feature"
+      }
+    },
+    {
+      "id": "users_001",
+      "name": "User Profile Management",
+      "description": "CRUD operations for user profiles and preferences",
+      "parent_id": "platform_003",
+      "status": "NOT_STARTED",
+      "priority": "high",
+      "estimated_effort": 12,
+      "capabilities_required": ["python", "database"],
+      "dependencies": [],
+      "metadata": {
+        "service": "users",
+        "type": "feature"
+      }
+    },
+    {
+      "id": "users_002",
+      "name": "Account Settings API",
+      "description": "Privacy settings, notification preferences, account deletion",
+      "parent_id": "platform_003",
+      "status": "NOT_STARTED",
+      "priority": "medium",
+      "estimated_effort": 8,
+      "capabilities_required": ["python", "database"],
+      "dependencies": ["users_001"],
+      "metadata": {
+        "service": "users",
+        "type": "feature"
+      }
+    },
+    {
+      "id": "payments_001",
+      "name": "Payment Gateway Integration",
+      "description": "Stripe and PayPal integration for payment processing",
+      "parent_id": "platform_004",
+      "status": "NOT_STARTED",
+      "priority": "critical",
+      "estimated_effort": 15,
+      "capabilities_required": ["python", "fintech", "security"],
+      "dependencies": [],
+      "metadata": {
+        "service": "payments",
+        "type": "feature"
+      }
+    },
+    {
+      "id": "payments_002",
+      "name": "Subscription Management",
+      "description": "Recurring billing and subscription lifecycle management",
+      "parent_id": "platform_004",
+      "status": "NOT_STARTED",
+      "priority": "high",
+      "estimated_effort": 18,
+      "capabilities_required": ["python", "fintech", "database"],
+      "dependencies": ["payments_001"],
+      "metadata": {
+        "service": "payments",
+        "type": "feature"
+      }
+    },
+    {
+      "id": "notifications_001",
+      "name": "Email Notification System",
+      "description": "Template-based email notifications with tracking",
+      "parent_id": "platform_005",
+      "status": "NOT_STARTED",
+      "priority": "high",
+      "estimated_effort": 10,
+      "capabilities_required": ["python", "messaging"],
+      "dependencies": [],
+      "metadata": {
+        "service": "notifications",
+        "type": "feature"
+      }
+    },
+    {
+      "id": "notifications_002",
+      "name": "Push Notification System",
+      "description": "Firebase/APNs push notifications for mobile apps",
+      "parent_id": "platform_005",
+      "status": "NOT_STARTED",
+      "priority": "medium",
+      "estimated_effort": 8,
+      "capabilities_required": ["python", "messaging", "mobile"],
+      "dependencies": ["notifications_001"],
+      "metadata": {
+        "service": "notifications",
+        "type": "feature"
+      }
+    }
+  ],
+  "expected_outcomes": {
+    "total_tasks": 22,
+    "max_depth": 2,
+    "parallel_branches": 8,
+    "total_effort": 497,
+    "critical_path": ["platform_001", "auth_001", "platform_002", "gateway_002", "platform_007"],
+    "teams": ["platform", "backend", "fintech", "data", "frontend", "mobile"],
+    "capabilities_distribution": {
+      "python": 18,
+      "typescript": 2,
+      "security": 8,
+      "database": 6,
+      "messaging": 4
+    },
+    "service_dependencies": {
+      "auth": ["gateway", "users", "payments"],
+      "gateway": ["frontend", "mobile"],
+      "users": ["notifications", "analytics"]
+    }
+  }
+}

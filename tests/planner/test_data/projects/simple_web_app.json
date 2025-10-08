@@ -1,0 +1,146 @@
+{
+  "project": {
+    "id": "simple_web_app",
+    "name": "Simple Web Application",
+    "description": "A basic web application with frontend, backend, and deployment",
+    "created": "2025-01-01T00:00:00Z",
+    "status": "NOT_STARTED",
+    "capabilities_required": ["python", "javascript", "devops"],
+    "estimated_complexity": "low",
+    "max_parallel_agents": 2
+  },
+  "tasks": [
+    {
+      "id": "webapp_001",
+      "name": "Frontend Development",
+      "description": "Build responsive web frontend",
+      "parent_id": null,
+      "status": "NOT_STARTED",
+      "priority": "high",
+      "estimated_effort": 8,
+      "capabilities_required": ["javascript", "css"],
+      "dependencies": [],
+      "metadata": {
+        "component": "frontend",
+        "type": "development"
+      }
+    },
+    {
+      "id": "webapp_002",
+      "name": "Create React Components",
+      "description": "Build reusable React components for UI",
+      "parent_id": "webapp_001",
+      "status": "NOT_STARTED",
+      "priority": "high",
+      "estimated_effort": 4,
+      "capabilities_required": ["javascript", "react"],
+      "dependencies": [],
+      "metadata": {
+        "component": "frontend",
+        "type": "implementation"
+      }
+    },
+    {
+      "id": "webapp_003",
+      "name": "Implement Responsive Design",
+      "description": "Add responsive CSS and mobile optimization",
+      "parent_id": "webapp_001",
+      "status": "NOT_STARTED",
+      "priority": "medium",
+      "estimated_effort": 3,
+      "capabilities_required": ["css", "design"],
+      "dependencies": ["webapp_002"],
+      "metadata": {
+        "component": "frontend",
+        "type": "implementation"
+      }
+    },
+    {
+      "id": "webapp_004",
+      "name": "Backend API Development",
+      "description": "Build REST API and database layer",
+      "parent_id": null,
+      "status": "NOT_STARTED",
+      "priority": "high",
+      "estimated_effort": 12,
+      "capabilities_required": ["python", "database"],
+      "dependencies": [],
+      "metadata": {
+        "component": "backend",
+        "type": "development"
+      }
+    },
+    {
+      "id": "webapp_005",
+      "name": "Create Database Models",
+      "description": "Define SQLAlchemy models and relationships",
+      "parent_id": "webapp_004",
+      "status": "NOT_STARTED",
+      "priority": "high",
+      "estimated_effort": 3,
+      "capabilities_required": ["python", "sqlalchemy"],
+      "dependencies": [],
+      "metadata": {
+        "component": "backend",
+        "type": "implementation"
+      }
+    },
+    {
+      "id": "webapp_006",
+      "name": "Implement API Endpoints",
+      "description": "Build FastAPI endpoints with validation",
+      "parent_id": "webapp_004",
+      "status": "NOT_STARTED",
+      "priority": "high",
+      "estimated_effort": 6,
+      "capabilities_required": ["python", "fastapi"],
+      "dependencies": ["webapp_005"],
+      "metadata": {
+        "component": "backend",
+        "type": "implementation"
+      }
+    },
+    {
+      "id": "webapp_007",
+      "name": "Add Authentication",
+      "description": "Implement JWT-based user authentication",
+      "parent_id": "webapp_004",
+      "status": "NOT_STARTED",
+      "priority": "medium",
+      "estimated_effort": 4,
+      "capabilities_required": ["python", "security"],
+      "dependencies": ["webapp_006"],
+      "metadata": {
+        "component": "backend",
+        "type": "feature"
+      }
+    },
+    {
+      "id": "webapp_008",
+      "name": "Deployment Setup",
+      "description": "Configure production deployment and CI/CD",
+      "parent_id": null,
+      "status": "NOT_STARTED",
+      "priority": "medium",
+      "estimated_effort": 6,
+      "capabilities_required": ["devops", "docker"],
+      "dependencies": ["webapp_001", "webapp_004"],
+      "metadata": {
+        "component": "deployment",
+        "type": "infrastructure"
+      }
+    }
+  ],
+  "expected_outcomes": {
+    "total_tasks": 8,
+    "max_depth": 2,
+    "parallel_branches": 3,
+    "total_effort": 46,
+    "critical_path": ["webapp_001", "webapp_002", "webapp_003"],
+    "capabilities_distribution": {
+      "javascript": 3,
+      "python": 4,
+      "devops": 1
+    }
+  }
+}

@@ -1,0 +1,974 @@
+{
+  "id": "vi-rewrite",
+  "name": "Vi Editor Rewrite in Python",
+  "created_at": "2025-10-07T11:48:50.416993",
+  "updated_at": "2025-10-07T11:48:50.500513",
+  "tasks": {
+    "arch": {
+      "id": "arch",
+      "title": "Architecture & Design",
+      "description": "Define overall architecture, data structures, and interfaces",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.416994",
+      "updated_at": "2025-10-07T11:48:50.416994"
+    },
+    "core": {
+      "id": "core",
+      "title": "Core Editing Engine",
+      "description": "Text buffer management, cursor handling, basic operations",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "arch"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.416995",
+      "updated_at": "2025-10-07T11:48:50.416995"
+    },
+    "commands": {
+      "id": "commands",
+      "title": "Command System",
+      "description": "Vi command parsing, execution, and modal interface",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "arch"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.416996",
+      "updated_at": "2025-10-07T11:48:50.416996"
+    },
+    "ui": {
+      "id": "ui",
+      "title": "User Interface System",
+      "description": "Terminal handling, screen rendering, input processing",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "arch"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.416997",
+      "updated_at": "2025-10-07T11:48:50.416997"
+    },
+    "filesystem": {
+      "id": "filesystem",
+      "title": "File Operations",
+      "description": "File I/O, backup, recovery, file type detection",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "arch"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.416997",
+      "updated_at": "2025-10-07T11:48:50.416997"
+    },
+    "arch-analysis": {
+      "id": "arch-analysis",
+      "title": "Requirements Analysis",
+      "description": "Analyze vi behavior, commands, edge cases",
+      "state": "pending",
+      "parent_id": "arch",
+      "depends_on": [],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.416998",
+      "updated_at": "2025-10-07T11:48:50.416998"
+    },
+    "arch-design": {
+      "id": "arch-design",
+      "title": "System Design",
+      "description": "Design core data structures and interfaces",
+      "state": "pending",
+      "parent_id": "arch",
+      "depends_on": [
+        "arch-analysis"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.416999",
+      "updated_at": "2025-10-07T11:48:50.416999"
+    },
+    "arch-patterns": {
+      "id": "arch-patterns",
+      "title": "Design Patterns",
+      "description": "Define patterns for extensibility",
+      "state": "pending",
+      "parent_id": "arch",
+      "depends_on": [
+        "arch-design"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417000",
+      "updated_at": "2025-10-07T11:48:50.417000"
+    },
+    "arch-docs": {
+      "id": "arch-docs",
+      "title": "Architecture Documentation",
+      "description": "Document architecture decisions",
+      "state": "pending",
+      "parent_id": "arch",
+      "depends_on": [
+        "arch-patterns"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417001",
+      "updated_at": "2025-10-07T11:48:50.417001"
+    },
+    "core-buffer": {
+      "id": "core-buffer",
+      "title": "Text Buffer",
+      "description": "Efficient text storage with undo/redo",
+      "state": "pending",
+      "parent_id": "core",
+      "depends_on": [
+        "core"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417001",
+      "updated_at": "2025-10-07T11:48:50.417001"
+    },
+    "core-cursor": {
+      "id": "core-cursor",
+      "title": "Cursor Management",
+      "description": "Cursor positioning, movement, selection",
+      "state": "pending",
+      "parent_id": "core",
+      "depends_on": [
+        "core-buffer"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417002",
+      "updated_at": "2025-10-07T11:48:50.417002"
+    },
+    "core-operations": {
+      "id": "core-operations",
+      "title": "Basic Operations",
+      "description": "Insert, delete, replace operations",
+      "state": "pending",
+      "parent_id": "core",
+      "depends_on": [
+        "core-cursor"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417004",
+      "updated_at": "2025-10-07T11:48:50.417004"
+    },
+    "core-marks": {
+      "id": "core-marks",
+      "title": "Marks and Registers",
+      "description": "Named marks, registers, clipboard",
+      "state": "pending",
+      "parent_id": "core",
+      "depends_on": [
+        "core-operations"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417005",
+      "updated_at": "2025-10-07T11:48:50.417005"
+    },
+    "core-search": {
+      "id": "core-search",
+      "title": "Search Engine",
+      "description": "Pattern matching, regex, search/replace",
+      "state": "pending",
+      "parent_id": "core",
+      "depends_on": [
+        "core-operations"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417005",
+      "updated_at": "2025-10-07T11:48:50.417005"
+    },
+    "buffer-gap": {
+      "id": "buffer-gap",
+      "title": "Gap Buffer Implementation",
+      "description": "Efficient gap buffer with automatic expansion",
+      "state": "pending",
+      "parent_id": "core-buffer",
+      "depends_on": [
+        "core-buffer"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417006",
+      "updated_at": "2025-10-07T11:48:50.417006"
+    },
+    "buffer-lines": {
+      "id": "buffer-lines",
+      "title": "Line Management",
+      "description": "Line indexing, wrapping, virtual lines",
+      "state": "pending",
+      "parent_id": "core-buffer",
+      "depends_on": [
+        "buffer-gap"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417007",
+      "updated_at": "2025-10-07T11:48:50.417007"
+    },
+    "buffer-encoding": {
+      "id": "buffer-encoding",
+      "title": "Text Encoding",
+      "description": "UTF-8, line endings, BOM handling",
+      "state": "pending",
+      "parent_id": "core-buffer",
+      "depends_on": [
+        "buffer-lines"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417007",
+      "updated_at": "2025-10-07T11:48:50.417007"
+    },
+    "buffer-undo": {
+      "id": "buffer-undo",
+      "title": "Undo System",
+      "description": "Efficient undo/redo with branching",
+      "state": "pending",
+      "parent_id": "core-buffer",
+      "depends_on": [
+        "buffer-encoding"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417008",
+      "updated_at": "2025-10-07T11:48:50.417008"
+    },
+    "buffer-diff": {
+      "id": "buffer-diff",
+      "title": "Change Tracking",
+      "description": "Track changes for diff, backup",
+      "state": "pending",
+      "parent_id": "core-buffer",
+      "depends_on": [
+        "buffer-undo"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417008",
+      "updated_at": "2025-10-07T11:48:50.417008"
+    },
+    "cmd-parser": {
+      "id": "cmd-parser",
+      "title": "Command Parser",
+      "description": "Parse vi commands with error handling",
+      "state": "pending",
+      "parent_id": "commands",
+      "depends_on": [
+        "commands"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417009",
+      "updated_at": "2025-10-07T11:48:50.417009"
+    },
+    "cmd-modes": {
+      "id": "cmd-modes",
+      "title": "Modal Interface",
+      "description": "Normal, insert, visual, command modes",
+      "state": "pending",
+      "parent_id": "commands",
+      "depends_on": [
+        "cmd-parser"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417009",
+      "updated_at": "2025-10-07T11:48:50.417009"
+    },
+    "cmd-movement": {
+      "id": "cmd-movement",
+      "title": "Movement Commands",
+      "description": "h,j,k,l, w,e,b, $,^, G, etc.",
+      "state": "pending",
+      "parent_id": "commands",
+      "depends_on": [
+        "cmd-modes"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417010",
+      "updated_at": "2025-10-07T11:48:50.417010"
+    },
+    "cmd-editing": {
+      "id": "cmd-editing",
+      "title": "Editing Commands",
+      "description": "i,a,o, d,c,y, p, u, ., etc.",
+      "state": "pending",
+      "parent_id": "commands",
+      "depends_on": [
+        "cmd-movement"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417010",
+      "updated_at": "2025-10-07T11:48:50.417011"
+    },
+    "cmd-visual": {
+      "id": "cmd-visual",
+      "title": "Visual Mode",
+      "description": "Visual selection, visual block",
+      "state": "pending",
+      "parent_id": "commands",
+      "depends_on": [
+        "cmd-editing"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417011",
+      "updated_at": "2025-10-07T11:48:50.417011"
+    },
+    "cmd-ex": {
+      "id": "cmd-ex",
+      "title": "Ex Commands",
+      "description": ":w, :q, :s, :!, etc.",
+      "state": "pending",
+      "parent_id": "commands",
+      "depends_on": [
+        "cmd-visual"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417012",
+      "updated_at": "2025-10-07T11:48:50.417012"
+    },
+    "move-char": {
+      "id": "move-char",
+      "title": "Character Movement",
+      "description": "h,l,space,backspace movement",
+      "state": "pending",
+      "parent_id": "cmd-movement",
+      "depends_on": [
+        "cmd-movement"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417012",
+      "updated_at": "2025-10-07T11:48:50.417012"
+    },
+    "move-word": {
+      "id": "move-word",
+      "title": "Word Movement",
+      "description": "w,e,b,W,E,B word boundaries",
+      "state": "pending",
+      "parent_id": "cmd-movement",
+      "depends_on": [
+        "move-char"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417013",
+      "updated_at": "2025-10-07T11:48:50.417013"
+    },
+    "move-line": {
+      "id": "move-line",
+      "title": "Line Movement",
+      "description": "j,k,$,^,0,+,- movements",
+      "state": "pending",
+      "parent_id": "cmd-movement",
+      "depends_on": [
+        "move-word"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417013",
+      "updated_at": "2025-10-07T11:48:50.417013"
+    },
+    "move-search": {
+      "id": "move-search",
+      "title": "Search Movement",
+      "description": "f,F,t,T,;,, and /,? searches",
+      "state": "pending",
+      "parent_id": "cmd-movement",
+      "depends_on": [
+        "move-line"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417014",
+      "updated_at": "2025-10-07T11:48:50.417014"
+    },
+    "move-jump": {
+      "id": "move-jump",
+      "title": "Jump Commands",
+      "description": "G,gg,H,M,L,ctrl-f,ctrl-b",
+      "state": "pending",
+      "parent_id": "cmd-movement",
+      "depends_on": [
+        "move-search"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417014",
+      "updated_at": "2025-10-07T11:48:50.417015"
+    },
+    "ui-terminal": {
+      "id": "ui-terminal",
+      "title": "Terminal Interface",
+      "description": "Raw terminal control, escape sequences",
+      "state": "pending",
+      "parent_id": "ui",
+      "depends_on": [
+        "ui"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417015",
+      "updated_at": "2025-10-07T11:48:50.417015"
+    },
+    "ui-screen": {
+      "id": "ui-screen",
+      "title": "Screen Management",
+      "description": "Screen buffer, scrolling, refresh",
+      "state": "pending",
+      "parent_id": "ui",
+      "depends_on": [
+        "ui-terminal"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417015",
+      "updated_at": "2025-10-07T11:48:50.417016"
+    },
+    "ui-input": {
+      "id": "ui-input",
+      "title": "Input Processing",
+      "description": "Key mapping, special keys, timing",
+      "state": "pending",
+      "parent_id": "ui",
+      "depends_on": [
+        "ui-screen"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417016",
+      "updated_at": "2025-10-07T11:48:50.417016"
+    },
+    "ui-rendering": {
+      "id": "ui-rendering",
+      "title": "Text Rendering",
+      "description": "Syntax highlighting, line numbers",
+      "state": "pending",
+      "parent_id": "ui",
+      "depends_on": [
+        "ui-input"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417017",
+      "updated_at": "2025-10-07T11:48:50.417017"
+    },
+    "ui-status": {
+      "id": "ui-status",
+      "title": "Status Line",
+      "description": "Mode indicator, position, filename",
+      "state": "pending",
+      "parent_id": "ui",
+      "depends_on": [
+        "ui-rendering"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417017",
+      "updated_at": "2025-10-07T11:48:50.417017"
+    },
+    "file-io": {
+      "id": "file-io",
+      "title": "Basic File I/O",
+      "description": "Read/write files, error handling",
+      "state": "pending",
+      "parent_id": "filesystem",
+      "depends_on": [
+        "filesystem"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417018",
+      "updated_at": "2025-10-07T11:48:50.417018"
+    },
+    "file-backup": {
+      "id": "file-backup",
+      "title": "Backup System",
+      "description": "Swap files, backup files, recovery",
+      "state": "pending",
+      "parent_id": "filesystem",
+      "depends_on": [
+        "file-io"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417018",
+      "updated_at": "2025-10-07T11:48:50.417018"
+    },
+    "file-detection": {
+      "id": "file-detection",
+      "title": "File Type Detection",
+      "description": "Syntax detection, file associations",
+      "state": "pending",
+      "parent_id": "filesystem",
+      "depends_on": [
+        "file-backup"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417019",
+      "updated_at": "2025-10-07T11:48:50.417019"
+    },
+    "file-encoding": {
+      "id": "file-encoding",
+      "title": "Encoding Detection",
+      "description": "Auto-detect and handle encodings",
+      "state": "pending",
+      "parent_id": "filesystem",
+      "depends_on": [
+        "file-detection"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417019",
+      "updated_at": "2025-10-07T11:48:50.417020"
+    },
+    "integration-basic": {
+      "id": "integration-basic",
+      "title": "Basic Integration",
+      "description": "Integrate core editing with UI",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "core-operations",
+        "cmd-editing",
+        "ui-screen"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417020",
+      "updated_at": "2025-10-07T11:48:50.417020"
+    },
+    "integration-advanced": {
+      "id": "integration-advanced",
+      "title": "Advanced Integration",
+      "description": "Integrate search, ex commands",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "integration-basic",
+        "core-search",
+        "cmd-ex"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417021",
+      "updated_at": "2025-10-07T11:48:50.417021"
+    },
+    "integration-files": {
+      "id": "integration-files",
+      "title": "File Integration",
+      "description": "Integrate file operations",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "integration-advanced",
+        "file-encoding"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417022",
+      "updated_at": "2025-10-07T11:48:50.417022"
+    },
+    "test-unit": {
+      "id": "test-unit",
+      "title": "Unit Tests",
+      "description": "Unit tests for all components",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "buffer-diff",
+        "move-jump",
+        "ui-status"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417022",
+      "updated_at": "2025-10-07T11:48:50.417022"
+    },
+    "test-integration": {
+      "id": "test-integration",
+      "title": "Integration Tests",
+      "description": "Integration tests across components",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "test-unit",
+        "integration-files"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417023",
+      "updated_at": "2025-10-07T11:48:50.417023"
+    },
+    "test-compatibility": {
+      "id": "test-compatibility",
+      "title": "Vi Compatibility Tests",
+      "description": "Test compatibility with real vi",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "test-integration"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417023",
+      "updated_at": "2025-10-07T11:48:50.417023"
+    },
+    "test-performance": {
+      "id": "test-performance",
+      "title": "Performance Tests",
+      "description": "Large file performance, memory usage",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "test-compatibility"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417024",
+      "updated_at": "2025-10-07T11:48:50.417024"
+    },
+    "test-edge-cases": {
+      "id": "test-edge-cases",
+      "title": "Edge Case Tests",
+      "description": "Binary files, huge files, corner cases",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "test-performance"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417024",
+      "updated_at": "2025-10-07T11:48:50.417026"
+    },
+    "polish-docs": {
+      "id": "polish-docs",
+      "title": "Documentation",
+      "description": "User manual, developer docs",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "test-edge-cases"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417026",
+      "updated_at": "2025-10-07T11:48:50.417026"
+    },
+    "polish-package": {
+      "id": "polish-package",
+      "title": "Packaging",
+      "description": "Setup.py, distribution, installation",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "polish-docs"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417027",
+      "updated_at": "2025-10-07T11:48:50.417027"
+    },
+    "polish-ci": {
+      "id": "polish-ci",
+      "title": "CI/CD Setup",
+      "description": "GitHub actions, automated testing",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "polish-package"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417027",
+      "updated_at": "2025-10-07T11:48:50.417028"
+    },
+    "release-beta": {
+      "id": "release-beta",
+      "title": "Beta Release",
+      "description": "Initial beta release",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "polish-ci"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417028",
+      "updated_at": "2025-10-07T11:48:50.417028"
+    },
+    "release-stable": {
+      "id": "release-stable",
+      "title": "Stable Release",
+      "description": "1.0 stable release",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "release-beta"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.417029",
+      "updated_at": "2025-10-07T11:48:50.417029"
+    },
+    "stress-00": {
+      "id": "stress-00",
+      "title": "Stress Test Task 0",
+      "description": "Random stress test task with 1 dependencies",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "buffer-lines"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.418835",
+      "updated_at": "2025-10-07T11:48:50.418837"
+    },
+    "stress-01": {
+      "id": "stress-01",
+      "title": "Stress Test Task 1",
+      "description": "Random stress test task with 2 dependencies",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "buffer-diff",
+        "arch-design"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.418894",
+      "updated_at": "2025-10-07T11:48:50.418894"
+    },
+    "stress-02": {
+      "id": "stress-02",
+      "title": "Stress Test Task 2",
+      "description": "Random stress test task with 2 dependencies",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "buffer-gap",
+        "cmd-ex"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.418899",
+      "updated_at": "2025-10-07T11:48:50.418899"
+    },
+    "stress-03": {
+      "id": "stress-03",
+      "title": "Stress Test Task 3",
+      "description": "Random stress test task with 2 dependencies",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "ui-rendering",
+        "core"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.418903",
+      "updated_at": "2025-10-07T11:48:50.418903"
+    },
+    "stress-04": {
+      "id": "stress-04",
+      "title": "Stress Test Task 4",
+      "description": "Random stress test task with 0 dependencies",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.418905",
+      "updated_at": "2025-10-07T11:48:50.418905"
+    },
+    "stress-05": {
+      "id": "stress-05",
+      "title": "Stress Test Task 5",
+      "description": "Random stress test task with 2 dependencies",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "cmd-movement",
+        "stress-04"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.418908",
+      "updated_at": "2025-10-07T11:48:50.418908"
+    },
+    "stress-06": {
+      "id": "stress-06",
+      "title": "Stress Test Task 6",
+      "description": "Random stress test task with 3 dependencies",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "polish-ci",
+        "filesystem",
+        "commands"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.418910",
+      "updated_at": "2025-10-07T11:48:50.418910"
+    },
+    "stress-07": {
+      "id": "stress-07",
+      "title": "Stress Test Task 7",
+      "description": "Random stress test task with 3 dependencies",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "stress-00",
+        "move-char",
+        "buffer-lines"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.418913",
+      "updated_at": "2025-10-07T11:48:50.418913"
+    },
+    "stress-08": {
+      "id": "stress-08",
+      "title": "Stress Test Task 8",
+      "description": "Random stress test task with 1 dependencies",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "cmd-editing"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.418917",
+      "updated_at": "2025-10-07T11:48:50.418917"
+    },
+    "stress-09": {
+      "id": "stress-09",
+      "title": "Stress Test Task 9",
+      "description": "Random stress test task with 1 dependencies",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "move-word"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.418919",
+      "updated_at": "2025-10-07T11:48:50.418919"
+    },
+    "stress-10": {
+      "id": "stress-10",
+      "title": "Stress Test Task 10",
+      "description": "Random stress test task with 2 dependencies",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "integration-basic",
+        "test-integration"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.418922",
+      "updated_at": "2025-10-07T11:48:50.418922"
+    },
+    "stress-11": {
+      "id": "stress-11",
+      "title": "Stress Test Task 11",
+      "description": "Random stress test task with 1 dependencies",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "ui"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.418924",
+      "updated_at": "2025-10-07T11:48:50.418924"
+    },
+    "stress-12": {
+      "id": "stress-12",
+      "title": "Stress Test Task 12",
+      "description": "Random stress test task with 1 dependencies",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "arch-docs"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.418926",
+      "updated_at": "2025-10-07T11:48:50.418926"
+    },
+    "stress-13": {
+      "id": "stress-13",
+      "title": "Stress Test Task 13",
+      "description": "Random stress test task with 0 dependencies",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.418928",
+      "updated_at": "2025-10-07T11:48:50.418928"
+    },
+    "stress-14": {
+      "id": "stress-14",
+      "title": "Stress Test Task 14",
+      "description": "Random stress test task with 2 dependencies",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "stress-05",
+        "buffer-undo"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.418931",
+      "updated_at": "2025-10-07T11:48:50.418931"
+    },
+    "stress-15": {
+      "id": "stress-15",
+      "title": "Stress Test Task 15",
+      "description": "Random stress test task with 2 dependencies",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "buffer-encoding",
+        "test-integration"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.418933",
+      "updated_at": "2025-10-07T11:48:50.418933"
+    },
+    "stress-16": {
+      "id": "stress-16",
+      "title": "Stress Test Task 16",
+      "description": "Random stress test task with 2 dependencies",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "integration-basic",
+        "core"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.418936",
+      "updated_at": "2025-10-07T11:48:50.418936"
+    },
+    "stress-17": {
+      "id": "stress-17",
+      "title": "Stress Test Task 17",
+      "description": "Random stress test task with 0 dependencies",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.418937",
+      "updated_at": "2025-10-07T11:48:50.418937"
+    },
+    "stress-18": {
+      "id": "stress-18",
+      "title": "Stress Test Task 18",
+      "description": "Random stress test task with 0 dependencies",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.418940",
+      "updated_at": "2025-10-07T11:48:50.418941"
+    },
+    "stress-19": {
+      "id": "stress-19",
+      "title": "Stress Test Task 19",
+      "description": "Random stress test task with 1 dependencies",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "test-unit"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.418943",
+      "updated_at": "2025-10-07T11:48:50.418943"
+    },
+    "extreme-data": {
+      "id": "extreme-data",
+      "title": "Task with extreme data",
+      "description": "Description with every Unicode character:  !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [],
+      "assigned_to": "user with 🔥émojis💻 and spëciål chars",
+      "created_at": "2025-10-07T11:48:50.419843",
+      "updated_at": "2025-10-07T11:48:50.419843"
+    },
+    "state-test": {
+      "id": "state-test",
+      "title": "State Transition Test",
+      "description": "",
+      "state": "blocked",
+      "parent_id": null,
+      "depends_on": [],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:48:50.500504",
+      "updated_at": "2025-10-07T11:48:50.500509"
+    }
+  }
+}

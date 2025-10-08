@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }} - {{ site.name }}</title>
+    <meta name="description" content="{{ meta_description }}">
+
+    <!-- SEO -->
+    <meta property="og:title" content="{{ page_title }} - {{ site.name }}">
+    <meta property="og:description" content="{{ meta_description }}">
+    <meta property="og:type" content="website">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Custom colors from design system -->
+    <style>
+        :root {
+            --primary-color: {{ get_color('primary') }};
+            --secondary-color: {{ get_color('secondary') }};
+            --accent-color: {{ get_color('accent') }};
+            --background-color: {{ get_color('background') }};
+            --text-primary: {{ get_color('text_primary') }};
+            --text-secondary: {{ get_color('text_secondary') }};
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-brand">
+                <h1>{{ site.name }}</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#hero">Home</a></li>
+                {% if content.agent_showcase %}
+                <li><a href="#agents">Agents</a></li>
+                {% endif %}
+                <li><a href="#examples">Examples</a></li>
+                <li><a href="#setup">Setup</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        {{ sections_html | safe }}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; {{ now().year }} {{ site.name }}. Built with Website Generator.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,207 @@
+# Example Configuration for Amplifier Project
+# This configuration demonstrates how to customize the website generator for the Amplifier project
+
+# Override site-specific settings
+site:
+  name: "Amplifier"
+  tagline: "Supercharged AI Development"
+  description: "A complete development environment that supercharges AI coding assistants with 25+ specialized agents, modular architecture, and parallel workflow capabilities"
+  theme: "revolution"
+
+  # Amplifier-specific branding
+  repo_url: "https://github.com/user/amplifier"
+  demo_video: "https://example.com/amplifier-demo"
+
+# Content strategy optimized for revolutionary paradigm
+content_strategy:
+  paradigm_shift_detection: true
+  progressive_disclosure: true
+  trust_building_focus: true
+  role_transformation_emphasis: true
+
+  # Amplifier-specific content emphasis
+  highlight_agent_count: true  # Showcase 25+ agents
+  emphasize_parallel_workflows: true
+  show_complexity_reduction: true
+
+# Design system tuned for Amplifier
+design_system:
+  color_palette: "amplifier_blue_gradient"
+  typography: "inter_modern"
+  component_style: "card_based_progressive"
+  animation_level: "engaging"
+
+  # Custom colors for Amplifier brand
+  colors:
+    primary: "#2563eb"      # Amplifier blue
+    secondary: "#1e40af"    # Darker blue
+    accent: "#3b82f6"       # Lighter blue
+    success: "#10b981"      # Green for positive metrics
+    revolution: "#6366f1"   # Purple for revolution theme
+
+# Page structure optimized for Amplifier
+pages:
+  - name: "index"
+    title: "Amplifier - Supercharged AI Development"
+    sections:
+      - "revolution"        # Revolutionary paradigm section
+      - "hero"             # Hero with animated counters
+      - "overview"         # System overview
+      - "agent_showcase"   # Highlight 25+ agents
+      - "quick_setup"      # 3-tier progressive setup
+      - "examples"         # Real workflow examples
+      - "cta"              # Get started CTA
+
+  - name: "setup"
+    title: "Setup Guide"
+    sections:
+      - "progressive_tiers"    # Quick taste → Essential → Power user
+      - "installation"         # Step-by-step install
+      - "first_agent"          # Your first agent workflow
+      - "troubleshooting"      # Common issues
+
+  - name: "agents"
+    title: "25+ Specialized Agents"
+    sections:
+      - "agent_gallery"        # All agents with search/filter
+      - "agent_categories"     # By specialty
+      - "workflow_examples"    # Multi-agent workflows
+      - "custom_agents"        # Creating your own
+
+# Interactive elements for Amplifier
+interactions:
+  animated_counters: true
+  progressive_setup_tiers: true
+  terminal_demos: true
+  copy_paste_commands: true
+  agent_carousel: true
+
+  # Amplifier-specific counters
+  counters:
+    - name: "ideas_generated"
+      label: "Ideas Generated"
+      end_value: 1247
+      duration: 2000
+      format: "number"
+    - name: "time_saved"
+      label: "Hours Saved"
+      end_value: 1200
+      duration: 1800
+      format: "number"
+    - name: "specialized_agents"
+      label: "Specialized Agents"
+      end_value: 25
+      duration: 1500
+      format: "number"
+
+# Navigation for Amplifier
+navigation:
+  style: "horizontal"
+  sticky: true
+  custom_items:
+    - name: "GitHub"
+      url: "https://github.com/user/amplifier"
+      external: true
+    - name: "Documentation"
+      url: "/docs"
+      external: false
+    - name: "Community"
+      url: "https://discord.gg/amplifier"
+      external: true
+
+# SEO optimized for Amplifier
+seo:
+  meta_description_template: "Amplifier supercharges AI development with 25+ specialized agents, parallel workflows, and revolutionary paradigm shift from traditional coding to AI-amplified architecture."
+  keywords:
+    - "ai development"
+    - "claude code"
+    - "specialized agents"
+    - "development automation"
+    - "ai coding assistant"
+    - "parallel workflows"
+    - "modular architecture"
+    - "knowledge synthesis"
+
+# Content generation rules for Amplifier
+content_rules:
+  # Revolution section configuration
+  revolution_metrics:
+    ideas_multiplier: 25    # 50 → 1250 ideas
+    time_reduction: 12      # 12 hours → 1 hour
+    quality_improvement: 5  # 5x better code quality
+
+  # Agent showcase rules
+  agent_display:
+    featured_agents:
+      - "zen-architect"
+      - "bug-hunter"
+      - "security-guardian"
+      - "test-coverage"
+      - "performance-optimizer"
+
+    categories:
+      architecture: ["zen-architect", "modular-builder"]
+      debugging: ["bug-hunter", "analysis-engine"]
+      security: ["security-guardian"]
+      testing: ["test-coverage"]
+      synthesis: ["concept-extractor", "insight-synthesizer"]
+      automation: ["post-task-cleanup", "integration-specialist"]
+
+  # Setup tier customization
+  setup_tiers:
+    quick_taste:
+      focus: "First agent in 60 seconds"
+      demo_command: "Use zen-architect to design my notification system"
+      expected_output: "Complete architecture specification generated"
+
+    essential:
+      focus: "Core workflow with 5 essential agents"
+      commands:
+        - "zen-architect for system design"
+        - "modular-builder for implementation"
+        - "test-coverage for quality assurance"
+
+    power_user:
+      focus: "Full 25+ agent ecosystem mastery"
+      advanced_features:
+        - "Custom agent creation"
+        - "Parallel workflow orchestration"
+        - "Knowledge synthesis pipelines"
+
+# Trust building for Amplifier
+trust_building:
+  progression:
+    skeptical:
+      emphasize: "concrete_examples"
+      show: ["quick_wins", "reversibility", "human_control"]
+      tone: "prove_value_first"
+
+    curious:
+      emphasize: "how_it_works"
+      show: ["agent_specialization", "quality_assurance", "learning_curve"]
+      tone: "educational_depth"
+
+    convinced:
+      emphasize: "mastery_path"
+      show: ["advanced_patterns", "customization", "community"]
+      tone: "empowering_growth"
+
+# Output customization
+output:
+  file_naming:
+    index: "index.html"
+    setup: "setup.html"
+    agents: "agents.html"
+    examples: "examples.html"
+
+  asset_organization:
+    css_file: "amplifier-styles.css"
+    js_file: "amplifier-script.js"
+    images_dir: "images"
+
+  # Generation preferences
+  generation:
+    preserve_existing_assets: true
+    update_content_only: false
+    full_regeneration: true
+    backup_previous: true

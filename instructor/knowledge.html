@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knowledge Base - Amplifier</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .knowledge-hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text-light);
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+        .knowledge-hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .knowledge-hero p {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .workflow-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        .workflow-step {
+            background: white;
+            padding: 2rem;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow);
+            text-align: center;
+            position: relative;
+        }
+        .workflow-step::before {
+            content: '';
+            position: absolute;
+            top: -1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 3rem;
+            height: 3rem;
+            background: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .workflow-step:nth-child(1)::before { content: '1'; }
+        .workflow-step:nth-child(2)::before { content: '2'; }
+        .workflow-step:nth-child(3)::before { content: '3'; }
+        .workflow-step h3 {
+            color: var(--primary-color);
+            margin: 1rem 0;
+            font-size: 1.3rem;
+        }
+        .workflow-step p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        .feature-showcase-kb {
+            background: var(--light-bg);
+            padding: 4rem 2rem;
+            margin: 3rem 0;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .feature-item {
+            background: white;
+            padding: 2rem;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow);
+        }
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        .feature-item h3 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+        .feature-item p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        .command-demo {
+            background: var(--dark-bg);
+            color: var(--text-light);
+            padding: 2rem;
+            border-radius: var(--border-radius-lg);
+            font-family: monospace;
+            margin: 2rem 0;
+            overflow-x: auto;
+        }
+        .command-line {
+            display: flex;
+            margin-bottom: 1rem;
+        }
+        .prompt {
+            color: #4fd1c7;
+            margin-right: 1rem;
+        }
+        .command {
+            color: #f7fafc;
+        }
+        .output {
+            color: #a0aec0;
+            margin-left: 2rem;
+            font-style: italic;
+        }
+        .graph-visualization {
+            background: white;
+            padding: 3rem;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow);
+            text-align: center;
+            margin: 2rem 0;
+        }
+        .graph-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+            position: relative;
+        }
+        .knowledge-node {
+            background: var(--primary-color);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 2rem;
+            position: absolute;
+            font-weight: 500;
+            font-size: 0.9rem;
+            box-shadow: var(--shadow);
+        }
+        .knowledge-node.center {
+            background: var(--accent-color);
+            font-size: 1.1rem;
+            z-index: 10;
+        }
+        .knowledge-connection {
+            position: absolute;
+            height: 2px;
+            background: var(--text-secondary);
+            opacity: 0.6;
+        }
+        .use-cases {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        .use-case {
+            background: white;
+            padding: 2rem;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary-color);
+        }
+        .use-case h4 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        .use-case p {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        .use-case .example {
+            background: var(--light-bg);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: var(--primary-color);
+        }
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .benefit-item {
+            text-align: center;
+            padding: 1.5rem;
+        }
+        .benefit-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        .benefit-item h4 {
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        .benefit-item p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-brand">
+                <h1>Amplifier</h1>
+                <span class="tagline">Knowledge Base</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="agents.html" class="nav-link">Agents</a>
+                <a href="setup.html" class="nav-link">Setup</a>
+                <a href="examples.html" class="nav-link">Examples</a>
+                <a href="https://github.com/microsoft/amplifier" class="nav-link">GitHub</a>
+            </div>
+            <div class="nav-mobile">
+                <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+            </div>
+        </nav>
+    </header>
+
+    <main style="padding-top: 0;">
+        <!-- Hero Section -->
+        <section class="knowledge-hero">
+            <div class="container">
+                <h1>Knowledge Base System</h1>
+                <p>Transform your documentation into queryable, connected knowledge that makes every project smarter</p>
+            </div>
+        </section>
+
+        <!-- Overview -->
+        <section class="section">
+            <div class="container">
+                <div style="max-width: 800px; margin: 0 auto; text-align: center;">
+                    <h2 class="section-title">Stop Losing Insights</h2>
+                    <p style="font-size: 1.2rem; color: var(--text-secondary); margin-bottom: 3rem;">
+                        Every document, specification, design decision, and lesson learned becomes part of your permanent,
+                        queryable knowledge that Claude can instantly access and build upon.
+                    </p>
+                </div>
+
+                <div class="workflow-steps">
+                    <div class="workflow-step">
+                        <h3>Extract Knowledge</h3>
+                        <p>Add your content (documentation, specs, notes, decisions) and let Amplifier extract concepts, relationships, and patterns automatically.</p>
+                    </div>
+                    <div class="workflow-step">
+                        <h3>Build Connections</h3>
+                        <p>The system identifies how ideas connect, creating a rich knowledge graph that reveals hidden relationships and insights.</p>
+                    </div>
+                    <div class="workflow-step">
+                        <h3>Query & Apply</h3>
+                        <p>Instantly query your accumulated wisdom and apply learned patterns to new challenges and projects.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Features -->
+        <section class="feature-showcase-kb">
+            <div class="container">
+                <h2 style="text-align: center; font-size: 2.2rem; margin-bottom: 3rem; color: var(--text-primary);">Powerful Knowledge Features</h2>
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <span class="feature-icon">🧠</span>
+                        <h3>Automatic Extraction</h3>
+                        <p>Processes any text-based files: documentation, specifications, notes, design decisions, and lessons learned. Extracts key concepts and relationships automatically.</p>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">🔗</span>
+                        <h3>Connected Knowledge</h3>
+                        <p>Creates a knowledge graph showing how concepts relate. Surfaces connections you might have missed and helps you see the big picture.</p>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">⚡</span>
+                        <h3>Instant Queries</h3>
+                        <p>Ask questions in natural language and get relevant insights from across all your documentation. Find patterns and solutions quickly.</p>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">📊</span>
+                        <h3>Visual Insights</h3>
+                        <p>Generate knowledge graph visualizations to understand how your ideas connect and evolve over time.</p>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">🌐</span>
+                        <h3>Shared Across Projects</h3>
+                        <p>Knowledge accumulates across all worktrees and projects. Every project benefits from lessons learned in others.</p>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">☁️</span>
+                        <h3>Cloud Sync Ready</h3>
+                        <p>Configure with cloud storage for automatic backup and cross-device synchronization of your knowledge base.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works -->
+        <section class="section">
+            <div class="container">
+                <h2 class="section-title">How Knowledge Extraction Works</h2>
+
+                <div class="command-demo">
+                    <div class="command-line">
+                        <span class="prompt">$</span>
+                        <span class="command">make knowledge-update</span>
+                    </div>
+                    <div class="output">📄 Processing documents...</div>
+                    <div class="output">🧠 Extracting concepts from: architecture.md</div>
+                    <div class="output">🧠 Extracting concepts from: requirements.md</div>
+                    <div class="output">🔗 Building knowledge graph...</div>
+                    <div class="output">✅ Knowledge base updated with 47 concepts, 23 relationships</div>
+                    <br>
+                    <div class="command-line">
+                        <span class="prompt">$</span>
+                        <span class="command">make knowledge-query Q="authentication patterns"</span>
+                    </div>
+                    <div class="output">🔍 Searching knowledge base...</div>
+                    <div class="output">Found 5 relevant concepts:</div>
+                    <div class="output">• JWT Token Authentication (confidence: 0.92)</div>
+                    <div class="output">• OAuth 2.0 Flow (confidence: 0.87)</div>
+                    <div class="output">• Session Management (confidence: 0.81)</div>
+                </div>
+
+                <div class="graph-visualization">
+                    <h3 style="margin-bottom: 2rem; color: var(--primary-color);">Example Knowledge Graph</h3>
+                    <div class="graph-container">
+                        <div class="knowledge-node center" style="top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                            Authentication
+                        </div>
+                        <div class="knowledge-node" style="top: 20%; left: 30%;">JWT Tokens</div>
+                        <div class="knowledge-node" style="top: 20%; right: 30%;">OAuth 2.0</div>
+                        <div class="knowledge-node" style="bottom: 20%; left: 20%;">Sessions</div>
+                        <div class="knowledge-node" style="bottom: 20%; right: 20%;">Security</div>
+                        <div class="knowledge-node" style="top: 50%; left: 15%;">Middleware</div>
+                        <div class="knowledge-node" style="top: 50%; right: 15%;">API Keys</div>
+                    </div>
+                    <p style="color: var(--text-secondary); margin-top: 1rem; font-style: italic;">
+                        Knowledge graphs help you visualize how concepts connect and discover related patterns.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section section-alt">
+            <div class="container">
+                <h2 class="section-title">Real-World Use Cases</h2>
+                <div class="use-cases">
+                    <div class="use-case">
+                        <h4>📐 Architecture Decisions</h4>
+                        <p>Track why architectural decisions were made, their trade-offs, and outcomes. Never forget the reasoning behind important choices.</p>
+                        <div class="example">Query: "microservices vs monolith decisions"</div>
+                    </div>
+                    <div class="use-case">
+                        <h4>🐛 Bug Patterns</h4>
+                        <p>Accumulate knowledge about common bugs, their causes, and solutions. Build institutional memory for faster debugging.</p>
+                        <div class="example">Query: "race condition fixes"</div>
+                    </div>
+                    <div class="use-case">
+                        <h4>🔒 Security Practices</h4>
+                        <p>Maintain a knowledge base of security patterns, threats, and mitigation strategies across all projects.</p>
+                        <div class="example">Query: "input validation patterns"</div>
+                    </div>
+                    <div class="use-case">
+                        <h4>⚡ Performance Lessons</h4>
+                        <p>Document performance optimizations, bottlenecks discovered, and solutions that worked in different contexts.</p>
+                        <div class="example">Query: "database optimization techniques"</div>
+                    </div>
+                    <div class="use-case">
+                        <h4>🔄 Integration Patterns</h4>
+                        <p>Collect knowledge about integrating with external services, APIs, and third-party tools.</p>
+                        <div class="example">Query: "payment gateway integration"</div>
+                    </div>
+                    <div class="use-case">
+                        <h4>📋 Requirements Evolution</h4>
+                        <p>Track how requirements change over time and understand the context behind feature decisions.</p>
+                        <div class="example">Query: "user authentication requirements"</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Benefits -->
+        <section class="section">
+            <div class="container">
+                <h2 class="section-title">Why Use Knowledge Base?</h2>
+                <div class="benefits-grid">
+                    <div class="benefit-item">
+                        <span class="benefit-icon">💡</span>
+                        <h4>Compound Learning</h4>
+                        <p>Every project makes you smarter. Lessons learned compound across all your work.</p>
+                    </div>
+                    <div class="benefit-item">
+                        <span class="benefit-icon">🚀</span>
+                        <h4>Faster Decisions</h4>
+                        <p>Quickly find relevant patterns and solutions from your past experience.</p>
+                    </div>
+                    <div class="benefit-item">
+                        <span class="benefit-icon">🔄</span>
+                        <h4>Avoid Repetition</h4>
+                        <p>Stop solving the same problems repeatedly. Build on what you've learned.</p>
+                    </div>
+                    <div class="benefit-item">
+                        <span class="benefit-icon">🤝</span>
+                        <h4>Team Knowledge</h4>
+                        <p>Share insights across team members. Institutional knowledge stays with the team.</p>
+                    </div>
+                    <div class="benefit-item">
+                        <span class="benefit-icon">📈</span>
+                        <h4>Better Architecture</h4>
+                        <p>Make informed decisions based on documented experience and proven patterns.</p>
+                    </div>
+                    <div class="benefit-item">
+                        <span class="benefit-icon">🎯</span>
+                        <h4>Context Preservation</h4>
+                        <p>Never lose the context behind important decisions and design choices.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Getting Started -->
+        <section class="section section-alt">
+            <div class="container">
+                <div style="max-width: 800px; margin: 0 auto; text-align: center;">
+                    <h2 class="section-title">Getting Started</h2>
+
+                    <div style="background: white; padding: 2rem; border-radius: var(--border-radius-lg); box-shadow: var(--shadow); text-align: left; margin-bottom: 2rem;">
+                        <h3 style="color: var(--primary-color); margin-bottom: 1rem;">1. Add Your Content</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                            Place your documentation, specifications, notes, and design documents in the content directories:
+                        </p>
+                        <div class="code-snippet">
+                            <code>ai_context/  # Built-in Amplifier knowledge<br>
+~/OneDrive/amplifier/content/  # Your external content<br>
+~/Documents/notes/  # Additional content sources</code>
+                        </div>
+                    </div>
+
+                    <div style="background: white; padding: 2rem; border-radius: var(--border-radius-lg); box-shadow: var(--shadow); text-align: left; margin-bottom: 2rem;">
+                        <h3 style="color: var(--primary-color); margin-bottom: 1rem;">2. Extract Knowledge</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                            Run the knowledge update command to process your documents:
+                        </p>
+                        <div class="code-snippet">
+                            <code>make knowledge-update</code>
+                        </div>
+                        <p style="color: var(--text-secondary); margin-top: 1rem; font-size: 0.9rem;">
+                            <em>Processing time: ~10-30 seconds per document</em>
+                        </p>
+                    </div>
+
+                    <div style="background: white; padding: 2rem; border-radius: var(--border-radius-lg); box-shadow: var(--shadow); text-align: left; margin-bottom: 3rem;">
+                        <h3 style="color: var(--primary-color); margin-bottom: 1rem;">3. Query and Apply</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                            Start querying your knowledge base and applying insights:
+                        </p>
+                        <div class="code-snippet">
+                            <code>make knowledge-query Q="error handling patterns"<br>
+make knowledge-graph-viz  # Generate visual graphs</code>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                        <a href="setup.html" class="btn btn-primary">Setup Amplifier</a>
+                        <a href="examples.html" class="btn btn-outline">View Examples</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <h3>Amplifier</h3>
+                    <p>Supercharged AI Development Environment</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Documentation</h4>
+                        <a href="setup.html">Setup Guide</a>
+                        <a href="agents.html">Agent Catalog</a>
+                        <a href="knowledge.html">Knowledge Base</a>
+                        <a href="examples.html">Examples</a>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Resources</h4>
+                        <a href="https://github.com/microsoft/amplifier">GitHub</a>
+                        <a href="../AMPLIFIER_VISION.md">Vision</a>
+                        <a href="../README.md">README</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Microsoft. Licensed under MIT.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
