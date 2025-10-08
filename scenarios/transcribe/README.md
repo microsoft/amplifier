@@ -1,41 +1,31 @@
-# Transcribe Scenario
+# Transcribe: Never Miss What Was Said
 
-Transcribes YouTube videos and local audio/video files using OpenAI's Whisper API.
+**Turn YouTube videos and audio files into searchable, quotable transcripts.**
 
-## Features
+## The Problem
 
-- ✅ YouTube video transcription (via yt-dlp)
-- ✅ Local audio/video file transcription
-- ✅ Multiple output formats (JSON, Markdown, WebVTT, SRT)
-- ✅ Readable paragraphs with clickable timestamps (YouTube)
-- ✅ AI-powered insights: summaries + key quotes (optional)
-- ✅ Audio file preservation and caching (avoid re-downloads)
-- ✅ Automatic audio compression for API limits
-- ✅ State persistence for resume capability
-- ✅ Cost estimation before processing
-- ✅ Batch processing with incremental saves
+You consume valuable content through videos and audio, but:
+- **Can't search what was said** - Information is locked in audio format
+- **Can't reference specific moments** - No way to quote or cite exact timestamps
+- **Takes hours to review** - Re-watching entire videos to find that one insight
+- **Miss key points** - No written record means details get forgotten
+- **Can't share highlights** - No easy way to extract and share the best parts
 
-## Prerequisites
+## The Solution
 
-1. **OpenAI API Key**: Set `OPENAI_API_KEY` environment variable in `.env`
-2. **Anthropic API Key**: Set `ANTHROPIC_API_KEY` environment variable in `.env` (for AI enhancements)
-3. **FFmpeg**: Required for audio extraction and compression
+Transcribe is a multi-stage pipeline that:
 
-## Installation
+1. **Downloads audio** - From YouTube or uses your local files
+2. **Creates accurate transcripts** - Using OpenAI's Whisper API
+3. **Formats for readability** - Smart paragraphs with clickable timestamps
+4. **Extracts insights** - AI-powered summaries and key quotes (optional)
+5. **Preserves everything** - Keeps audio files for offline listening
 
-```bash
-# Install all dependencies (including yt-dlp, openai, anthropic)
-make install
+**The result**: Searchable, readable transcripts with insights you can reference forever.
 
-# Or manually with uv:
-uv sync
+## Quick Start
 
-# Ensure FFmpeg is installed (system dependency)
-# macOS: brew install ffmpeg
-# Ubuntu: sudo apt-get install ffmpeg
-```
-
-## Usage
+**Prerequisites**: Complete the [Amplifier setup instructions](../../README.md#-step-by-step-setup) first.
 
 ### Basic Usage
 
@@ -43,199 +33,229 @@ uv sync
 # Transcribe a YouTube video
 python -m scenarios.transcribe "https://youtube.com/watch?v=..."
 
-# Transcribe a local video file
-python -m scenarios.transcribe video.mp4
-
-# Transcribe multiple sources
-python -m scenarios.transcribe video1.mp4 "https://youtube.com/..." audio.mp3
+# Transcribe a local audio file
+python -m scenarios.transcribe podcast.mp3
 ```
+
+The tool will:
+1. Download/extract the audio
+2. Send it to Whisper API for transcription
+3. Format into readable paragraphs
+4. Generate AI insights (summary + quotes)
+5. Save everything in organized folders
+
+## Your First Transcript
+
+### 1. Find a video to transcribe
+
+Choose a YouTube video or prepare an audio file:
+- YouTube: Copy the video URL
+- Local file: Note the path to your .mp3, .mp4, .wav, etc.
+
+### 2. Run the transcription
+
+```bash
+python -m scenarios.transcribe "https://youtube.com/watch?v=dQw4w9WgXcQ"
+```
+
+### 3. Watch the progress
+
+The tool will show:
+```
+Downloading audio from YouTube...
+Extracting audio (this may take a moment)...
+Transcribing with Whisper API...
+Formatting transcript into readable paragraphs...
+Generating AI insights...
+✓ Transcript saved to: ~/amplifier/transcripts/dQw4w9WgXcQ/
+```
+
+### 4. Explore the output
+
+Navigate to your transcripts folder:
+```
+~/amplifier/transcripts/dQw4w9WgXcQ/
+├── audio.mp3          # The audio file (for offline listening)
+├── transcript.md      # Readable transcript with timestamps
+└── insights.md        # AI summary and key quotes
+```
+
+### 5. Use your transcript
+
+- **Read** the formatted transcript with clickable timestamps
+- **Search** for specific topics or quotes
+- **Listen** to the preserved audio file
+- **Share** insights and quotes with proper citations
+- **Reference** exact moments with timestamp links
+
+## Usage Examples
+
+### Basic: Single YouTube Video
+
+```bash
+python -m scenarios.transcribe "https://youtube.com/watch?v=..."
+```
+
+**What happens**:
+- Downloads audio from YouTube
+- Creates accurate transcript
+- Formats into readable paragraphs
+- Generates summary and quotes
+- Saves everything for future reference
+
+### Advanced: Multiple Sources
+
+```bash
+python -m scenarios.transcribe video1.mp4 "https://youtube.com/..." podcast.mp3
+```
+
+**What happens**:
+- Processes each source sequentially
+- Saves state between each item
+- Creates separate folders for each
+- Updates the transcript index
+- Can resume if interrupted
 
 ### Resume Interrupted Session
 
 ```bash
-# Resume last session
-python -m scenarios.transcribe --resume video.mp4
-
-# Resume specific session
-python -m scenarios.transcribe --session-dir .data/transcribe/20241201_143022 --resume video.mp4
+# If interrupted, just add --resume
+python -m scenarios.transcribe --resume video1.mp4 video2.mp4
 ```
 
-### Custom Output Directory
+**What happens**:
+- Finds where you left off
+- Skips already completed items
+- Continues from interruption point
+- Preserves all previous work
 
-```bash
-python -m scenarios.transcribe --output-dir ~/my-transcripts video.mp4
+## How It Works
+
+### The Pipeline
+
 ```
+YouTube URL or Audio File
+         ↓
+    [Download/Extract Audio]
+         ↓
+    [Whisper Transcription]
+         ↓
+    [Format Paragraphs] ────→ transcript.md
+         ↓
+    [Generate Summary] ─────→ insights.md
+         ↓
+    [Update Index] ─────────→ index.md
+```
+
+### Key Components
+
+- **Video Loader**: Downloads from YouTube using yt-dlp
+- **Audio Extractor**: Compresses audio for API limits (25MB max)
+- **Whisper Transcriber**: Calls OpenAI's speech-to-text API
+- **Transcript Formatter**: Creates readable paragraphs with timestamps
+- **Insights Generator**: AI summaries and quote extraction
+- **State Manager**: Enables interrupt/resume capability
+
+### Why It Works
+
+**Code handles the structure**:
+- Audio download and extraction
+- API calls and retry logic
+- File organization and caching
+- State management for resume
+- Error handling and recovery
+
+**AI handles the intelligence**:
+- Accurate speech transcription
+- Summary generation
+- Key quote identification
+- Content understanding
+
+This separation means reliable processing (code) with intelligent output (AI).
+
+## Configuration
+
+### Output Locations
+
+**User Content** (`~/amplifier/transcripts/`):
+- `index.md` - Auto-generated index of all transcripts
+- `[video-id]/audio.mp3` - Preserved audio file
+- `[video-id]/transcript.md` - Readable transcript
+- `[video-id]/insights.md` - Summary and quotes
+
+**Technical Artifacts** (`.data/transcripts/`):
+- `[video-id]/transcript.json` - Structured data
+- `[video-id]/transcript.vtt` - WebVTT subtitles
+- `[video-id]/transcript.srt` - SRT subtitles
 
 ### Audio Caching
 
-Audio files are automatically cached to avoid re-downloading. If you transcribe the same video twice, the second run uses the cached audio:
+Audio files are automatically cached to save bandwidth:
+- First run downloads and saves audio
+- Subsequent runs use cached version
+- Force re-download with `--force-download`
 
-```bash
-# First run: downloads audio
-make transcribe SOURCE="https://youtube.com/watch?v=..."
-
-# Second run: uses cached audio (instant)
-make transcribe SOURCE="https://youtube.com/watch?v=..."
-
-# Force re-download (ignore cache)
-make transcribe SOURCE="https://youtube.com/watch?v=..." --force-download
-```
-
-**Benefits:**
-- Saves bandwidth and time
-- Audio preserved for offline listening
-- All files self-contained in one directory
-
-### Transcript Index
-
-The transcript index is **automatically updated** after each transcription session:
-
-`AMPLIFIER_CONTENT_DIRS/transcripts/index.md` contains:
-- Links to all transcripts and insights
-- Titles, durations, and creation dates
-- Sorted by newest first
-
-The index makes it easy to:
-- Discover what you've transcribed
-- Navigate to specific transcripts
-- See metadata at a glance
-
-**Manual update** (optional):
-```bash
-# Rebuild index manually if needed
-make transcribe-index
-```
-
-## Output Structure
-
-Transcripts are saved in two locations:
-
-### User Content (AMPLIFIER_CONTENT_DIRS/transcripts/)
-
-```
-AMPLIFIER_CONTENT_DIRS/transcripts/
-├── index.md                 # Generated index of all transcripts
-└── [video-id]/
-    ├── audio.mp3            # Downloaded/extracted audio (cached)
-    ├── transcript.md        # Readable paragraphs with timestamps
-    └── insights.md          # AI summary + key quotes (if enhanced)
-```
-
-### Technical Artifacts (.data/transcripts/)
-
-```
-.data/transcripts/
-└── [video-id]/
-    ├── transcript.json      # Full structured data with segments
-    ├── transcript.vtt       # WebVTT subtitles
-    └── transcript.srt       # SRT subtitles
-```
-
-**Why split storage?**
-- Content directory has only files users read/listen to
-- Technical artifacts (JSON, subtitles) in .data avoid knowledge system confusion
-- Prevents duplicate content processing
-
-**audio.mp3**: Preserved audio file (192kbps MP3). Re-used on subsequent runs - saves bandwidth and time.
-
-**transcript.md**: Formatted in readable paragraphs (4-5 sentences each) with inline clickable YouTube timestamps.
-
-**insights.md**: Combined summary (overview, key points, themes) and notable quotes with timestamps - only created when AI enhancement is enabled.
-
-## State Management
-
-The pipeline saves state after each video, enabling:
-- Resume from interruption
-- Skip already processed videos
-- Track failed videos for retry
-
-State files are saved in:
-```
-.data/transcribe/[session-timestamp]/
-├── state.json              # Pipeline state
-└── audio/                  # Temporary audio files
-```
-
-## Cost Estimation
+### Cost Estimation
 
 OpenAI Whisper API pricing (as of 2024):
 - $0.006 per minute of audio
-- Estimated costs shown before processing
-
-## Architecture
-
-The pipeline follows a modular design:
-
-1. **video_loader**: Load video info and download from YouTube
-2. **audio_extractor**: Extract and compress audio for API
-3. **whisper_transcriber**: Call OpenAI Whisper API
-4. **transcript_formatter**: Format segments into readable paragraphs
-5. **summary_generator**: Generate AI summaries (optional)
-6. **quote_extractor**: Extract key quotes (optional)
-7. **insights_generator**: Combine summaries and quotes
-8. **storage**: Save transcripts in multiple formats
-9. **state**: Track progress for resume capability
-
-## Error Handling
-
-- Automatic retry with exponential backoff for API failures
-- Audio compression if file exceeds 25MB limit
-- Failed videos tracked in state for manual retry
-- Graceful handling of interrupted sessions
-
-## Examples
-
-### Transcribe YouTube Playlist (one at a time)
-```bash
-for url in url1 url2 url3; do
-    python -m scenarios.transcribe "$url"
-done
-```
-
-### Process Local Directory
-```bash
-python -m scenarios.transcribe ~/videos/*.mp4
-```
-
-### Resume After Failure
-```bash
-# First run (interrupted)
-python -m scenarios.transcribe video1.mp4 video2.mp4 video3.mp4
-# Ctrl+C after video1
-
-# Resume (will skip video1, continue with video2)
-python -m scenarios.transcribe --resume video1.mp4 video2.mp4 video3.mp4
-```
+- Example: 60-minute video = $0.36
+- Cost shown before processing
 
 ## Troubleshooting
 
 ### "yt-dlp is not installed"
-```bash
-# Ensure all dependencies are installed
-make install
 
-# Or manually add yt-dlp:
-uv add yt-dlp
+**Problem**: Missing YouTube download dependency.
+
+**Solution**:
+```bash
+make install  # or: uv add yt-dlp
 ```
 
 ### "ffmpeg not found"
-Install FFmpeg for your platform:
+
+**Problem**: Audio processing tool not installed.
+
+**Solution**:
 - macOS: `brew install ffmpeg`
-- Ubuntu/Debian: `sudo apt-get install ffmpeg`
+- Ubuntu: `sudo apt-get install ffmpeg`
 - Windows: Download from ffmpeg.org
 
 ### "Audio file too large"
-The pipeline automatically compresses audio files over 25MB. If compression fails, manually convert to a smaller format:
+
+**Problem**: File exceeds 25MB API limit.
+
+**Solution**: The tool auto-compresses. If it still fails, manually compress:
 ```bash
 ffmpeg -i input.wav -b:a 64k -ar 16000 output.mp3
 ```
 
-### API Rate Limits
-The pipeline includes automatic retry with exponential backoff. For persistent issues, wait and resume later.
+### "API key not found"
 
-## Phase 2 Enhancements (Coming Soon)
+**Problem**: OpenAI/Anthropic API keys not configured.
 
-- AI-powered summaries and key quotes extraction
-- Batch processing with parallel downloads
-- Screenshot extraction at key moments
-- Custom prompt templates for domain-specific transcription
+**Solution**: Set in `.env` file:
+```
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+## Learn More
+
+- **[HOW_TO_CREATE_YOUR_OWN.md](./HOW_TO_CREATE_YOUR_OWN.md)** - Create your own tool like this
+- **[Amplifier](https://github.com/microsoft/amplifier)** - The framework that powers these tools
+- **[Scenario Tools](../)** - More tools like this one
+
+## What's Next?
+
+This tool demonstrates what's possible when you describe a process to Amplifier:
+
+1. **Use it** - Transcribe videos and build your knowledge library
+2. **Learn from it** - See [HOW_TO_CREATE_YOUR_OWN.md](./HOW_TO_CREATE_YOUR_OWN.md) for how it was made
+3. **Build your own** - Describe your goal to Amplifier
+4. **Share back** - Let others learn from what you create!
+
+---
+
+**Built through conversation using Amplifier** - The entire tool came from describing the goal in natural language. See [HOW_TO_CREATE_YOUR_OWN.md](./HOW_TO_CREATE_YOUR_OWN.md) for the actual conversation.
