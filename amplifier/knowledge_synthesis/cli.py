@@ -443,10 +443,10 @@ async def _sync_content_resilient(max_items: int | None, retry_partial: bool = F
         logger.info(f"{'=' * 60}")
         logger.info("1. Review the failures above to identify systematic issues")
         logger.info("2. Fix any configuration or service problems")
-        logger.info("3. Run retry command to process only failed components:")
-        logger.info("   python -m amplifier.knowledge_synthesis.cli_resilient retry")
-        logger.info("4. Generate detailed report:")
-        logger.info("   python -m amplifier.knowledge_synthesis.cli_resilient report")
+        logger.info("3. Run sync again to retry failed articles:")
+        logger.info("   make knowledge-sync")
+        logger.info("4. View statistics and details:")
+        logger.info("   make knowledge-stats")
 
     # Send completion notification with results
     if notify:

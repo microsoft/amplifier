@@ -670,13 +670,13 @@ class ArticleProcessor:
         return status
 
     def _save_extraction_data(self, article_id: str, data: dict[str, Any]) -> None:
-        """Save extracted data to JSON file.
+        """Save extracted data in both formats for compatibility.
 
         Args:
             article_id: Article ID
             data: Extraction data to save
         """
-        # Create extractions directory
+        # Primary: Individual file (critical - must succeed)
         extractions_dir = paths.data_dir / "extractions"
         extractions_dir.mkdir(parents=True, exist_ok=True)
 
@@ -688,6 +688,36 @@ class ArticleProcessor:
         save_data = {"article_id": article_id, "extracted_at": datetime.now().isoformat(), "data": data}
 
         output_file.write_text(json.dumps(save_data, indent=2, ensure_ascii=False))
+
+        # Secondary: Append to JSONL (non-critical - failures are logged but don't stop processing)
+        try:
+            jsonl_data = self._transform_to_jsonl_format(article_id, data)
+            jsonl_path = paths.data_dir / "knowledge" / "extractions.jsonl"
+            jsonl_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(jsonl_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(jsonl_data, ensure_ascii=False) + "\n")
+            logger.debug(f"Dual-write complete for {article_id}")
+        except Exception as e:
+            logger.warning(f"JSONL write failed for {article_id}: {e}")
+
+    def _transform_to_jsonl_format(self, article_id: str, nested_data: dict[str, Any]) -> dict[str, Any]:
+        """Transform nested format to flat JSONL format for KnowledgeStore compatibility.
+
+        Args:
+            article_id: Article ID to use as source_id
+            nested_data: Nested extraction data with concepts, relationships, etc.
+
+        Returns:
+            Flat dictionary format compatible with KnowledgeStore
+        """
+        jsonl_data = {
+            "source_id": article_id,
+            "extracted_at": datetime.now().isoformat(),
+            "success": True,  # Required for KnowledgeStore compatibility
+        }
+        # Flatten the nested data structure
+        jsonl_data.update(nested_data)
+        return jsonl_data
 
     def _update_stats(self, status: ArticleProcessingStatus) -> None:
         """Update mining statistics based on processing status.
