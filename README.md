@@ -82,7 +82,6 @@ Expand the different sections below to learn more about Amplifier feature capabi
 
 <details>
 <summary> Deploy Specialists</summary>
-<br>
 
 > ### 💡 Deploy Specialists
 >*Amplifier includes 20+ specialized AI agents, each trained for specific tasks like architecture design, bug hunting, test coverage analysis, and modular code generation. These specialists work with expert-level precision, delivering focused results without the context confusion of general-purpose AI assistants.*
@@ -105,7 +104,6 @@ Expand the different sections below to learn more about Amplifier feature capabi
 
 <details>
 <summary>Create a Scenario Tool</summary>
-<br>
 
 > ### 🎨 Create A Scenario Tool
 >*Scenario tools are reusable CLI applications that combine Python code structure with AI intelligence for reliable, repeatable workflows. Create custom tools once, then run them anytime with simple make commands - perfect for standardizing complex multi-step processes.*
@@ -132,7 +130,6 @@ Expand the different sections below to learn more about Amplifier feature capabi
 
 <details>
 <summary>Build a Knowledge Base</summary>
-<br>
 
 > ### 📚 Build a Knowledge Base
 >*Amplifier's knowledge system automatically extracts concepts, relationships, and insights from your documents, organizing them into a queryable knowledge graph. This enables powerful semantic search, pattern recognition, and context-aware assistance across your entire project documentation.*
@@ -156,7 +153,6 @@ Expand the different sections below to learn more about Amplifier feature capabi
 
 <details>
 <summary>Context Management</summary>
-<br>
 
 > ### 🧠 Context Management
 >*Amplifier's context management intelligently compresses long conversation sessions, reducing token usage while preserving the essential information you need. All conversation history is automatically saved as searchable transcripts that you can restore anytime, ensuring no valuable context is ever lost.*
