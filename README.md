@@ -74,7 +74,7 @@ source .venv/bin/activate  # Linux/Mac/WSL
 
 ---
 
-## 📖 Explore Features
+## ✨  Explore Features
 
 **[View the complete guide →](https://microsoft.github.io/amplifier)**
 
