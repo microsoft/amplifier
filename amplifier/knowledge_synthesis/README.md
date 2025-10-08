@@ -87,9 +87,7 @@ Each extraction returns:
       "confidence": 0.95
     }
   ],
-  "insights": [
-    "AI agents can reduce manual work by 80%"
-  ],
+  "insights": ["AI agents can reduce manual work by 80%"],
   "patterns": [
     {
       "name": "Agent Orchestration",
@@ -101,9 +99,25 @@ Each extraction returns:
 
 ## Storage
 
-Extractions are stored in JSON Lines format at `.data/knowledge/extractions.jsonl`. Each line is a complete JSON object representing one document's extraction.
+Extractions are saved in two formats for resilience and compatibility:
+
+1. **Individual files** (`.data/extractions/{id}.json`):
+
+   - One file per article for resilience
+   - Nested format with metadata
+   - Used for selective retry and recovery
+   - Enables incremental progress tracking
+
+2. **Consolidated JSONL** (`.data/knowledge/extractions.jsonl`):
+   - Single append-only file with flat format
+   - Used by downstream tools (stats, graph, synthesis)
+   - Each line is a complete extraction
+   - Optimized for batch processing
+
+The system automatically writes to both locations during extraction for resilience and compatibility.
 
 Benefits of JSON Lines:
+
 - Append-only (fast writes)
 - Line-by-line processing (memory efficient)
 - Direct text search with grep
@@ -114,6 +128,7 @@ Benefits of JSON Lines:
 Pipeline events are appended to `.data/knowledge/events.jsonl` as newline-delimited JSON. These provide visibility into sync, extraction progress, successes, skips, and failures.
 
 Examples of event types:
+
 - `sync_started`, `sync_finished`
 - `document_skipped` (e.g., already processed, read error)
 - `extraction_started`, `extraction_succeeded`, `extraction_failed`
@@ -127,6 +142,7 @@ Examples of event types:
 ## Design Philosophy
 
 Following the project's ruthless simplicity principle:
+
 - No complex graph databases
 - No unnecessary chunking (Claude handles 100K+ tokens)
 - No over-engineered abstractions
