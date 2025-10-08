@@ -48,9 +48,6 @@ default: ## Show essential commands
 	@echo "  make transcribe      Transcribe audio/video files or YouTube URLs"
 	@echo "  make transcribe-index Generate index of all transcripts"
 	@echo ""
-	@echo "Knowledge Assistant:"
-	@echo "  make knowledge-assist  Generate research from knowledge base"
-	@echo ""
 	@echo "Article Illustration:"
 	@echo "  make illustrate      Generate AI illustrations for article"
 	@echo ""
@@ -126,9 +123,6 @@ help: ## Show ALL available commands
 	@echo "BLOG WRITING:"
 	@echo "  make blog-write IDEA=<file> WRITINGS=<dir> [INSTRUCTIONS=\"...\"]  Create blog"
 	@echo "  make blog-resume       Resume most recent blog writing session"
-	@echo ""
-	@echo "KNOWLEDGE ASSISTANT:"
-	@echo "  make knowledge-assist TOPIC=\"subject\" [QUESTION=\"specific aspect\"] [OUTPUT=<path>]  Generate research report"
 	@echo ""
 	@echo "ARTICLE ILLUSTRATION:"
 	@echo "  make illustrate INPUT=<file> [OUTPUT=<path>] [STYLE=\"...\"] [APIS=\"...\"] [RESUME=true]  Generate illustrations"
@@ -569,23 +563,6 @@ transcribe-resume: ## Resume interrupted transcription session
 transcribe-index: ## Generate index of all transcripts
 	@echo "📑 Generating transcript index..."
 	@uv run python -m scenarios.transcribe index
-
-# Knowledge Assistant
-knowledge-assist: ## Generate research report from knowledge base. Usage: make knowledge-assist TOPIC="subject" [QUESTION="specific aspect"] [DEPTH=quick|deep] [RESUME=session_id]
-	@if [ -z "$(TOPIC)" ] && [ -z "$(RESUME)" ]; then \
-		echo "Error: Please provide a topic or resume a session."; \
-		echo "Usage: make knowledge-assist TOPIC=\"authentication patterns\" [QUESTION=\"best for mobile?\"] [DEPTH=quick|deep]"; \
-		echo "   Or: make knowledge-assist RESUME=session_id"; \
-		exit 1; \
-	fi
-	@echo "🔍 Starting knowledge assistant..."; \
-	if [ -n "$(TOPIC)" ]; then echo "  Topic: $(TOPIC)"; fi; \
-	if [ -n "$(QUESTION)" ]; then echo "  Question: $(QUESTION)"; fi; \
-	if [ -n "$(DEPTH)" ]; then echo "  Depth: $(DEPTH)"; else echo "  Depth: quick (default)"; fi; \
-	if [ -n "$(RESUME)" ]; then echo "  Resuming session: $(RESUME)"; fi; \
-	echo "  Output: Auto-generated in session directory"; \
-	TOPIC="$(TOPIC)" QUESTION="$(QUESTION)" DEPTH="$(DEPTH)" RESUME="$(RESUME)" \
-	uv run python -m scenarios.knowledge_assist
 
 # Article Illustration
 illustrate: ## Generate AI illustrations for markdown article. Usage: make illustrate INPUT=article.md [OUTPUT=path] [STYLE="..."] [APIS="..."] [RESUME=true]
