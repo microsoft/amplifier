@@ -43,6 +43,11 @@ logger = ToolkitLogger("tips_synthesizer_cli")
     help="Maximum review iterations (default: 3)",
 )
 @click.option(
+    "--interactive/--no-interactive",
+    default=True,
+    help="Enable human review checkpoints (default: enabled)",
+)
+@click.option(
     "--verbose",
     "-v",
     is_flag=True,
@@ -59,6 +64,7 @@ def main(
     temp_dir: Path | None,
     resume: bool,
     max_iterations: int,
+    interactive: bool,
     verbose: bool,
     dry_run: bool,
 ) -> int:
@@ -111,6 +117,7 @@ def main(
         temp_dir=temp_dir,
         max_iterations=max_iterations,
         resume=resume,
+        interactive=interactive,
     )
 
     # Run the synthesis pipeline
@@ -118,6 +125,7 @@ def main(
     logger.info(f"  Session: {synthesizer.session_dir}")
     logger.info(f"  Output: {output_file}")
     logger.info(f"  Max iterations: {max_iterations}")
+    logger.info(f"  Interactive mode: {'enabled' if interactive else 'disabled'}")
 
     try:
         success = asyncio.run(synthesizer.run())
@@ -126,6 +134,11 @@ def main(
             logger.info("\n✨ Tips synthesis complete!")
             logger.info(f"📄 Output saved to: {output_file}")
             return 0
+        # Check if we hit max iterations without approval
+        if synthesizer.session.context.get("review_iteration", 0) >= max_iterations:
+            logger.info("\n⏸️ Reached max iterations without approval.")
+            logger.info("  Run with --resume to continue refinement")
+            return 0  # Not a failure, just incomplete
         logger.error("\n❌ Tips synthesis failed")
         return 1
 

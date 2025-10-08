@@ -9,8 +9,12 @@ from amplifier.ccsdk_toolkit import ClaudeSession
 from amplifier.ccsdk_toolkit import SessionManager
 from amplifier.ccsdk_toolkit import SessionOptions
 from amplifier.ccsdk_toolkit import ToolkitLogger
+from amplifier.ccsdk_toolkit.defensive import isolate_prompt
 from amplifier.ccsdk_toolkit.defensive import parse_llm_json
+from amplifier.ccsdk_toolkit.defensive import retry_with_feedback
 from amplifier.ccsdk_toolkit.defensive import write_json_with_retry
+
+from .user_feedback import get_user_feedback_async
 
 # System prompts for different roles
 EXTRACTOR_PROMPT = """You are a tips extraction specialist. Extract individual tips/tricks from markdown content.
@@ -87,6 +91,7 @@ class TipsSynthesizer:
         temp_dir: Path | None = None,
         max_iterations: int = 3,
         resume: bool = False,
+        interactive: bool = True,
     ):
         """Initialize the tips synthesizer.
 
@@ -96,11 +101,15 @@ class TipsSynthesizer:
             temp_dir: Temporary directory for intermediate files
             max_iterations: Maximum review-refine iterations
             resume: Whether to resume from saved state
+            interactive: Whether to enable human review checkpoints
         """
         self.logger = ToolkitLogger("tips_synthesizer")
         self.input_dir = input_dir
         self.output_file = output_file
         self.max_iterations = max_iterations
+        self.interactive = interactive
+        self.iteration = 0
+        self.user_feedback = None
 
         # Set up session management
         self.session_mgr = SessionManager(session_dir=Path(".data/tips_synthesizer"))
@@ -116,6 +125,8 @@ class TipsSynthesizer:
                 if loaded_session:
                     self.session = loaded_session
                     self.logger.info(f"Resumed session: {session_id}")
+                    # Restore iteration counter
+                    self.iteration = self.session.context.get("review_iteration", 0)
                 else:
                     self.session = self.session_mgr.create_session("tips_synthesis")
             else:
@@ -129,6 +140,7 @@ class TipsSynthesizer:
                 "input_dir": str(input_dir),
                 "output_file": str(output_file),
                 "max_iterations": max_iterations,
+                "interactive": interactive,
                 "started_at": datetime.now().isoformat(),
             }
             self.session_mgr.save_session(self.session)
@@ -139,6 +151,8 @@ class TipsSynthesizer:
         self.temp_dir.mkdir(parents=True, exist_ok=True)
 
         self.logger.info(f"Session directory: {self.session_dir}")
+        if self.interactive:
+            self.logger.info("🤝 Interactive mode enabled - will pause for human review")
 
     async def run(self) -> bool:
         """Orchestrate the pipeline stages based on current state.
@@ -153,9 +167,7 @@ class TipsSynthesizer:
 
             # Execute pipeline stages
             if stage == "extract":
-                await self.extract_tips()
-                self.session.context["stage"] = "notes"
-                self.session_mgr.save_session(self.session)
+                await self._run_extraction_stage()
                 stage = "notes"
 
             if stage == "notes":
@@ -165,7 +177,14 @@ class TipsSynthesizer:
                 stage = "synthesize"
 
             if stage == "synthesize":
-                await self.synthesize_document()
+                approved = await self._run_synthesis_stage()
+                if approved:
+                    # User approved, skip review
+                    self.session.context["stage"] = "complete"
+                    self.session.context["completed_at"] = datetime.now().isoformat()
+                    self.session_mgr.save_session(self.session)
+                    await self._save_final_document()
+                    return True
                 self.session.context["stage"] = "review"
                 self.session_mgr.save_session(self.session)
                 stage = "review"
@@ -183,6 +202,38 @@ class TipsSynthesizer:
         except Exception as e:
             self.logger.error(f"Pipeline failed: {e}")
             return False
+
+    async def _run_extraction_stage(self) -> None:
+        """Run extraction stage with defensive utilities."""
+        await self.extract_tips()
+        self.session.context["stage"] = "notes"
+        self.session_mgr.save_session(self.session)
+
+    async def _run_synthesis_stage(self) -> bool:
+        """Run synthesis stage with human feedback checkpoint.
+
+        Returns:
+            True if user approved draft, False to continue refinement
+        """
+        await self.synthesize_document()
+
+        # Human feedback checkpoint (if interactive mode)
+        if self.interactive:
+            draft_path = self.session_dir / f"draft_v{self.iteration + 1}.md"
+            mode, feedback = await get_user_feedback_async(draft_path)
+
+            if mode == "approve":
+                self.logger.info("✅ User approved draft")
+                return True
+            if mode == "done" and feedback:
+                self.logger.info(f"📝 User provided feedback: {len(feedback)} chars")
+                # Store feedback for refinement
+                self.user_feedback = feedback
+                self.session.context["user_feedback"] = feedback
+                self.session_mgr.save_session(self.session)
+            # If skip or no feedback, continue to review stage
+
+        return False
 
     async def extract_tips(self) -> None:
         """Stage 1: Extract tips from each markdown file."""
@@ -214,15 +265,28 @@ class TipsSynthesizer:
                 # Read file content
                 content = file_path.read_text(encoding="utf-8")
 
-                # Extract tips using Claude
-                async with ClaudeSession(options=SessionOptions(system_prompt=EXTRACTOR_PROMPT)) as claude:
-                    response = await claude.query(f"Extract all tips and tricks from this markdown file:\n\n{content}")
+                # Extract tips using Claude with defensive retry
+                # Use isolate_prompt to prevent context contamination
+                full_prompt = isolate_prompt(prompt=EXTRACTOR_PROMPT, content=content)
 
-                # Parse response
+                async with ClaudeSession(options=SessionOptions()) as claude:
+                    response = await retry_with_feedback(func=claude.query, prompt=full_prompt, max_retries=3)
+
+                # Parse response with defensive default
                 self.logger.debug(f"Raw LLM response: {response.content[:500]}")
-                tips = parse_llm_json(response.content)
-                if not isinstance(tips, list):
-                    self.logger.warning(f"Expected list but got {type(tips)}: {tips}")
+                tips = parse_llm_json(response.content, default=[])
+
+                # Normalize response: handle single tip as dict
+                if isinstance(tips, dict):
+                    # Check if it's a valid tip object (has expected fields)
+                    if any(key in tips for key in ["title", "content", "category"]):
+                        self.logger.debug("LLM returned single tip as dict, wrapping in list")
+                        tips = [tips]  # Wrap single tip in list
+                    else:
+                        self.logger.warning(f"Unexpected dict structure: {tips}")
+                        tips = []
+                elif not isinstance(tips, list):
+                    self.logger.warning(f"Expected list or dict but got {type(tips)}: {tips}")
                     tips = []
 
                 # Store extracted tips
@@ -332,17 +396,22 @@ class TipsSynthesizer:
         # Full tips content
         tips_content = json.dumps(all_tips, indent=2)
 
-        # Synthesize using Claude
-        async with ClaudeSession(options=SessionOptions(system_prompt=SYNTHESIZER_PROMPT)) as claude:
-            response = await claude.query(
-                f"""Here's a summary of the tips to synthesize:
+        # Synthesize using Claude with defensive retry
+        synthesis_prompt = (
+            SYNTHESIZER_PROMPT
+            + f"""
+
+Here's a summary of the tips to synthesize:
 {tips_summary}
 
 Full tips content:
 {tips_content}
 
 Create a cohesive, well-organized document that incorporates all these tips."""
-            )
+        )
+
+        async with ClaudeSession(options=SessionOptions()) as claude:
+            response = await retry_with_feedback(func=claude.query, prompt=synthesis_prompt, max_retries=3)
 
         # Store synthesized document
         self.session.context["current_draft"] = response.content
@@ -378,6 +447,7 @@ Create a cohesive, well-organized document that incorporates all these tips."""
 
         while iteration < max_iterations:
             iteration += 1
+            self.iteration = iteration
             self.logger.info(f"\n  Iteration {iteration}/{max_iterations}")
 
             current_draft = self.session.context.get("current_draft", "")
@@ -387,20 +457,46 @@ Create a cohesive, well-organized document that incorporates all these tips."""
 
             # Reviewer role - evaluate the document
             self.logger.info("  🔍 Reviewing document quality...")
-            async with ClaudeSession(options=SessionOptions(system_prompt=REVIEWER_PROMPT)) as reviewer:
-                review_response = await reviewer.query(f"Review this synthesized tips document:\n\n{current_draft}")
+            review_prompt = REVIEWER_PROMPT + f"\n\nReview this synthesized tips document:\n\n{current_draft}"
 
-            # Parse review response
-            review_result = parse_llm_json(review_response.content)
+            async with ClaudeSession(options=SessionOptions()) as reviewer:
+                review_response = await retry_with_feedback(func=reviewer.query, prompt=review_prompt, max_retries=3)
+
+            # Parse review response with defensive default
+            # Add debug logging to see raw response
+            self.logger.debug(f"Raw review response: {review_response.content[:500]}")
+
+            review_result = parse_llm_json(
+                review_response.content,
+                default={
+                    "passes_review": False,
+                    "score": 0,
+                    "issues": ["Could not parse review response"],
+                },
+            )
+
+            # Additional validation and logging
             if not isinstance(review_result, dict):
+                self.logger.warning(f"Review result not a dict: {type(review_result)}")
                 review_result = {
                     "passes_review": False,
                     "score": 0,
                     "issues": ["Could not parse review response"],
                 }
 
+            # Log parsed review result for debugging
+            self.logger.debug(f"Parsed review result: {review_result}")
+
             # Log review results
-            self.logger.info(f"  📊 Review score: {review_result.get('score', 0)}/100")
+            score = review_result.get("score", 0)
+            # Ensure score is numeric
+            try:
+                score = int(score) if score is not None else 0
+            except (ValueError, TypeError):
+                self.logger.warning(f"Invalid score value: {score}, defaulting to 0")
+                score = 0
+
+            self.logger.info(f"  📊 Review score: {score}/100")
             passes_review = review_result.get("passes_review", False)
 
             # Store review in history
@@ -417,63 +513,101 @@ Create a cohesive, well-organized document that incorporates all these tips."""
             self.session.context["review_iteration"] = iteration
             self.session_mgr.save_session(self.session)
 
-            if passes_review:
-                self.logger.info("  ✅ Document passes quality review!")
-                # Save final document
-                await self._save_final_document()
-                return True
+            # ALWAYS refine based on feedback, regardless of review score
+            # The review score is informational only, not a gating condition
+            self.logger.info(f"  📝 Refining based on review feedback (score: {score}/100)")
+            await self._refine_document(review_result, iteration)
 
-            # Writer role - refine based on feedback
-            self.logger.info("  ✏️ Refining document based on feedback...")
-            issues = review_result.get("issues", [])
-            suggestions = review_result.get("suggestions", [])
+            # Human feedback checkpoint AFTER EVERY refinement (if interactive mode)
+            if self.interactive:
+                draft_path = self.session_dir / f"draft_v{iteration + 1}.md"
+                self.logger.info(f"\n  📄 Draft refined: {draft_path.name}")
 
-            if not issues and not suggestions:
-                self.logger.warning("  No specific feedback provided, keeping current draft")
-                # Save anyway and consider complete
-                await self._save_final_document()
-                return True
+                mode, feedback = await get_user_feedback_async(draft_path)
 
-            # Format feedback for refinement
-            feedback_json = json.dumps(
-                {
-                    "issues": issues,
-                    "suggestions": suggestions,
-                    "strengths": review_result.get("strengths", []),
-                },
-                indent=2,
-            )
-
-            # Refine the document
-            refinement_prompt = WRITER_REFINEMENT_PROMPT.format(feedback=feedback_json, document=current_draft)
-
-            async with ClaudeSession(options=SessionOptions()) as writer:
-                refinement_response = await writer.query(refinement_prompt)
-
-            # Update draft
-            self.session.context["current_draft"] = refinement_response.content
-            self.session.context["draft_versions"].append(
-                {
-                    "version": iteration + 1,
-                    "content": refinement_response.content,
-                    "timestamp": datetime.now().isoformat(),
-                    "based_on_feedback": review_result,
-                }
-            )
-
-            # Save draft to file
-            draft_path = self.session_dir / f"draft_v{iteration + 1}.md"
-            draft_path.write_text(refinement_response.content, encoding="utf-8")
-
-            # Save session after EVERY iteration
-            self.session_mgr.save_session(self.session)
-            self.logger.info(f"  💾 Refined draft saved (version {iteration + 1})")
+                if mode == "approve":
+                    self.logger.info("  ✅ User approved refined draft")
+                    await self._save_final_document()
+                    return True
+                if mode == "done" and feedback:
+                    self.logger.info(f"  📝 User provided additional feedback: {len(feedback)} chars")
+                    # Store feedback for next iteration
+                    self.user_feedback = feedback
+                    self.session.context["user_feedback"] = feedback
+                    self.session_mgr.save_session(self.session)
+                    # Continue to next iteration
+                elif mode == "skip":
+                    self.logger.info("  ⏭️ User skipped review, continuing refinement")
+                    # Continue to next iteration without user feedback
 
         # Max iterations reached
         self.logger.warning(f"\n⚠️ Maximum iterations ({max_iterations}) reached without full approval")
-        self.logger.info("  Saving current draft as final output...")
-        await self._save_final_document()
-        return True
+        self.logger.info("  ℹ️ Draft saved in session directory. Run again with --resume to continue refinement.")
+        self.logger.info(f"  📂 Session directory: {self.session_dir}")
+        # Don't save final document without approval
+        return False
+
+    async def _refine_document(self, review_feedback: dict[str, Any], iteration: int) -> None:
+        """Refine document based on reviewer AND user feedback.
+
+        Args:
+            review_feedback: Feedback from reviewer
+            iteration: Current iteration number
+        """
+        self.logger.info("  ✏️ Refining document based on feedback...")
+
+        current_draft = self.session.context.get("current_draft", "")
+        issues = review_feedback.get("issues", [])
+        suggestions = review_feedback.get("suggestions", [])
+
+        # Always refine if we have any feedback, even if minimal
+        # This ensures we give the human a chance to review improvements
+
+        # Combine reviewer and user feedback
+        combined_feedback = {
+            "issues": issues,
+            "suggestions": suggestions,
+            "strengths": review_feedback.get("strengths", []),
+        }
+
+        # Add user feedback if available
+        if self.user_feedback or self.session.context.get("user_feedback"):
+            user_fb = self.user_feedback or self.session.context.get("user_feedback")
+            combined_feedback["user_feedback"] = user_fb
+            self.logger.info("  📝 Including user feedback in refinement")
+
+        # Format feedback for refinement
+        feedback_json = json.dumps(combined_feedback, indent=2)
+
+        # Refine the document with defensive retry
+        refinement_prompt = WRITER_REFINEMENT_PROMPT.format(feedback=feedback_json, document=current_draft)
+
+        async with ClaudeSession(options=SessionOptions()) as writer:
+            refinement_response = await retry_with_feedback(func=writer.query, prompt=refinement_prompt, max_retries=3)
+
+        # Update draft
+        self.session.context["current_draft"] = refinement_response.content
+        self.session.context["draft_versions"].append(
+            {
+                "version": iteration + 1,
+                "content": refinement_response.content,
+                "timestamp": datetime.now().isoformat(),
+                "based_on_feedback": combined_feedback,
+            }
+        )
+
+        # Save draft to file
+        draft_path = self.session_dir / f"draft_v{iteration + 1}.md"
+        draft_path.write_text(refinement_response.content, encoding="utf-8")
+
+        # Clear user feedback after use
+        self.user_feedback = None
+        if "user_feedback" in self.session.context:
+            del self.session.context["user_feedback"]
+
+        # Save session after EVERY iteration
+        self.session_mgr.save_session(self.session)
+        self.logger.info(f"  💾 Refined draft saved (version {iteration + 1})")
 
     async def _save_final_document(self) -> None:
         """Save the final synthesized document."""
