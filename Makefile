@@ -520,6 +520,30 @@ blog-write-example: ## Run blog writer with example data
 		--idea scenarios/blog_writer/tests/sample_brain_dump.md \
 		--writings-dir scenarios/blog_writer/tests/sample_writings/
 
+# Tips Synthesis
+tips-synthesizer: ## Synthesize tips from markdown files into cohesive document. Usage: make tips-synthesizer INPUT=tips_dir/ OUTPUT=guide.md [RESUME=true] [VERBOSE=true]
+	@if [ -z "$(INPUT)" ]; then \
+		echo "Error: Please provide an input directory. Usage: make tips-synthesizer INPUT=tips_dir/ OUTPUT=guide.md"; \
+		exit 1; \
+	fi
+	@if [ -z "$(OUTPUT)" ]; then \
+		echo "Error: Please provide an output file. Usage: make tips-synthesizer INPUT=tips_dir/ OUTPUT=guide.md"; \
+		exit 1; \
+	fi
+	@echo "📚 Synthesizing tips from $(INPUT) to $(OUTPUT)"
+	@uv run python -m scenarios.tips_synthesizer \
+		--input-dir "$(INPUT)" \
+		--output-file "$(OUTPUT)" \
+		$(if $(RESUME),--resume) \
+		$(if $(VERBOSE),--verbose)
+
+tips-synthesizer-example: ## Run tips synthesizer with example data
+	@echo "📚 Running tips synthesizer with example data..."
+	@uv run python -m scenarios.tips_synthesizer \
+		--input-dir scenarios/tips_synthesizer/tests/sample_tips/ \
+		--output-file synthesized_tips_example.md \
+		--verbose
+
 # Article Illustration
 illustrate: ## Generate AI illustrations for markdown article. Usage: make illustrate INPUT=article.md [OUTPUT=path] [STYLE="..."] [APIS="..."] [RESUME=true]
 	@if [ -z "$(INPUT)" ]; then \
