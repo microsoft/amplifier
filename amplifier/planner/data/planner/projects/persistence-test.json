@@ -1,0 +1,32 @@
+{
+  "id": "persistence-test",
+  "name": "Persistence Test",
+  "created_at": "2025-10-07T11:54:42.768935",
+  "updated_at": "2025-10-07T11:54:42.768944",
+  "tasks": {
+    "t1": {
+      "id": "t1",
+      "title": "Task 1",
+      "description": "First task",
+      "state": "completed",
+      "parent_id": null,
+      "depends_on": [],
+      "assigned_to": null,
+      "created_at": "2025-10-07T11:54:42.768939",
+      "updated_at": "2025-10-07T11:54:42.768939"
+    },
+    "t2": {
+      "id": "t2",
+      "title": "Task 2",
+      "description": "",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [
+        "t1"
+      ],
+      "assigned_to": "test-user",
+      "created_at": "2025-10-07T11:54:42.768942",
+      "updated_at": "2025-10-07T11:54:42.768942"
+    }
+  }
+}
