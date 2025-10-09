@@ -1,0 +1,217 @@
+name: Validate AI-First Principles
+
+on:
+  push:
+    paths:
+      - 'ai-first-principles/**'
+      - '.github/workflows/principles-validate.yml'
+  pull_request:
+    paths:
+      - 'ai-first-principles/**'
+      - '.github/workflows/principles-validate.yml'
+
+jobs:
+  validate-principles:
+    runs-on: ubuntu-latest
+    name: Validate Principle Specifications
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate principle structure
+        run: |
+          cd ai-first-principles
+          echo "🔍 Validating all principle specifications..."
+
+          # Track validation results
+          FAILED=0
+          PASSED=0
+
+          # Validate each principle
+          for i in {1..44}; do
+            echo ""
+            echo "Checking principle #$i..."
+            if python3 tools/principle_builder.py validate $i; then
+              PASSED=$((PASSED + 1))
+            else
+              FAILED=$((FAILED + 1))
+              echo "❌ Principle #$i validation failed"
+            fi
+          done
+
+          echo ""
+          echo "=============================="
+          echo "Validation Summary:"
+          echo "✅ Passed: $PASSED"
+          echo "❌ Failed: $FAILED"
+          echo "=============================="
+
+          # Exit with error if any validation failed
+          if [ $FAILED -gt 0 ]; then
+            echo "Validation failed for $FAILED principle(s)"
+            exit 1
+          fi
+
+          echo "All principles validated successfully!"
+
+  quality-check:
+    runs-on: ubuntu-latest
+    name: Quality Check High-Priority Principles
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Quality check priority principles
+        run: |
+          cd ai-first-principles
+          echo "🎯 Quality checking high-priority principles..."
+
+          # High-priority principles to check
+          PRIORITY_PRINCIPLES="7 8 9 26 31 32"
+
+          FAILED=0
+          for i in $PRIORITY_PRINCIPLES; do
+            echo ""
+            echo "Quality checking principle #$i..."
+            if ! python3 tools/principle_builder.py check-quality $i; then
+              FAILED=$((FAILED + 1))
+              echo "⚠️ Principle #$i quality check raised warnings"
+            fi
+          done
+
+          if [ $FAILED -gt 0 ]; then
+            echo ""
+            echo "⚠️ Quality checks found issues in $FAILED principle(s)"
+            echo "Please review and address the warnings above"
+            # Don't fail the build for quality warnings, just notify
+          else
+            echo ""
+            echo "✅ All priority principles passed quality checks!"
+          fi
+
+  check-cross-references:
+    runs-on: ubuntu-latest
+    name: Verify Cross-References
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check for incorrect cross-references
+        run: |
+          cd ai-first-principles
+          echo "🔗 Checking cross-reference titles..."
+
+          # Run the fix script in dry-run mode to check for issues
+          if python3 tools/fix_cross_references.py 2>&1 | grep -q "Total issues found: 0"; then
+            echo "✅ All cross-references are correct!"
+          else
+            echo "❌ Found incorrect cross-reference titles!"
+            python3 tools/fix_cross_references.py
+            echo ""
+            echo "Please run 'python3 tools/fix_cross_references.py --fix' locally to correct these issues"
+            exit 1
+          fi
+
+  verify-progress:
+    runs-on: ubuntu-latest
+    name: Verify Progress Tracking
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Update and verify progress
+        run: |
+          cd ai-first-principles
+          echo "📊 Verifying progress tracking..."
+
+          # Update progress statistics
+          python3 tools/principle_builder.py update-progress
+
+          # Check if all principles are marked complete
+          if grep -q "44/44 specifications complete" PROGRESS.md; then
+            echo "✅ Progress tracking is up to date (44/44 complete)"
+          else
+            echo "⚠️ Progress tracking may be out of sync"
+            cat PROGRESS.md | grep -E "specifications complete|By category:"
+          fi
+
+  check-file-structure:
+    runs-on: ubuntu-latest
+    name: Verify File Structure
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify directory structure
+        run: |
+          cd ai-first-principles
+          echo "📁 Verifying file structure..."
+
+          # Check required directories exist
+          REQUIRED_DIRS="principles principles/people principles/process principles/technology principles/governance tools"
+
+          for dir in $REQUIRED_DIRS; do
+            if [ -d "$dir" ]; then
+              echo "✅ Directory exists: $dir"
+            else
+              echo "❌ Missing directory: $dir"
+              exit 1
+            fi
+          done
+
+          # Check required files exist
+          REQUIRED_FILES="README.md TEMPLATE.md PROGRESS.md cross-reference-index.md tools/principle_builder.py tools/fix_cross_references.py tools/README.md"
+
+          for file in $REQUIRED_FILES; do
+            if [ -f "$file" ]; then
+              echo "✅ File exists: $file"
+            else
+              echo "❌ Missing file: $file"
+              exit 1
+            fi
+          done
+
+          # Count principle files
+          PEOPLE_COUNT=$(ls principles/people/*.md 2>/dev/null | wc -l)
+          PROCESS_COUNT=$(ls principles/process/*.md 2>/dev/null | wc -l)
+          TECH_COUNT=$(ls principles/technology/*.md 2>/dev/null | wc -l)
+          GOV_COUNT=$(ls principles/governance/*.md 2>/dev/null | wc -l)
+
+          echo ""
+          echo "Principle file counts:"
+          echo "  People: $PEOPLE_COUNT (expected 6)"
+          echo "  Process: $PROCESS_COUNT (expected 13)"
+          echo "  Technology: $TECH_COUNT (expected 18)"
+          echo "  Governance: $GOV_COUNT (expected 7)"
+
+          if [ $PEOPLE_COUNT -eq 6 ] && [ $PROCESS_COUNT -eq 13 ] && [ $TECH_COUNT -eq 18 ] && [ $GOV_COUNT -eq 7 ]; then
+            echo "✅ All 44 principle files present!"
+          else
+            echo "❌ Missing principle files"
+            exit 1
+          fi
