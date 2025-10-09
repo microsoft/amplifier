@@ -2,6 +2,18 @@
 
 This file provides guidance to AI assistants when working with code in this repository.
 
+## Foundation: Amplifier Self-Improvement Philosophy
+
+**START HERE**: Before working on Amplifier, read `AMPLIFIER_SELF_IMPROVEMENT_PHILOSOPHY.md`. It establishes the 44 core principles for how Amplifier improves itself through AI-first development. Key concepts:
+
+- AI writes 95%+ of code, working on itself
+- Regenerate modules from specs rather than editing
+- Tests are the quality gate, not code review
+- Contracts defined before implementation
+- Self-healing kernel with disposable components
+
+This file (`AGENTS.md`) provides tactical guidelines. The philosophy document provides strategic principles.
+
 ## Important: Consult DISCOVERIES.md
 
 Before implementing solutions to complex problems:

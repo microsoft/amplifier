@@ -8,6 +8,7 @@ This file is reserved for Claude Code-specific instructions.
 
 # import the following files (using the `@` syntax):
 
+- @AMPLIFIER_SELF_IMPROVEMENT_PHILOSOPHY.md
 - @AGENTS.md
 - @DISCOVERIES.md
 - @ai_context/IMPLEMENTATION_PHILOSOPHY.md
