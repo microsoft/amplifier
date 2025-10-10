@@ -37,6 +37,7 @@ Missing something? [→ Quick Install Guide](#quick-install-guide)
 
 ### Setup
 
+#### Install
 ```bash
 git clone https://github.com/microsoft/amplifier.git
 cd amplifier
@@ -46,7 +47,11 @@ source .venv/bin/activate  # Linux/Mac/WSL
 ```
 > **Windows PowerShell:** `.venv\Scripts\Activate.ps1`
 
-> **Verify installation:** `make check` and `make test`
+#### Verify
+```bash
+make check
+make test
+```
 
 
 ### Use Amplifier via Claude Code
@@ -58,7 +63,7 @@ source .venv/bin/activate  # Linux/Mac/WSL
     claude
     ```
 
-    > [!NOTE] Claude:
+    > [!NOTE]
     > ```
     > I'm working in ai_working/quickstart-demo, and using the capabilities from 
     > amplifier.
