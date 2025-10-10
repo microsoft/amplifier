@@ -63,7 +63,8 @@ make test
     claude
     ```
 
-> [!NOTE] Claude:
+> [!NOTE] 
+> Claude:
 > ```
 > I'm working in ai_working/quickstart-demo, and using the capabilities from 
 > amplifier.
