@@ -49,27 +49,22 @@ source .venv/bin/activate  # Linux/Mac/WSL
 > **Verify installation:** `make check` and `make test`
 
 
-### Start Claude Code
+### Use Amplifier via Claude Code
 
-
-- **Option 1** - Work within the Amplifier project
+- **Option 1** - Work on a new (or existing) project
     ```bash
-    mkdir ai_working/quickstart-demo
+    mkdir ../quickstart-demo
+    ln -s ../../quickstart-demo ai_working/quickstart-demo
     claude
     ```
 
     ```
     > I'm working in ai_working/quickstart-demo, and using the capabilities from amplifier.
     ```
-    
-- **Option 2** - Connect to a new project
-    ```bash
-    mkdir ~/quickstart-demo
-    claude --add-dir ~/quickstart-demo
-    ```
 
-    ```
-    > I'm working in ~/quickstart-demo, and using the capabilities from amplifier.
+- **Option 2** - Work on the Amplifier project itself
+    ```bash
+    claude
     ```
 
 ---
