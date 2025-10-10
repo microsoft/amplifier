@@ -2,11 +2,7 @@
 
 ## 🎯 Why Amplifier?
 
-Claude Code is powerful on its own—but Amplifier transforms it from a coding assistant into a development platform. 
-
-Think of Claude Code as the engine and Amplifier as the car: one provides the power, the other provides the structure, memory, and specialized capabilities that make it truly useful for complex, real-world development.  
-
-While you might have custom tools, commands, and agents running in your current Claude Code installation, Amplifier offers a pre-built suite of advanced capabilities for immediate use.
+Claude Code is powerful on its own—but Amplifier transforms it from a coding assistant into a coordinated and accelerated development system. Amplifier offers a pre-built suite of advanced capabilities for immediate use.
 
 **[See how it can benefit you →](https://microsoft.github.io/amplifier)**
 
@@ -233,7 +229,7 @@ Manual multi-step prompting vs. one-command workflows. Amplifier transforms comp
 > ```
 > 
 > **Result** 
-> With Amplifier, you run /ultrathink-task implement authentication and it automatically orchestrates TodoWrite tracking, parallel agent spawning,
+> With Amplifier, you run "/ultrathink-task implement authentication" and it automatically orchestrates TodoWrite tracking, parallel agent spawning,
 > architecture-implementation-review cycles, and validation. 30 messages → 1 command.
 
 #### Knowledge Synthesis Pipeline
@@ -251,29 +247,20 @@ Conversation-limited context vs. unlimited knowledge processing. Amplifier extra
 > 
 > **Result** 
 > With Amplifier:
-> make knowledge-sync              # Extract from all 200 articles
-> make knowledge-query Q="CAP theorem tradeoffs"  # Query instantly
-> make knowledge-graph-viz         # See connections visually
+> ```
+> make knowledge-sync                               # Extract from all 200 articles
+> make knowledge-query Q="CAP theorem tradeoffs"    # Query instantly
+> make knowledge-graph-viz                          # See connections visually
+> ```
 > This isn't summarization—it's building a queryable, evolving knowledge structure that finds patterns you didn't know existed.
 
----
 
 ## Why Amplifier Works
 
-Amplifier solves the core problem of AI coding assistants: they generate code well but can't maintain context or coordinate complexity.
-
-Persistent Context — Auto-loaded memory files preserve your project's history, decisions, and lessons. No more re-explaining every session.
-
-Specialized Agents — 25+ focused experts working in parallel, each with separate context windows. Better answers, faster results.
-
-Hybrid Architecture — Code handles structure (loops, retries, state). AI handles intelligence (understanding, decisions, creativity). Both reliable and smart.
-
-Executable Workflows — Slash commands bundle entire methodologies. /ultrathink-task orchestrates everything automatically. One command replaces 30 messages.
-
-Learning System — Solve a problem once, DISCOVERIES.md captures it. Future sessions apply that knowledge automatically. Gets smarter over time.
-
-The magic isn't any single feature—it's how they multiply each other. Memory makes agents more effective. Agents make workflows smarter. Workflows capture
-learnings. Learnings improve future sessions. It compounds.
+The magic isn't any single feature—it's how they multiply each other. Persistent
+Memory & Learning gives context to Parallel Specialized Agents. Agents coordinate
+through Executable Methodologies. Methodologies capture insights via the Knowledge
+Synthesis Pipeline. Synthesis feeds back into Memory. It compounds.
 
 ---
 
