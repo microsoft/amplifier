@@ -58,9 +58,11 @@ source .venv/bin/activate  # Linux/Mac/WSL
     claude
     ```
 
-    ```
-    > I'm working in ai_working/quickstart-demo, and using the capabilities from amplifier.
-    ```
+    > [!NOTE] Claude:
+    > ```
+    > I'm working in ai_working/quickstart-demo, and using the capabilities from 
+    > amplifier.
+    >```
 
 - **Option 2** - Work on the Amplifier project itself
     ```bash
