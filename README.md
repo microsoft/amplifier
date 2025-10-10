@@ -43,9 +43,9 @@ git clone https://github.com/microsoft/amplifier.git
 cd amplifier
 make configure
 make install
-source .venv/bin/activate  # Linux/Mac/WSL
+source .venv/bin/activate # Linux/Mac/WSL 
+# source .venv\Scripts\Activate.ps1 # Windows PowerShell 
 ```
-> **Windows PowerShell:** `.venv\Scripts\Activate.ps1`
 
 #### Verify
 ```bash
@@ -56,24 +56,24 @@ make test
 
 ### Use Amplifier via Claude Code
 
-- **Option 1** - Work on a new (or existing) project
-    ```bash
-    mkdir ../quickstart-demo
-    ln -s ../../quickstart-demo ai_working/quickstart-demo
-    claude
-    ```
+**Option 1** - 
+Work on a new (or existing) project
+```bash
+mkdir ../quickstart-demo
+ln -s ../../quickstart-demo ai_working/quickstart-demo
+claude
+```
 
-> [!NOTE] 
-> Claude:
+> *Claude Code:*
 > ```
 > I'm working in ai_working/quickstart-demo, and using the capabilities from 
 > amplifier.
 >```
 
-- **Option 2** - Work on the Amplifier project itself
-    ```bash
-    claude
-    ```
+**Option 2** - Work on the Amplifier project itself
+```bash
+claude
+```
 
 ---
 
