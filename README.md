@@ -1,19 +1,10 @@
 # Amplifier: AI Development Supercharged
 
-## 🎯 What is Amplifier
+*Your AI Development Amplified*
 
-Amplifier transforms AI coding assistants into force multipliers through specialized expertise and proven patterns. It is a supercharged AI development environment for your AI-first needs. Get immediate access to 20+ specialized agents, pre-loaded context, and workflows that deliver complex solutions with minimal guidance. 
+## 🎯 Why Amplifier?
 
-### 📊 Feature Comparison Chart
-
-| Traditional AI Setup | Amplifier Environment |
-|----------------------|----------------------|
-| ❌ Generic responses | ✅ **20+ Specialized agents** |
-| ❌ Lost context each session | ✅ **Accumulated knowledge** |  
-| ❌ Single solution path | ✅ **Parallel exploration** |
-| ❌ Manual processes | ✅ **Automated workflows** |
-| ❌ Surprise bills | ✅ **Real-time cost tracking** |
-
+Claude Code is powerful on its own—but Amplifier transforms it from a coding assistant into a complete development platform. Think of Claude Code as the engine and Amplifier as the car: one provides the power, the other provides the structure, memory, and specialized capabilities that make it truly useful for complex, real-world development.  While you might have custom tools, commands, and agents running in your Claude Code installation, Amplifier offers a pre-built suite of advanced capabilities for immediate use.
 
 **[See how it can benefit you →](https://microsoft.github.io/amplifier)**
 
@@ -77,9 +68,44 @@ claude
 
 ---
 
-## ✨  Explore Features
+## ✨ How is Amplifier Different?
 
-**[View the complete guide →](https://microsoft.github.io/amplifier)**
+### Five Core Amplifications
+
+<!-- Learning Style Navigation -->
+<table align="center" style="border: 2px solid #0366d6; border-radius: 8px; background: linear-gradient(135deg, #f6f8fa 0%, #ffffff 100%); margin: 20px 0;">
+<tr>
+<td align="center" style="padding: 15px;">
+<b>🔍 Choose Your Learning Path</b><br>
+<a href="#🎥-visual-learners-start-here">🎥 Visual</a> | 
+<a href="#🎧-audio-learners-start-here">🎧 Audio</a> | 
+<a href="#🛠️-hands-on-learners-start-here">🛠️ Hands-on</a> | 
+<a href="#📱-mobile-friendly">📱 Mobile</a> | 
+<a href="#⚡-quick-scan">⚡ Quick Scan</a>
+</td>
+</tr>
+</table>
+
+> [Persistent Memory & Learning](#persistent-memory-&-learning) • [Parallel
+  Specialized Agent Intelligence](#specialized-agent-intelligence) • [Executable
+  Methodologies](#executable-methodologies) • [Knowledge Synthesis Pipeline](#knowledge-synthesis-pipeline) • [Automated Quality & Consistency](#automated-quality-&-consistency)
+
+  #### Persistent Memory & Learning
+  ...
+
+  #### Specialized Agent Intelligence
+  ...
+
+  #### Executable Methodologies
+  ...
+
+  #### Knowledge Synthesis Pipeline
+  ...
+
+  #### Automated Quality & Consistency
+  ...
+
+
 
 Expand the different sections below to learn more about Amplifier feature capabilities. *Recommended to progress in order.*
 
@@ -227,3 +253,18 @@ npm install -g @anthropic-ai/claude-cli
 ---
 
 *Experience the interactive documentation at [microsoft.github.io/amplifier](https://microsoft.github.io/amplifier)*
+
+
+## 🎯 What is Amplifier
+
+Amplifier transforms AI coding assistants into force multipliers through specialized expertise and proven patterns. It is a supercharged AI development environment for your AI-first needs. Get immediate access to 20+ specialized agents, pre-loaded context, and workflows that deliver complex solutions with minimal guidance. 
+
+### 📊 Feature Comparison Chart
+
+| Traditional AI Setup | Amplifier Environment |
+|----------------------|----------------------|
+| ❌ Generic responses | ✅ **20+ Specialized agents** |
+| ❌ Lost context each session | ✅ **Accumulated knowledge** |  
+| ❌ Single solution path | ✅ **Parallel exploration** |
+| ❌ Manual processes | ✅ **Automated workflows** |
+| ❌ Surprise bills | ✅ **Real-time cost tracking** |
