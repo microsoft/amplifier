@@ -54,6 +54,9 @@ default: ## Show essential commands
 	@echo "Web to Markdown:"
 	@echo "  make web-to-md       Convert web pages to markdown"
 	@echo ""
+	@echo "Repository Analysis:"
+	@echo "  make repo-analyze    Compare repositories for improvements"
+	@echo ""
 	@echo "Other:"
 	@echo "  make clean          Clean build artifacts"
 	@echo "  make help           Show ALL available commands"
@@ -131,6 +134,10 @@ help: ## Show ALL available commands
 	@echo ""
 	@echo "WEB TO MARKDOWN:"
 	@echo "  make web-to-md URL=<url> [URL2=<url>] [OUTPUT=<path>]  Convert web pages to markdown (saves to content_dirs[0]/sites/)"
+	@echo ""
+	@echo "REPOSITORY ANALYSIS:"
+	@echo "  make repo-analyze SOURCE=<path> TARGET=<path> REQUEST=\"...\"  Compare repositories"
+	@echo "  make repo-resume                Resume most recent analysis session"
 	@echo ""
 	@echo "UTILITIES:"
 	@echo "  make clean           Clean build artifacts"
@@ -640,6 +647,33 @@ web-to-md: ## Convert web pages to markdown. Usage: make web-to-md URL=https://e
 	if [ -n "$(URL5)" ]; then CMD="$$CMD --url \"$(URL5)\""; fi; \
 	if [ -n "$(OUTPUT)" ]; then CMD="$$CMD --output \"$(OUTPUT)\""; fi; \
 	eval $$CMD
+
+# Repository Analysis
+repo-analyze: ## Compare repositories for improvement opportunities. Usage: make repo-analyze SOURCE=path TARGET=path REQUEST="..."
+	@if [ -z "$(SOURCE)" ]; then \
+		echo "Error: Please provide source repository. Usage: make repo-analyze SOURCE=ref_repo TARGET=my_repo REQUEST=\"...\""; \
+		exit 1; \
+	fi
+	@if [ -z "$(TARGET)" ]; then \
+		echo "Error: Please provide target repository. Usage: make repo-analyze SOURCE=ref_repo TARGET=my_repo REQUEST=\"...\""; \
+		exit 1; \
+	fi
+	@if [ -z "$(REQUEST)" ]; then \
+		echo "Error: Please provide analysis request. Usage: make repo-analyze SOURCE=ref_repo TARGET=my_repo REQUEST=\"...\""; \
+		exit 1; \
+	fi
+	@echo "🔍 Starting repository analysis..."; \
+	echo "  Source: $(SOURCE)"; \
+	echo "  Target: $(TARGET)"; \
+	echo "  Request: $(REQUEST)"; \
+	uv run python -m scenarios.repo_analyzer \
+		--source "$(SOURCE)" \
+		--target "$(TARGET)" \
+		--request "$(REQUEST)"
+
+repo-resume: ## Resume most recent repository analysis session
+	@echo "🔍 Resuming repository analysis..."
+	@uv run python -m scenarios.repo_analyzer --resume
 
 # Clean WSL Files
 clean-wsl-files: ## Clean up WSL-related files (Zone.Identifier, sec.endpointdlp)

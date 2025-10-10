@@ -69,27 +69,43 @@ def parse_llm_json(
 
     # Try 3: Find JSON-like structures in text
     # Look for {...} or [...] patterns
-    json_patterns = [
-        r"(\{[^{}]*\{[^{}]*\}[^{}]*\})",  # Nested objects
-        r"(\[[^\[\]]*\[[^\[\]]*\][^\[\]]*\])",  # Nested arrays
-        r"(\{[^{}]+\})",  # Simple objects
-        r"(\[[^\[\]]+\])",  # Simple arrays
-    ]
+    # Try to find the LARGEST JSON structure (to avoid extracting nested structures)
+    json_candidates = []
 
-    for pattern in json_patterns:
-        matches = re.findall(pattern, response, re.DOTALL)
-        for match in matches:
-            try:
-                result = json.loads(match)
-                # Prefer arrays over single objects for typical AI responses
-                if isinstance(result, dict | list):
-                    if verbose:
-                        logger.debug("Successfully extracted JSON structure from text")
-                    return result
-            except (json.JSONDecodeError, TypeError) as e:
+    # First try to find array structures (most common for lists of items)
+    array_pattern = r"\[(?:[^[\]]*|\[(?:[^[\]]*|\[[^[\]]*\])*\])*\]"
+    array_matches = re.findall(array_pattern, response, re.DOTALL)
+
+    for match in array_matches:
+        try:
+            result = json.loads(match)
+            if isinstance(result, list):
+                json_candidates.append((len(match), result))
                 if verbose:
-                    logger.debug(f"Failed to parse JSON structure: {e}")
-                continue
+                    logger.debug(f"Found JSON array candidate of length {len(match)}")
+        except (json.JSONDecodeError, TypeError):
+            continue
+
+    # Then try object structures
+    object_pattern = r"\{(?:[^{}]*|\{(?:[^{}]*|\{[^{}]*\})*\})*\}"
+    object_matches = re.findall(object_pattern, response, re.DOTALL)
+
+    for match in object_matches:
+        try:
+            result = json.loads(match)
+            if isinstance(result, dict):
+                json_candidates.append((len(match), result))
+                if verbose:
+                    logger.debug(f"Found JSON object candidate of length {len(match)}")
+        except (json.JSONDecodeError, TypeError):
+            continue
+
+    # Return the largest valid JSON structure found
+    if json_candidates:
+        json_candidates.sort(key=lambda x: x[0], reverse=True)
+        if verbose:
+            logger.debug(f"Successfully extracted largest JSON structure (size: {json_candidates[0][0]})")
+        return json_candidates[0][1]
 
     # Try 4: Extract after common preambles
     # Remove common AI response prefixes

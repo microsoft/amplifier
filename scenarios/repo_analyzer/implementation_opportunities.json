@@ -1,0 +1,332 @@
+[
+  {
+    "id": "defensive-llm-toolkit",
+    "title": "Create Comprehensive Defensive LLM Response Toolkit",
+    "description": "Build a centralized toolkit for handling all LLM interactions with robust error handling, retry logic, and format normalization. This addresses the critical gap where LLM responses can vary wildly in format and quality.",
+    "implementation": {
+      "location": "amplifier/llm_toolkit/",
+      "modules": [
+        "response_parser.py - Extract structured data from any LLM format",
+        "retry_manager.py - Intelligent retry with feedback loops",
+        "prompt_isolation.py - Prevent context contamination",
+        "validation.py - Schema validation with auto-correction"
+      ],
+      "code_example": "```python\n# amplifier/llm_toolkit/response_parser.py\nclass LLMResponseParser:\n    def parse_json(self, response: str) -> dict:\n        \"\"\"Extract JSON from any LLM response format.\"\"\"\n        # Try direct parsing\n        # Extract from markdown blocks\n        # Remove preambles and explanations\n        # Fix common formatting issues\n        # Return parsed data or raise with context\n\n    def parse_structured_output(self, response: str, schema: Type[BaseModel]):\n        \"\"\"Parse and validate against Pydantic schema.\"\"\"\n        data = self.parse_json(response)\n        return schema.model_validate(data)\n```"
+    },
+    "patterns_applied": [
+      "Defensive LLM Response Handling from DISCOVERIES.md",
+      "Extraction over validation principle",
+      "Feedback loops for self-correction"
+    ],
+    "effort": "Medium (3-5 days)",
+    "impact": "Critical - Prevents 90% of LLM-related failures",
+    "dependencies": [],
+    "risks": [
+      "May mask underlying prompt engineering issues",
+      "Could become a bottleneck if overly complex"
+    ],
+    "validation_criteria": [
+      "Successfully parses 99% of real LLM responses",
+      "Handles markdown, JSON, mixed formats",
+      "Provides clear error messages when parsing fails",
+      "Performance overhead < 10ms per response"
+    ]
+  },
+  {
+    "id": "incremental-progress-system",
+    "title": "Implement Universal Progress Persistence System",
+    "description": "Create a framework-wide progress tracking system that automatically saves state after every atomic operation, enabling resume from any point and protecting against failures.",
+    "implementation": {
+      "location": "amplifier/progress/",
+      "modules": [
+        "tracker.py - Core progress tracking",
+        "checkpoint.py - Checkpoint management",
+        "resume.py - Resume logic",
+        "decorators.py - Easy integration decorators"
+      ],
+      "code_example": "```python\n# amplifier/progress/tracker.py\nclass ProgressTracker:\n    def __init__(self, work_dir: Path, job_id: str):\n        self.checkpoint_file = work_dir / f\"{job_id}_progress.json\"\n        self.state = self._load_or_create()\n    \n    @contextmanager\n    def track_item(self, item_id: str):\n        \"\"\"Context manager for tracking single item.\"\"\"\n        self.state['current'] = item_id\n        self.state['started_at'] = datetime.now().isoformat()\n        self._save()\n        \n        try:\n            yield\n            self.state['completed'].append(item_id)\n            self.state['last_success'] = datetime.now().isoformat()\n        except Exception as e:\n            self.state['failed'][item_id] = str(e)\n            raise\n        finally:\n            self._save()\n\n# Usage in any processor:\n@with_progress_tracking\nasync def process_items(items: list, tracker: ProgressTracker):\n    for item in items:\n        if item.id in tracker.completed:\n            continue  # Skip already processed\n        \n        with tracker.track_item(item.id):\n            result = await process_single_item(item)\n            tracker.save_result(item.id, result)\n```"
+    },
+    "patterns_applied": [
+      "Incremental Processing Pattern from AGENTS.md",
+      "Save continuously principle",
+      "Fixed filenames for overwriting"
+    ],
+    "effort": "Medium (3-4 days)",
+    "impact": "High - Enables resilient long-running operations",
+    "dependencies": [],
+    "risks": [
+      "Disk I/O overhead if used excessively",
+      "State file corruption could block progress"
+    ],
+    "validation_criteria": [
+      "Zero data loss on interruption",
+      "Resume works from any failure point",
+      "Minimal performance overhead (<5%)",
+      "Works with async and sync code"
+    ]
+  },
+  {
+    "id": "cloud-sync-file-io",
+    "title": "Add Cloud-Sync Aware File I/O Layer",
+    "description": "Implement a file I/O abstraction layer that handles cloud-synced directories (OneDrive, Dropbox) with automatic retry logic and informative warnings.",
+    "implementation": {
+      "location": "amplifier/io/",
+      "modules": [
+        "file_ops.py - Core file operations with retry",
+        "cloud_detection.py - Detect cloud sync locations",
+        "warnings.py - User-friendly warnings"
+      ],
+      "code_example": "```python\n# amplifier/io/file_ops.py\nclass CloudAwareFileOps:\n    def __init__(self):\n        self.cloud_paths = self._detect_cloud_paths()\n        self.retry_config = RetryConfig(\n            max_attempts=5,\n            initial_delay=0.5,\n            max_delay=10,\n            exponential_base=2\n        )\n    \n    def write_json(self, data: dict, path: Path) -> None:\n        \"\"\"Write JSON with cloud-sync retry logic.\"\"\"\n        is_cloud = any(str(path).startswith(str(cp)) for cp in self.cloud_paths)\n        \n        for attempt in self.retry_config:\n            try:\n                # Atomic write with temp file\n                temp_path = path.with_suffix('.tmp')\n                with open(temp_path, 'w') as f:\n                    json.dump(data, f, indent=2)\n                    f.flush()\n                    os.fsync(f.fileno())  # Force write to disk\n                \n                # Atomic rename\n                temp_path.replace(path)\n                return\n                \n            except OSError as e:\n                if e.errno == 5 and is_cloud and attempt.can_retry:\n                    if attempt.is_first:\n                        logger.warning(\n                            f\"Cloud sync delay detected for {path}. \"\n                            f\"Consider 'Always keep on device' setting.\"\n                        )\n                    attempt.wait()\n                else:\n                    raise\n```"
+    },
+    "patterns_applied": [
+      "Cloud Sync File I/O pattern from DISCOVERIES.md",
+      "Exponential backoff with informative warnings",
+      "Atomic operations for data integrity"
+    ],
+    "effort": "Low (1-2 days)",
+    "impact": "High - Prevents mysterious I/O failures",
+    "dependencies": [],
+    "risks": [
+      "May hide legitimate file system issues",
+      "Could slow down operations in cloud directories"
+    ],
+    "validation_criteria": [
+      "Handles cloud sync delays gracefully",
+      "Provides clear warnings to users",
+      "Works on WSL2, Windows, Mac, Linux",
+      "No data corruption on partial writes"
+    ]
+  },
+  {
+    "id": "template-driven-tools",
+    "title": "Establish Template-Driven Tool Generation System",
+    "description": "Create a comprehensive template system for generating new tools with enforced patterns for validation, error handling, and progress visibility.",
+    "implementation": {
+      "location": "amplifier/templates/",
+      "modules": [
+        "base_tool.py - Abstract base with required patterns",
+        "validators.py - Common validation patterns",
+        "generators.py - Tool generation from templates",
+        "checklist.py - Automated validation checklist"
+      ],
+      "code_example": "```python\n# amplifier/templates/base_tool.py\nclass BaseTool(ABC):\n    \"\"\"Base class enforcing standard patterns.\"\"\"\n    \n    def __init__(self, min_inputs: int = 1):\n        self.min_inputs = min_inputs\n        self.progress_tracker = None\n        \n    def validate_inputs(self, inputs: List[Path]) -> None:\n        \"\"\"Enforced validation pattern.\"\"\"\n        if not inputs:\n            raise ValueError(\"No inputs provided\")\n        \n        # Check minimum inputs\n        if len(inputs) < self.min_inputs:\n            raise ValueError(\n                f\"Need at least {self.min_inputs} inputs, got {len(inputs)}\"\n            )\n        \n        # Check files exist\n        missing = [f for f in inputs if not f.exists()]\n        if missing:\n            raise ValueError(f\"Files not found: {missing}\")\n    \n    def discover_files(self, pattern: str, base_dir: Path) -> List[Path]:\n        \"\"\"Enforced recursive discovery.\"\"\"\n        # ALWAYS use ** for recursive\n        files = list(base_dir.glob(f\"**/{pattern}\"))\n        \n        # Show what was found\n        logger.info(f\"Found {len(files)} matching files:\")\n        for f in files[:5]:\n            logger.info(f\"  • {f.relative_to(base_dir)}\")\n        if len(files) > 5:\n            logger.info(f\"  ... and {len(files)-5} more\")\n            \n        return files\n    \n    @abstractmethod\n    async def process(self, inputs: List[Path]) -> dict:\n        \"\"\"Main processing logic to implement.\"\"\"\n        pass\n```"
+    },
+    "patterns_applied": [
+      "Tool Generation Pattern Failures from DISCOVERIES.md",
+      "Enforced validation and visibility",
+      "Standard patterns for common operations"
+    ],
+    "effort": "Medium (3-4 days)",
+    "impact": "High - Prevents common tool failures",
+    "dependencies": [],
+    "risks": [
+      "May be too rigid for some use cases",
+      "Could slow down rapid prototyping"
+    ],
+    "validation_criteria": [
+      "All generated tools pass checklist",
+      "No recursive discovery failures",
+      "Clear progress visibility in all tools",
+      "Validation catches 95% of input errors"
+    ]
+  },
+  {
+    "id": "production-edge-handler",
+    "title": "Build Production Edge Case Handler Framework",
+    "description": "Create a comprehensive system for handling production edge cases including partial failures, timeout recovery, and graceful degradation.",
+    "implementation": {
+      "location": "amplifier/resilience/",
+      "modules": [
+        "partial_failure.py - Continue on failure patterns",
+        "timeout_manager.py - Intelligent timeout handling",
+        "circuit_breaker.py - Prevent cascade failures",
+        "degradation.py - Graceful feature degradation"
+      ],
+      "code_example": "```python\n# amplifier/resilience/partial_failure.py\nclass PartialFailureHandler:\n    \"\"\"Handle partial failures in batch operations.\"\"\"\n    \n    def __init__(self, continue_on_error: bool = True):\n        self.continue_on_error = continue_on_error\n        self.results = {'success': [], 'failed': [], 'skipped': []}\n        \n    async def process_batch(self, items: list, processor: Callable) -> dict:\n        \"\"\"Process batch with partial failure handling.\"\"\"\n        total = len(items)\n        \n        for i, item in enumerate(items, 1):\n            logger.info(f\"Processing {i}/{total}: {item.id}\")\n            \n            try:\n                # Timeout for individual items\n                result = await asyncio.wait_for(\n                    processor(item),\n                    timeout=30\n                )\n                self.results['success'].append({\n                    'item': item.id,\n                    'result': result\n                })\n                \n            except asyncio.TimeoutError:\n                logger.warning(f\"Timeout processing {item.id}\")\n                self.results['failed'].append({\n                    'item': item.id,\n                    'error': 'timeout',\n                    'retryable': True\n                })\n                \n            except Exception as e:\n                logger.error(f\"Failed processing {item.id}: {e}\")\n                self.results['failed'].append({\n                    'item': item.id,\n                    'error': str(e),\n                    'retryable': self._is_retryable(e)\n                })\n                \n                if not self.continue_on_error:\n                    raise\n            \n            # Save progress after each item\n            self._save_progress()\n        \n        return self._generate_report()\n```"
+    },
+    "patterns_applied": [
+      "Partial Failure Handling Pattern from AGENTS.md",
+      "Continue on failure with comprehensive reporting",
+      "Graceful degradation principles"
+    ],
+    "effort": "High (5-7 days)",
+    "impact": "Critical - Essential for production reliability",
+    "dependencies": ["incremental-progress-system"],
+    "risks": [
+      "May mask critical failures if not monitored",
+      "Complex to test all failure scenarios"
+    ],
+    "validation_criteria": [
+      "Handles timeout, network, and logic errors",
+      "Provides actionable failure reports",
+      "Supports selective retry of failed items",
+      "No data loss on partial failure"
+    ]
+  },
+  {
+    "id": "llm-provider-abstraction",
+    "title": "Create Unified LLM Provider Abstraction Layer",
+    "description": "Build a provider-agnostic LLM interface that handles provider-specific quirks, rate limiting, and automatic fallback between providers.",
+    "implementation": {
+      "location": "amplifier/llm/",
+      "modules": [
+        "providers/base.py - Abstract provider interface",
+        "providers/openai.py - OpenAI implementation",
+        "providers/anthropic.py - Anthropic implementation",
+        "router.py - Intelligent routing and fallback",
+        "rate_limiter.py - Provider-aware rate limiting"
+      ],
+      "code_example": "```python\n# amplifier/llm/router.py\nclass LLMRouter:\n    \"\"\"Route requests to appropriate providers with fallback.\"\"\"\n    \n    def __init__(self):\n        self.providers = {\n            'openai': OpenAIProvider(),\n            'anthropic': AnthropicProvider(),\n            'gemini': GeminiProvider()\n        }\n        self.fallback_chain = ['anthropic', 'openai', 'gemini']\n        \n    async def complete(self, \n                      prompt: str, \n                      model: Optional[str] = None,\n                      **kwargs) -> LLMResponse:\n        \"\"\"Complete with automatic fallback.\"\"\"\n        errors = []\n        \n        # Try primary provider based on model\n        primary = self._get_provider_for_model(model)\n        if primary:\n            try:\n                return await primary.complete(prompt, model, **kwargs)\n            except RateLimitError as e:\n                logger.warning(f\"Rate limit on {primary.name}: {e}\")\n                errors.append(e)\n            except ProviderError as e:\n                logger.error(f\"Provider error on {primary.name}: {e}\")\n                errors.append(e)\n        \n        # Fallback chain\n        for provider_name in self.fallback_chain:\n            if provider_name == primary?.name:\n                continue\n                \n            provider = self.providers[provider_name]\n            try:\n                logger.info(f\"Falling back to {provider_name}\")\n                # Map model to equivalent\n                fallback_model = self._map_model(model, provider_name)\n                return await provider.complete(\n                    prompt, fallback_model, **kwargs\n                )\n            except Exception as e:\n                errors.append(e)\n                continue\n        \n        raise AllProvidersFailedError(errors)\n```"
+    },
+    "patterns_applied": [
+      "Library vs Custom Code philosophy",
+      "Provider-specific handling with unified interface",
+      "Graceful fallback patterns"
+    ],
+    "effort": "High (5-6 days)",
+    "impact": "High - Improves reliability and flexibility",
+    "dependencies": ["defensive-llm-toolkit"],
+    "risks": [
+      "Provider API changes require maintenance",
+      "Cost implications of fallback usage"
+    ],
+    "validation_criteria": [
+      "Seamless fallback between providers",
+      "Handles provider-specific rate limits",
+      "Consistent response format across providers",
+      "Performance metrics per provider"
+    ]
+  },
+  {
+    "id": "validation-first-dev",
+    "title": "Implement Validation-First Development Framework",
+    "description": "Create a framework that enforces validation before implementation, with contract definitions, test generation, and behavior verification.",
+    "implementation": {
+      "location": "amplifier/validation/",
+      "modules": [
+        "contracts.py - Contract definition system",
+        "test_generator.py - Auto-generate tests from contracts",
+        "behavior_validator.py - Runtime behavior validation",
+        "decorators.py - Validation decorators"
+      ],
+      "code_example": "```python\n# amplifier/validation/contracts.py\nclass Contract:\n    \"\"\"Define and enforce function contracts.\"\"\"\n    \n    def __init__(self, \n                 inputs: Dict[str, type],\n                 outputs: type,\n                 preconditions: List[Callable] = None,\n                 postconditions: List[Callable] = None,\n                 invariants: List[Callable] = None):\n        self.inputs = inputs\n        self.outputs = outputs\n        self.preconditions = preconditions or []\n        self.postconditions = postconditions or []\n        self.invariants = invariants or []\n    \n    def validate_inputs(self, **kwargs):\n        \"\"\"Validate inputs against contract.\"\"\"\n        # Type checking\n        for name, expected_type in self.inputs.items():\n            if name not in kwargs:\n                raise ContractViolation(f\"Missing required input: {name}\")\n            \n            value = kwargs[name]\n            if not isinstance(value, expected_type):\n                raise ContractViolation(\n                    f\"{name} must be {expected_type}, got {type(value)}\"\n                )\n        \n        # Preconditions\n        for condition in self.preconditions:\n            if not condition(**kwargs):\n                raise ContractViolation(\n                    f\"Precondition failed: {condition.__doc__}\"\n                )\n    \n    def __call__(self, func):\n        \"\"\"Decorator to enforce contract.\"\"\"\n        @wraps(func)\n        def wrapper(**kwargs):\n            # Validate inputs\n            self.validate_inputs(**kwargs)\n            \n            # Check invariants before\n            for inv in self.invariants:\n                assert inv(), f\"Invariant violated: {inv.__doc__}\"\n            \n            # Execute function\n            result = func(**kwargs)\n            \n            # Validate output\n            if not isinstance(result, self.outputs):\n                raise ContractViolation(\n                    f\"Output must be {self.outputs}, got {type(result)}\"\n                )\n            \n            # Check postconditions\n            for condition in self.postconditions:\n                if not condition(result, **kwargs):\n                    raise ContractViolation(\n                        f\"Postcondition failed: {condition.__doc__}\"\n                    )\n            \n            # Check invariants after\n            for inv in self.invariants:\n                assert inv(), f\"Invariant violated: {inv.__doc__}\"\n            \n            return result\n        \n        wrapper.contract = self\n        return wrapper\n```"
+    },
+    "patterns_applied": [
+      "Validation-first from Problem Analysis pattern",
+      "Contract-driven development",
+      "Behavior verification over implementation"
+    ],
+    "effort": "Medium (4-5 days)",
+    "impact": "High - Catches bugs before they happen",
+    "dependencies": [],
+    "risks": [
+      "May slow down initial development",
+      "Runtime overhead from validation"
+    ],
+    "validation_criteria": [
+      "Contracts catch 80% of bugs before runtime",
+      "Auto-generated tests cover all contracts",
+      "Clear contract violation messages",
+      "Minimal runtime overhead (<10%)"
+    ]
+  },
+  {
+    "id": "hybrid-code-ai-orchestrator",
+    "title": "Build Hybrid Code/AI Orchestration System",
+    "description": "Create an orchestration layer that uses code for structure and flow control while delegating intelligence tasks to AI, maximizing reliability while leveraging AI capabilities.",
+    "implementation": {
+      "location": "amplifier/orchestration/",
+      "modules": [
+        "workflow.py - Deterministic workflow engine",
+        "ai_tasks.py - AI task definitions",
+        "decision_points.py - Code-controlled decision logic",
+        "state_machine.py - Explicit state management"
+      ],
+      "code_example": "```python\n# amplifier/orchestration/workflow.py\nclass HybridWorkflow:\n    \"\"\"Code-driven workflow with AI intelligence points.\"\"\"\n    \n    def __init__(self, workflow_def: WorkflowDefinition):\n        self.workflow = workflow_def\n        self.state = WorkflowState()\n        self.ai_executor = AITaskExecutor()\n        \n    async def execute(self, input_data: dict) -> dict:\n        \"\"\"Execute workflow with code structure, AI intelligence.\"\"\"\n        \n        # Code controls the flow\n        for step in self.workflow.steps:\n            logger.info(f\"Executing step: {step.name}\")\n            \n            if step.type == StepType.CODE:\n                # Deterministic code execution\n                result = await self._execute_code_step(step, input_data)\n                \n            elif step.type == StepType.AI:\n                # AI for intelligence tasks only\n                result = await self._execute_ai_step(step, input_data)\n                \n                # Code validates AI output\n                if not self._validate_ai_output(result, step.schema):\n                    # Retry with feedback\n                    result = await self._retry_with_constraints(\n                        step, input_data, result\n                    )\n            \n            elif step.type == StepType.DECISION:\n                # Code makes structural decisions\n                next_step = self._make_decision(step, input_data)\n                if next_step:\n                    self.workflow.jump_to(next_step)\n            \n            # Code manages state\n            self.state.update(step.name, result)\n            self.state.save()  # Persistence handled by code\n            \n            # Code controls flow\n            if step.stops_on_failure and not result.success:\n                logger.warning(f\"Workflow stopped at {step.name}\")\n                break\n        \n        return self.state.to_dict()\n    \n    def _validate_ai_output(self, output: dict, schema: Schema) -> bool:\n        \"\"\"Code validates AI outputs for reliability.\"\"\"\n        try:\n            schema.validate(output)\n            return True\n        except ValidationError as e:\n            logger.warning(f\"AI output validation failed: {e}\")\n            return False\n```"
+    },
+    "patterns_applied": [
+      "Hybrid Code/AI Architecture pattern",
+      "Code for structure, AI for intelligence",
+      "Deterministic flow with AI capabilities"
+    ],
+    "effort": "High (6-8 days)",
+    "impact": "Critical - Maximizes reliability with AI power",
+    "dependencies": ["defensive-llm-toolkit", "validation-first-dev"],
+    "risks": [
+      "Complex to design workflows",
+      "May limit AI creativity"
+    ],
+    "validation_criteria": [
+      "99% workflow completion rate",
+      "AI failures don't break workflows",
+      "State recovery works correctly",
+      "Clear separation of code/AI responsibilities"
+    ]
+  },
+  {
+    "id": "observability-layer",
+    "title": "Add Comprehensive Observability and Monitoring Layer",
+    "description": "Implement detailed observability for all operations including LLM calls, file I/O, and processing pipelines with actionable insights.",
+    "implementation": {
+      "location": "amplifier/observability/",
+      "modules": [
+        "metrics.py - Metrics collection and aggregation",
+        "tracing.py - Distributed tracing support",
+        "llm_monitor.py - LLM-specific monitoring",
+        "dashboard.py - Real-time dashboard generation"
+      ],
+      "code_example": "```python\n# amplifier/observability/llm_monitor.py\nclass LLMMonitor:\n    \"\"\"Monitor LLM operations for insights and debugging.\"\"\"\n    \n    def __init__(self):\n        self.metrics = {\n            'total_calls': 0,\n            'success_rate': 0.0,\n            'avg_latency': 0.0,\n            'token_usage': {},\n            'error_patterns': Counter(),\n            'retry_stats': defaultdict(list)\n        }\n        \n    @contextmanager\n    def track_llm_call(self, \n                       provider: str, \n                       model: str,\n                       operation: str):\n        \"\"\"Track individual LLM call.\"\"\"\n        call_id = str(uuid.uuid4())\n        start_time = time.time()\n        \n        # Create span for tracing\n        span = self.tracer.start_span(\n            f\"llm.{provider}.{operation}\",\n            attributes={\n                'llm.provider': provider,\n                'llm.model': model,\n                'llm.operation': operation,\n                'llm.call_id': call_id\n            }\n        )\n        \n        try:\n            yield CallContext(call_id, span)\n            \n            # Success metrics\n            latency = time.time() - start_time\n            self.metrics['total_calls'] += 1\n            self._update_success_rate(True)\n            self._update_latency(latency)\n            \n            span.set_attribute('llm.latency_ms', latency * 1000)\n            span.set_status(StatusCode.OK)\n            \n        except Exception as e:\n            # Failure metrics\n            self.metrics['total_calls'] += 1\n            self._update_success_rate(False)\n            self.metrics['error_patterns'][type(e).__name__] += 1\n            \n            span.set_status(\n                StatusCode.ERROR,\n                f\"{type(e).__name__}: {str(e)}\"\n            )\n            span.record_exception(e)\n            \n            # Log for debugging\n            logger.error(\n                f\"LLM call failed\",\n                extra={\n                    'call_id': call_id,\n                    'provider': provider,\n                    'model': model,\n                    'operation': operation,\n                    'error': str(e),\n                    'error_type': type(e).__name__\n                }\n            )\n            raise\n            \n        finally:\n            span.end()\n            self._export_metrics()\n```"
+    ],
+    "patterns_applied": [
+      "Error visibility principle",
+      "Actionable insights over raw data",
+      "Comprehensive tracking without overhead"
+    ],
+    "effort": "Medium (4-5 days)",
+    "impact": "High - Critical for production operations",
+    "dependencies": [],
+    "risks": [
+      "Performance overhead if too detailed",
+      "Storage requirements for metrics"
+    ],
+    "validation_criteria": [
+      "Less than 5% performance overhead",
+      "Actionable insights within 1 minute",
+      "Covers all critical operations",
+      "Integrates with standard tools (Prometheus, Grafana)"
+    ]
+  },
+  {
+    "id": "test-generation-framework",
+    "title": "Create Automated Test Generation Framework",
+    "description": "Build a system that automatically generates comprehensive tests from code contracts, examples, and behavior specifications.",
+    "implementation": {
+      "location": "amplifier/testing/",
+      "modules": [
+        "generators/unit.py - Unit test generation",
+        "generators/integration.py - Integration test generation",
+        "generators/property.py - Property-based test generation",
+        "analyzers/coverage.py - Intelligent coverage analysis"
+      ],
+      "code_example": "```python\n# amplifier/testing/generators/unit.py\nclass UnitTestGenerator:\n    \"\"\"Generate unit tests from contracts and examples.\"\"\"\n    \n    def generate_from_contract(self, \n                              func: Callable,\n                              contract: Contract) -> str:\n        \"\"\"Generate test cases from contract definition.\"\"\"\n        test_cases = []\n        \n        # Generate happy path tests\n        for example in contract.examples:\n            test_case = self._generate_test_case(\n                func.__name__,\n                example.inputs,\n                example.expected_output,\n                'happy_path'\n            )\n            test_cases.append(test_case)\n        \n        # Generate edge case tests\n        for input_name, input_type in contract.inputs.items():\n            edge_cases = self._generate_edge_cases(input_type)\n            for edge_case in edge_cases:\n                test_case = self._generate_edge_test(\n                    func.__name__,\n                    input_name,\n                    edge_case\n                )\n                test_cases.append(test_case)\n        \n        # Generate error case tests\n        for precondition in contract.preconditions:\n            violation_case = self._generate_violation_case(\n                precondition\n            )\n            test_case = self._generate_error_test(\n                func.__name__,\n                violation_case,\n                'ContractViolation'\n            )\n            test_cases.append(test_case)\n        \n        # Generate property-based tests\n        properties = self._infer_properties(contract)\n        for prop in properties:\n            test_case = self._generate_property_test(\n                func.__name__,\n                prop\n            )\n            test_cases.append(test_case)\n        \n        return self._format_test_file(\n            func.__name__,\n            test_cases\n        )\n    \n    def _generate_edge_cases(self, input_type: type) -> list:\n        \"\"\"Generate edge cases for different types.\"\"\"\n        if input_type == str:\n            return ['', ' ', 'a'*10000, '\\n\\t', None]\n        elif input_type == int:\n            return [0, -1, 1, sys.maxsize, -sys.maxsize]\n        elif input_type == list:\n            return [[], [None], [1]*1000, None]\n        elif input_type == dict:\n            return [{}, {'': ''}, None, {'a': {'b': {'c': 'd'}}}]\n        else:\n            return [None]\n```"
+    ],
+    "patterns_applied": [
+      "Testing pyramid (60% unit, 30% integration, 10% e2e)",
+      "Contract-based test generation",
+      "Property-based testing principles"
+    ],
+    "effort": "High (5-6 days)",
+    "impact": "High - Dramatically improves test coverage",
+    "dependencies": ["validation-first-dev"],
+    "risks": [
+      "Generated tests may be too generic",
+      "Maintenance of generated tests"
+    ],
+    "validation_criteria": [
+      "Generates tests achieving 80%+ coverage",
+      "Tests catch real bugs",
+      "Generated tests are readable",
+      "Works with pytest and unittest"
+    ]
+  }
+]
