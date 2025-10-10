@@ -63,11 +63,11 @@ make test
     claude
     ```
 
-    > [!NOTE]
-    > ```
-    > I'm working in ai_working/quickstart-demo, and using the capabilities from 
-    > amplifier.
-    >```
+> [!NOTE]
+> ```
+> I'm working in ai_working/quickstart-demo, and using the capabilities from 
+> amplifier.
+>```
 
 - **Option 2** - Work on the Amplifier project itself
     ```bash
