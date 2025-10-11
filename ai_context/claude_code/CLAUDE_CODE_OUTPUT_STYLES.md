@@ -55,7 +55,7 @@ By default, output styles created through `/output-style:new` are saved as
 markdown files at the user level in `~/.claude/output-styles` and can be used
 across projects. They have the following structure:
 
-```markdown
+```markdown theme={null}
 ---
 name: My Custom Style
 description: A brief description of what this style does, to be displayed to the user

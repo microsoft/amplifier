@@ -81,7 +81,7 @@ Type `Bash` for the matcher.
 
 Select `+ Add new hook…` and enter this command:
 
-```bash
+```bash theme={null}
 jq -r '"\(.tool_input.command) - \(.tool_input.description // "No description")"' >> ~/.claude/bash-command-log.txt
 ```
 
@@ -97,7 +97,7 @@ Then press Esc until you return to the REPL. Your hook is now registered!
 
 Run `/hooks` again or check `~/.claude/settings.json` to see your configuration:
 
-```json
+```json theme={null}
 {
   "hooks": {
     "PreToolUse": [
@@ -119,7 +119,7 @@ Run `/hooks` again or check `~/.claude/settings.json` to see your configuration:
 
 Ask Claude to run a simple command like `ls` and check your log file:
 
-```bash
+```bash theme={null}
 cat ~/.claude/bash-command-log.txt
 ```
 
@@ -139,7 +139,7 @@ ls - Lists files and directories
 
 Automatically format TypeScript files after editing:
 
-```json
+```json theme={null}
 {
   "hooks": {
     "PostToolUse": [
@@ -161,7 +161,7 @@ Automatically format TypeScript files after editing:
 
 Automatically fix missing language tags and formatting issues in markdown files:
 
-```json
+```json theme={null}
 {
   "hooks": {
     "PostToolUse": [
@@ -170,7 +170,7 @@ Automatically fix missing language tags and formatting issues in markdown files:
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/markdown_formatter.py"
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/markdown_formatter.py"
           }
         ]
       }
@@ -181,7 +181,7 @@ Automatically fix missing language tags and formatting issues in markdown files:
 
 Create `.claude/hooks/markdown_formatter.py` with this content:
 
-````python
+````python theme={null}
 #!/usr/bin/env python3
 """
 Markdown formatter for Claude Code output.
@@ -269,7 +269,7 @@ except Exception as e:
 
 Make the script executable:
 
-```bash
+```bash theme={null}
 chmod +x .claude/hooks/markdown_formatter.py
 ```
 
@@ -284,7 +284,7 @@ This hook automatically:
 
 Get desktop notifications when Claude needs input:
 
-```json
+```json theme={null}
 {
   "hooks": {
     "Notification": [
@@ -306,7 +306,7 @@ Get desktop notifications when Claude needs input:
 
 Block edits to sensitive files:
 
-```json
+```json theme={null}
 {
   "hooks": {
     "PreToolUse": [
