@@ -1,5 +1,9 @@
 # Amplifier: Your AI Development Amplified
 
+**Am accelerated development system** that provides specialized AI agents, persistent knowledge that compounds over time, and workflows that execute complex methodologies.
+
+**Quick to install. Immediate impact.** ↓
+
 ## 🚀 QuickStart 
 
 ### Prerequisites
