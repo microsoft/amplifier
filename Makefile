@@ -666,4 +666,3 @@ dot-to-mermaid: ## Convert DOT files to Mermaid format. Usage: make dot-to-merma
 	mkdir -p "$$SESSION_DIR"; \
 	echo "Converting DOT files to Mermaid format..."; \
 	uv run python -m ai_working.dot_to_mermaid.cli "$(INPUT)" --session-file "$$SESSION_DIR/session.json"
-	
