@@ -21,7 +21,6 @@ Amplifier is a coordinated and accelerated development system that provides spec
     - `node --version     # Need any version`
     - `pnpm --version     # Need any version`
     - `git --version      # Need any version`
-    - `claude --version   # For now. To be removed in the future.`
 
 2. Install what is missing.    
 
@@ -29,7 +28,6 @@ Amplifier is a coordinated and accelerated development system that provides spec
 
     ```bash
     brew install python3 node git pnpm uv
-    npm install -g @anthropic-ai/claude-cli
     ```
 
    **Ubuntu/Debian/WSL**
@@ -44,9 +42,6 @@ Amplifier is a coordinated and accelerated development system that provides spec
 
     # uv (Python package manager)
     curl -LsSf https://astral.sh/uv/install.sh | sh
-
-    # Claude Code CLI
-    npm install -g @anthropic-ai/claude-cli
     ```
 
     **Windows**
@@ -61,7 +56,6 @@ Amplifier is a coordinated and accelerated development system that provides spec
     - [pnpm](https://pnpm.io/installation) (package manager)
     - [Git](https://git-scm.com) (any version)
     - [uv](https://docs.astral.sh/uv/getting-started/installation/) (Python package manager)
-    - [Claude Code CLI](https://github.com/anthropics/claude-code) (AI assistant)
 
 > **Platform Note**: Development and testing has primarily been done in Windows WSL2. macOS and Linux should work but have received less testing. Your mileage may vary.
 
@@ -75,7 +69,7 @@ git clone https://github.com/microsoft/amplifier.git
 cd amplifier
 ```
 ```bash
-# Install Python dependencies and latest Claude Code CLI globally
+# Install Python dependencies
 make install
 make check
 make test
