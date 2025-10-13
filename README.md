@@ -97,11 +97,11 @@ mkdir ai_working/<project-name>
 claude
 ```
 
-> *Claude Code:*
-> ```
-> I'm working in ai_working/<project-name>, and using the capabilities from 
-> amplifier.
->```
+*Type into Claude Code:*
+```
+I'm working in ai_working/<project-name>, and using the capabilities from 
+amplifier.
+```
 
 **Option 2** - Work on the Amplifier project itself
 ```bash
