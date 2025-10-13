@@ -1,13 +1,13 @@
 # Amplifier: Supercharged AI Development Environment
 
-> *"I have more ideas than time to try them out"* — The problem we're solving.
+> _"I have more ideas than time to try them out"_ — The problem we're solving.
 
 > [!CAUTION]
 > This project is a research demonstrator. It is in early development and may change significantly. Using permissive AI tools in your repository requires careful attention to security considerations and careful human supervision, and even then things can still go wrong. Use it with caution, and at your own risk.
 
 Amplifier is a coordinated and accelerated development system that provides specialized AI agents, persistent knowledge that compounds over time, and workflows that execute complex methodologies.
 
-## 🚀 QuickStart 
+## 🚀 QuickStart
 
 ### Prerequisites Guide
 
@@ -16,46 +16,46 @@ Amplifier is a coordinated and accelerated development system that provides spec
 
 1. Check if prerequisites are already met.
 
-    - `python3 --version  # Need 3.11+`
-    - `uv --version       # Need any version`
-    - `node --version     # Need any version`
-    - `pnpm --version     # Need any version`
-    - `git --version      # Need any version`
+   - `python3 --version  # Need 3.11+`
+   - `uv --version       # Need any version`
+   - `node --version     # Need any version`
+   - `pnpm --version     # Need any version`
+   - `git --version      # Need any version`
 
-2. Install what is missing.    
+2. Install what is missing.
 
-    **Mac**
+   **Mac**
 
-    ```bash
-    brew install python3 node git pnpm uv
-    ```
+   ```bash
+   brew install python3 node git pnpm uv
+   ```
 
    **Ubuntu/Debian/WSL**
 
-    ```bash
-    # System packages
-    sudo apt update && sudo apt install -y python3 python3-pip nodejs npm git
+   ```bash
+   # System packages
+   sudo apt update && sudo apt install -y python3 python3-pip nodejs npm git
 
-    # pnpm
-    npm install -g pnpm
-    pnpm setup && source ~/.bashrc
+   # pnpm
+   npm install -g pnpm
+   pnpm setup && source ~/.bashrc
 
-    # uv (Python package manager)
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    ```
+   # uv (Python package manager)
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
 
-    **Windows**
+   **Windows**
 
-    1. Install [WSL2](https://learn.microsoft.com/windows/wsl/install)
-    2. Run Ubuntu commands above inside WSL
+   1. Install [WSL2](https://learn.microsoft.com/windows/wsl/install)
+   2. Run Ubuntu commands above inside WSL
 
-    **Manual Downloads**
+   **Manual Downloads**
 
-    - [Python](https://python.org/downloads) (3.11 or newer)
-    - [Node.js](https://nodejs.org) (any recent version)
-    - [pnpm](https://pnpm.io/installation) (package manager)
-    - [Git](https://git-scm.com) (any version)
-    - [uv](https://docs.astral.sh/uv/getting-started/installation/) (Python package manager)
+   - [Python](https://python.org/downloads) (3.11 or newer)
+   - [Node.js](https://nodejs.org) (any recent version)
+   - [pnpm](https://pnpm.io/installation) (package manager)
+   - [Git](https://git-scm.com) (any version)
+   - [uv](https://docs.astral.sh/uv/getting-started/installation/) (Python package manager)
 
 > **Platform Note**: Development and testing has primarily been done in Windows WSL2. macOS and Linux should work but have received less testing. Your mileage may vary.
 
@@ -68,41 +68,44 @@ Amplifier is a coordinated and accelerated development system that provides spec
 git clone https://github.com/microsoft/amplifier.git
 cd amplifier
 ```
+
 ```bash
 # Install Python dependencies
 make install
-make check
-make test
-```
-```bash
-# Activate virtual environment 
-source .venv/bin/activate # Linux/Mac/WSL 
-# .venv\Scripts\Activate.ps1 # Windows PowerShell 
 ```
 
+```bash
+# Activate virtual environment
+source .venv/bin/activate # Linux/Mac/WSL
+# .venv\Scripts\Activate.ps1 # Windows PowerShell
+```
 
 ### Use Amplifier via Claude Code
 
-**Option 1** - 
+**Option 1** -
 Work on a new (or existing) project
+
 ```bash
-mkdir ai_working/<project-name>
-# ln -s ../<path-to-my-existing-project> ai_working/<project-name>
+mkdir ai_working/<my-new-project-name> # new
+# ln -s ../<relative-path-to-my-existing-project> ai_working/<mt-existing-project-name> # existing
 claude
 ```
 
-*Type into Claude Code:*
+_Type into Claude Code:_
+
 ```
-I'm working in ai_working/<project-name>, and using the capabilities from 
+I'm working in ai_working/<project-name>, and using the capabilities from
 amplifier.
 ```
 
 **Option 2** - Work on the Amplifier project itself
+
 ```bash
 claude
 ```
 
 ---
+
 ## What Is Amplifier?
 
 **Amplifier is a complete development environment that takes AI coding assistants and supercharges them with discovered patterns, specialized expertise, and powerful automation — turning a helpful assistant into a force multiplier that can deliver complex solutions with minimal hand-holding.**
@@ -126,9 +129,9 @@ We've taken our learnings about what works in AI-assisted development and packag
 
 Try out one of the specialized experts:
 
-   - "Use the zen-architect agent to design my application's caching layer"
-   - "Deploy bug-hunter to find why my login system is failing"
-   - "Have security-guardian review my API implementation for vulnerabilities"
+- "Use the zen-architect agent to design my application's caching layer"
+- "Deploy bug-hunter to find why my login system is failing"
+- "Have security-guardian review my API implementation for vulnerabilities"
 
 ### Parallel Development
 
