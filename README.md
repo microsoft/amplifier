@@ -1,5 +1,7 @@
 # Amplifier: Supercharged AI Development Environment
 
+> *"I have more ideas than time to try them out"* — The problem we're solving.
+
 > [!CAUTION]
 > This project is a research demonstrator. It is in early development and may change significantly. Using permissive AI tools in your repository requires careful attention to security considerations and careful human supervision, and even then things can still go wrong. Use it with caution, and at your own risk.
 
