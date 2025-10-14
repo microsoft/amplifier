@@ -373,6 +373,13 @@ For detailed guidance, see [scenarios/blog_writer/HOW_TO_CREATE_YOUR_OWN.md](sce
 - This is a learning resource, not production software
 - **No support provided** - See [SUPPORT.md](SUPPORT.md)
 
+## 🧪 Testing & Benchmarks
+
+Testing and benchmarking are critical to ensuring that any product leveraging AI, including Amplifier, is quantitatively measured for performance and reliability.
+Currently, we leverage [terminal-bench](https://github.com/laude-institute/terminal-bench) to reproducibly benchmark Amplifier against other agents.
+Further details on how to run the benchmark can be found in [tests/terminal_bench/README.md](tests/terminal_bench/README.md).
+
+
 ## 🔮 Vision
 
 We're building toward a future where:
