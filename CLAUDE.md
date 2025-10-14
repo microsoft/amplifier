@@ -33,6 +33,150 @@ Assistant: "Did you have a specific design or set of requirements in mind for th
 Assistant: Use ExitPlanMode tool when you have finished planning and there are no further clarifying questions you need answered from the user or if they have explicitly indicated they are done planning.
 </example>
 
+## 🚨 CRITICAL: Git Flow Rules (絶対遵守)
+
+**These rules have NO EXCEPTIONS. Violating them is a critical mistake that compromises the entire project.**
+
+### Absolute Prohibitions
+
+**NEVER do these operations under ANY circumstances:**
+
+1. ❌ **Direct commits to main branch**
+   ```bash
+   # ABSOLUTELY FORBIDDEN - DO NOT DO THIS:
+   git checkout main
+   git add .
+   git commit -m "..."
+   git push origin main
+   ```
+
+2. ❌ **Direct commits to develop branch** (except from feature branches)
+
+3. ❌ **Merge without Pull Request** - All merges require PR review
+
+4. ❌ **Force push without explicit user approval**
+
+5. ❌ **Rewrite history on public branches** (main, develop)
+
+### Mandatory Workflow
+
+**ALWAYS follow this flow for ALL changes:**
+
+```bash
+# ✅ CORRECT WORKFLOW:
+
+# 1. Start from develop
+git checkout develop
+git pull origin develop
+
+# 2. Create feature/fix branch
+git checkout -b feature/my-feature
+# or
+git checkout -b fix/my-fix
+
+# 3. Make changes and commit
+git add .
+git commit -m "feat: description"
+
+# 4. Push to origin
+git push origin feature/my-feature
+
+# 5. Create Pull Request (ALWAYS)
+gh pr create --base develop --head feature/my-feature \
+  --title "feat: my feature" \
+  --body "Description..."
+
+# 6. Wait for review and approval
+# 7. Merge via GitHub (squash merge preferred)
+```
+
+### Security Fixes Are NOT Exceptions
+
+**Even for critical security vulnerabilities:**
+
+- ✅ Create feature/fix branch from develop (or hotfix from main for production emergencies)
+- ✅ Implement fix
+- ✅ Create PR with `security` label
+- ✅ Request expedited review
+- ✅ Merge after approval
+
+**NEVER:**
+- ❌ Commit directly to main "because it's urgent"
+- ❌ Skip PR process "because it's a security fix"
+- ❌ Push to main "to save time"
+
+**Security urgency does NOT override process. Always use PRs.**
+
+### Hotfix Exception (Production Emergencies Only)
+
+For critical production issues affecting main branch:
+
+```bash
+# 1. Branch from main (NOT develop)
+git checkout main
+git pull origin main
+git checkout -b hotfix/critical-issue
+
+# 2. Fix the issue
+git commit -m "fix: critical production issue"
+
+# 3. Create PR to main
+gh pr create --base main --head hotfix/critical-issue \
+  --title "🚨 HOTFIX: Critical issue" \
+  --label "priority:critical"
+
+# 4. After merge, backport to develop
+git checkout develop
+git pull origin develop
+git merge main
+git push origin develop
+```
+
+### Required User Confirmations
+
+**ALWAYS ask user before:**
+
+- Merging to main or develop
+- Force pushing to any branch
+- Deleting branches
+- Rewriting commit history
+- Any git operation on main/develop branches
+
+### Violation Recovery
+
+If you accidentally commit to main:
+
+```bash
+# DO NOT PANIC - DO NOT FORCE PUSH
+
+# Option A: Revert (Recommended)
+git revert <commit-hash>
+git push origin main
+
+# Option B: Reset (Requires team approval)
+# STOP and ask user first
+```
+
+**Immediately notify the user if you make this mistake.**
+
+### Why These Rules Exist
+
+This project learned this lesson the hard way:
+- Direct commits to main bypassed code review
+- Security fixes were merged without validation
+- Branch protection was circumvented
+- Team coordination broke down
+
+**These rules exist because they were violated and caused problems. Do not repeat history.**
+
+### Integration with AGENTS.md
+
+For complete Git Flow documentation, see:
+- `@docs/dev/GIT_FLOW.md` - Comprehensive git workflow guide
+- `@AGENTS.md` Section 16.5 - AI development tool git rules
+
+**Remember: You are Claude Code. You follow these rules absolutely. No exceptions.**
+
 ## Parallel Execution Strategy
 
 **CRITICAL**: Always ask yourself: "What can I do in parallel here?" Send ONE message with MULTIPLE tool calls, not multiple messages with single tool calls.
