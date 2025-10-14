@@ -3,7 +3,6 @@
 import hashlib
 import json
 import logging
-import os
 import re
 from collections.abc import Iterator
 from pathlib import Path
@@ -37,13 +36,15 @@ class ContentLoader:
 
         Args:
             content_dirs: Optional list of directories to scan.
-                         If None, uses AMPLIFIER_CONTENT_DIRS env var.
+                         If None, uses PathConfig to get configured directories.
         """
         if content_dirs is None:
-            env_dirs = os.environ.get("AMPLIFIER_CONTENT_DIRS", "")
-            content_dirs = [d.strip() for d in env_dirs.split(",") if d.strip()]
+            # Use PathConfig which properly loads from .env file
+            from amplifier.config.paths import paths
 
-        self.content_dirs = [Path(d).resolve() for d in content_dirs if Path(d).exists()]
+            self.content_dirs = [p for p in paths.content_dirs if p.exists()]
+        else:
+            self.content_dirs = [Path(d).resolve() for d in content_dirs if Path(d).exists()]
 
         if not self.content_dirs:
             logger.warning("No valid content directories configured")
@@ -140,7 +141,8 @@ class ContentLoader:
         total_files_loaded = 0
 
         for content_dir in self.content_dirs:
-            logger.info(f"Scanning directory: {content_dir}")
+            if not quiet:
+                logger.info(f"Scanning directory: {content_dir}")
 
             # First, count total files to scan for better progress indication
             dir_files_found = 0
@@ -186,7 +188,7 @@ class ContentLoader:
         if not case_sensitive:
             query = query.lower()
 
-        for item in self.load_all():
+        for item in self.load_all(quiet=True):
             search_content = item.content if case_sensitive else item.content.lower()
             search_title = item.title if case_sensitive else item.title.lower()
 
@@ -202,7 +204,7 @@ class ContentLoader:
         Returns:
             ContentItem if found, None otherwise
         """
-        for item in self.load_all():
+        for item in self.load_all(quiet=True):
             if item.content_id == content_id:
                 return item
         return None

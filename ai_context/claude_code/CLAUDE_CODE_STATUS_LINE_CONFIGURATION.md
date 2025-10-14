@@ -12,7 +12,7 @@ You can either:
 
 - Directly add a `statusLine` command to your `.claude/settings.json`:
 
-```json
+```json theme={null}
 {
   "statusLine": {
     "type": "command",
@@ -34,7 +34,7 @@ You can either:
 
 Your status line command receives structured data via stdin in JSON format:
 
-```json
+```json theme={null}
 {
   "hook_event_name": "Status",
   "session_id": "abc123...",
@@ -66,7 +66,7 @@ Your status line command receives structured data via stdin in JSON format:
 
 ### Simple Status Line
 
-```bash
+```bash theme={null}
 #!/bin/bash
 # Read JSON input from stdin
 input=$(cat)
@@ -80,7 +80,7 @@ echo "[$MODEL_DISPLAY] 📁 ${CURRENT_DIR##*/}"
 
 ### Git-Aware Status Line
 
-```bash
+```bash theme={null}
 #!/bin/bash
 # Read JSON input from stdin
 input=$(cat)
@@ -103,7 +103,7 @@ echo "[$MODEL_DISPLAY] 📁 ${CURRENT_DIR##*/}$GIT_BRANCH"
 
 ### Python Example
 
-```python
+```python theme={null}
 #!/usr/bin/env python3
 import json
 import sys
@@ -132,7 +132,7 @@ print(f"[{model}] 📁 {current_dir}{git_branch}")
 
 ### Node.js Example
 
-```javascript
+```javascript theme={null}
 #!/usr/bin/env node
 
 const fs = require("fs");
@@ -167,7 +167,7 @@ process.stdin.on("end", () => {
 
 For more complex bash scripts, you can create helper functions:
 
-```bash
+```bash theme={null}
 #!/bin/bash
 # Read JSON input once
 input=$(cat)

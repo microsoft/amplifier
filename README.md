@@ -1,9 +1,110 @@
 # Amplifier: Supercharged AI Development Environment
 
-> "I have more ideas than time to try them out" — The problem we're solving
+> _"I have more ideas than time to try them out"_ — The problem we're solving.
 
 > [!CAUTION]
 > This project is a research demonstrator. It is in early development and may change significantly. Using permissive AI tools in your repository requires careful attention to security considerations and careful human supervision, and even then things can still go wrong. Use it with caution, and at your own risk.
+
+Amplifier is a coordinated and accelerated development system that provides specialized AI agents, persistent knowledge that compounds over time, and workflows that execute complex methodologies.
+
+## 🚀 QuickStart
+
+### Prerequisites Guide
+
+<details>
+<summary>Click to expand prerequisite instructions</summary>
+
+1. Check if prerequisites are already met.
+
+   - `python3 --version  # Need 3.11+`
+   - `uv --version       # Need any version`
+   - `node --version     # Need any version`
+   - `pnpm --version     # Need any version`
+   - `git --version      # Need any version`
+
+2. Install what is missing.
+
+   **Mac**
+
+   ```bash
+   brew install python3 node git pnpm uv
+   ```
+
+   **Ubuntu/Debian/WSL**
+
+   ```bash
+   # System packages
+   sudo apt update && sudo apt install -y python3 python3-pip nodejs npm git
+
+   # pnpm
+   npm install -g pnpm
+   pnpm setup && source ~/.bashrc
+
+   # uv (Python package manager)
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+
+   **Windows**
+
+   1. Install [WSL2](https://learn.microsoft.com/windows/wsl/install)
+   2. Run Ubuntu commands above inside WSL
+
+   **Manual Downloads**
+
+   - [Python](https://python.org/downloads) (3.11 or newer)
+   - [Node.js](https://nodejs.org) (any recent version)
+   - [pnpm](https://pnpm.io/installation) (package manager)
+   - [Git](https://git-scm.com) (any version)
+   - [uv](https://docs.astral.sh/uv/getting-started/installation/) (Python package manager)
+
+> **Platform Note**: Development and testing has primarily been done in Windows WSL2. macOS and Linux should work but have received less testing. Your mileage may vary.
+
+</details>
+
+### Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/microsoft/amplifier.git
+cd amplifier
+```
+
+```bash
+# Install Python dependencies
+make install
+```
+
+```bash
+# Activate virtual environment
+source .venv/bin/activate # Linux/Mac/WSL
+# .venv\Scripts\Activate.ps1 # Windows PowerShell
+```
+
+### Use Amplifier via Claude Code
+
+**Option 1** -
+Work on a new (or existing) project
+
+```bash
+mkdir ai_working/<my-new-project-name> # new
+# ln -s ../<relative-path-to-my-existing-project> ai_working/<mt-existing-project-name> # existing
+claude
+```
+
+_Type into Claude Code:_
+
+```
+I'm working in ai_working/<project-name>, and using the capabilities from
+amplifier.
+```
+
+**Option 2** - Work on the Amplifier project itself
+
+```bash
+claude
+```
+
+---
 
 ## What Is Amplifier?
 
@@ -20,103 +121,17 @@ We've taken our learnings about what works in AI-assisted development and packag
 - **Conversation Transcripts**: Never lose context - automatic export before compaction, instant restoration
 - **Automation Tools**: Quality checks and patterns enforced automatically
 
-## 🚀 Step-by-Step Setup
-
-### Prerequisites
-
-Before starting, you'll need:
-
-- **Python 3.11+** - [Download Python](https://www.python.org/downloads/)
-- **Node.js** - [Download Node.js](https://nodejs.org/)
-- **VS Code** (recommended) - [Download VS Code](https://code.visualstudio.com/)
-- **Git** - [Download Git](https://git-scm.com/)
-
-> **Platform Note**: Development and testing has primarily been done in Windows WSL2. macOS and Linux should work but have received less testing. Your mileage may vary.
-
-### Installation
-
-1. **Clone the repository**:
-
-   ```bash
-   git clone https://github.com/microsoft/amplifier.git
-   cd amplifier
-   ```
-
-2. **Run the installer**:
-
-   ```bash
-   make install
-   ```
-
-   This installs Python dependencies, the Claude CLI, and sets up your environment.
-
-3. **Configure your data directories** (Recommended but optional):
-
-   **Why configure this?** By default, Amplifier stores data in `.data/` (git-ignored). But centralizing your data externally gives you:
-
-   - **Shared knowledge across all worktrees** - Every parallel experiment accesses the same knowledge base
-   - **Cross-device synchronization** - Work from any machine with the same accumulated knowledge
-   - **Automatic cloud backup** - Never lose your extracted insights
-   - **Reusable across projects** - Apply learned patterns to new codebases
-
-   Set up external directories:
-
-   ```bash
-   cp .env.example .env
-   # Edit .env to point to your preferred locations
-   ```
-
-   Example configuration using cloud storage:
-
-   ```bash
-   # Centralized knowledge base - shared across all worktrees and devices
-   # Using OneDrive/Dropbox/iCloud enables automatic backup!
-   AMPLIFIER_DATA_DIR=~/OneDrive/amplifier/data
-
-   # Your source materials (documentation, specs, design docs, notes)
-   # Can point to multiple folders where you keep content
-   AMPLIFIER_CONTENT_DIRS=.data/content,~/OneDrive/amplifier/content,~/Documents/notes
-   ```
-
-4. **Activate the environment** (if not already active):
-   ```bash
-   source .venv/bin/activate  # Linux/Mac/WSL
-   .venv\Scripts\activate     # Windows
-   ```
+---
 
 ## 📖 How to Use Amplifier
 
-### Basic Usage
+### Explore Ampifier's agents on your code
 
-Start Claude in the Amplifier directory to get all enhancements automatically:
+Try out one of the specialized experts:
 
-```bash
-cd amplifier
-claude  # Everything is pre-configured and ready
-```
-
-### Using with Your Own Projects
-
-Want Amplifier's power on your own code? Easy:
-
-1. **Start Claude with both directories**:
-
-   ```bash
-   claude --add-dir /path/to/your/project
-   ```
-
-2. **Tell Claude where to work** (paste as first message):
-
-   ```
-   I'm working in /path/to/your/project which doesn't have Amplifier files.
-   Please cd to that directory and work there.
-   Do NOT update any issues or PRs in the Amplifier repo.
-   ```
-
-3. **Use Amplifier's agents on your code**:
-   - "Use the zen-architect agent to design my application's caching layer"
-   - "Deploy bug-hunter to find why my login system is failing"
-   - "Have security-guardian review my API implementation for vulnerabilities"
+- "Use the zen-architect agent to design my application's caching layer"
+- "Deploy bug-hunter to find why my login system is failing"
+- "Have security-guardian review my API implementation for vulnerabilities"
 
 ### Parallel Development
 
@@ -153,6 +168,16 @@ Enable with:
 ```
 /statusline use the script at .claude/tools/statusline-example.sh
 ```
+
+### Best Practices & Tips
+
+**Want to get the most out of Amplifier?** Check out [The Amplifier Way](docs/THIS_IS_THE_WAY.md) for battle-tested strategies including:
+
+- Understanding capability vs. context
+- Decomposition strategies for complex tasks
+- Using transcript tools to capture and improve workflows
+- Demo-driven development patterns
+- Practical tips for effective AI-assisted development
 
 ## 🎯 Key Features
 
@@ -308,6 +333,7 @@ Don't create them, just give me some ideas.
 ```
 
 This brainstorming session will give you ideas like:
+
 - **Documentation Quality Amplifier** - Improves docs by simulating confused readers
 - **Research Synthesis Quality Escalator** - Extracts and refines knowledge from documents
 - **Code Quality Evolution Engine** - Writes code, tests it, learns from failures
@@ -315,6 +341,7 @@ This brainstorming session will give you ideas like:
 - **Self-Debugging Error Recovery** - Learns to fix errors autonomously
 
 The magic happens when you combine:
+
 1. **Amplifier's brainstorming** - Generates diverse possibilities
 2. **Your domain knowledge** - You know your needs and opportunities
 3. **Your creativity** - Sparks recognition of what would be useful
@@ -330,6 +357,7 @@ Once you have an idea:
 5. **Share it back** - Help others by contributing to scenarios/
 
 **Example**: The blog writer tool was created with one conversation where the user described:
+
 - The goal (write blog posts in my style)
 - The thinking process (extract style → draft → review sources → review style → get feedback → refine)
 

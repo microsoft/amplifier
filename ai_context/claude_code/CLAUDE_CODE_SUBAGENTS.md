@@ -84,15 +84,42 @@ Subagents are stored as Markdown files with YAML frontmatter in two possible loc
 
 When subagent names conflict, project-level subagents take precedence over user-level subagents.
 
+### CLI-based configuration
+
+You can also define subagents dynamically using the `--agents` CLI flag, which accepts a JSON object:
+
+```bash theme={null}
+claude --agents '{
+  "code-reviewer": {
+    "description": "Expert code reviewer. Use proactively after code changes.",
+    "prompt": "You are a senior code reviewer. Focus on code quality, security, and best practices.",
+    "tools": ["Read", "Grep", "Glob", "Bash"],
+    "model": "sonnet"
+  }
+}'
+```
+
+**Priority**: CLI-defined subagents have lower priority than project-level subagents but higher priority than user-level subagents.
+
+**Use case**: This approach is useful for:
+
+- Quick testing of subagent configurations
+- Session-specific subagents that don't need to be saved
+- Automation scripts that need custom subagents
+- Sharing subagent definitions in documentation or scripts
+
+For detailed information about the JSON format and all available options, see the [CLI reference documentation](/en/docs/claude-code/cli-reference#agents-flag-format).
+
 ### File format
 
 Each subagent is defined in a Markdown file with this structure:
 
-```markdown
+```markdown theme={null}
 ---
 name: your-sub-agent-name
 description: Description of when this subagent should be invoked
 tools: tool1, tool2, tool3 # Optional - inherits all tools if omitted
+model: sonnet # Optional - specify model alias or 'inherit'
 ---
 
 Your subagent's system prompt goes here. This can be multiple paragraphs
@@ -105,11 +132,24 @@ the subagent should follow.
 
 #### Configuration fields
 
-| Field         | Required | Description                                                                                 |
-| :------------ | :------- | :------------------------------------------------------------------------------------------ |
-| `name`        | Yes      | Unique identifier using lowercase letters and hyphens                                       |
-| `description` | Yes      | Natural language description of the subagent's purpose                                      |
-| `tools`       | No       | Comma-separated list of specific tools. If omitted, inherits all tools from the main thread |
+| Field         | Required | Description                                                                                                                                                                                                                      |
+| :------------ | :------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`        | Yes      | Unique identifier using lowercase letters and hyphens                                                                                                                                                                            |
+| `description` | Yes      | Natural language description of the subagent's purpose                                                                                                                                                                           |
+| `tools`       | No       | Comma-separated list of specific tools. If omitted, inherits all tools from the main thread                                                                                                                                      |
+| `model`       | No       | Model to use for this subagent. Can be a model alias (`sonnet`, `opus`, `haiku`) or `'inherit'` to use the main conversation's model. If omitted, defaults to the [configured subagent model](/en/docs/claude-code/model-config) |
+
+### Model selection
+
+The `model` field allows you to control which [AI model](/en/docs/claude-code/model-config) the subagent uses:
+
+- **Model alias**: Use one of the available aliases: `sonnet`, `opus`, or `haiku`
+- **`'inherit'`**: Use the same model as the main conversation (useful for consistency)
+- **Omitted**: If not specified, uses the default model configured for subagents (`sonnet`)
+
+<Note>
+  Using `'inherit'` is particularly useful when you want your subagents to adapt to the model choice of the main conversation, ensuring consistent capabilities and response style throughout your session.
+</Note>
 
 ### Available tools
 
@@ -149,7 +189,7 @@ This opens an interactive menu where you can:
 
 You can also manage subagents by working directly with their files:
 
-```bash
+```bash theme={null}
 # Create a project subagent
 mkdir -p .claude/agents
 echo '---
@@ -192,11 +232,12 @@ Request a specific subagent by mentioning it in your command:
 
 ### Code reviewer
 
-```markdown
+```markdown theme={null}
 ---
 name: code-reviewer
 description: Expert code review specialist. Proactively reviews code for quality, security, and maintainability. Use immediately after writing or modifying code.
 tools: Read, Grep, Glob, Bash
+model: inherit
 ---
 
 You are a senior code reviewer ensuring high standards of code quality and security.
@@ -229,7 +270,7 @@ Include specific examples of how to fix issues.
 
 ### Debugger
 
-```markdown
+```markdown theme={null}
 ---
 name: debugger
 description: Debugging specialist for errors, test failures, and unexpected behavior. Use proactively when encountering any issues.
@@ -267,11 +308,12 @@ Focus on fixing the underlying issue, not just symptoms.
 
 ### Data scientist
 
-```markdown
+```markdown theme={null}
 ---
 name: data-scientist
 description: Data analysis expert for SQL queries, BigQuery operations, and data insights. Use proactively for data analysis tasks and queries.
 tools: Bash, Read, Write
+model: sonnet
 ---
 
 You are a data scientist specializing in SQL and BigQuery analysis.

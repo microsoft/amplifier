@@ -30,6 +30,26 @@ Transform rough ideas into polished blog posts that match your personal writing 
 
 ---
 
+### 📚 [tips-synthesizer](./tips_synthesizer/)
+
+Transform scattered tips and tricks into comprehensive, well-organized guides.
+
+**The Problem**: You have valuable tips scattered across multiple files. They're fragmented, have redundancy, lack structure, and miss the connections between related concepts.
+
+**The Solution**: A multi-stage AI pipeline that synthesizes scattered knowledge:
+
+- Extracts tips systematically from all your markdown files
+- Categorizes and organizes related tips intelligently
+- Creates a cohesive document with logical flow
+- Reviews for completeness, accuracy, and clarity
+- Refines iteratively based on automated feedback
+
+**How it was built**: User described the goal and multi-stage thinking process - "extract tips, organize into notes, synthesize into a document, review for quality, refine until it passes." Amplifier implemented the complete pipeline with state management, defensive patterns, and review loops.
+
+**Status**: Ready to use (experimental)
+
+---
+
 ### 🎨 [article-illustrator](./article_illustrator/)
 
 Automatically generate contextually relevant AI illustrations for your markdown articles.

@@ -12,13 +12,13 @@ Suppose you've just joined a new project and need to understand its structure qu
 
 <Steps>
   <Step title="Navigate to the project root directory">
-    ```bash
+    ```bash  theme={null}
     cd /path/to/project
     ```
   </Step>
 
   <Step title="Start Claude Code">
-    ```bash
+    ```bash  theme={null}
     claude
     ```
   </Step>
@@ -246,7 +246,7 @@ If you are in Normal Mode, **Shift+Tab** will first switch into Auto-Accept Mode
 
 To start a new session in Plan Mode, use the `--permission-mode plan` flag:
 
-```bash
+```bash theme={null}
 claude --permission-mode plan
 ```
 
@@ -254,13 +254,13 @@ claude --permission-mode plan
 
 You can also run a query in Plan Mode directly with `-p` (i.e., in ["headless mode"](/en/docs/claude-code/sdk/sdk-headless)):
 
-```bash
+```bash theme={null}
 claude --permission-mode plan -p "Analyze the authentication system and suggest improvements"
 ```
 
 ### Example: Planning a complex refactor
 
-```bash
+```bash theme={null}
 claude --permission-mode plan
 ```
 
@@ -277,7 +277,7 @@ Claude will analyze the current implementation and create a comprehensive plan. 
 
 ### Configure Plan Mode as default
 
-```json
+```json theme={null}
 // .claude/settings.json
 {
   "permissions": {
@@ -519,6 +519,10 @@ Use @ to quickly include files or directories without waiting for Claude to read
 
 Suppose you're working on complex architectural decisions, challenging bugs, or planning multi-step implementations that require deep reasoning.
 
+<Note>
+  [Extended thinking](/en/docs/build-with-claude/extended-thinking) is disabled by default in Claude Code. You can enable it on-demand by using `Tab` to toggle Thinking on, or by using prompts like "think" or "think hard". You can also enable it permanently by setting the [`MAX_THINKING_TOKENS` environment variable](/en/docs/claude-code/settings#environment-variables) in your settings.
+</Note>
+
 <Steps>
   <Step title="Provide context and ask Claude to think">
     ```
@@ -536,7 +540,7 @@ Suppose you're working on complex architectural decisions, challenging bugs, or 
     ```
 
     ```
-    > keep thinking about edge cases we should handle
+    > think hard about edge cases we should handle
     ```
 
   </Step>
@@ -545,7 +549,7 @@ Suppose you're working on complex architectural decisions, challenging bugs, or 
 <Tip>
   Tips to get the most value out of extended thinking:
 
-Extended thinking is most valuable for complex tasks such as:
+[Extended thinking](/en/docs/build-with-claude/extended-thinking) is most valuable for complex tasks such as:
 
 - Planning complex architectural changes
 - Debugging intricate issues
@@ -553,10 +557,12 @@ Extended thinking is most valuable for complex tasks such as:
 - Understanding complex codebases
 - Evaluating tradeoffs between different approaches
 
+Use `Tab` to toggle Thinking on and off during a session.
+
 The way you prompt for thinking results in varying levels of thinking depth:
 
 - "think" triggers basic extended thinking
-- intensifying phrases such as "keep thinking", "think more", "think a lot", or "think longer" triggers deeper thinking
+- intensifying phrases such as "keep hard", "think more", "think a lot", or "think longer" triggers deeper thinking
 
 For more extended thinking prompting tips, see [Extended thinking tips](/en/docs/build-with-claude/prompt-engineering/extended-thinking-tips).
 </Tip>
@@ -579,7 +585,7 @@ Claude Code provides two options for resuming previous conversations:
 
 <Steps>
   <Step title="Continue the most recent conversation">
-    ```bash
+    ```bash  theme={null}
     claude --continue
     ```
 
@@ -588,7 +594,7 @@ Claude Code provides two options for resuming previous conversations:
   </Step>
 
   <Step title="Continue in non-interactive mode">
-    ```bash
+    ```bash  theme={null}
     claude --continue --print "Continue with my task"
     ```
 
@@ -597,17 +603,16 @@ Claude Code provides two options for resuming previous conversations:
   </Step>
 
   <Step title="Show conversation picker">
-    ```bash
+    ```bash  theme={null}
     claude --resume
     ```
 
-    This displays an interactive conversation selector showing:
+    This displays an interactive conversation selector with a clean list view showing:
 
-    * Conversation start time
-    * Initial prompt or conversation summary
-    * Message count
+    * Session summary (or initial prompt)
+    * Metadata: time elapsed, message count, and git branch
 
-    Use arrow keys to navigate and press Enter to select a conversation.
+    Use arrow keys to navigate and press Enter to select a conversation. Press Esc to exit.
 
   </Step>
 </Steps>
@@ -630,7 +635,7 @@ How it works:
 
 Examples:
 
-```bash
+```bash theme={null}
 # Continue most recent conversation
 claude --continue
 
@@ -662,7 +667,7 @@ Suppose you need to work on multiple tasks simultaneously with complete code iso
   </Step>
 
   <Step title="Create a new worktree">
-    ```bash
+    ```bash  theme={null}
     # Create a new worktree with a new branch
     git worktree add ../project-feature-a -b feature-a
 
@@ -675,7 +680,7 @@ Suppose you need to work on multiple tasks simultaneously with complete code iso
   </Step>
 
   <Step title="Run Claude Code in each worktree">
-    ```bash
+    ```bash  theme={null}
     # Navigate to your worktree
     cd ../project-feature-a
 
@@ -686,14 +691,14 @@ Suppose you need to work on multiple tasks simultaneously with complete code iso
   </Step>
 
   <Step title="Run Claude in another worktree">
-    ```bash
+    ```bash  theme={null}
     cd ../project-bugfix
     claude
     ```
   </Step>
 
   <Step title="Manage your worktrees">
-    ```bash
+    ```bash  theme={null}
     # List all worktrees
     git worktree list
 
@@ -727,7 +732,7 @@ Suppose you want to use Claude Code as a linter or code reviewer.
 
 **Add Claude to your build script:**
 
-```json
+```json theme={null}
 // package.json
 {
     ...
@@ -752,7 +757,7 @@ Suppose you want to pipe data into Claude, and get back data in a structured for
 
 **Pipe data through Claude:**
 
-```bash
+```bash theme={null}
 cat build-error.txt | claude -p 'concisely explain the root cause of this build error' > output.txt
 ```
 
@@ -770,7 +775,7 @@ Suppose you need Claude's output in a specific format, especially when integrati
 
 <Steps>
   <Step title="Use text format (default)">
-    ```bash
+    ```bash  theme={null}
     cat data.txt | claude -p 'summarize this data' --output-format text > summary.txt
     ```
 
@@ -779,7 +784,7 @@ Suppose you need Claude's output in a specific format, especially when integrati
   </Step>
 
   <Step title="Use JSON format">
-    ```bash
+    ```bash  theme={null}
     cat code.py | claude -p 'analyze this code for bugs' --output-format json > analysis.json
     ```
 
@@ -788,7 +793,7 @@ Suppose you need Claude's output in a specific format, especially when integrati
   </Step>
 
   <Step title="Use streaming JSON format">
-    ```bash
+    ```bash  theme={null}
     cat log.txt | claude -p 'parse this log file for errors' --output-format stream-json
     ```
 
@@ -819,13 +824,13 @@ Suppose you want to create reusable slash commands for your project that all tea
 
 <Steps>
   <Step title="Create a commands directory in your project">
-    ```bash
+    ```bash  theme={null}
     mkdir -p .claude/commands
     ```
   </Step>
 
   <Step title="Create a Markdown file for each command">
-    ```bash
+    ```bash  theme={null}
     echo "Analyze the performance of this code and suggest three specific optimizations:" > .claude/commands/optimize.md
     ```
   </Step>
@@ -852,7 +857,7 @@ Suppose you want to create flexible slash commands that can accept additional in
 
 <Steps>
   <Step title="Create a command file with the $ARGUMENTS placeholder">
-    ```bash
+    ```bash  theme={null}
     echo 'Find and fix issue #$ARGUMENTS. Follow these steps: 1.
     Understand the issue described in the ticket 2. Locate the relevant code in
     our codebase 3. Implement a solution that addresses the root cause 4. Add
@@ -887,13 +892,13 @@ Suppose you want to create personal slash commands that work across all your pro
 
 <Steps>
   <Step title="Create a commands directory in your home folder">
-    ```bash
+    ```bash  theme={null}
     mkdir -p ~/.claude/commands
     ```
   </Step>
 
   <Step title="Create a Markdown file for each command">
-    ```bash
+    ```bash  theme={null}
     echo "Review this code for security vulnerabilities, focusing on:" >
     ~/.claude/commands/security-review.md
     ```

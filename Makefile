@@ -44,8 +44,15 @@ default: ## Show essential commands
 	@echo "Blog Writing:"
 	@echo "  make blog-write      Create a blog post from your ideas"
 	@echo ""
+	@echo "Transcription:"
+	@echo "  make transcribe      Transcribe audio/video files or YouTube URLs"
+	@echo "  make transcribe-index Generate index of all transcripts"
+	@echo ""
 	@echo "Article Illustration:"
 	@echo "  make illustrate      Generate AI illustrations for article"
+	@echo ""
+	@echo "Web to Markdown:"
+	@echo "  make web-to-md       Convert web pages to markdown"
 	@echo ""
 	@echo "Other:"
 	@echo "  make clean          Clean build artifacts"
@@ -122,6 +129,9 @@ help: ## Show ALL available commands
 	@echo "  make illustrate-example  Run illustrator with example article"
 	@echo "  make illustrate-prompts-only INPUT=<file>  Preview prompts without generating"
 	@echo ""
+	@echo "WEB TO MARKDOWN:"
+	@echo "  make web-to-md URL=<url> [URL2=<url>] [OUTPUT=<path>]  Convert web pages to markdown (saves to content_dirs[0]/sites/)"
+	@echo ""
 	@echo "UTILITIES:"
 	@echo "  make clean           Clean build artifacts"
 	@echo "  make clean-wsl-files Clean WSL-related files"
@@ -137,20 +147,12 @@ install: ## Install all dependencies
 	uv sync --group dev
 	@echo ""
 	@echo "Installing npm packages globally..."
-	@command -v pnpm >/dev/null 2>&1 || { echo "❌ pnpm required. Install: curl -fsSL https://get.pnpm.io/install.sh | sh -"; exit 1; }
-	@# Ensure pnpm global directory exists and is configured (handles non-interactive shells)
-	@PNPM_HOME=$$(pnpm bin -g 2>/dev/null || echo "$$HOME/.local/share/pnpm"); \
-	mkdir -p "$$PNPM_HOME" 2>/dev/null || true; \
-	PATH="$$PNPM_HOME:$$PATH" pnpm add -g @anthropic-ai/claude-code@latest || { \
-		echo "❌ Failed to install global packages. Trying pnpm setup..."; \
-		pnpm setup >/dev/null 2>&1 || true; \
-		echo "❌ Could not configure pnpm global directory automatically."; \
-		if [ -n "$$ZSH_VERSION" ] || [ "$$SHELL" = "/bin/zsh" ] || [ -f ~/.zshrc ]; then \
-			echo "   Please run: pnpm setup && source ~/.zshrc"; \
-		else \
-			echo "   Please run: pnpm setup && source ~/.bashrc"; \
-		fi; \
-		echo "   Then run: make install"; \
+	@command -v pnpm >/dev/null 2>&1 || { echo "  Installing pnpm..."; npm install -g pnpm; }
+	@pnpm add -g @anthropic-ai/claude-code@latest || { \
+		echo "❌ Failed to install global packages."; \
+		echo "   This may be a permissions issue. Try:"; \
+		echo "   1. Run: pnpm setup && source ~/.bashrc (or ~/.zshrc)"; \
+		echo "   2. Then run: make install"; \
 		exit 1; \
 	}
 	@echo ""
@@ -522,6 +524,70 @@ blog-write-example: ## Run blog writer with example data
 		--idea scenarios/blog_writer/tests/sample_brain_dump.md \
 		--writings-dir scenarios/blog_writer/tests/sample_writings/
 
+# Tips Synthesis
+tips-synthesizer: ## Synthesize tips from markdown files into cohesive document. Usage: make tips-synthesizer INPUT=tips_dir/ OUTPUT=guide.md [RESUME=true] [VERBOSE=true]
+	@if [ -z "$(INPUT)" ]; then \
+		echo "Error: Please provide an input directory. Usage: make tips-synthesizer INPUT=tips_dir/ OUTPUT=guide.md"; \
+		exit 1; \
+	fi
+	@if [ -z "$(OUTPUT)" ]; then \
+		echo "Error: Please provide an output file. Usage: make tips-synthesizer INPUT=tips_dir/ OUTPUT=guide.md"; \
+		exit 1; \
+	fi
+	@echo "📚 Synthesizing tips from $(INPUT) to $(OUTPUT)"
+	@uv run python -m scenarios.tips_synthesizer \
+		--input-dir "$(INPUT)" \
+		--output-file "$(OUTPUT)" \
+		$(if $(RESUME),--resume) \
+		$(if $(VERBOSE),--verbose)
+
+tips-synthesizer-example: ## Run tips synthesizer with example data
+	@echo "📚 Running tips synthesizer with example data..."
+	@uv run python -m scenarios.tips_synthesizer \
+		--input-dir scenarios/tips_synthesizer/tests/sample_tips/ \
+		--output-file synthesized_tips_example.md \
+		--verbose
+
+# Transcription
+transcribe: ## Transcribe audio/video files or YouTube URLs. Usage: make transcribe SOURCE="url or file" [NO_ENHANCE=true]
+	@if [ -z "$(SOURCE)" ]; then \
+		echo "Error: Please provide a source. Usage: make transcribe SOURCE=\"https://youtube.com/watch?v=...\""; \
+		echo "   Or: make transcribe SOURCE=\"video.mp4\""; \
+		exit 1; \
+	fi
+	@echo "🎙️ Starting transcription..."; \
+	echo "  Source: $(SOURCE)"; \
+	if [ "$(NO_ENHANCE)" = "true" ]; then \
+		echo "  Enhancement: Disabled"; \
+		uv run python -m scenarios.transcribe transcribe "$(SOURCE)" --no-enhance; \
+	else \
+		echo "  Enhancement: Enabled (summaries and quotes)"; \
+		uv run python -m scenarios.transcribe transcribe "$(SOURCE)"; \
+	fi
+
+transcribe-batch: ## Transcribe multiple files. Usage: make transcribe-batch SOURCES="file1.mp4 file2.mp4" [NO_ENHANCE=true]
+	@if [ -z "$(SOURCES)" ]; then \
+		echo "Error: Please provide sources. Usage: make transcribe-batch SOURCES=\"video1.mp4 video2.mp4\""; \
+		exit 1; \
+	fi
+	@echo "🎙️ Starting batch transcription..."; \
+	echo "  Sources: $(SOURCES)"; \
+	if [ "$(NO_ENHANCE)" = "true" ]; then \
+		echo "  Enhancement: Disabled"; \
+		uv run python -m scenarios.transcribe transcribe $(SOURCES) --no-enhance; \
+	else \
+		echo "  Enhancement: Enabled"; \
+		uv run python -m scenarios.transcribe transcribe $(SOURCES); \
+	fi
+
+transcribe-resume: ## Resume interrupted transcription session
+	@echo "🎙️ Resuming transcription..."
+	@uv run python -m scenarios.transcribe transcribe --resume
+
+transcribe-index: ## Generate index of all transcripts
+	@echo "📑 Generating transcript index..."
+	@uv run python -m scenarios.transcribe index
+
 # Article Illustration
 illustrate: ## Generate AI illustrations for markdown article. Usage: make illustrate INPUT=article.md [OUTPUT=path] [STYLE="..."] [APIS="..."] [RESUME=true]
 	@if [ -z "$(INPUT)" ]; then \
@@ -559,6 +625,21 @@ illustrate-prompts-only: ## Preview prompts without generating images. Usage: ma
 	fi
 	@echo "🎨 Generating prompts (no images)..."
 	@uv run python -m scenarios.article_illustrator "$(INPUT)" --prompts-only
+
+# Web to Markdown
+web-to-md: ## Convert web pages to markdown. Usage: make web-to-md URL=https://example.com [URL2=https://another.com] [OUTPUT=path]
+	@if [ -z "$(URL)" ]; then \
+		echo "Error: Please provide at least one URL. Usage: make web-to-md URL=https://example.com"; \
+		exit 1; \
+	fi
+	@echo "🌐 Converting web page(s) to markdown..."
+	@CMD="uv run python -m scenarios.web_to_md --url \"$(URL)\""; \
+	if [ -n "$(URL2)" ]; then CMD="$$CMD --url \"$(URL2)\""; fi; \
+	if [ -n "$(URL3)" ]; then CMD="$$CMD --url \"$(URL3)\""; fi; \
+	if [ -n "$(URL4)" ]; then CMD="$$CMD --url \"$(URL4)\""; fi; \
+	if [ -n "$(URL5)" ]; then CMD="$$CMD --url \"$(URL5)\""; fi; \
+	if [ -n "$(OUTPUT)" ]; then CMD="$$CMD --output \"$(OUTPUT)\""; fi; \
+	eval $$CMD
 
 # Clean WSL Files
 clean-wsl-files: ## Clean up WSL-related files (Zone.Identifier, sec.endpointdlp)

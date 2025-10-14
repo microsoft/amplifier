@@ -135,6 +135,19 @@ common_phrases (list), writing_patterns (list), voice, examples (list)"""
                     logger.warning("Could not extract style after retries, using defaults")
                     return StyleProfile(**self._default_profile())
 
+                # Handle both dict and list responses from LLM
+                # If LLM returns an array like [{...}], extract first element
+                if isinstance(parsed, list):
+                    if len(parsed) > 0 and isinstance(parsed[0], dict):
+                        parsed = parsed[0]
+                        logger.debug("Extracted style data from array response")
+                    else:
+                        logger.warning("LLM returned empty or invalid array, using defaults")
+                        return StyleProfile(**self._default_profile())
+                elif not isinstance(parsed, dict):
+                    logger.warning(f"Unexpected response type: {type(parsed)}, using defaults")
+                    return StyleProfile(**self._default_profile())
+
                 # Log what we extracted
                 logger.info("Successfully extracted style profile:")
                 logger.info(f"  - Tone: {parsed.get('tone', 'N/A')}")
