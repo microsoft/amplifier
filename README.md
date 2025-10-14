@@ -379,7 +379,6 @@ Testing and benchmarking are critical to ensuring that any product leveraging AI
 Currently, we leverage [terminal-bench](https://github.com/laude-institute/terminal-bench) to reproducibly benchmark Amplifier against other agents.
 Further details on how to run the benchmark can be found in [tests/terminal_bench/README.md](tests/terminal_bench/README.md).
 
-
 ## 🔮 Vision
 
 We're building toward a future where:
