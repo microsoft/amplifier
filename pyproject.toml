@@ -2,7 +2,7 @@
 name = "workspace"
 version = "0.1.0"
 description = "Workspace project"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 dependencies = [
     "aiohttp>=3.12.15",
     "anthropic>=0.69.0",
@@ -24,7 +24,6 @@ dependencies = [
     "pyyaml>=6.0.2",
     "rapidfuzz>=3.13.0",
     "requests>=2.32.4",
-    "terminal-bench>=0.2.18",
     "tiktoken>=0.11.0",
     "tqdm>=4.67.1",
     "yt-dlp>=2025.9.26",

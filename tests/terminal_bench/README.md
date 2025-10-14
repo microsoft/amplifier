@@ -5,7 +5,7 @@
 Run the terminal-bench benchmark suite with amplifier or baseline agent:
 
 ```bash
-uv run tests/terminal_bench/run_terminal_bench.py --agent baseline
+uv run --with terminal-bench tests/terminal_bench/run_terminal_bench.py --agent baseline
 ```
 
 ## Analyzing Benchmark Results
@@ -13,9 +13,7 @@ uv run tests/terminal_bench/run_terminal_bench.py --agent baseline
 Generate failure analysis reports for a terminal-bench run:
 
 ```bash
-uv run tests/terminal_bench/generate_benchmark_report.py \
-  --run-dir ai_working/tmp/2025-09-30__11-09-23 \
-  --output-dir ai_working/tmp/2025-09-30__11-09-23_analysis
+uv run tests/terminal_bench/generate_benchmark_report.py --run-dir "ai_working/tmp/2025-10-14__09-39-16"
 ```
 
 
