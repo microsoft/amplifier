@@ -76,7 +76,11 @@ def find_default_session(projects_dir: Path):
     best_match_score = 0
 
     for project_dir in projects_dir.iterdir():
-        if project_dir.is_dir() and project_dir.name.startswith("-") and cwd_encoded.startswith(project_dir.name):
+        if (
+            project_dir.is_dir()
+            and project_dir.name.startswith("-")
+            and cwd_encoded.startswith(project_dir.name)
+        ):
             # Score based on the length of the match (longer = more specific)
             score = len(project_dir.name)
             if score > best_match_score:
@@ -110,7 +114,10 @@ def find_default_session(projects_dir: Path):
 
 
 def process_session(
-    session_file: Path, output_dir: Path, include_system: bool = False, subagent_mapper: SubagentMapper | None = None
+    session_file: Path,
+    output_dir: Path,
+    include_system: bool = False,
+    subagent_mapper: SubagentMapper | None = None,
 ):
     """Process a single session file (with compact lineage) and generate transcripts.
 
@@ -124,7 +131,11 @@ def process_session(
 
     # Extract project info
     project_dir_name = session_file.parent.name
-    project_name = project_dir_name[1:].replace("-", "/") if project_dir_name.startswith("-") else project_dir_name
+    project_name = (
+        project_dir_name[1:].replace("-", "/")
+        if project_dir_name.startswith("-")
+        else project_dir_name
+    )
     logger.info(f"📂 Project: {project_name}")
 
     # Trace compact lineage
@@ -166,7 +177,9 @@ def process_session(
     # Generate simple transcript
     logger.info("")
     logger.info("Generating transcripts...")
-    simple_transcript = formatter.format_simple_transcript(include_system=include_system)
+    simple_transcript = formatter.format_simple_transcript(
+        include_system=include_system
+    )
     simple_file = session_output_dir / "transcript.md"
     simple_file.write_text(simple_transcript, encoding="utf-8")
     logger.info(f"✅ Simple transcript: {simple_file}")
@@ -188,7 +201,9 @@ def process_session(
         v1_subagents = [
             (sid, info)
             for sid, info in subagent_mapper.get_subagent_sessions(session_id)
-            if not sid.startswith(session_id + "_sidechain_")  # Exclude v2.x synthetic sidechains
+            if not sid.startswith(
+                session_id + "_sidechain_"
+            )  # Exclude v2.x synthetic sidechains
         ]
 
         if v1_subagents:
@@ -199,7 +214,9 @@ def process_session(
                 # Find the subagent session file
                 subagent_file = project_dir / f"{subagent_id}.jsonl"
                 if not subagent_file.exists():
-                    logger.warning(f"Subagent session file not found: {subagent_file.name}")
+                    logger.warning(
+                        f"Subagent session file not found: {subagent_file.name}"
+                    )
                     continue
 
                 # Load and process the subagent session
@@ -217,7 +234,9 @@ def process_session(
 
                 # Generate transcript
                 subagent_formatter = TranscriptFormatter(subagent_data, subagent_tree)
-                subagent_transcript = subagent_formatter.format_simple_transcript(include_system=False)
+                subagent_transcript = subagent_formatter.format_simple_transcript(
+                    include_system=False
+                )
 
                 # Write transcript
                 transcript_file = subagent_output_dir / "transcript.md"
@@ -233,7 +252,9 @@ def process_session(
         for i, chain_file in enumerate(session_chain):
             dest = chain_dir / f"{i + 1:02d}_{chain_file.name}"
             shutil.copy2(chain_file, dest)
-        logger.info(f"✅ Session chain: {len(session_chain)} files copied to {chain_dir}")
+        logger.info(
+            f"✅ Session chain: {len(session_chain)} files copied to {chain_dir}"
+        )
     else:
         session_copy = session_output_dir / "session.jsonl"
         shutil.copy2(session_file, session_copy)
@@ -252,7 +273,9 @@ def process_session(
     return session_output_dir
 
 
-def _should_process_at_root(session_file: Path, subagent_mapper: SubagentMapper | None = None) -> bool:
+def _should_process_at_root(
+    session_file: Path, subagent_mapper: SubagentMapper | None = None
+) -> bool:
     """Determine if a session should be processed at root level.
 
     Legacy subagent sessions are skipped as they appear within parent transcripts.
@@ -346,13 +369,21 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
-    parser.add_argument("session_file", nargs="?", help="Path to specific session file (optional)")
+    parser.add_argument(
+        "session_file", nargs="?", help="Path to specific session file (optional)"
+    )
 
-    parser.add_argument("--project", "-p", help="Project name or directory (fuzzy match supported)")
+    parser.add_argument(
+        "--project", "-p", help="Project name or directory (fuzzy match supported)"
+    )
 
-    parser.add_argument("--list", "-l", action="store_true", help="List available projects and sessions")
+    parser.add_argument(
+        "--list", "-l", action="store_true", help="List available projects and sessions"
+    )
 
-    parser.add_argument("--session", "-s", help="Session UUID or filename within project")
+    parser.add_argument(
+        "--session", "-s", help="Session UUID or filename within project"
+    )
 
     parser.add_argument(
         "--output",
@@ -362,7 +393,11 @@ def main():
         help="Output directory for transcripts (default: ./output)",
     )
 
-    parser.add_argument("--include-system", action="store_true", help="Include system messages in simple transcript")
+    parser.add_argument(
+        "--include-system",
+        action="store_true",
+        help="Include system messages in simple transcript",
+    )
 
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
 
@@ -375,7 +410,9 @@ def main():
     # Find Claude projects directory
     projects_dir = find_claude_projects_dir()
     if not projects_dir:
-        logger.error("Error: Claude Code projects directory not found at ~/.claude/projects")
+        logger.error(
+            "Error: Claude Code projects directory not found at ~/.claude/projects"
+        )
         sys.exit(1)
 
     # Handle --list flag
@@ -399,7 +436,9 @@ def main():
                 for session_file, mtime in sessions[:3]:
                     dt = datetime.fromtimestamp(mtime, tz=UTC)
                     size_kb = session_file.stat().st_size / 1024
-                    logger.info(f"       - {session_file.name} ({dt.strftime('%Y-%m-%d %H:%M')}, {size_kb:.1f}KB)")
+                    logger.info(
+                        f"       - {session_file.name} ({dt.strftime('%Y-%m-%d %H:%M')}, {size_kb:.1f}KB)"
+                    )
                 if len(sessions) > 3:
                     logger.info(f"       ... and {len(sessions) - 3} more")
             else:
@@ -461,7 +500,9 @@ def main():
                         best_match_score = score
 
             if not matched_project:
-                logger.error("Error: Could not find project for current directory to search for session")
+                logger.error(
+                    "Error: Could not find project for current directory to search for session"
+                )
                 logger.info("Hint: Use --project to specify the project")
                 sys.exit(1)
 
@@ -485,7 +526,9 @@ def main():
             # Use most recent session from project
             sessions = list_sessions(matched_project)
             if not sessions:
-                logger.error(f"Error: No sessions found in project {matched_project.name}")
+                logger.error(
+                    f"Error: No sessions found in project {matched_project.name}"
+                )
                 sys.exit(1)
             session_file = sessions[0][0]
 
@@ -503,7 +546,11 @@ def main():
         best_match = None
         best_match_score = 0
         for project_dir in projects_dir.iterdir():
-            if project_dir.is_dir() and project_dir.name.startswith("-") and cwd_encoded.startswith(project_dir.name):
+            if (
+                project_dir.is_dir()
+                and project_dir.name.startswith("-")
+                and cwd_encoded.startswith(project_dir.name)
+            ):
                 score = len(project_dir.name)
                 if score > best_match_score:
                     best_match = project_dir
@@ -511,7 +558,9 @@ def main():
 
         if not best_match:
             logger.error("Error: Could not find project matching current directory")
-            logger.info("Hint: Use --list to see available projects or --project to specify one")
+            logger.info(
+                "Hint: Use --list to see available projects or --project to specify one"
+            )
             sys.exit(1)
 
         # Get all sessions from matched project
@@ -550,7 +599,9 @@ def main():
                 for session_id in skipped_subagents:
                     logger.debug(f"  Skipped: {session_id}")
         else:
-            logger.info(f"📍 Processing ALL sessions from current project: {display_path}")
+            logger.info(
+                f"📍 Processing ALL sessions from current project: {display_path}"
+            )
 
         logger.info(f"📊 Processing {len(human_sessions)} human-initiated sessions")
         logger.info("")
@@ -563,7 +614,10 @@ def main():
 
             try:
                 output_dir = process_session(
-                    session_file, args.output, include_system=args.include_system, subagent_mapper=subagent_mapper
+                    session_file,
+                    args.output,
+                    include_system=args.include_system,
+                    subagent_mapper=subagent_mapper,
                 )
                 logger.info(f"✨ Transcripts saved to: {output_dir}")
                 logger.info("")
@@ -594,14 +648,19 @@ def main():
         # Check if this is a legacy subagent
         if not _should_process_at_root(session_file, subagent_mapper):
             logger.warning("Note: This appears to be a legacy subagent session")
-            logger.warning("It would normally be skipped and appear within its parent transcript")
+            logger.warning(
+                "It would normally be skipped and appear within its parent transcript"
+            )
             logger.warning("Processing anyway since explicitly requested...")
 
         logger.info("Processing single session")
         logger.info(f"{'=' * 60}")
 
         output_dir = process_session(
-            session_file, args.output, include_system=args.include_system, subagent_mapper=subagent_mapper
+            session_file,
+            args.output,
+            include_system=args.include_system,
+            subagent_mapper=subagent_mapper,
         )
         logger.info("")
         logger.info(f"✨ All transcripts saved to: {output_dir}")

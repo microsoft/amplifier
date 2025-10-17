@@ -83,7 +83,9 @@ class HookLogger:
                 structure[key] = f"list[{len(value)}]"
             elif isinstance(value, dict):
                 structure[key] = (
-                    f"dict[{list(value.keys())[:3]}...]" if len(value.keys()) > 3 else f"dict[{list(value.keys())}]"
+                    f"dict[{list(value.keys())[:3]}...]"
+                    if len(value.keys()) > 3
+                    else f"dict[{list(value.keys())}]"
                 )
             elif isinstance(value, str):
                 structure[key] = f"str[{len(value)} chars]"

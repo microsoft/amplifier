@@ -156,7 +156,9 @@ def parse_dot_file(file_path: Path) -> DotGraph:
     try:
         dot_content = file_path.read_text(encoding="utf-8")
         result = parse_dot_string(dot_content)
-        logger.debug(f"Parsed {file_path.name}: {len(result.nodes)} nodes, {len(result.edges)} edges")
+        logger.debug(
+            f"Parsed {file_path.name}: {len(result.nodes)} nodes, {len(result.edges)} edges"
+        )
         return result
     except Exception as e:
         logger.error(f"Failed to read DOT file {file_path}: {e}")

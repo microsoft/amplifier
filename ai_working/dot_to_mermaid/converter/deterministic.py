@@ -94,7 +94,9 @@ def convert_deterministic(graph: DotGraph) -> str | None:
             # Get source node label if not yet defined
             if source not in defined_nodes:
                 if edge["source"] in graph.nodes:
-                    source_label = format_node_label(edge["source"], graph.nodes[edge["source"]])
+                    source_label = format_node_label(
+                        edge["source"], graph.nodes[edge["source"]]
+                    )
                 else:
                     source_label = f"[{edge['source']}]"
                 defined_nodes.add(source)
@@ -104,7 +106,9 @@ def convert_deterministic(graph: DotGraph) -> str | None:
             # Get target node label if not yet defined
             if target not in defined_nodes:
                 if edge["target"] in graph.nodes:
-                    target_label = format_node_label(edge["target"], graph.nodes[edge["target"]])
+                    target_label = format_node_label(
+                        edge["target"], graph.nodes[edge["target"]]
+                    )
                 else:
                     target_label = f"[{edge['target']}]"
                 defined_nodes.add(target)
@@ -173,7 +177,9 @@ def convert_deterministic(graph: DotGraph) -> str | None:
                 )
 
         result = "\n".join(lines)
-        logger.debug(f"Deterministic conversion successful: {len(lines)} lines generated")
+        logger.debug(
+            f"Deterministic conversion successful: {len(lines)} lines generated"
+        )
         return result
 
     except Exception as e:

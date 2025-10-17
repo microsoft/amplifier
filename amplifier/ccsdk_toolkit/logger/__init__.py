@@ -11,7 +11,6 @@ from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any
-from typing import Optional
 from typing import TextIO
 from typing import Union
 
@@ -84,7 +83,11 @@ class ToolkitLogger:
             if format == LogFormat.JSON:
                 handler.setFormatter(logging.Formatter("%(message)s"))
             else:
-                handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
+                handler.setFormatter(
+                    logging.Formatter(
+                        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+                    )
+                )
         self.logger.addHandler(handler)
 
         # Add file handler if specified
@@ -93,7 +96,11 @@ class ToolkitLogger:
             if format == LogFormat.JSON:
                 file_handler.setFormatter(logging.Formatter("%(message)s"))
             else:
-                file_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
+                file_handler.setFormatter(
+                    logging.Formatter(
+                        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+                    )
+                )
             self.logger.addHandler(file_handler)
 
     def set_session(self, session_id: str) -> None:
@@ -119,7 +126,9 @@ class ToolkitLogger:
             msg = f"{msg} | {json.dumps(event.context)}"
         return msg
 
-    def _log(self, level: str, message: str, context: dict[str, Any] | None = None) -> None:
+    def _log(
+        self, level: str, message: str, context: dict[str, Any] | None = None
+    ) -> None:
         """Internal logging method"""
         event = LogEvent(
             timestamp=datetime.now().isoformat(),
@@ -146,7 +155,9 @@ class ToolkitLogger:
         """Log warning message"""
         self._log(LogLevel.WARNING, message, context)
 
-    def error(self, message: str, error: Exception | None = None, **context: Any) -> None:
+    def error(
+        self, message: str, error: Exception | None = None, **context: Any
+    ) -> None:
         """Log error message with optional exception"""
         if error:
             context["error_type"] = type(error).__name__
@@ -158,11 +169,15 @@ class ToolkitLogger:
         self.info(
             "Query executed",
             prompt=prompt[:500] if len(prompt) > 500 else prompt,
-            response_preview=response[:500] if response and len(response) > 500 else response,
+            response_preview=response[:500]
+            if response and len(response) > 500
+            else response,
             has_response=response is not None,
         )
 
-    def log_tool_use(self, tool_name: str, arguments: dict[str, Any], result: Any = None) -> None:
+    def log_tool_use(
+        self, tool_name: str, arguments: dict[str, Any], result: Any = None
+    ) -> None:
         """Log tool invocation"""
         self.debug(
             f"Tool invoked: {tool_name}",
@@ -178,7 +193,9 @@ class ToolkitLogger:
             context["progress"] = progress
         self.info(f"Progress: {message}", **context)
 
-    def log_session_start(self, session_id: str, config: dict[str, Any], workspace: Path | None = None) -> None:
+    def log_session_start(
+        self, session_id: str, config: dict[str, Any], workspace: Path | None = None
+    ) -> None:
         """Log session start with configuration"""
         self.set_session(session_id)
         self.info(
@@ -225,7 +242,9 @@ class ToolkitLogger:
 
         # No longer send progress notifications - only final completion
 
-    def task_complete(self, message: str, duration: float | None = None, success: bool = True) -> None:
+    def task_complete(
+        self, message: str, duration: float | None = None, success: bool = True
+    ) -> None:
         """Mark task completion and send final notification"""
         # Log the completion
         context: dict[str, Any] = {"success": success}
@@ -250,7 +269,9 @@ class ToolkitLogger:
                     cwd=os.getcwd(),
                 )
             except ImportError:
-                self.debug("Notifications not available - amplifier.utils.notifications not found")
+                self.debug(
+                    "Notifications not available - amplifier.utils.notifications not found"
+                )
             except Exception as e:
                 self.debug(f"Failed to send notification: {e}")
 

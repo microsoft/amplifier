@@ -58,7 +58,12 @@ class ToolConfig(BaseModel):
         return v
 
     class Config:
-        json_schema_extra = {"example": {"allowed": ["read", "write", "grep"], "disallowed": ["bash", "execute"]}}
+        json_schema_extra = {
+            "example": {
+                "allowed": ["read", "write", "grep"],
+                "disallowed": ["bash", "execute"],
+            }
+        }
 
 
 class MCPServerConfig(BaseModel):
@@ -216,12 +221,18 @@ class EnvironmentConfig(BaseModel):
     """
 
     working_directory: Path = Field(default_factory=Path.cwd)
-    session_directory: Path = Field(default_factory=lambda: Path.home() / ".ccsdk" / "sessions")
+    session_directory: Path = Field(
+        default_factory=lambda: Path.home() / ".ccsdk" / "sessions"
+    )
     log_directory: Path = Field(default_factory=lambda: Path.home() / ".ccsdk" / "logs")
-    cache_directory: Path = Field(default_factory=lambda: Path.home() / ".ccsdk" / "cache")
+    cache_directory: Path = Field(
+        default_factory=lambda: Path.home() / ".ccsdk" / "cache"
+    )
     debug: bool = Field(default=False)
 
-    @field_validator("working_directory", "session_directory", "log_directory", "cache_directory")
+    @field_validator(
+        "working_directory", "session_directory", "log_directory", "cache_directory"
+    )
     @classmethod
     def ensure_directory(cls, v):
         """Ensure directories exist."""

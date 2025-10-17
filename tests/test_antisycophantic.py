@@ -26,7 +26,9 @@ class SycophancyDetector:
     ]
 
     def __init__(self):
-        self.compiled_patterns = [re.compile(pattern, re.IGNORECASE) for pattern in self.SYCOPHANTIC_PATTERNS]
+        self.compiled_patterns = [
+            re.compile(pattern, re.IGNORECASE) for pattern in self.SYCOPHANTIC_PATTERNS
+        ]
 
     def detect_sycophancy(self, text: str) -> tuple[bool, list[str]]:
         """

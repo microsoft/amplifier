@@ -129,7 +129,9 @@ def _build_continuous_text_with_timestamps(
             if video_url and _is_youtube_url(video_url):
                 video_id = _extract_youtube_id(video_url)
                 if video_id:
-                    link = f"https://youtube.com/watch?v={video_id}&t={int(segment.start)}"
+                    link = (
+                        f"https://youtube.com/watch?v={video_id}&t={int(segment.start)}"
+                    )
                     timestamp_text = f" [{timestamp_str}]({link})"
                 else:
                     timestamp_text = f" [{timestamp_str}]"
@@ -181,7 +183,9 @@ def _add_paragraph_breaks(text: str) -> str:
                 next_sentence = sentences[i + 1]
                 # Get first word (ignoring timestamp links)
                 # Remove timestamp pattern first
-                clean_next = re.sub(r"\s*\[[^\]]+\](?:\([^)]+\))?\s*", " ", next_sentence).strip()
+                clean_next = re.sub(
+                    r"\s*\[[^\]]+\](?:\([^)]+\))?\s*", " ", next_sentence
+                ).strip()
                 words = clean_next.split()
 
                 if words:

@@ -19,7 +19,9 @@ from pathlib import Path
 from typing import Any
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 
@@ -67,7 +69,9 @@ class Message:
 
     # Tool-related fields
     tool_invocations: list[ToolInvocation] = field(default_factory=list)
-    tool_results: list[tuple[str, Any]] = field(default_factory=list)  # (tool_id, result)
+    tool_results: list[tuple[str, Any]] = field(
+        default_factory=list
+    )  # (tool_id, result)
 
     # Sidechain fields
     sidechain_agent: str | None = None
@@ -191,7 +195,9 @@ class ClaudeCodeParser:
                         timestamp=msg.timestamp,
                         arguments=tool_input,
                         is_task=(tool_name == "Task"),
-                        subagent_type=tool_input.get("subagent_type") if tool_name == "Task" else None,
+                        subagent_type=tool_input.get("subagent_type")
+                        if tool_name == "Task"
+                        else None,
                     )
 
                     msg.tool_invocations.append(invocation)

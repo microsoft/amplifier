@@ -56,7 +56,9 @@ def get_analyst_briefs() -> list[dict[str, Any]]:
                 with open(os.path.join(CACHE_DIR, filename)) as f:
                     briefs.append(json.load(f))
             except Exception as e:
-                print(f"Warning: Could not load or parse {filename}: {e}", file=sys.stderr)
+                print(
+                    f"Warning: Could not load or parse {filename}: {e}", file=sys.stderr
+                )
     return briefs
 
 
@@ -67,9 +69,7 @@ def run_synthesis(query: str) -> str:
     """
     briefs = get_analyst_briefs()
     if not briefs:
-        return (
-            "Error: No analyst briefs were found in the cache. Cannot synthesize. Please run the analysis step first."
-        )
+        return "Error: No analyst briefs were found in the cache. Cannot synthesize. Please run the analysis step first."
 
     formatted_briefs = []
     for brief in briefs:
@@ -81,5 +81,7 @@ def run_synthesis(query: str) -> str:
     parser = StrOutputParser()
     chain = SYNTHESIST_PROMPT | llm | parser
 
-    final_report = chain.invoke({"query": query, "briefs": "\n\n---\n\n".join(formatted_briefs)})
+    final_report = chain.invoke(
+        {"query": query, "briefs": "\n\n---\n\n".join(formatted_briefs)}
+    )
     return final_report

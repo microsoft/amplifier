@@ -39,7 +39,9 @@ class MemoryStore:
         self._data = self._load_data()
         self._memories = self._extract_memories()
 
-        logger.info(f"[MEMORY STORE] Loaded {len(self._memories)} memories from storage")
+        logger.info(
+            f"[MEMORY STORE] Loaded {len(self._memories)} memories from storage"
+        )
 
     def add_memory(self, memory: Memory) -> StoredMemory:
         """Add a new memory to storage
@@ -59,7 +61,9 @@ class MemoryStore:
             accessed_count=0,
         )
 
-        logger.info(f"[MEMORY STORE] Adding memory: {stored.category} - {stored.content[:50]}...")
+        logger.info(
+            f"[MEMORY STORE] Adding memory: {stored.category} - {stored.content[:50]}..."
+        )
         self._memories[stored.id] = stored
         self._save_memories()
         logger.info(f"[MEMORY STORE] Memory added, total now: {len(self._memories)}")
@@ -113,14 +117,18 @@ class MemoryStore:
         Args:
             extracted: Dictionary with memories and metadata from extraction
         """
-        logger.info(f"[MEMORY STORE] add_memories_batch called with: {list(extracted.keys()) if extracted else 'None'}")
+        logger.info(
+            f"[MEMORY STORE] add_memories_batch called with: {list(extracted.keys()) if extracted else 'None'}"
+        )
 
         if not extracted or "memories" not in extracted:
             logger.warning("[MEMORY STORE] No memories in extracted data")
             return
 
         memories_list = extracted.get("memories", [])
-        logger.info(f"[MEMORY STORE] Processing {len(memories_list)} memories from batch")
+        logger.info(
+            f"[MEMORY STORE] Processing {len(memories_list)} memories from batch"
+        )
 
         added_count = 0
         for i, memory_data in enumerate(memories_list):
@@ -133,7 +141,9 @@ class MemoryStore:
                 metadata={
                     "importance": memory_data.get("importance", 0.5),
                     "tags": memory_data.get("tags", []),
-                    "extraction_method": extracted.get("metadata", {}).get("extraction_method", "unknown"),
+                    "extraction_method": extracted.get("metadata", {}).get(
+                        "extraction_method", "unknown"
+                    ),
                 },
             )
 
@@ -162,7 +172,9 @@ class MemoryStore:
         if len(self._memories) > self.max_memories:
             # Sort by access count and timestamp, keep most accessed/recent
             memories_list = list(self._memories.values())
-            memories_list.sort(key=lambda m: (m.accessed_count, m.timestamp.isoformat()))
+            memories_list.sort(
+                key=lambda m: (m.accessed_count, m.timestamp.isoformat())
+            )
 
             # Remove oldest/least accessed
             to_remove = len(memories_list) - self.max_memories
@@ -181,7 +193,10 @@ class MemoryStore:
     def _load_data(self) -> dict[str, Any]:
         """Load full data structure from JSON file"""
         if not self.data_file.exists():
-            return {"memories": [], "metadata": {"version": "2.0", "created": datetime.now().isoformat()}}
+            return {
+                "memories": [],
+                "metadata": {"version": "2.0", "created": datetime.now().isoformat()},
+            }
 
         try:
             with open(self.data_file) as f:
@@ -193,7 +208,10 @@ class MemoryStore:
                 return data
         except (json.JSONDecodeError, ValueError) as e:
             logger.error(f"Failed to load memories: {e}")
-            return {"memories": [], "metadata": {"version": "2.0", "created": datetime.now().isoformat()}}
+            return {
+                "memories": [],
+                "metadata": {"version": "2.0", "created": datetime.now().isoformat()},
+            }
 
     def _extract_memories(self) -> dict[str, StoredMemory]:
         """Extract memory objects from data structure"""
@@ -206,7 +224,9 @@ class MemoryStore:
                     try:
                         # Convert timestamp if it's a string
                         if isinstance(mem_data.get("timestamp"), str):
-                            mem_data["timestamp"] = datetime.fromisoformat(mem_data["timestamp"])
+                            mem_data["timestamp"] = datetime.fromisoformat(
+                                mem_data["timestamp"]
+                            )
                         # Handle old format with "type" instead of "category"
                         if "type" in mem_data and "category" not in mem_data:
                             mem_data["category"] = mem_data.pop("type")
@@ -217,12 +237,21 @@ class MemoryStore:
 
         # Also check for direct memory storage (compatibility)
         for key, value in self._data.items():
-            if key not in ["memories", "metadata", "embeddings", "key_learnings", "decisions_made", "issues_solved"]:
+            if key not in [
+                "memories",
+                "metadata",
+                "embeddings",
+                "key_learnings",
+                "decisions_made",
+                "issues_solved",
+            ]:
                 try:
                     # This might be a memory ID with memory data
                     if isinstance(value, dict) and "content" in value:
                         if isinstance(value.get("timestamp"), str):
-                            value["timestamp"] = datetime.fromisoformat(value["timestamp"])
+                            value["timestamp"] = datetime.fromisoformat(
+                                value["timestamp"]
+                            )
                         memory = StoredMemory(id=key, **value)
                         memories[key] = memory
                 except Exception:
@@ -235,7 +264,9 @@ class MemoryStore:
         logger.info(f"[MEMORY STORE] Saving data to {self.data_file}")
 
         # Update memories in data structure
-        self._data["memories"] = [memory.model_dump(mode="json") for memory in self._memories.values()]
+        self._data["memories"] = [
+            memory.model_dump(mode="json") for memory in self._memories.values()
+        ]
 
         # Update metadata
         self._data.setdefault("metadata", {})
@@ -245,7 +276,9 @@ class MemoryStore:
         try:
             with open(self.data_file, "w") as f:
                 json.dump(self._data, f, indent=2, default=str)
-            logger.info(f"[MEMORY STORE] Successfully saved {len(self._memories)} memories to disk")
+            logger.info(
+                f"[MEMORY STORE] Successfully saved {len(self._memories)} memories to disk"
+            )
         except Exception as e:
             logger.error(f"[MEMORY STORE] Failed to save data: {e}")
 

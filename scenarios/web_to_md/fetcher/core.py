@@ -10,7 +10,9 @@ import httpx
 logger = logging.getLogger(__name__)
 
 
-def fetch_page(url: str, timeout: int = 30, max_retries: int = 3) -> tuple[str, dict[str, Any]]:
+def fetch_page(
+    url: str, timeout: int = 30, max_retries: int = 3
+) -> tuple[str, dict[str, Any]]:
     """Fetch a web page and extract metadata.
 
     Args:
@@ -24,7 +26,9 @@ def fetch_page(url: str, timeout: int = 30, max_retries: int = 3) -> tuple[str, 
     Raises:
         httpx.HTTPError: If all fetch attempts fail
     """
-    headers = {"User-Agent": "Mozilla/5.0 (compatible; WebToMd/1.0; +https://github.com/amplifier/web_to_md)"}
+    headers = {
+        "User-Agent": "Mozilla/5.0 (compatible; WebToMd/1.0; +https://github.com/amplifier/web_to_md)"
+    }
 
     retry_delay = 1
     last_error = None
@@ -52,7 +56,9 @@ def fetch_page(url: str, timeout: int = 30, max_retries: int = 3) -> tuple[str, 
 
                 # Try to extract title from headers if present
                 if "content-disposition" in response.headers:
-                    metadata["content_disposition"] = response.headers["content-disposition"]
+                    metadata["content_disposition"] = response.headers[
+                        "content-disposition"
+                    ]
 
                 logger.info(f"Successfully fetched {url} ({len(response.text)} bytes)")
                 return response.text, metadata

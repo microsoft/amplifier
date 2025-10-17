@@ -40,7 +40,9 @@ class StubDetector:
         (r"will\s+implement", "Future implementation"),
     ]
 
-    def scan_content(self, content: str, filename: str = "unknown") -> list[StubViolation]:
+    def scan_content(
+        self, content: str, filename: str = "unknown"
+    ) -> list[StubViolation]:
         """Scan content for stub patterns."""
         violations = []
         lines = content.split("\n")
@@ -227,4 +229,6 @@ if __name__ == "__main__":
     print("\n" + "=" * 60)
     print("ZERO-BS PRINCIPLE:")
     print("✗ Without instructions: Agents create stubs when requirements are vague")
-    print("✓ With instructions: Agents either build working code or ask for clarification")
+    print(
+        "✓ With instructions: Agents either build working code or ask for clarification"
+    )

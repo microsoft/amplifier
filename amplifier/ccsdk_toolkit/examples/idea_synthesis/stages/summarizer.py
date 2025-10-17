@@ -30,7 +30,9 @@ class SummarizerStage:
         self.state_file = state_file
         self.console = console or Console()
 
-    async def summarize_files(self, files: list[SourceFile], state: SynthesisState) -> list[FileSummary]:
+    async def summarize_files(
+        self, files: list[SourceFile], state: SynthesisState
+    ) -> list[FileSummary]:
         """Summarize a list of files.
 
         Args:
@@ -52,7 +54,9 @@ class SummarizerStage:
             TaskProgressColumn(),
             console=self.console,
         ) as progress:
-            task = progress.add_task(f"Summarizing {len(files)} files...", total=len(files))
+            task = progress.add_task(
+                f"Summarizing {len(files)} files...", total=len(files)
+            )
 
             for file in files:
                 # Skip if already processed
@@ -70,7 +74,9 @@ class SummarizerStage:
                     state.current_stage = "summarizer"
                     self._save_state(state)
 
-                    progress.update(task, advance=1, description=f"Summarized {file.path.name}")
+                    progress.update(
+                        task, advance=1, description=f"Summarized {file.path.name}"
+                    )
 
                 except Exception as e:
                     self.console.print(f"[red]Error summarizing {file.path}: {e}[/red]")
@@ -112,7 +118,9 @@ Focus on:
 - Cross-cutting themes
 - Important patterns or methodologies"""
 
-        response = await query_claude_with_timeout(prompt=prompt, system_prompt=system_prompt, parse_json=True)
+        response = await query_claude_with_timeout(
+            prompt=prompt, system_prompt=system_prompt, parse_json=True
+        )
 
         # Handle both dict and list responses
         if isinstance(response, dict):
@@ -169,7 +177,9 @@ Focus on:
                     "title": e.title,
                     "synthesis": e.synthesis,
                     "themes": [t.theme for t in e.themes],
-                    "supporting_quotes": [[str(q[0]), q[1]] for q in e.supporting_quotes],
+                    "supporting_quotes": [
+                        [str(q[0]), q[1]] for q in e.supporting_quotes
+                    ],
                     "action_items": e.action_items,
                     "metadata": e.metadata,
                     "timestamp": e.timestamp.isoformat(),

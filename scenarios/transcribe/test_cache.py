@@ -45,7 +45,9 @@ def test_cache_functionality():
         logger.info("Test 2: Testing save_audio with file already in place...")
         existing_audio = output_dir / "audio.mp3"
         saved_again = storage.save_audio(existing_audio, output_dir)
-        assert saved_again == existing_audio, "Should return same path if already in place"
+        assert saved_again == existing_audio, (
+            "Should return same path if already in place"
+        )
         logger.info("✓ save_audio handles existing files correctly")
 
         # Test 3: Test video loader cache detection (mock test)
@@ -63,8 +65,12 @@ def test_cache_functionality():
         import inspect
 
         sig = inspect.signature(loader.download_audio)
-        assert "use_cache" in sig.parameters, "download_audio should have use_cache parameter"
-        assert sig.parameters["use_cache"].default is True, "use_cache should default to True"
+        assert "use_cache" in sig.parameters, (
+            "download_audio should have use_cache parameter"
+        )
+        assert sig.parameters["use_cache"].default is True, (
+            "use_cache should default to True"
+        )
         logger.info("✓ VideoLoader has cache detection implemented")
 
         # Test 4: Verify JSON metadata includes audio info
@@ -82,7 +88,13 @@ def test_cache_functionality():
             segments=[TranscriptSegment(id=0, start=0.0, end=5.0, text="Test segment")],
         )
 
-        video_info = VideoInfo(source="test_source", type="file", title="Test Video", id="test_id", duration=60.0)
+        video_info = VideoInfo(
+            source="test_source",
+            type="file",
+            title="Test Video",
+            id="test_id",
+            duration=60.0,
+        )
 
         # Save with audio path
         json_output_dir = temp_path / "json_test"

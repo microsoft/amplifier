@@ -57,7 +57,10 @@ class Message:
         if not isinstance(items, list):
             return False
 
-        return any(isinstance(item, dict) and item.get("type") == "tool_result" for item in items)
+        return any(
+            isinstance(item, dict) and item.get("type") == "tool_result"
+            for item in items
+        )
 
     def is_tool_use(self) -> bool:
         """Check if this message contains tool invocations."""
@@ -68,7 +71,9 @@ class Message:
         if not isinstance(items, list):
             return False
 
-        return any(isinstance(item, dict) and item.get("type") == "tool_use" for item in items)
+        return any(
+            isinstance(item, dict) and item.get("type") == "tool_use" for item in items
+        )
 
     def get_tool_calls(self) -> list[dict[str, Any]]:
         """Extract tool calls from this message."""
@@ -82,7 +87,13 @@ class Message:
 
         for item in items:
             if isinstance(item, dict) and item.get("type") == "tool_use":
-                tools.append({"id": item.get("id"), "name": item.get("name"), "input": item.get("input", {})})
+                tools.append(
+                    {
+                        "id": item.get("id"),
+                        "name": item.get("name"),
+                        "input": item.get("input", {}),
+                    }
+                )
         return tools
 
     def get_tool_results(self) -> list[dict[str, Any]]:
@@ -97,7 +108,12 @@ class Message:
 
         for item in items:
             if isinstance(item, dict) and item.get("type") == "tool_result":
-                results.append({"tool_use_id": item.get("tool_use_id"), "content": item.get("content")})
+                results.append(
+                    {
+                        "tool_use_id": item.get("tool_use_id"),
+                        "content": item.get("content"),
+                    }
+                )
         return results
 
 
@@ -132,7 +148,9 @@ class SessionData:
 
     def count_branches(self) -> int:
         """Count number of branches (messages with multiple children)."""
-        return sum(1 for children in self.parent_child_map.values() if len(children) > 1)
+        return sum(
+            1 for children in self.parent_child_map.values() if len(children) > 1
+        )
 
     def has_sidechains(self) -> bool:
         """Check if session contains sidechains."""
@@ -182,7 +200,9 @@ class DAGLoader:
         # Store file metadata
         self.session_data.metadata["file_path"] = str(file_path)
         self.session_data.metadata["file_size"] = file_path.stat().st_size
-        self.session_data.metadata["modified_time"] = datetime.fromtimestamp(file_path.stat().st_mtime, tz=UTC)
+        self.session_data.metadata["modified_time"] = datetime.fromtimestamp(
+            file_path.stat().st_mtime, tz=UTC
+        )
 
         # First pass: identify compact artifacts to filter
         compact_boundary_uuids = set()
@@ -215,7 +235,9 @@ class DAGLoader:
         # Second pass: load messages, filtering compact artifacts
         with open(file_path, encoding="utf-8") as f:
             for line_num, line in enumerate(f, 1):
-                self._process_line(line, line_num, compact_boundary_uuids, compact_summary_uuids)
+                self._process_line(
+                    line, line_num, compact_boundary_uuids, compact_summary_uuids
+                )
 
         # Build parent-child relationships
         self._build_relationships()
@@ -305,7 +327,16 @@ class DAGLoader:
         )
 
         # Store any extra metadata
-        skip_fields = {"uuid", "type", "parentUuid", "message", "content", "timestamp", "isSidechain", "userType"}
+        skip_fields = {
+            "uuid",
+            "type",
+            "parentUuid",
+            "message",
+            "content",
+            "timestamp",
+            "isSidechain",
+            "userType",
+        }
         for key, value in data.items():
             if key not in skip_fields:
                 msg.metadata[key] = value
@@ -332,21 +363,29 @@ class DAGLoader:
     def _classify_session(self):
         """Classify session type and detect subagent name."""
         # Check for modern sidechain (any message has isSidechain: true)
-        has_sidechain = any(msg.is_sidechain for msg in self.session_data.messages.values())
+        has_sidechain = any(
+            msg.is_sidechain for msg in self.session_data.messages.values()
+        )
 
         if has_sidechain:
             self.session_data.session_type = SessionType.MODERN_SIDECHAIN
             self.session_data.subagent_name = self._extract_subagent_from_task()
-            logger.info(f"Detected modern sidechain session (agent: {self.session_data.subagent_name})")
+            logger.info(
+                f"Detected modern sidechain session (agent: {self.session_data.subagent_name})"
+            )
             return
 
         # Check for legacy subagent session using mapper
         if self.subagent_mapper and self.session_data.session_id:
-            subagent_info = self.subagent_mapper.get_subagent_info(self.session_data.session_id)
+            subagent_info = self.subagent_mapper.get_subagent_info(
+                self.session_data.session_id
+            )
             if subagent_info:
                 self.session_data.session_type = SessionType.LEGACY_SUBAGENT
                 self.session_data.subagent_name = subagent_info.subagent_type
-                logger.info(f"Detected legacy subagent session (agent: {self.session_data.subagent_name})")
+                logger.info(
+                    f"Detected legacy subagent session (agent: {self.session_data.subagent_name})"
+                )
                 return
 
         self.session_data.session_type = SessionType.REGULAR
@@ -432,7 +471,9 @@ class DAGLoader:
             if not session_path.exists():
                 continue
 
-            logger.info(f"  Loading session {session_index + 1}/{len(session_paths)}: {session_path.name}")
+            logger.info(
+                f"  Loading session {session_index + 1}/{len(session_paths)}: {session_path.name}"
+            )
 
             with open(session_path, encoding="utf-8") as f:
                 for line_num, line in enumerate(f, 1):
@@ -449,7 +490,10 @@ class DAGLoader:
                             continue
 
                         # Skip compact artifacts
-                        if uuid in compact_boundary_uuids or uuid in compact_summary_uuids:
+                        if (
+                            uuid in compact_boundary_uuids
+                            or uuid in compact_summary_uuids
+                        ):
                             logger.debug(f"Filtering compact artifact: {uuid}")
                             continue
 
@@ -464,7 +508,9 @@ class DAGLoader:
 
                     except json.JSONDecodeError as e:
                         self.error_count += 1
-                        logger.warning(f"{session_path.name}:{line_num}: Invalid JSON - {e}")
+                        logger.warning(
+                            f"{session_path.name}:{line_num}: Invalid JSON - {e}"
+                        )
                     except Exception as e:
                         self.error_count += 1
                         logger.warning(f"{session_path.name}:{line_num}: Error - {e}")
@@ -479,7 +525,9 @@ class DAGLoader:
         self.session_data.metadata["chain_length"] = len(session_paths)
         self.session_data.metadata["chain_sessions"] = [p.stem for p in session_paths]
         self.session_data.metadata["file_path"] = str(session_paths[-1])  # Most recent
-        self.session_data.metadata["total_files_size"] = sum(p.stat().st_size for p in session_paths if p.exists())
+        self.session_data.metadata["total_files_size"] = sum(
+            p.stat().st_size for p in session_paths if p.exists()
+        )
 
         # Log summary
         logger.info(f"Loaded {self.session_data.count_messages()} messages from chain")
@@ -487,7 +535,9 @@ class DAGLoader:
             f"Filtered {len(compact_boundary_uuids)} compact boundaries and {len(compact_summary_uuids)} compact summaries"
         )
         if self.session_data.count_branches() > 0:
-            logger.info(f"Found {self.session_data.count_branches()} branches in merged DAG")
+            logger.info(
+                f"Found {self.session_data.count_branches()} branches in merged DAG"
+            )
         if self.session_data.has_sidechains():
             logger.info("Merged session contains sidechains")
         if self.error_count > 0:

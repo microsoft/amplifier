@@ -55,7 +55,9 @@ def trace_lineage(session_path: Path, project_dir: Path) -> list[Path]:
                 logger.warning(f"Previous session not found: {prev_session_id}")
                 break
         else:
-            logger.debug(f"No compact boundary found in {current.name} - reached origin")
+            logger.debug(
+                f"No compact boundary found in {current.name} - reached origin"
+            )
             current = None  # No more compacts, reached origin
 
     logger.info(f"Trace complete: found {len(chain)} sessions in chain")
@@ -83,11 +85,16 @@ def find_compact_boundary(session_path: Path) -> str | None:
                     data = json.loads(line)
 
                     # Check for compact boundary
-                    if data.get("type") == "system" and data.get("subtype") == "compact_boundary":
+                    if (
+                        data.get("type") == "system"
+                        and data.get("subtype") == "compact_boundary"
+                    ):
                         # Previous session ID is in sessionId field
                         prev_session_id = data.get("sessionId")
                         if prev_session_id:
-                            logger.debug(f"Found compact boundary at line {line_num} pointing to {prev_session_id}")
+                            logger.debug(
+                                f"Found compact boundary at line {line_num} pointing to {prev_session_id}"
+                            )
                             return prev_session_id
 
                 except json.JSONDecodeError:
@@ -116,7 +123,12 @@ def get_session_metadata(session_path: Path) -> dict:
         - file_size: Size in bytes
         - has_compact: Whether session contains a compact boundary
     """
-    metadata = {"session_id": session_path.stem, "message_count": 0, "file_size": 0, "has_compact": False}
+    metadata = {
+        "session_id": session_path.stem,
+        "message_count": 0,
+        "file_size": 0,
+        "has_compact": False,
+    }
 
     try:
         # Get file size
@@ -131,7 +143,10 @@ def get_session_metadata(session_path: Path) -> dict:
                 if not metadata["has_compact"]:
                     try:
                         data = json.loads(line)
-                        if data.get("type") == "system" and data.get("subtype") == "compact_boundary":
+                        if (
+                            data.get("type") == "system"
+                            and data.get("subtype") == "compact_boundary"
+                        ):
                             metadata["has_compact"] = True
                     except json.JSONDecodeError:
                         pass
@@ -147,7 +162,10 @@ def get_session_metadata(session_path: Path) -> dict:
 # Example usage and testing
 if __name__ == "__main__":
     # Set up logging for testing
-    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
 
     # Test with a sample session
     import sys

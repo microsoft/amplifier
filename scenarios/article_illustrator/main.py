@@ -86,14 +86,18 @@ class ArticleIllustratorPipeline:
             if not session_file.exists():
                 logger.warning(f"Cannot resume: No session found at {self.output_dir}")
                 logger.info("Starting new session instead")
-                self.state = self.session_mgr.create_new(article_path, {"style": style} if style else {})
+                self.state = self.session_mgr.create_new(
+                    article_path, {"style": style} if style else {}
+                )
             else:
                 # Load existing session
                 try:
                     self.state = self.session_mgr.load_existing()
 
                     # Validate compatibility
-                    is_compatible, mismatches = self.session_mgr.validate_compatibility(self.state, article_path, style)
+                    is_compatible, mismatches = self.session_mgr.validate_compatibility(
+                        self.state, article_path, style
+                    )
 
                     if not is_compatible:
                         logger.warning("⚠️  Session parameter mismatch detected:")
@@ -101,17 +105,25 @@ class ArticleIllustratorPipeline:
                             logger.warning(f"    • {mismatch}")
                         logger.warning("")
                         logger.warning("  You can either:")
-                        logger.warning("    1. Stop and use a different OUTPUT directory")
-                        logger.warning("    2. Continue with mismatched parameters (may cause issues)")
+                        logger.warning(
+                            "    1. Stop and use a different OUTPUT directory"
+                        )
+                        logger.warning(
+                            "    2. Continue with mismatched parameters (may cause issues)"
+                        )
 
                         # For non-interactive environments, fail safe
                         if not sys.stdin.isatty():
-                            logger.error("Cannot prompt in non-interactive mode. Aborting.")
+                            logger.error(
+                                "Cannot prompt in non-interactive mode. Aborting."
+                            )
                             return False
 
                         response = input("\n  Continue anyway? (y/N): ").strip().lower()
                         if response != "y":
-                            logger.info("Aborted. Specify different OUTPUT or remove --resume flag.")
+                            logger.info(
+                                "Aborted. Specify different OUTPUT or remove --resume flag."
+                            )
                             return False
 
                     logger.info(f"✓ Resumed session from {self.output_dir}")
@@ -120,14 +132,20 @@ class ArticleIllustratorPipeline:
                 except (FileNotFoundError, ValueError) as e:
                     logger.error(f"Failed to resume: {e}")
                     logger.info("Starting new session instead")
-                    self.state = self.session_mgr.create_new(article_path, {"style": style} if style else {})
+                    self.state = self.session_mgr.create_new(
+                        article_path, {"style": style} if style else {}
+                    )
         else:
             # New session (default behavior)
             if session_file.exists():
                 logger.info(f"ℹ️  Note: Existing session found at {self.output_dir}")
-                logger.info("    Ignoring it. Use --resume to continue existing session.")
+                logger.info(
+                    "    Ignoring it. Use --resume to continue existing session."
+                )
 
-            self.state = self.session_mgr.create_new(article_path, {"style": style} if style else {})
+            self.state = self.session_mgr.create_new(
+                article_path, {"style": style} if style else {}
+            )
             logger.info(f"Starting new session in {self.output_dir}")
 
         try:
@@ -179,7 +197,9 @@ class ArticleIllustratorPipeline:
         self.state.illustration_points = await analyzer.analyze(self.state.article_path)
 
         self.session_mgr.mark_complete(self.state, StageState.ANALYSIS)
-        logger.info(f"✓ Identified {len(self.state.illustration_points)} illustration points")
+        logger.info(
+            f"✓ Identified {len(self.state.illustration_points)} illustration points"
+        )
 
     async def _generate_prompts(self) -> None:
         """Stage 2: Generate image prompts."""
@@ -189,7 +209,9 @@ class ArticleIllustratorPipeline:
             raise RuntimeError("Session state not initialized")
 
         generator = PromptGenerator(style_params=self.state.style_params)
-        self.state.prompts = await generator.generate_prompts(self.state.illustration_points, self.state.article_path)
+        self.state.prompts = await generator.generate_prompts(
+            self.state.illustration_points, self.state.article_path
+        )
 
         self.session_mgr.save_prompts(self.state)
         self.session_mgr.mark_complete(self.state, StageState.PROMPTS)
@@ -216,7 +238,9 @@ class ArticleIllustratorPipeline:
             cost_limit=cost_limit,
         )
 
-        self.state.images = await generator.generate_images(self.state.prompts, save_callback=save_callback)
+        self.state.images = await generator.generate_images(
+            self.state.prompts, save_callback=save_callback
+        )
         self.state.total_cost = generator.total_cost
 
         self.session_mgr.mark_complete(self.state, StageState.IMAGES)
@@ -263,7 +287,9 @@ class ArticleIllustratorPipeline:
 
         if self.state.markdown_complete:
             logger.info("\n✨ Illustrated article ready!")
-            logger.info(f"   View: {self.state.output_dir}/illustrated_{self.state.article_path.name}")
+            logger.info(
+                f"   View: {self.state.output_dir}/illustrated_{self.state.article_path.name}"
+            )
 
 
 # CLI Interface

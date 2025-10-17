@@ -26,7 +26,17 @@ import os
 import pathlib
 
 # Default exclude patterns: common directories and binary files to ignore.
-DEFAULT_EXCLUDE = [".venv", "node_modules", "*.lock", ".git", "__pycache__", "*.pyc", "*.ruff_cache", "logs", "output"]
+DEFAULT_EXCLUDE = [
+    ".venv",
+    "node_modules",
+    "*.lock",
+    ".git",
+    "__pycache__",
+    "*.pyc",
+    "*.ruff_cache",
+    "logs",
+    "output",
+]
 
 
 def parse_patterns(pattern_str: str) -> list[str]:
@@ -91,7 +101,9 @@ def match_pattern(path: str, pattern: str, component_matching=False) -> bool:
                 return fnmatch.fnmatch(os.path.basename(abs_path), pattern_file)
             return False  # Not under the pattern directory
         # Direct file match
-        return abs_path == resolved_pattern or fnmatch.fnmatch(abs_path, resolved_pattern)
+        return abs_path == resolved_pattern or fnmatch.fnmatch(
+            abs_path, resolved_pattern
+        )
     # Regular pattern without navigation, use relative path matching
     return fnmatch.fnmatch(path, pattern)
 
@@ -100,7 +112,10 @@ def should_exclude(path: str, exclude_patterns: list[str]) -> bool:
     """
     Returns True if any component of the path matches an exclude pattern.
     """
-    return any(match_pattern(path, pattern, component_matching=True) for pattern in exclude_patterns)
+    return any(
+        match_pattern(path, pattern, component_matching=True)
+        for pattern in exclude_patterns
+    )
 
 
 def should_include(path: str, include_patterns: list[str]) -> bool:
@@ -111,7 +126,9 @@ def should_include(path: str, include_patterns: list[str]) -> bool:
     return any(match_pattern(path, pattern) for pattern in include_patterns)
 
 
-def collect_files(patterns: list[str], exclude_patterns: list[str], include_patterns: list[str]) -> list[str]:
+def collect_files(
+    patterns: list[str], exclude_patterns: list[str], include_patterns: list[str]
+) -> list[str]:
     """
     Collects file paths matching the given patterns, applying exclusion first.
     Files that match an include pattern are added back in.
@@ -158,20 +175,30 @@ def collect_files(patterns: list[str], exclude_patterns: list[str], include_patt
     return sorted(collected)
 
 
-def process_file(file_path: str, collected: set[str], exclude_patterns: list[str], include_patterns: list[str]) -> None:
+def process_file(
+    file_path: str,
+    collected: set[str],
+    exclude_patterns: list[str],
+    include_patterns: list[str],
+) -> None:
     """Process a single file"""
     abs_path = os.path.abspath(file_path)
     rel_path = os.path.relpath(file_path)
 
     # Skip if excluded and not specifically included
-    if should_exclude(rel_path, exclude_patterns) and not should_include(rel_path, include_patterns):
+    if should_exclude(rel_path, exclude_patterns) and not should_include(
+        rel_path, include_patterns
+    ):
         return
 
     collected.add(abs_path)
 
 
 def process_directory(
-    dir_path: str, collected: set[str], exclude_patterns: list[str], include_patterns: list[str]
+    dir_path: str,
+    collected: set[str],
+    exclude_patterns: list[str],
+    include_patterns: list[str],
 ) -> None:
     """Process a directory recursively"""
     for root, dirs, files in os.walk(dir_path):
@@ -281,7 +308,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Recursively collect files matching the given patterns and output a document with file names and content."
     )
-    parser.add_argument("patterns", nargs="+", help="File and/or directory patterns to collect (e.g. *.py or output)")
+    parser.add_argument(
+        "patterns",
+        nargs="+",
+        help="File and/or directory patterns to collect (e.g. *.py or output)",
+    )
     parser.add_argument(
         "--exclude",
         type=str,
@@ -291,10 +322,17 @@ def main() -> None:
         + ")",
     )
     parser.add_argument(
-        "--include", type=str, default="", help="Comma-separated patterns to include (overrides excludes if matched)"
+        "--include",
+        type=str,
+        default="",
+        help="Comma-separated patterns to include (overrides excludes if matched)",
     )
     parser.add_argument(
-        "--format", type=str, choices=["markdown", "plain"], default="plain", help="Output format (default: plain)"
+        "--format",
+        type=str,
+        choices=["markdown", "plain"],
+        default="plain",
+        help="Output format (default: plain)",
     )
     args = parser.parse_args()
 
@@ -309,7 +347,9 @@ def main() -> None:
     files = collect_files(patterns, exclude_patterns, include_patterns)
 
     # Format and print output
-    output = format_output(files, args.format, exclude_patterns, include_patterns, patterns)
+    output = format_output(
+        files, args.format, exclude_patterns, include_patterns, patterns
+    )
     print(output)
 
 

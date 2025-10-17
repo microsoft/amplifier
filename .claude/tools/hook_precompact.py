@@ -50,7 +50,9 @@ def format_message(msg: dict) -> str:
                     tool_id = item.get("id", "unknown")
                     tool_input = item.get("input", {})
                     output_lines.append("")
-                    output_lines.append(f"[TOOL USE: {tool_name}] (ID: {tool_id[:20]}...)")
+                    output_lines.append(
+                        f"[TOOL USE: {tool_name}] (ID: {tool_id[:20]}...)"
+                    )
                     # Format tool input as indented JSON
                     try:
                         input_str = json.dumps(tool_input, indent=2)
@@ -67,7 +69,9 @@ def format_message(msg: dict) -> str:
 
                     output_lines.append("")
                     error_marker = " [ERROR]" if is_error else ""
-                    output_lines.append(f"[TOOL RESULT{error_marker}] (ID: {tool_id[:20]}...)")
+                    output_lines.append(
+                        f"[TOOL RESULT{error_marker}] (ID: {tool_id[:20]}...)"
+                    )
 
                     # Limit tool result output to prevent massive dumps
                     if isinstance(result_content, str):
@@ -76,7 +80,9 @@ def format_message(msg: dict) -> str:
                             # Show first 50 and last 20 lines
                             for line in lines[:50]:
                                 output_lines.append(f"  {line}")
-                            output_lines.append(f"  ... ({len(lines) - 70} lines omitted) ...")
+                            output_lines.append(
+                                f"  ... ({len(lines) - 70} lines omitted) ..."
+                            )
                             for line in lines[-20:]:
                                 output_lines.append(f"  {line}")
                         else:
@@ -140,12 +146,16 @@ def extract_loaded_session_ids(entries: list) -> set[str]:
                 session_id = match.group(1)
                 if len(session_id) > 20:
                     loaded_sessions.add(session_id)
-                    logger.info(f"Found referenced transcript file for session: {session_id[:8]}...")
+                    logger.info(
+                        f"Found referenced transcript file for session: {session_id[:8]}..."
+                    )
 
     return loaded_sessions
 
 
-def export_transcript(transcript_path: str, trigger: str, session_id: str, custom_instructions: str = "") -> str:
+def export_transcript(
+    transcript_path: str, trigger: str, session_id: str, custom_instructions: str = ""
+) -> str:
     """
     Export the conversation transcript to a text file.
     Includes duplicate detection to avoid re-embedding already-loaded transcripts.
@@ -198,7 +208,11 @@ def export_transcript(transcript_path: str, trigger: str, session_id: str, custo
                         timestamp = entry.get("timestamp", "")
 
                         # Create a pseudo-message for system entries
-                        system_msg = {"role": "system", "content": f"[{subtype}] {content}", "timestamp": timestamp}
+                        system_msg = {
+                            "role": "system",
+                            "content": f"[{subtype}] {content}",
+                            "timestamp": timestamp,
+                        }
                         entries.append(("system", system_msg))
 
                     elif entry_type in ["user", "assistant"]:
@@ -222,7 +236,9 @@ def export_transcript(transcript_path: str, trigger: str, session_id: str, custo
         # Check for already-loaded transcripts to avoid duplication
         loaded_sessions = extract_loaded_session_ids(entries)
         if loaded_sessions:
-            logger.info(f"Detected {len(loaded_sessions)} previously loaded transcript(s)")
+            logger.info(
+                f"Detected {len(loaded_sessions)} previously loaded transcript(s)"
+            )
             logger.info("These will be marked in the export to avoid re-embedding")
 
         # Write formatted transcript to text file
@@ -242,7 +258,9 @@ def export_transcript(transcript_path: str, trigger: str, session_id: str, custo
                 f.write(f"Previously Loaded Sessions: {len(loaded_sessions)}\n")
                 for loaded_id in sorted(loaded_sessions):
                     f.write(f"  - {loaded_id}\n")
-                f.write("Note: Content from these sessions may appear embedded in the conversation.\n")
+                f.write(
+                    "Note: Content from these sessions may appear embedded in the conversation.\n"
+                )
 
             f.write("=" * 80 + "\n\n")
 
@@ -261,7 +279,10 @@ def export_transcript(transcript_path: str, trigger: str, session_id: str, custo
                             content_str += item.get("text", "")
 
                 # Check if we're entering or leaving a loaded transcript section
-                if "CONVERSATION SEGMENT" in content_str or "CLAUDE CODE CONVERSATION TRANSCRIPT" in content_str:
+                if (
+                    "CONVERSATION SEGMENT" in content_str
+                    or "CLAUDE CODE CONVERSATION TRANSCRIPT" in content_str
+                ):
                     in_loaded_transcript = True
                     f.write("\n--- [BEGIN EMBEDDED TRANSCRIPT] ---\n")
                 elif in_loaded_transcript and "END OF TRANSCRIPT" in content_str:
@@ -271,7 +292,9 @@ def export_transcript(transcript_path: str, trigger: str, session_id: str, custo
                 # Write the message with appropriate formatting
                 if entry_type in ["user", "assistant"]:
                     message_num += 1
-                    marker = " [FROM EMBEDDED TRANSCRIPT]" if in_loaded_transcript else ""
+                    marker = (
+                        " [FROM EMBEDDED TRANSCRIPT]" if in_loaded_transcript else ""
+                    )
                     f.write(f"\n--- Message {message_num} ({entry_type}){marker} ---\n")
                     f.write(format_message(msg))
                 elif entry_type == "system":
@@ -326,7 +349,9 @@ def main():
         # Export the transcript
         exported_path = ""
         if transcript_path:
-            exported_path = export_transcript(transcript_path, trigger, session_id, custom_instructions)
+            exported_path = export_transcript(
+                transcript_path, trigger, session_id, custom_instructions
+            )
             if exported_path:
                 logger.info(f"Successfully exported transcript to: {exported_path}")
             else:
@@ -338,14 +363,20 @@ def main():
         output = {
             "continue": True,
             "suppressOutput": True,
-            "metadata": {"transcript_exported": bool(exported_path), "export_path": exported_path, "trigger": trigger},
+            "metadata": {
+                "transcript_exported": bool(exported_path),
+                "export_path": exported_path,
+                "trigger": trigger,
+            },
         }
 
         # Add a system message to notify about the export
         if exported_path:
             # Extract just the filename for the message
             filename = Path(exported_path).name
-            output["systemMessage"] = f"Transcript exported to .data/transcripts/{filename}"
+            output["systemMessage"] = (
+                f"Transcript exported to .data/transcripts/{filename}"
+            )
 
         json.dump(output, sys.stdout)
         logger.info("PreCompact export hook completed")
@@ -353,7 +384,10 @@ def main():
     except Exception as e:
         logger.exception("Error in PreCompact export hook", e)
         # Return non-blocking error - we don't want to prevent compaction
-        json.dump({"continue": True, "suppressOutput": True, "metadata": {"error": str(e)}}, sys.stdout)
+        json.dump(
+            {"continue": True, "suppressOutput": True, "metadata": {"error": str(e)}},
+            sys.stdout,
+        )
         sys.exit(1)
 
 

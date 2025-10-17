@@ -65,7 +65,10 @@ def inspect_compact_operations(session_file: Path) -> None:
             else:
                 content_str = str(content)
 
-            if "session is being continued" in content_str.lower() or "continuing from" in content_str.lower():
+            if (
+                "session is being continued" in content_str.lower()
+                or "continuing from" in content_str.lower()
+            ):
                 continuation_messages.append(msg)
 
     # Report findings
@@ -136,7 +139,9 @@ def inspect_compact_operations(session_file: Path) -> None:
                     for item in content:
                         if isinstance(item, dict) and item.get("type") == "tool_result":
                             tool_content = item.get("content", "")
-                            print(f"  Tool result content preview: {tool_content[:300]}...")
+                            print(
+                                f"  Tool result content preview: {tool_content[:300]}..."
+                            )
                         elif isinstance(item, dict) and item.get("type") == "text":
                             text = item.get("text", "")
                             print(f"  Text content: {text[:300]}...")
@@ -179,7 +184,9 @@ def main():
     if len(sys.argv) < 2:
         print("Usage: python inspect_compact.py <session_file>")
         print("\nExample:")
-        print("  python inspect_compact.py ~/.claude/projects/my-project/session-id.jsonl")
+        print(
+            "  python inspect_compact.py ~/.claude/projects/my-project/session-id.jsonl"
+        )
         sys.exit(1)
 
     session_file = Path(sys.argv[1]).expanduser()

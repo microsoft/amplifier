@@ -38,8 +38,14 @@ from amplifier.ccsdk_toolkit import create_logger
 @click.option("--verbose", is_flag=True, help="Enable verbose logging")
 @click.option("--resume", help="Resume previous session by ID")
 @click.option("--agent", help="Path to custom agent definition")
-@click.option("--limit", type=int, help="Process only N files (works with --resume to process next N)")
-@click.option("--notify", is_flag=True, help="Enable desktop notifications for completion")
+@click.option(
+    "--limit",
+    type=int,
+    help="Process only N files (works with --resume to process next N)",
+)
+@click.option(
+    "--notify", is_flag=True, help="Enable desktop notifications for completion"
+)
 def main(
     target: str,
     pattern: str,
@@ -178,7 +184,9 @@ Provide specific recommendations for simplification.""",
 
     # Filter out already-processed files when resuming
     if processed_files_set:
-        files_to_analyze = [f for f in files_to_analyze if str(f) not in processed_files_set]
+        files_to_analyze = [
+            f for f in files_to_analyze if str(f) not in processed_files_set
+        ]
         logger.info(f"Skipping {len(processed_files_set)} already-processed files")
 
     # Apply limit to remaining files
@@ -190,11 +198,15 @@ Provide specific recommendations for simplification.""",
         logger.info("All files have been processed or limit reached")
         return
 
-    logger.info(f"Analyzing {len(files_to_analyze)} files (total: {session_state.context['total_files']})")
+    logger.info(
+        f"Analyzing {len(files_to_analyze)} files (total: {session_state.context['total_files']})"
+    )
 
     # Start notification for analysis begin
     if notify:
-        logger.stage_start("Analysis", f"Starting analysis of {len(files_to_analyze)} files")
+        logger.stage_start(
+            "Analysis", f"Starting analysis of {len(files_to_analyze)} files"
+        )
 
     # Configure session
     options = SessionOptions(
@@ -263,7 +275,9 @@ Focus on actionable improvements following ruthless simplicity principles."""
                     session_state.add_message("assistant", response.content)
                 else:
                     error_msg = response.error or "Unknown error"
-                    logger.error(f"Analysis failed for {file_path}", error=Exception(error_msg))
+                    logger.error(
+                        f"Analysis failed for {file_path}", error=Exception(error_msg)
+                    )
                     results.append(
                         {
                             "file": str(file_path),
@@ -279,7 +293,9 @@ Focus on actionable improvements following ruthless simplicity principles."""
         # Send failure notification
         if notify:
             logger.task_complete(
-                f"Code complexity analysis failed: {str(e)}", duration=time.time() - start_time, success=False
+                f"Code complexity analysis failed: {str(e)}",
+                duration=time.time() - start_time,
+                success=False,
             )
         raise click.ClickException(str(e))
 
@@ -298,7 +314,9 @@ Focus on actionable improvements following ruthless simplicity principles."""
     # Send completion notification
     if notify:
         logger.task_complete(
-            f"Code complexity analysis complete: {len(results)} files analyzed", duration=total_duration, success=True
+            f"Code complexity analysis complete: {len(results)} files analyzed",
+            duration=total_duration,
+            success=True,
         )
 
     # Output results

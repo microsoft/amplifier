@@ -146,7 +146,9 @@ class SimpleParser:
             lines.append("## Message Flow (First 10 messages)")
             for msg in flow[:10]:
                 msg_type = msg.get("type", "unknown")
-                lines.append(f"- [{msg['line_number']:4d}] {msg_type}: {msg['uuid'][:8]}...")
+                lines.append(
+                    f"- [{msg['line_number']:4d}] {msg_type}: {msg['uuid'][:8]}..."
+                )
             if len(flow) > 10:
                 lines.append(f"- ... and {len(flow) - 10} more messages")
             lines.append("")
@@ -205,7 +207,11 @@ def find_default_session(projects_dir: Path):
     best_match_score = 0
 
     for project_dir in projects_dir.iterdir():
-        if project_dir.is_dir() and project_dir.name.startswith("-") and cwd_encoded.startswith(project_dir.name):
+        if (
+            project_dir.is_dir()
+            and project_dir.name.startswith("-")
+            and cwd_encoded.startswith(project_dir.name)
+        ):
             # Check if the encoded CWD starts with this project directory name
             # This handles both exact matches and parent directories
             # Score based on the length of the match (longer = more specific)
@@ -253,13 +259,21 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
-    parser.add_argument("session_file", nargs="?", help="Path to specific session file (optional)")
+    parser.add_argument(
+        "session_file", nargs="?", help="Path to specific session file (optional)"
+    )
 
-    parser.add_argument("--project", "-p", help="Project name or directory (fuzzy match supported)")
+    parser.add_argument(
+        "--project", "-p", help="Project name or directory (fuzzy match supported)"
+    )
 
-    parser.add_argument("--list", "-l", action="store_true", help="List available projects and sessions")
+    parser.add_argument(
+        "--list", "-l", action="store_true", help="List available projects and sessions"
+    )
 
-    parser.add_argument("--session", "-s", help="Session UUID or filename within project")
+    parser.add_argument(
+        "--session", "-s", help="Session UUID or filename within project"
+    )
 
     parser.add_argument(
         "--output",
@@ -297,7 +311,9 @@ def main():
                 # Show most recent 3 sessions
                 for session_file, mtime in sessions[:3]:
                     dt = datetime.fromtimestamp(mtime, tz=UTC)
-                    print(f"       - {session_file.name} ({dt.strftime('%Y-%m-%d %H:%M')})")
+                    print(
+                        f"       - {session_file.name} ({dt.strftime('%Y-%m-%d %H:%M')})"
+                    )
                 if len(sessions) > 3:
                     print(f"       ... and {len(sessions) - 3} more")
             else:
@@ -368,7 +384,11 @@ def main():
     # Parse and analyze the session
     print(f"📄 Parsing: {session_file}")
     project_dir_name = session_file.parent.name  # e.g., "-home-user-repos-amplifier"
-    project_name = project_dir_name[1:].replace("-", "/") if project_dir_name.startswith("-") else project_dir_name
+    project_name = (
+        project_dir_name[1:].replace("-", "/")
+        if project_dir_name.startswith("-")
+        else project_dir_name
+    )
     print(f"📂 Project: {project_name}")
 
     file_size = session_file.stat().st_size

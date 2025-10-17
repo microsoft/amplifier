@@ -76,7 +76,9 @@ def generate_index(sites_dir: Path) -> str:
 
                 # Add metadata if available
                 if page["url"]:
-                    lines.append(f"- [{title}]({link_path}) - [Original]({page['url']})")
+                    lines.append(
+                        f"- [{title}]({link_path}) - [Original]({page['url']})"
+                    )
                 else:
                     lines.append(f"- [{title}]({link_path})")
 

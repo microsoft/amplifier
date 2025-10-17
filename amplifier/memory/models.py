@@ -7,7 +7,9 @@ from typing import Literal
 from pydantic import BaseModel
 from pydantic import Field
 
-MemoryCategory = Literal["learning", "decision", "issue_solved", "preference", "pattern"]
+MemoryCategory = Literal[
+    "learning", "decision", "issue_solved", "preference", "pattern"
+]
 
 
 class Memory(BaseModel):
@@ -15,7 +17,9 @@ class Memory(BaseModel):
 
     content: str = Field(..., description="The memory content")
     category: MemoryCategory = Field(..., description="Type of memory")
-    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional context")
+    metadata: dict[str, Any] = Field(
+        default_factory=dict, description="Additional context"
+    )
 
 
 class StoredMemory(Memory):

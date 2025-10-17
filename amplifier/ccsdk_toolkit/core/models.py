@@ -23,7 +23,9 @@ class SessionOptions(BaseModel):
     max_turns: int = Field(default=1, gt=0)
     retry_attempts: int = Field(default=3, gt=0, le=10)
     retry_delay: float = Field(default=1.0, gt=0, le=10.0)
-    stream_output: bool = Field(default=False, description="Enable real-time streaming output")
+    stream_output: bool = Field(
+        default=False, description="Enable real-time streaming output"
+    )
     progress_callback: Callable[[str], None] | None = Field(
         default=None,
         description="Optional callback for progress updates",

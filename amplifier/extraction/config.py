@@ -14,11 +14,14 @@ from pydantic_settings import SettingsConfigDict
 class MemoryExtractionConfig(BaseSettings):
     """Configuration for Memory Extraction system with environment variable support"""
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
+    )
 
     # Feature flag - must be explicitly enabled
     memory_system_enabled: bool = Field(
-        default=False, description="Enable memory extraction system (must be explicitly set to true)"
+        default=False,
+        description="Enable memory extraction system (must be explicitly set to true)",
     )
 
     # Model configuration
@@ -29,11 +32,13 @@ class MemoryExtractionConfig(BaseSettings):
 
     # Extraction configuration
     memory_extraction_timeout: int = Field(
-        default=120, description="Timeout in seconds for Claude Code SDK extraction operations"
+        default=120,
+        description="Timeout in seconds for Claude Code SDK extraction operations",
     )
 
     memory_extraction_max_messages: int = Field(
-        default=20, description="Maximum number of recent messages to process for extraction"
+        default=20,
+        description="Maximum number of recent messages to process for extraction",
     )
 
     memory_extraction_max_content_length: int = Field(
@@ -46,12 +51,14 @@ class MemoryExtractionConfig(BaseSettings):
 
     # Storage configuration (for future use)
     memory_storage_dir: Path = Field(
-        default=Path(".data/memories"), description="Directory for storing extracted memories"
+        default=Path(".data/memories"),
+        description="Directory for storing extracted memories",
     )
 
     # API Keys (optional - SDK may provide these)
     anthropic_api_key: str | None = Field(
-        default=None, description="Anthropic API key (optional, Claude Code SDK may provide)"
+        default=None,
+        description="Anthropic API key (optional, Claude Code SDK may provide)",
     )
 
     def ensure_storage_dir(self) -> Path:

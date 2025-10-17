@@ -55,7 +55,9 @@ def html_to_markdown(html: str, base_url: str) -> str:
         # Fix relative URLs if needed (basic implementation)
         # A more sophisticated implementation would parse and update URLs
 
-        logger.info(f"Converted HTML ({len(html)} chars) to Markdown ({len(result)} chars)")
+        logger.info(
+            f"Converted HTML ({len(html)} chars) to Markdown ({len(result)} chars)"
+        )
         return result.strip()
 
     except Exception as e:

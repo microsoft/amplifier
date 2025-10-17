@@ -40,9 +40,17 @@ def main():
         category_str = sys.argv[3] if len(sys.argv) > 3 else "learning"
 
         # Validate category
-        valid_categories = ["learning", "decision", "issue_solved", "preference", "pattern"]
+        valid_categories = [
+            "learning",
+            "decision",
+            "issue_solved",
+            "preference",
+            "pattern",
+        ]
         if category_str not in valid_categories:
-            print(f"Warning: Invalid category '{category_str}'. Using 'learning' instead.")
+            print(
+                f"Warning: Invalid category '{category_str}'. Using 'learning' instead."
+            )
             print(f"Valid categories: {', '.join(valid_categories)}")
             category_str = "learning"
 
@@ -50,7 +58,11 @@ def main():
         category = cast(MemoryCategory, category_str)
 
         # Create Memory object and add it
-        memory = Memory(content=content, category=category, metadata={"source": "CLI", "manual_entry": True})
+        memory = Memory(
+            content=content,
+            category=category,
+            metadata={"source": "CLI", "manual_entry": True},
+        )
         stored = store.add_memory(memory)
         print(f"✓ Added memory (ID: {stored.id[:8]}...): {content[:50]}...")
 
@@ -95,7 +107,10 @@ def main():
         if response == "yes":
             # Clear by reinitializing with empty data
             store._memories = {}
-            store._data = {"memories": [], "metadata": {"version": "2.0", "created": datetime.now().isoformat()}}
+            store._data = {
+                "memories": [],
+                "metadata": {"version": "2.0", "created": datetime.now().isoformat()},
+            }
             store._save_data()
             print("✓ All memories cleared")
         else:

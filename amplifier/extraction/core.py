@@ -45,7 +45,9 @@ class MemoryExtractor:
 
         # Check if Claude CLI is installed and available
         try:
-            result = subprocess.run(["which", "claude"], capture_output=True, text=True, timeout=2)
+            result = subprocess.run(
+                ["which", "claude"], capture_output=True, text=True, timeout=2
+            )
             if result.returncode != 0:
                 raise RuntimeError(
                     "Claude CLI not found. Memory extraction requires Claude CLI. "
@@ -57,9 +59,13 @@ class MemoryExtractor:
                 "Install with: npm install -g @anthropic-ai/claude-code"
             )
 
-        logger.info("[EXTRACTION] Claude Code SDK and CLI verified - ready for extraction")
+        logger.info(
+            "[EXTRACTION] Claude Code SDK and CLI verified - ready for extraction"
+        )
 
-    async def extract_memories(self, text: str, context: dict[str, Any] | None = None) -> list[Memory]:
+    async def extract_memories(
+        self, text: str, context: dict[str, Any] | None = None
+    ) -> list[Memory]:
         """Extract memories from text using Claude Code SDK
 
         Args:
@@ -74,10 +80,14 @@ class MemoryExtractor:
         """
         memories = await self._extract_with_claude(text, context)
         if not memories:
-            raise RuntimeError("Memory extraction failed - Claude Code SDK returned no results")
+            raise RuntimeError(
+                "Memory extraction failed - Claude Code SDK returned no results"
+            )
         return memories
 
-    async def extract_from_messages(self, messages: list[dict[str, Any]], context: str | None = None) -> dict[str, Any]:
+    async def extract_from_messages(
+        self, messages: list[dict[str, Any]], context: str | None = None
+    ) -> dict[str, Any]:
         """Extract memories from conversation messages using Claude Code SDK
 
         Args:
@@ -90,7 +100,9 @@ class MemoryExtractor:
         Raises:
             RuntimeError: If no messages provided or extraction fails
         """
-        logger.info(f"[EXTRACTION] extract_from_messages called with {len(messages)} messages")
+        logger.info(
+            f"[EXTRACTION] extract_from_messages called with {len(messages)} messages"
+        )
 
         if not messages:
             raise RuntimeError("No messages provided for memory extraction")
@@ -104,9 +116,13 @@ class MemoryExtractor:
         result = await self._extract_with_claude_full(conversation, context)
 
         if not result:
-            raise RuntimeError("Memory extraction failed - Claude Code SDK returned no results")
+            raise RuntimeError(
+                "Memory extraction failed - Claude Code SDK returned no results"
+            )
 
-        logger.info(f"[EXTRACTION] Extraction completed: {len(result.get('memories', []))} memories")
+        logger.info(
+            f"[EXTRACTION] Extraction completed: {len(result.get('memories', []))} memories"
+        )
         return result
 
     def _format_messages(self, messages: list[dict[str, Any]]) -> str:
@@ -117,8 +133,12 @@ class MemoryExtractor:
         max_content_length = self.config.memory_extraction_max_content_length
 
         # Only process the last N messages to avoid timeout
-        messages_to_process = messages[-max_messages:] if len(messages) > max_messages else messages
-        logger.info(f"[EXTRACTION] Processing {len(messages_to_process)} of {len(messages)} total messages")
+        messages_to_process = (
+            messages[-max_messages:] if len(messages) > max_messages else messages
+        )
+        logger.info(
+            f"[EXTRACTION] Processing {len(messages_to_process)} of {len(messages)} total messages"
+        )
 
         for msg in messages_to_process:
             role = msg.get("role", "unknown")
@@ -143,7 +163,9 @@ class MemoryExtractor:
         logger.info(f"[EXTRACTION] Formatted {len(formatted)} messages for extraction")
         return "\n\n".join(formatted)
 
-    async def _extract_with_claude(self, text: str, context: dict[str, Any] | None) -> list[Memory]:
+    async def _extract_with_claude(
+        self, text: str, context: dict[str, Any] | None
+    ) -> list[Memory]:
         """Extract memories using Claude Code SDK"""
         prompt = f"""Extract important memories from this conversation.
 
@@ -200,12 +222,17 @@ Context: {json.dumps(context or {})}
                             Memory(
                                 content=item["content"],
                                 category=item["category"],
-                                metadata={**item.get("metadata", {}), **(context or {})},
+                                metadata={
+                                    **item.get("metadata", {}),
+                                    **(context or {}),
+                                },
                             )
                             for item in data
                         ]
         except TimeoutError:
-            logger.warning(f"Claude Code SDK timed out after {self.config.memory_extraction_timeout} seconds")
+            logger.warning(
+                f"Claude Code SDK timed out after {self.config.memory_extraction_timeout} seconds"
+            )
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse extraction response: {e}")
         except Exception as e:
@@ -213,7 +240,9 @@ Context: {json.dumps(context or {})}
 
         return []
 
-    async def _extract_with_claude_full(self, conversation: str, context: str | None) -> dict[str, Any] | None:
+    async def _extract_with_claude_full(
+        self, conversation: str, context: str | None
+    ) -> dict[str, Any] | None:
         """Extract using Claude Code SDK with full response format"""
         from datetime import datetime
 
@@ -246,7 +275,9 @@ Focus on technical decisions, problems solved, user preferences, and important p
 Return ONLY valid JSON."""
 
         try:
-            logger.info(f"[EXTRACTION] Setting timeout to {self.config.memory_extraction_timeout} seconds")
+            logger.info(
+                f"[EXTRACTION] Setting timeout to {self.config.memory_extraction_timeout} seconds"
+            )
             async with asyncio.timeout(self.config.memory_extraction_timeout):
                 logger.info(
                     f"[EXTRACTION] Creating Claude Code SDK client with model: {self.config.memory_extraction_model}"
@@ -271,10 +302,14 @@ Return ONLY valid JSON."""
                                     if hasattr(block, "text"):
                                         response += getattr(block, "text", "")
 
-                    logger.info(f"[EXTRACTION] Received response length: {len(response)}")
+                    logger.info(
+                        f"[EXTRACTION] Received response length: {len(response)}"
+                    )
 
                     if not response:
-                        logger.warning("[EXTRACTION] Empty response from Claude Code SDK")
+                        logger.warning(
+                            "[EXTRACTION] Empty response from Claude Code SDK"
+                        )
                         return None
 
                     # Clean and parse JSON
@@ -289,9 +324,14 @@ Return ONLY valid JSON."""
 
                     logger.info("[EXTRACTION] Parsing JSON response")
                     data = json.loads(cleaned)
-                    data["metadata"] = {"extraction_method": "claude_sdk", "timestamp": datetime.now().isoformat()}
+                    data["metadata"] = {
+                        "extraction_method": "claude_sdk",
+                        "timestamp": datetime.now().isoformat(),
+                    }
 
-                    logger.info(f"[EXTRACTION] Successfully extracted: {len(data.get('memories', []))} memories")
+                    logger.info(
+                        f"[EXTRACTION] Successfully extracted: {len(data.get('memories', []))} memories"
+                    )
                     return data
 
         except TimeoutError:
@@ -335,7 +375,10 @@ Return ONLY valid JSON."""
             r"^Extract and return as JSON:",  # Instruction text
         ]
 
-        return any(re.match(pattern, clean_content, re.IGNORECASE) for pattern in system_patterns)
+        return any(
+            re.match(pattern, clean_content, re.IGNORECASE)
+            for pattern in system_patterns
+        )
 
     def _extract_tags(self, text: str) -> list[str]:
         """Extract relevant tags from text"""
@@ -351,7 +394,9 @@ Return ONLY valid JSON."""
         tags.extend([term.lower() for term in tech_terms])
 
         # File extensions
-        extensions = re.findall(r"\b\w+\.(py|js|ts|jsx|tsx|json|yaml|yml|md|txt)\b", text)
+        extensions = re.findall(
+            r"\b\w+\.(py|js|ts|jsx|tsx|json|yaml|yml|md|txt)\b", text
+        )
         tags.extend([ext for _, ext in extensions])
 
         return list(set(tags))[:5]

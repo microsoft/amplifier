@@ -52,7 +52,9 @@ class PromptGenerator:
         prompts = []
         for i, point in enumerate(points):
             try:
-                prompt = await self._generate_single_prompt(point, i, article_content, style_description)
+                prompt = await self._generate_single_prompt(
+                    point, i, article_content, style_description
+                )
                 prompts.append(prompt)
                 logger.info(f"Generated prompt {i + 1}/{len(points)}")
             except Exception as e:
@@ -167,7 +169,9 @@ Return JSON with:
 - High contrast for web viewing
 - No text or words in images"""
 
-    def _create_fallback_prompt(self, point: IllustrationPoint, index: int) -> ImagePrompt:
+    def _create_fallback_prompt(
+        self, point: IllustrationPoint, index: int
+    ) -> ImagePrompt:
         """Create a basic fallback prompt.
 
         Args:
@@ -217,13 +221,22 @@ Return JSON with:
         """
         content_lower = content.lower()
 
-        if any(word in content_lower for word in ["joke", "funny", "humor", "lol", "haha"]):
+        if any(
+            word in content_lower for word in ["joke", "funny", "humor", "lol", "haha"]
+        ):
             return "humorous"
-        if any(word in content_lower for word in ["research", "study", "analysis", "data"]):
+        if any(
+            word in content_lower for word in ["research", "study", "analysis", "data"]
+        ):
             return "academic"
-        if any(word in content_lower for word in ["tutorial", "how to", "step by step", "guide"]):
+        if any(
+            word in content_lower
+            for word in ["tutorial", "how to", "step by step", "guide"]
+        ):
             return "instructional"
-        if any(word in content_lower for word in ["opinion", "believe", "think", "feel"]):
+        if any(
+            word in content_lower for word in ["opinion", "believe", "think", "feel"]
+        ):
             return "opinion"
         return "professional"
 
@@ -239,8 +252,24 @@ Return JSON with:
         content_lower = content.lower()
 
         # Technology indicators
-        tech_words = ["software", "code", "programming", "api", "database", "cloud", "ai", "machine learning"]
-        business_words = ["business", "market", "customer", "revenue", "strategy", "growth"]
+        tech_words = [
+            "software",
+            "code",
+            "programming",
+            "api",
+            "database",
+            "cloud",
+            "ai",
+            "machine learning",
+        ]
+        business_words = [
+            "business",
+            "market",
+            "customer",
+            "revenue",
+            "strategy",
+            "growth",
+        ]
         science_words = ["research", "experiment", "hypothesis", "theory", "study"]
 
         tech_count = sum(1 for word in tech_words if word in content_lower)
@@ -278,7 +307,9 @@ Return JSON with:
             "interface",
             "abstraction",
         ]
-        tech_term_count = sum(1 for term in technical_terms if term.lower() in content.lower())
+        tech_term_count = sum(
+            1 for term in technical_terms if term.lower() in content.lower()
+        )
 
         if code_blocks > 5 or tech_term_count > 10:
             return "highly_technical"

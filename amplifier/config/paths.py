@@ -65,7 +65,9 @@ class PathConfig:
 
         # Content directories - defaults to current directory
         content_dirs_env = os.getenv("AMPLIFIER_CONTENT_DIRS", ".")
-        self._content_dirs = [self.resolve_path(p.strip()) for p in content_dirs_env.split(",")]
+        self._content_dirs = [
+            self.resolve_path(p.strip()) for p in content_dirs_env.split(",")
+        ]
 
     def resolve_path(self, path_str: Union[str, Path]) -> Path:
         """Resolve a path string to an absolute Path object.
@@ -123,7 +125,9 @@ class PathConfig:
 
     def __repr__(self) -> str:
         """String representation of PathConfig."""
-        return f"PathConfig(data_dir={self._data_dir}, content_dirs={self._content_dirs})"
+        return (
+            f"PathConfig(data_dir={self._data_dir}, content_dirs={self._content_dirs})"
+        )
 
 
 # Create singleton instance for module-level access

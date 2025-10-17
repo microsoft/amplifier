@@ -3,8 +3,8 @@
 Feature Demo #5: Parallel Worktrees
 Shows how to work on multiple solutions simultaneously
 """
+
 import subprocess
-from pathlib import Path
 
 
 def run_command(cmd, capture=True):
@@ -65,7 +65,7 @@ def main():
             print(worktrees)
         else:
             print("\n(No additional worktrees currently)")
-    except:
+    except Exception:
         print("\n(Unable to check - not in a git repository)")
 
     # Show the workflow
@@ -81,8 +81,8 @@ def main():
                 "Creates ../amplifier-my-experiment/",
                 "New branch: my-experiment",
                 "Copies .data/ for continuity",
-                "Independent environment"
-            ]
+                "Independent environment",
+            ],
         },
         {
             "title": "List All Worktrees",
@@ -90,8 +90,8 @@ def main():
             "what": [
                 "Shows all active worktrees",
                 "Branch and directory for each",
-                "Status information"
-            ]
+                "Status information",
+            ],
         },
         {
             "title": "Hide Worktree (Keep Files)",
@@ -100,8 +100,8 @@ def main():
                 "Hides from VS Code workspace",
                 "Files remain on disk",
                 "Can restore later",
-                "Useful for pausing experiments"
-            ]
+                "Useful for pausing experiments",
+            ],
         },
         {
             "title": "Remove Worktree",
@@ -110,8 +110,8 @@ def main():
                 "Deletes worktree directory",
                 "Deletes branch (with confirmation)",
                 "Cleans up completely",
-                "Use when experiment failed"
-            ]
+                "Use when experiment failed",
+            ],
         },
         {
             "title": "Adopt Remote Branch",
@@ -119,16 +119,16 @@ def main():
             "what": [
                 "Creates worktree from remote branch",
                 "Useful across devices",
-                "Continues work from another machine"
-            ]
-        }
+                "Continues work from another machine",
+            ],
+        },
     ]
 
     for workflow in workflows:
         print(f"\n📌 {workflow['title']}")
         print(f"   Command: {workflow['command']}")
         print("   What happens:")
-        for item in workflow['what']:
+        for item in workflow["what"]:
             print(f"      • {item}")
 
     # Real-world scenarios
@@ -145,8 +145,8 @@ def main():
                 "Implement both in parallel",
                 "Test both thoroughly",
                 "Compare: performance, complexity, security",
-                "Choose winner, delete loser"
-            ]
+                "Choose winner, delete loser",
+            ],
         },
         {
             "situation": "Risky Refactoring with Safety Net",
@@ -155,8 +155,8 @@ def main():
                 "make worktree risky-refactor",
                 "Try aggressive changes in worktree",
                 "If it works: merge to main",
-                "If it fails: delete worktree, no damage"
-            ]
+                "If it fails: delete worktree, no damage",
+            ],
         },
         {
             "situation": "Working on Multiple Features",
@@ -166,8 +166,8 @@ def main():
                 "make worktree feature-analytics",
                 "Switch contexts by switching windows",
                 "Each feature stays isolated",
-                "Merge when ready, independently"
-            ]
+                "Merge when ready, independently",
+            ],
         },
         {
             "situation": "Urgent Hotfix While Deep in Feature",
@@ -177,14 +177,14 @@ def main():
                 "Fix bug in hotfix worktree",
                 "Deploy from hotfix",
                 "Return to feature work",
-                "No branch switching, no stashing!"
-            ]
-        }
+                "No branch switching, no stashing!",
+            ],
+        },
     ]
 
     for i, scenario in enumerate(scenarios, 1):
         print(f"\n🎯 Scenario {i}: {scenario['situation']}")
-        for j, step in enumerate(scenario['approach'], 1):
+        for j, step in enumerate(scenario["approach"], 1):
             print(f"   {j}. {step}")
 
     # Advanced tips
@@ -195,24 +195,24 @@ def main():
     tips = [
         {
             "tip": "Shared Data Directory",
-            "detail": "Set AMPLIFIER_DATA_DIR in .env to share knowledge across all worktrees"
+            "detail": "Set AMPLIFIER_DATA_DIR in .env to share data across all worktrees",
         },
         {
             "tip": "VS Code Integration",
-            "detail": "Each worktree can be a separate VS Code window - true parallel development"
+            "detail": "Each worktree can be a separate VS Code window - true parallel development",
         },
         {
             "tip": "Worktree Naming",
-            "detail": "Use descriptive names: feature-X, experiment-Y, refactor-Z, hotfix-N"
+            "detail": "Use descriptive names: feature-X, experiment-Y, refactor-Z, hotfix-N",
         },
         {
             "tip": "Clean Up Regularly",
-            "detail": "Delete failed experiments: make worktree-rm experiment-name"
+            "detail": "Delete failed experiments: make worktree-rm experiment-name",
         },
         {
             "tip": "Safety Net Pattern",
-            "detail": "Always keep main worktree clean, experiment in others"
-        }
+            "detail": "Always keep main worktree clean, experiment in others",
+        },
     ]
 
     for tip in tips:

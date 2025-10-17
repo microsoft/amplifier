@@ -93,7 +93,9 @@ def main() -> None:
     for r in runners:
         # Capture output for git-collector / pnpm, but stream for npx (shows progress)
         is_npx = "npx" in r[0].lower() if isinstance(r[0], str) else False
-        is_git_collector = "git-collector" in r[0].lower() if isinstance(r[0], str) else False
+        is_git_collector = (
+            "git-collector" in r[0].lower() if isinstance(r[0], str) else False
+        )
         capture = not (is_npx or is_git_collector)
 
         print(f"Executing command: {' '.join(r + [root, '--update'])}")

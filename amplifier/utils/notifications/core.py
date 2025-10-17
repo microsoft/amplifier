@@ -62,7 +62,9 @@ class NotificationSender:
         self._debug(f"Using directory name as project: {project_name}")
         return project_name
 
-    def _format_subtitle(self, subtitle: str | None, session_id: str | None) -> str | None:
+    def _format_subtitle(
+        self, subtitle: str | None, session_id: str | None
+    ) -> str | None:
         """Format subtitle.
 
         Args:
@@ -99,13 +101,21 @@ class NotificationSender:
         fallback_used = False
 
         if self.platform == Platform.MACOS:
-            success, error = send_macos_notification(request.message, request.title, subtitle)
+            success, error = send_macos_notification(
+                request.message, request.title, subtitle
+            )
         elif self.platform == Platform.LINUX:
-            success, error = send_linux_notification(request.message, request.title, subtitle)
+            success, error = send_linux_notification(
+                request.message, request.title, subtitle
+            )
         elif self.platform == Platform.WSL:
-            success, error = send_wsl_notification(request.message, request.title, subtitle)
+            success, error = send_wsl_notification(
+                request.message, request.title, subtitle
+            )
         elif self.platform == Platform.WINDOWS:
-            success, error = send_windows_notification(request.message, request.title, subtitle)
+            success, error = send_windows_notification(
+                request.message, request.title, subtitle
+            )
         else:
             # Unknown platform - fallback to console
             success = False

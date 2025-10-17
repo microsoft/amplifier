@@ -98,7 +98,9 @@ class ClaudeSession:
             SessionResponse with the result or error
         """
         if not self.client:
-            return SessionResponse(error="Session not initialized. Use 'async with' context.")
+            return SessionResponse(
+                error="Session not initialized. Use 'async with' context."
+            )
 
         retry_delay = self.options.retry_delay
         last_error = None
@@ -124,7 +126,11 @@ class ClaudeSession:
                                         response_text += text
 
                                         # Stream output if enabled
-                                        should_stream = stream if stream is not None else self.options.stream_output
+                                        should_stream = (
+                                            stream
+                                            if stream is not None
+                                            else self.options.stream_output
+                                        )
                                         if should_stream:
                                             print(text, end="", flush=True)
 
@@ -133,16 +139,25 @@ class ClaudeSession:
                                             self.options.progress_callback(text)
 
                     # Collect metadata from ResultMessage if available
-                    if hasattr(message, "__class__") and message.__class__.__name__ == "ResultMessage":
+                    if (
+                        hasattr(message, "__class__")
+                        and message.__class__.__name__ == "ResultMessage"
+                    ):
                         if hasattr(message, "session_id"):
-                            metadata["session_id"] = getattr(message, "session_id", None)
+                            metadata["session_id"] = getattr(
+                                message, "session_id", None
+                            )
                         if hasattr(message, "total_cost_usd"):
-                            metadata["total_cost_usd"] = getattr(message, "total_cost_usd", 0.0)
+                            metadata["total_cost_usd"] = getattr(
+                                message, "total_cost_usd", 0.0
+                            )
                         if hasattr(message, "duration_ms"):
                             metadata["duration_ms"] = getattr(message, "duration_ms", 0)
 
                 # Add newline after streaming if enabled
-                should_stream = stream if stream is not None else self.options.stream_output
+                should_stream = (
+                    stream if stream is not None else self.options.stream_output
+                )
                 if should_stream and response_text:
                     print()  # Final newline after streaming
 
@@ -162,4 +177,6 @@ class ClaudeSession:
                 retry_delay *= 2  # Exponential backoff
 
         # All retries exhausted
-        return SessionResponse(error=f"Failed after {self.options.retry_attempts} attempts: {last_error}")
+        return SessionResponse(
+            error=f"Failed after {self.options.retry_attempts} attempts: {last_error}"
+        )

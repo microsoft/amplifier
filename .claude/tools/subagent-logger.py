@@ -85,7 +85,9 @@ def update_summary(log_dir: Path, log_entry: dict[str, Any]) -> None:
 
     subagent_type = log_entry["subagent_type"]
     if subagent_type:
-        summary["subagent_counts"][subagent_type] = summary["subagent_counts"].get(subagent_type, 0) + 1
+        summary["subagent_counts"][subagent_type] = (
+            summary["subagent_counts"].get(subagent_type, 0) + 1
+        )
 
     if not summary["first_invocation"]:
         summary["first_invocation"] = log_entry["timestamp"]

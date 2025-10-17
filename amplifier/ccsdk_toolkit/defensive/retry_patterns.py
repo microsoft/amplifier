@@ -65,11 +65,15 @@ async def retry_with_feedback(
 
         except TimeoutError as e:
             last_error = f"Operation timed out: {e}"
-            logger.warning(f"Attempt {attempt + 1}/{max_retries + 1} failed: {last_error}")
+            logger.warning(
+                f"Attempt {attempt + 1}/{max_retries + 1} failed: {last_error}"
+            )
 
         except Exception as e:
             last_error = str(e)
-            logger.warning(f"Attempt {attempt + 1}/{max_retries + 1} failed: {last_error}")
+            logger.warning(
+                f"Attempt {attempt + 1}/{max_retries + 1} failed: {last_error}"
+            )
 
     # All retries exhausted
     logger.error(f"All {max_retries + 1} attempts failed. Last error: {last_error}")

@@ -38,7 +38,9 @@ class SessionManager:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.state_file = output_dir / ".session_state.json"
 
-    def create_new(self, article_path: Path, style_params: dict | None = None) -> SessionState:
+    def create_new(
+        self, article_path: Path, style_params: dict | None = None
+    ) -> SessionState:
         """Create a fresh session state - never loads existing.
 
         Args:
@@ -99,13 +101,17 @@ class SessionManager:
 
         # Check article path
         if existing.article_path != article_path:
-            mismatches.append(f"Article: session={existing.article_path.name}, current={article_path.name}")
+            mismatches.append(
+                f"Article: session={existing.article_path.name}, current={article_path.name}"
+            )
 
         # Check style if provided
         existing_style = existing.style_params.get("style", "")
         current_style = style or ""
         if current_style and existing_style != current_style:
-            mismatches.append(f"Style: session='{existing_style}', current='{current_style}'")
+            mismatches.append(
+                f"Style: session='{existing_style}', current='{current_style}'"
+            )
 
         return (len(mismatches) == 0, mismatches)
 
@@ -124,14 +130,18 @@ class SessionManager:
             state_dict["output_dir"] = str(state.output_dir)
 
             # Convert complex objects to dicts
-            state_dict["illustration_points"] = [p.dict() for p in state.illustration_points]
+            state_dict["illustration_points"] = [
+                p.dict() for p in state.illustration_points
+            ]
             state_dict["prompts"] = [p.dict() for p in state.prompts]
             state_dict["images"] = [img.dict() for img in state.images]
 
             # Handle Path objects in nested structures
             for img_data in state_dict["images"]:
                 if "primary" in img_data:
-                    img_data["primary"]["local_path"] = str(img_data["primary"]["local_path"])
+                    img_data["primary"]["local_path"] = str(
+                        img_data["primary"]["local_path"]
+                    )
                 for alt in img_data.get("alternatives", []):
                     alt["local_path"] = str(alt["local_path"])
 
@@ -212,7 +222,9 @@ class SessionManager:
         logger.info("Resumed session - Progress:")
         logger.info(f"  Analysis: {'✓' if state.analysis_complete else '✗'}")
         logger.info(f"  Prompts: {'✓' if state.prompts_complete else '✗'}")
-        logger.info(f"  Images: {'✓' if state.images_complete else '✗'} ({state.images_generated} generated)")
+        logger.info(
+            f"  Images: {'✓' if state.images_complete else '✗'} ({state.images_generated} generated)"
+        )
         logger.info(f"  Markdown: {'✓' if state.markdown_complete else '✗'}")
         logger.info(f"  Total cost: ${state.total_cost:.2f}")
 
@@ -225,7 +237,12 @@ class SessionManager:
         Returns:
             True if all stages complete, False otherwise
         """
-        return state.analysis_complete and state.prompts_complete and state.images_complete and state.markdown_complete
+        return (
+            state.analysis_complete
+            and state.prompts_complete
+            and state.images_complete
+            and state.markdown_complete
+        )
 
     def reset(self, state: SessionState) -> SessionState:
         """Reset state for fresh run.

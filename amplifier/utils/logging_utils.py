@@ -23,7 +23,9 @@ class ExtractionLogger:
         self.article_count = 0
         self.total_count = 0
 
-    def start_article(self, current: int, total: int, title: str, article_id: str) -> None:
+    def start_article(
+        self, current: int, total: int, title: str, article_id: str
+    ) -> None:
         """Start processing a new article.
 
         Args:
@@ -62,7 +64,9 @@ class ExtractionLogger:
         sys.stdout.write(f"  ├─ {phase_name}: Extracting...")
         sys.stdout.flush()
 
-    def complete_phase(self, phase_name: str, results: Any, elapsed: float | None = None) -> None:
+    def complete_phase(
+        self, phase_name: str, results: Any, elapsed: float | None = None
+    ) -> None:
         """Complete an extraction phase.
 
         Args:
@@ -121,7 +125,11 @@ class ExtractionLogger:
 
         # Add partial failure warning if status provided
         if status and hasattr(status, "processor_results"):
-            failed_processors = [name for name, result in status.processor_results.items() if result.status == "failed"]
+            failed_processors = [
+                name
+                for name, result in status.processor_results.items()
+                if result.status == "failed"
+            ]
             if failed_processors:
                 print(base_msg)
                 print(f"     ⚠ Partial: {', '.join(failed_processors)} failed")
@@ -141,6 +149,10 @@ class ExtractionLogger:
         """
         if self.article_start_time:
             total_elapsed = time.time() - self.article_start_time
-            print(f"  └─ Complete: {concepts_count} concepts, {relations_count} relations ({total_elapsed:.1f}s total)")
+            print(
+                f"  └─ Complete: {concepts_count} concepts, {relations_count} relations ({total_elapsed:.1f}s total)"
+            )
         else:
-            print(f"  └─ Complete: {concepts_count} concepts, {relations_count} relations")
+            print(
+                f"  └─ Complete: {concepts_count} concepts, {relations_count} relations"
+            )

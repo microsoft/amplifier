@@ -66,7 +66,11 @@ def process_single_file(file_path: Path, output_dir: Path) -> ConversionResult:
     except Exception as e:
         logger.error(f"Error processing {file_path.name}: {e}")
         return ConversionResult(
-            source_file=file_path, mermaid_content="", conversion_method="error", warnings=[str(e)], success=False
+            source_file=file_path,
+            mermaid_content="",
+            conversion_method="error",
+            warnings=[str(e)],
+            success=False,
         )
 
 
@@ -79,7 +83,12 @@ def process_single_file(file_path: Path, output_dir: Path) -> ConversionResult:
     default=Path("mermaid_output"),
     help="Output directory for Mermaid files",
 )
-@click.option("--pattern", "-p", default="**/*.dot", help="Glob pattern for finding DOT files (default: **/*.dot)")
+@click.option(
+    "--pattern",
+    "-p",
+    default="**/*.dot",
+    help="Glob pattern for finding DOT files (default: **/*.dot)",
+)
 @click.option(
     "--session-file",
     "-s",
@@ -87,7 +96,9 @@ def process_single_file(file_path: Path, output_dir: Path) -> ConversionResult:
     default=Path("dot_conversion_session.json"),
     help="Session file for progress tracking and resume (default: dot_conversion_session.json in current dir)",
 )
-@click.option("--clear-session", is_flag=True, help="Clear existing session and start fresh")
+@click.option(
+    "--clear-session", is_flag=True, help="Clear existing session and start fresh"
+)
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 def main(
     input_path: Path,

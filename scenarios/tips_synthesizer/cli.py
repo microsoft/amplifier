@@ -89,7 +89,9 @@ def main(
     # Input validation - check for minimum files
     files = list(input_dir.glob("**/*.md"))
     if len(files) < 2:
-        logger.error(f"Need at least 2 markdown files, found {len(files)} in {input_dir}")
+        logger.error(
+            f"Need at least 2 markdown files, found {len(files)} in {input_dir}"
+        )
         if len(files) == 1:
             logger.error(f"  Found: {files[0].name}")
         return 1
@@ -143,7 +145,9 @@ def main(
         return 1
 
     except KeyboardInterrupt:
-        logger.warning("\n⚠️ Synthesis interrupted - progress saved, use --resume to continue")
+        logger.warning(
+            "\n⚠️ Synthesis interrupted - progress saved, use --resume to continue"
+        )
         return 130
     except Exception as e:
         logger.error(f"\n❌ Unexpected error: {e}")

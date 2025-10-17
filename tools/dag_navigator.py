@@ -151,7 +151,9 @@ class DAGNavigator:
                 self._handle_branch_point(current_uuid, children, branch)
                 break
 
-    def _handle_branch_point(self, parent_uuid: str, children: list[str], parent_branch: Branch):
+    def _handle_branch_point(
+        self, parent_uuid: str, children: list[str], parent_branch: Branch
+    ):
         """Handle a message with multiple children (branch point)."""
         logger.debug(f"Branch point at {parent_uuid} with {len(children)} children")
 

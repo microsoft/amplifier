@@ -18,7 +18,9 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
-def write_json_with_retry(data: Any, filepath: Path, max_retries: int = 3, initial_delay: float = 0.5) -> None:
+def write_json_with_retry(
+    data: Any, filepath: Path, max_retries: int = 3, initial_delay: float = 0.5
+) -> None:
     """
     Write JSON to file with retry logic for cloud-synced directories.
 
@@ -63,7 +65,12 @@ def write_json_with_retry(data: Any, filepath: Path, max_retries: int = 3, initi
                 raise
 
 
-def read_json_with_retry(filepath: Path, max_retries: int = 3, initial_delay: float = 0.5, default: Any = None) -> Any:
+def read_json_with_retry(
+    filepath: Path,
+    max_retries: int = 3,
+    initial_delay: float = 0.5,
+    default: Any = None,
+) -> Any:
     """
     Read JSON from file with retry logic for cloud-synced directories.
 

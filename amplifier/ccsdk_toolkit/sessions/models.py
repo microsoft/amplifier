@@ -103,7 +103,10 @@ class SessionState(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "metadata": {"session_id": "123e4567-e89b-12d3-a456-426614174000", "name": "example-session"},
+                "metadata": {
+                    "session_id": "123e4567-e89b-12d3-a456-426614174000",
+                    "name": "example-session",
+                },
                 "messages": [
                     {"role": "user", "content": "Review this code"},
                     {"role": "assistant", "content": "Here's my review..."},

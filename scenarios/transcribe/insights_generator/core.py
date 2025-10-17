@@ -123,7 +123,9 @@ def generate_insights(
             # More compact format for additional quotes
             lines.append(f'- "{quote.text}" [{timestamp_str}]')
             if quote.timestamp_link:
-                lines[-1] = f'- "{quote.text}" [[{timestamp_str}]({quote.timestamp_link})]'
+                lines[-1] = (
+                    f'- "{quote.text}" [[{timestamp_str}]({quote.timestamp_link})]'
+                )
 
         lines.append("")
 

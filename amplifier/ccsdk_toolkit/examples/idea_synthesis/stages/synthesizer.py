@@ -28,7 +28,9 @@ class SynthesizerStage:
         self.state_file = state_file
         self.console = console or Console()
 
-    async def synthesize_themes(self, summaries: list[FileSummary], state: SynthesisState) -> list[CrossCuttingTheme]:
+    async def synthesize_themes(
+        self, summaries: list[FileSummary], state: SynthesisState
+    ) -> list[CrossCuttingTheme]:
         """Find cross-cutting themes from summaries.
 
         Args:
@@ -40,11 +42,15 @@ class SynthesizerStage:
         """
         # Skip if already processed
         if state.themes:
-            self.console.print("[yellow]Themes already synthesized, skipping...[/yellow]")
+            self.console.print(
+                "[yellow]Themes already synthesized, skipping...[/yellow]"
+            )
             return state.themes
 
         with Progress(
-            SpinnerColumn(), TextColumn("[progress.description]{task.description}"), console=self.console
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=self.console,
         ) as progress:
             task = progress.add_task("Synthesizing themes...", total=1)
 
@@ -56,7 +62,9 @@ class SynthesizerStage:
                 state.current_stage = "synthesizer"
                 self._save_state(state)
 
-                progress.update(task, advance=1, description=f"Found {len(themes)} themes")
+                progress.update(
+                    task, advance=1, description=f"Found {len(themes)} themes"
+                )
 
                 return themes
 
@@ -64,7 +72,9 @@ class SynthesizerStage:
                 self.console.print(f"[red]Error synthesizing themes: {e}[/red]")
                 return []
 
-    async def _synthesize(self, summaries: list[FileSummary]) -> list[CrossCuttingTheme]:
+    async def _synthesize(
+        self, summaries: list[FileSummary]
+    ) -> list[CrossCuttingTheme]:
         """Perform theme synthesis using Claude.
 
         Args:
@@ -118,7 +128,9 @@ Focus on themes that:
 - Could guide decision-making or architecture
 - Show evolution of thinking over time"""
 
-        response = await query_claude_with_timeout(prompt=prompt, system_prompt=system_prompt, parse_json=True)
+        response = await query_claude_with_timeout(
+            prompt=prompt, system_prompt=system_prompt, parse_json=True
+        )
 
         themes = []
         # Ensure response is a list
@@ -182,7 +194,9 @@ Focus on themes that:
                     "title": e.title,
                     "synthesis": e.synthesis,
                     "themes": [t.theme for t in e.themes],
-                    "supporting_quotes": [[str(q[0]), q[1]] for q in e.supporting_quotes],
+                    "supporting_quotes": [
+                        [str(q[0]), q[1]] for q in e.supporting_quotes
+                    ],
                     "action_items": e.action_items,
                     "metadata": e.metadata,
                     "timestamp": e.timestamp.isoformat(),
