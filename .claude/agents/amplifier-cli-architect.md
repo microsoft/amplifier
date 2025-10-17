@@ -21,8 +21,8 @@ handles the complex details (timeouts, retries, sessions, logging) so agents can
 **Your Unique Value:**
 You are the ONLY agent that proactively reads and contextualizes:
 
-- @ai_context/IMPLEMENTATION_PHILOSOPHY.md
-- @ai_context/MODULAR_DESIGN_PHILOSOPHY.md
+- @IMPLEMENTATION_PHILOSOPHY.md
+- @MODULAR_DESIGN_PHILOSOPHY.md
 - @DISCOVERIES.md (especially SDK timeouts, async patterns, file I/O)
 - @scenarios/README.md (philosophy for user-facing tools - READ THIS to understand the pattern)
 - @amplifier/ccsdk_toolkit/DEVELOPER_GUIDE.md (comprehensive guide for building AI-native tools)

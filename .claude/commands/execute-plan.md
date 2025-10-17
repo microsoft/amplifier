@@ -7,8 +7,8 @@ make install
 source .venv/bin/activate
 
 READ:
-@ai_context/IMPLEMENTATION_PHILOSOPHY.md
-@ai_context/MODULAR_DESIGN_PHILOSOPHY.md
+@IMPLEMENTATION_PHILOSOPHY.md
+@MODULAR_DESIGN_PHILOSOPHY.md
 
 Execute the plan created in $ARGUMENTS to implement the changes needed to complete the task. Follow the detailed instructions provided in the plan, ensuring that each step is executed as described.
 

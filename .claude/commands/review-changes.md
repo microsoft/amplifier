@@ -11,8 +11,8 @@ make test
 If all tests pass, let's take a look at the implementation philosophy documents to ensure we are aligned with the project's design principles.
 
 READ:
-@ai_context/IMPLEMENTATION_PHILOSOPHY.md
-@ai_context/MODULAR_DESIGN_PHILOSOPHY.md
+@IMPLEMENTATION_PHILOSOPHY.md
+@MODULAR_DESIGN_PHILOSOPHY.md
 
 Now go and look at what code is currently changed since the last commit. Ultrathink and review each of those files more thoroughly and make sure they are aligned with the implementation philosophy documents. Follow the breadcrumbs in the files to their dependencies or files they are importing and make sure those are also aligned with the implementation philosophy documents.
 

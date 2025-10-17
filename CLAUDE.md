@@ -10,8 +10,8 @@ This file is reserved for Claude Code-specific instructions.
 
 - @AGENTS.md
 - @DISCOVERIES.md
-- @ai_context/IMPLEMENTATION_PHILOSOPHY.md
-- @ai_context/MODULAR_DESIGN_PHILOSOPHY.md
+- @IMPLEMENTATION_PHILOSOPHY.md
+- @MODULAR_DESIGN_PHILOSOPHY.md
 
 # Claude's Working Philosophy and Memory System
 

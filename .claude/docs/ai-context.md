@@ -75,7 +75,7 @@ python tools/build_git_collector_files.py
 /prime
 
 # Or manually reference
-Please read @ai_context/IMPLEMENTATION_PHILOSOPHY.md and follow these principles
+Please read @IMPLEMENTATION_PHILOSOPHY.md and follow these principles
 ```
 
 This can be skipped if the files are @mentioned in the root AGENTS.md or CLAUDE.md file or equivalent.
@@ -104,8 +104,8 @@ Architecture principles for scalable systems:
 
 ```
 /ultrathink-task Build a user authentication system following our philosophy:
-@ai_context/IMPLEMENTATION_PHILOSOPHY.md
-@ai_context/MODULAR_DESIGN_PHILOSOPHY.md
+@IMPLEMENTATION_PHILOSOPHY.md
+@MODULAR_DESIGN_PHILOSOPHY.md
 
 Focus especially on simplicity and contract-first design.
 ```
@@ -268,7 +268,7 @@ Build context progressively:
 
 ```
 # Start broad
-Read @ai_context/IMPLEMENTATION_PHILOSOPHY.md
+Read @IMPLEMENTATION_PHILOSOPHY.md
 
 # Get specific
 Now read @ai_context/generated/auth_module.md
