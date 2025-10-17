@@ -87,10 +87,14 @@ class AudioExtractor:
 
         # Check if compression needed
         if audio_path.stat().st_size <= max_size_bytes:
-            logger.info(f"Audio size OK: {audio_path.stat().st_size / 1024 / 1024:.1f}MB")
+            logger.info(
+                f"Audio size OK: {audio_path.stat().st_size / 1024 / 1024:.1f}MB"
+            )
             return audio_path
 
-        logger.info(f"Compressing audio from {audio_path.stat().st_size / 1024 / 1024:.1f}MB")
+        logger.info(
+            f"Compressing audio from {audio_path.stat().st_size / 1024 / 1024:.1f}MB"
+        )
 
         # Create compressed output path
         compressed_path = audio_path.parent / f"{audio_path.stem}_compressed.mp3"
@@ -107,7 +111,9 @@ class AudioExtractor:
                 "default=noprint_wrappers=1:nokey=1",
                 str(audio_path),
             ]
-            result = subprocess.run(duration_cmd, capture_output=True, text=True, check=True)
+            result = subprocess.run(
+                duration_cmd, capture_output=True, text=True, check=True
+            )
             duration = float(result.stdout.strip())
 
             # Calculate target bitrate (90% of max for safety)

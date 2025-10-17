@@ -31,7 +31,9 @@ class SessionManager:
         if self.session_file.exists():
             try:
                 data = read_json_with_retry(self.session_file)
-                logger.info(f"Resuming session: {len(data['processed_files'])} files already processed")
+                logger.info(
+                    f"Resuming session: {len(data['processed_files'])} files already processed"
+                )
                 return SessionState(
                     processed_files=data.get("processed_files", []),
                     results=[ConversionResult(**r) for r in data.get("results", [])],
@@ -42,7 +44,13 @@ class SessionManager:
             except Exception as e:
                 logger.warning(f"Could not load session state: {e}")
 
-        return SessionState(processed_files=[], results=[], failed_files=[], total_files=0, current_file=None)
+        return SessionState(
+            processed_files=[],
+            results=[],
+            failed_files=[],
+            total_files=0,
+            current_file=None,
+        )
 
     def _save_state(self):
         """Save current state to disk."""
@@ -64,7 +72,9 @@ class SessionManager:
                 "current_file": self.state.current_file,
             }
             write_json_with_retry(data, self.session_file)
-            logger.debug(f"Session state saved: {len(self.state.processed_files)}/{self.state.total_files} processed")
+            logger.debug(
+                f"Session state saved: {len(self.state.processed_files)}/{self.state.total_files} processed"
+            )
         except Exception as e:
             logger.error(f"Failed to save session state: {e}")
 
@@ -161,14 +171,22 @@ class SessionManager:
             "processed": len(self.state.processed_files),
             "successful": successful,
             "failed": failed,
-            "completion_percent": (len(self.state.processed_files) / self.state.total_files * 100)
+            "completion_percent": (
+                len(self.state.processed_files) / self.state.total_files * 100
+            )
             if self.state.total_files > 0
             else 0,
         }
 
     def clear(self):
         """Clear session state and delete session file."""
-        self.state = SessionState(processed_files=[], results=[], failed_files=[], total_files=0, current_file=None)
+        self.state = SessionState(
+            processed_files=[],
+            results=[],
+            failed_files=[],
+            total_files=0,
+            current_file=None,
+        )
         if self.session_file.exists():
             self.session_file.unlink()
         logger.info("Session cleared")

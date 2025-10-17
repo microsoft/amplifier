@@ -147,7 +147,9 @@ class BlogPostPipeline:
         logger.info("\n📝 Extracting author's style...")
         self.state.update_stage("extracting_style")
 
-        assert self.writings_dir is not None, "writings_dir must be set before extracting style"
+        assert self.writings_dir is not None, (
+            "writings_dir must be set before extracting style"
+        )
         style_profile = await self.style_extractor.extract_style(self.writings_dir)
         self.state.set_style_profile(style_profile)
         self.state.update_stage("style_extracted")
@@ -223,7 +225,9 @@ class BlogPostPipeline:
         logger.info("\n👤 Getting user feedback...")
 
         # Get the path to the saved draft file in session directory
-        draft_file_path = self.state.session_dir / f"draft_iter_{self.state.state.iteration}.md"
+        draft_file_path = (
+            self.state.session_dir / f"draft_iter_{self.state.state.iteration}.md"
+        )
 
         # Run in thread to handle blocking input
         loop = asyncio.get_event_loop()
@@ -236,11 +240,15 @@ class BlogPostPipeline:
         )
 
         self.state.add_user_feedback(feedback)
-        self.state.add_iteration_history({"type": "user_feedback", "feedback": feedback})
+        self.state.add_iteration_history(
+            {"type": "user_feedback", "feedback": feedback}
+        )
 
         return feedback
 
-    async def _apply_user_feedback(self, parsed_feedback: dict, increment_after: bool = False) -> None:
+    async def _apply_user_feedback(
+        self, parsed_feedback: dict, increment_after: bool = False
+    ) -> None:
         """Apply user feedback to draft.
 
         Args:
@@ -383,7 +391,9 @@ def main(
         # Find most recent session for resume
         base_dir = Path(".data/blog_post_writer")
         if base_dir.exists():
-            sessions = sorted([d for d in base_dir.iterdir() if d.is_dir()], reverse=True)
+            sessions = sorted(
+                [d for d in base_dir.iterdir() if d.is_dir()], reverse=True
+            )
             if sessions:
                 session_dir = sessions[0]
                 logger.info(f"Resuming session: {session_dir.name}")

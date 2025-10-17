@@ -39,15 +39,21 @@ class SummaryGenerator:
             model: Model to use. If not provided, uses AMPLIFIER_MODEL_DEFAULT or claude-3-haiku-20240307.
         """
         if not ANTHROPIC_AVAILABLE:
-            raise ImportError("anthropic package not available. Install with: pip install anthropic")
+            raise ImportError(
+                "anthropic package not available. Install with: pip install anthropic"
+            )
 
         # Get API key from param or environment
         self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
         if not self.api_key:
-            raise ValueError("ANTHROPIC_API_KEY not set. Please set it in your environment or pass it as a parameter.")
+            raise ValueError(
+                "ANTHROPIC_API_KEY not set. Please set it in your environment or pass it as a parameter."
+            )
 
         # Get model from param or environment
-        self.model = model or os.getenv("AMPLIFIER_MODEL_DEFAULT", "claude-3-haiku-20240307")
+        self.model = model or os.getenv(
+            "AMPLIFIER_MODEL_DEFAULT", "claude-3-haiku-20240307"
+        )
 
         # Initialize Anthropic client
         self.client = Anthropic(api_key=self.api_key)

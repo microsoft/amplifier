@@ -36,7 +36,9 @@ class WebToMdState:
                 self.failed_urls = data.get("failed_urls", {})
                 self.session_start = data.get("session_start", self.session_start)
                 self.last_update = data.get("last_update")
-                logger.info(f"Resumed state: {len(self.processed_urls)} processed, {len(self.failed_urls)} failed")
+                logger.info(
+                    f"Resumed state: {len(self.processed_urls)} processed, {len(self.failed_urls)} failed"
+                )
         except Exception as e:
             logger.warning(f"Could not load state: {e}")
 

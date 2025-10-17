@@ -44,7 +44,9 @@ class ContentLoader:
 
             self.content_dirs = [p for p in paths.content_dirs if p.exists()]
         else:
-            self.content_dirs = [Path(d).resolve() for d in content_dirs if Path(d).exists()]
+            self.content_dirs = [
+                Path(d).resolve() for d in content_dirs if Path(d).exists()
+            ]
 
         if not self.content_dirs:
             logger.warning("No valid content directories configured")
@@ -94,7 +96,9 @@ class ContentLoader:
                 if isinstance(data, dict):
                     content = data.get("content", "")
                     title = data.get("title", "")
-                    metadata = {k: v for k, v in data.items() if k not in ("content", "title")}
+                    metadata = {
+                        k: v for k, v in data.items() if k not in ("content", "title")
+                    }
                 else:
                     content = json.dumps(data, indent=2)
                     title = ""

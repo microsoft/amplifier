@@ -22,14 +22,24 @@ logger = get_logger(__name__)
 class StyleProfile(BaseModel):
     """Author style profile extracted from writings."""
 
-    tone: str = Field(description="Overall tone (formal, conversational, technical, etc.)")
-    vocabulary_level: str = Field(description="Vocabulary complexity (simple, moderate, advanced)")
+    tone: str = Field(
+        description="Overall tone (formal, conversational, technical, etc.)"
+    )
+    vocabulary_level: str = Field(
+        description="Vocabulary complexity (simple, moderate, advanced)"
+    )
     sentence_structure: str = Field(description="Typical sentence patterns")
     paragraph_length: str = Field(description="Typical paragraph length preference")
-    common_phrases: list[str] = Field(default_factory=list, description="Frequently used phrases")
-    writing_patterns: list[str] = Field(default_factory=list, description="Common structural patterns")
+    common_phrases: list[str] = Field(
+        default_factory=list, description="Frequently used phrases"
+    )
+    writing_patterns: list[str] = Field(
+        default_factory=list, description="Common structural patterns"
+    )
     voice: str = Field(description="Active vs passive voice preference")
-    examples: list[str] = Field(default_factory=list, description="Example sentences that capture style")
+    examples: list[str] = Field(
+        default_factory=list, description="Example sentences that capture style"
+    )
 
 
 class StyleExtractor:
@@ -128,11 +138,16 @@ common_phrases (list), writing_patterns (list), voice, examples (list)"""
 
                 # Retry with feedback if parsing fails
                 parsed = await retry_with_feedback(
-                    func=query_with_parsing, prompt=prompt, max_retries=3, provide_feedback=True
+                    func=query_with_parsing,
+                    prompt=prompt,
+                    max_retries=3,
+                    provide_feedback=True,
                 )
 
                 if parsed is None:
-                    logger.warning("Could not extract style after retries, using defaults")
+                    logger.warning(
+                        "Could not extract style after retries, using defaults"
+                    )
                     return StyleProfile(**self._default_profile())
 
                 # Handle both dict and list responses from LLM
@@ -142,10 +157,14 @@ common_phrases (list), writing_patterns (list), voice, examples (list)"""
                         parsed = parsed[0]
                         logger.debug("Extracted style data from array response")
                     else:
-                        logger.warning("LLM returned empty or invalid array, using defaults")
+                        logger.warning(
+                            "LLM returned empty or invalid array, using defaults"
+                        )
                         return StyleProfile(**self._default_profile())
                 elif not isinstance(parsed, dict):
-                    logger.warning(f"Unexpected response type: {type(parsed)}, using defaults")
+                    logger.warning(
+                        f"Unexpected response type: {type(parsed)}, using defaults"
+                    )
                     return StyleProfile(**self._default_profile())
 
                 # Log what we extracted

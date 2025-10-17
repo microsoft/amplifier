@@ -76,7 +76,9 @@ class MarkdownUpdater:
         logger.info(f"Saved illustrated article: {output_path}")
         return output_path
 
-    def _create_image_markdown(self, image_alt: ImageAlternatives, point: IllustrationPoint) -> str:
+    def _create_image_markdown(
+        self, image_alt: ImageAlternatives, point: IllustrationPoint
+    ) -> str:
         """Create markdown for an image with alternatives.
 
         Args:
@@ -88,14 +90,18 @@ class MarkdownUpdater:
         """
         # Main image - using HTML img tag with 50% width
         primary_path = Path("images") / image_alt.primary.local_path.name
-        markdown = f'\n<img src="./{primary_path}" alt="{point.section_title}" width="50%">\n'
+        markdown = (
+            f'\n<img src="./{primary_path}" alt="{point.section_title}" width="50%">\n'
+        )
 
         # Add alternatives as HTML comment
         if image_alt.alternatives:
             markdown += "\n<!-- ALTERNATIVES\n"
             for alt in image_alt.alternatives:
                 alt_path = Path("images") / alt.local_path.name
-                markdown += f'<img src="./{alt_path}" alt="{alt.api} version" width="50%">\n'
+                markdown += (
+                    f'<img src="./{alt_path}" alt="{alt.api} version" width="50%">\n'
+                )
 
             markdown += "\nTo use an alternative, replace the main image above.\n"
             markdown += f"Generated from: {image_alt.primary.prompt_id}\n"

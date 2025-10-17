@@ -12,7 +12,9 @@ from bs4 import BeautifulSoup
 logger = logging.getLogger(__name__)
 
 
-def process_images(html: str, base_url: str, output_dir: Path) -> list[tuple[str, Path]]:
+def process_images(
+    html: str, base_url: str, output_dir: Path
+) -> list[tuple[str, Path]]:
     """Extract and download images from HTML.
 
     Args:

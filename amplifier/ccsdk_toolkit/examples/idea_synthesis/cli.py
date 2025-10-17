@@ -50,10 +50,14 @@ except ImportError:
 @click.option("--recursive", is_flag=True, default=True, help="Search recursively")
 @click.option("--limit", type=int, help="Process only N files")
 @click.option("--resume", help="Resume from previous session ID")
-@click.option("--output", type=click.Path(path_type=Path), help="Output directory for results")
+@click.option(
+    "--output", type=click.Path(path_type=Path), help="Output directory for results"
+)
 @click.option("--json-output", is_flag=True, help="Output results as JSON")
 @click.option("--verbose", is_flag=True, help="Enable verbose output")
-@click.option("--notify", is_flag=True, help="Enable desktop notifications on completion")
+@click.option(
+    "--notify", is_flag=True, help="Enable desktop notifications on completion"
+)
 def main(
     directory: Path,
     pattern: str,
@@ -115,7 +119,9 @@ async def run_synthesis(
     # Create logger with notification support
     from amplifier.ccsdk_toolkit.logger.logger import ToolkitLogger
 
-    logger = ToolkitLogger(output_format="text", enable_notifications=notify, source="idea-synthesis")
+    logger = ToolkitLogger(
+        output_format="text", enable_notifications=notify, source="idea-synthesis"
+    )
 
     # Setup output directory
     if not output_dir:
@@ -128,7 +134,9 @@ async def run_synthesis(
 
     if resume_id:
         console.print(f"[cyan]Resuming session: {state.session_id}[/cyan]")
-        console.print(f"[cyan]Previous progress: {state.processed_files}/{state.total_files} files[/cyan]")
+        console.print(
+            f"[cyan]Previous progress: {state.processed_files}/{state.total_files} files[/cyan]"
+        )
     else:
         console.print(f"[cyan]Starting new session: {state.session_id}[/cyan]")
 
@@ -152,7 +160,13 @@ async def run_synthesis(
 
         # Read files
         source_files = list(
-            reader.read_files(directory=directory, pattern=pattern, recursive=recursive, limit=limit, skip=skip_count)
+            reader.read_files(
+                directory=directory,
+                pattern=pattern,
+                recursive=recursive,
+                limit=limit,
+                skip=skip_count,
+            )
         )
 
         console.print(f"[green]✓ Loaded {len(source_files)} files[/green]")
@@ -164,7 +178,11 @@ async def run_synthesis(
         summaries = await summarizer.summarize_files(source_files, state)
         console.print(f"[green]✓ Created {len(summaries)} new summaries[/green]")
         console.print(f"[green]✓ Total summaries: {len(state.summaries)}[/green]")
-        logger.stage_complete("Summarizer", f"Created {len(summaries)} summaries", total=len(state.summaries))
+        logger.stage_complete(
+            "Summarizer",
+            f"Created {len(summaries)} summaries",
+            total=len(state.summaries),
+        )
 
         # Stage 3: Synthesize themes
         console.print("\n[bold cyan]Stage 3: Synthesizing Themes[/bold cyan]")
@@ -176,7 +194,9 @@ async def run_synthesis(
         # Stage 4: Expand ideas
         console.print("\n[bold cyan]Stage 4: Expanding Ideas[/bold cyan]")
         logger.stage_start("Expander")
-        expanded = await expander.expand_ideas(themes, state.summaries, source_files, state)
+        expanded = await expander.expand_ideas(
+            themes, state.summaries, source_files, state
+        )
         console.print(f"[green]✓ Expanded {len(expanded)} ideas[/green]")
         logger.stage_complete("Expander", f"Expanded {len(expanded)} ideas")
 
@@ -196,12 +216,16 @@ async def run_synthesis(
             export_markdown_report(state, report_file)
             console.print(f"\n[green]✓ Markdown report saved to {report_file}[/green]")
 
-        console.print(f"\n[bold green]✨ Synthesis complete! Session: {state.session_id}[/bold green]")
+        console.print(
+            f"\n[bold green]✨ Synthesis complete! Session: {state.session_id}[/bold green]"
+        )
 
         # Send final completion notification
         total_time = asyncio.get_event_loop().time() - start_time
         logger.task_complete(
-            f"Idea synthesis complete: {state.processed_files} files processed", duration=total_time, success=True
+            f"Idea synthesis complete: {state.processed_files} files processed",
+            duration=total_time,
+            success=True,
         )
 
     except KeyboardInterrupt:
@@ -275,7 +299,9 @@ def display_results(state: SynthesisState, console: Console):
             console.print(f"\n{i}. [bold cyan]{theme.theme}[/bold cyan]")
             console.print(f"   {theme.description}")
             console.print(f"   Confidence: {theme.confidence:.1%}")
-            console.print(f"   Sources: {', '.join(f.name for f in theme.source_files[:5])}")
+            console.print(
+                f"   Sources: {', '.join(f.name for f in theme.source_files[:5])}"
+            )
 
     # Display expanded ideas
     if state.expanded_ideas:
@@ -310,7 +336,9 @@ def export_markdown_report(state: SynthesisState, output_file: Path):
             lines.append("\n**Supporting Points:**")
             for point in theme.supporting_points[:5]:
                 lines.append(f"- {point}")
-            lines.append(f"\n**Source Documents:** {', '.join(f.name for f in theme.source_files[:10])}")
+            lines.append(
+                f"\n**Source Documents:** {', '.join(f.name for f in theme.source_files[:10])}"
+            )
             lines.append("")
 
     # Add expanded ideas section

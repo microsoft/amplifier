@@ -21,10 +21,14 @@ def cmd_scan(args: argparse.Namespace) -> int:
 
     if not loader.content_dirs:
         logger.error("No content directories configured.")
-        logger.info("Set AMPLIFIER_CONTENT_DIRS environment variable or use --dirs option")
+        logger.info(
+            "Set AMPLIFIER_CONTENT_DIRS environment variable or use --dirs option"
+        )
         return 1
 
-    logger.info(f"Scanning directories: {', '.join(str(d) for d in loader.content_dirs)}")
+    logger.info(
+        f"Scanning directories: {', '.join(str(d) for d in loader.content_dirs)}"
+    )
     logger.info("")
 
     count = 0
@@ -47,7 +51,9 @@ def cmd_status(args: argparse.Namespace) -> int:
 
     if not loader.content_dirs:
         logger.error("No content directories configured.")
-        logger.info("Set AMPLIFIER_CONTENT_DIRS environment variable or use --dirs option")
+        logger.info(
+            "Set AMPLIFIER_CONTENT_DIRS environment variable or use --dirs option"
+        )
         return 1
 
     logger.info("Content Statistics")
@@ -85,7 +91,9 @@ def cmd_search(args: argparse.Namespace) -> int:
 
     if not loader.content_dirs:
         logger.error("No content directories configured.")
-        logger.info("Set AMPLIFIER_CONTENT_DIRS environment variable or use --dirs option")
+        logger.info(
+            "Set AMPLIFIER_CONTENT_DIRS environment variable or use --dirs option"
+        )
         return 1
 
     logger.info(f"Searching for: '{args.query}'")
@@ -99,7 +107,9 @@ def cmd_search(args: argparse.Namespace) -> int:
         print(f"  Path: {item.source_path}")
 
         # Show snippet of matching content
-        content_lower = item.content.lower() if not args.case_sensitive else item.content
+        content_lower = (
+            item.content.lower() if not args.case_sensitive else item.content
+        )
         query_lower = args.query.lower() if not args.case_sensitive else args.query
 
         idx = content_lower.find(query_lower)
@@ -124,7 +134,9 @@ def cmd_search(args: argparse.Namespace) -> int:
 
 def main() -> int:
     """Main entry point for CLI."""
-    parser = argparse.ArgumentParser(description="Content Loader CLI - Manage and search content files")
+    parser = argparse.ArgumentParser(
+        description="Content Loader CLI - Manage and search content files"
+    )
     parser.add_argument(
         "--dirs",
         nargs="+",
@@ -142,7 +154,12 @@ def main() -> int:
     # Search command
     search_parser = subparsers.add_parser("search", help="Search content")
     search_parser.add_argument("query", help="Search query string")
-    search_parser.add_argument("-c", "--case-sensitive", action="store_true", help="Perform case-sensitive search")
+    search_parser.add_argument(
+        "-c",
+        "--case-sensitive",
+        action="store_true",
+        help="Perform case-sensitive search",
+    )
 
     args = parser.parse_args()
 

@@ -5,16 +5,12 @@ Provides templates and scaffolding for creating new CLI tools
 that leverage the Claude Code SDK.
 """
 
-import shutil
 import textwrap
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
-import click
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
-from jinja2 import Template
 
 
 class CliTemplate(str, Enum):
@@ -423,7 +419,9 @@ Created with CCSDK Toolkit
         except ValueError:
             return f"Unknown template: {template_name}"
 
-    def create_makefile_target(self, tool_name: str, makefile_path: Path | None = None) -> None:
+    def create_makefile_target(
+        self, tool_name: str, makefile_path: Path | None = None
+    ) -> None:
         """
         Add a make target for the tool to a Makefile.
 

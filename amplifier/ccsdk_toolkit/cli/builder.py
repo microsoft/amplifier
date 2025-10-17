@@ -24,7 +24,11 @@ class CliBuilder:
         self.tools_dir = tools_dir or Path("tools")
 
     def create_template(
-        self, name: str, description: str, template_type: str = "basic", output_dir: Path | None = None
+        self,
+        name: str,
+        description: str,
+        template_type: str = "basic",
+        output_dir: Path | None = None,
     ) -> Path:
         """Create a new CLI tool from template.
 
@@ -88,7 +92,11 @@ class CliBuilder:
         return target
 
     def scaffold_tool(
-        self, name: str, description: str, template_type: str = "basic", create_tests: bool = True
+        self,
+        name: str,
+        description: str,
+        template_type: str = "basic",
+        create_tests: bool = True,
     ) -> dict:
         """Create complete tool scaffolding.
 

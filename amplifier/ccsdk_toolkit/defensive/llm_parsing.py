@@ -138,5 +138,7 @@ def parse_llm_json(
 
     # All attempts failed
     if verbose:
-        logger.debug(f"All JSON parsing attempts failed. Response (first 500 chars): {response[:500]}")
+        logger.debug(
+            f"All JSON parsing attempts failed. Response (first 500 chars): {response[:500]}"
+        )
     return default

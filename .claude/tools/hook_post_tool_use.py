@@ -34,7 +34,11 @@ async def main():
         # Check if memory system is enabled
         import os
 
-        memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "false").lower() in ["true", "1", "yes"]
+        memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "false").lower() in [
+            "true",
+            "1",
+            "yes",
+        ]
         if not memory_enabled:
             logger.info("Memory system disabled via MEMORY_SYSTEM_ENABLED env var")
             # Return empty response and exit gracefully
@@ -96,7 +100,9 @@ async def main():
                 output = {
                     "warning": "\n".join(warnings),
                     "metadata": {
-                        "contradictionsFound": sum(1 for c in validation_result.claims if c.contradicts),
+                        "contradictionsFound": sum(
+                            1 for c in validation_result.claims if c.contradicts
+                        ),
                         "claimsChecked": len(validation_result.claims),
                         "source": "amplifier_validation",
                     },
@@ -105,7 +111,9 @@ async def main():
         json.dump(output, sys.stdout)
 
         if output:
-            logger.info(f"Returned {len(warnings) if 'warnings' in locals() else 0} warnings")
+            logger.info(
+                f"Returned {len(warnings) if 'warnings' in locals() else 0} warnings"
+            )
         else:
             logger.info("No contradictions found")
 

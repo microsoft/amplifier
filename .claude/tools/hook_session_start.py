@@ -34,7 +34,11 @@ async def main():
         # Check if memory system is enabled
         import os
 
-        memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "false").lower() in ["true", "1", "yes"]
+        memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "false").lower() in [
+            "true",
+            "1",
+            "yes",
+        ]
         if not memory_enabled:
             logger.info("Memory system disabled via MEMORY_SYSTEM_ENABLED env var")
             # Return empty response and exit gracefully
@@ -95,7 +99,9 @@ async def main():
                     content = result.memory.content
                     category = result.memory.category
                     score = result.score
-                    context_parts.append(f"- **{category}** (relevance: {score:.2f}): {content}")
+                    context_parts.append(
+                        f"- **{category}** (relevance: {score:.2f}): {content}"
+                    )
 
             # Add recent memories not already shown
             seen_ids = {r.memory.id for r in search_results}
@@ -130,7 +136,9 @@ async def main():
             }
 
         json.dump(output, sys.stdout)
-        logger.info(f"Returned {len(context_parts) if context_parts else 0} memory contexts")
+        logger.info(
+            f"Returned {len(context_parts) if context_parts else 0} memory contexts"
+        )
 
     except Exception as e:
         logger.exception("Error during memory retrieval", e)

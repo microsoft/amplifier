@@ -24,15 +24,21 @@ class StyleReview(BaseModel):
     consistency_score: float = Field(description="Style consistency score 0-1")
     matches_tone: bool = Field(description="Whether tone matches profile")
     matches_voice: bool = Field(description="Whether voice matches profile")
-    issues: list[str] = Field(default_factory=list, description="Style inconsistencies found")
-    suggestions: list[str] = Field(default_factory=list, description="Improvement suggestions")
+    issues: list[str] = Field(
+        default_factory=list, description="Style inconsistencies found"
+    )
+    suggestions: list[str] = Field(
+        default_factory=list, description="Improvement suggestions"
+    )
     needs_revision: bool = Field(description="Whether style revision needed")
 
 
 class StyleReviewer:
     """Reviews blog posts for style consistency."""
 
-    async def review_style(self, blog_draft: str, style_profile: dict[str, Any]) -> dict[str, Any]:
+    async def review_style(
+        self, blog_draft: str, style_profile: dict[str, Any]
+    ) -> dict[str, Any]:
         """Review blog for style consistency.
 
         Args:
@@ -88,11 +94,16 @@ Return JSON with:
 
                 # Retry with feedback if parsing fails
                 parsed = await retry_with_feedback(
-                    func=query_with_parsing, prompt=prompt, max_retries=3, provide_feedback=True
+                    func=query_with_parsing,
+                    prompt=prompt,
+                    max_retries=3,
+                    provide_feedback=True,
                 )
 
                 if parsed is None:
-                    logger.error("Could not get style review after retries, using default")
+                    logger.error(
+                        "Could not get style review after retries, using default"
+                    )
                     return self._default_review()
 
                 # Validate and structure response
@@ -103,12 +114,17 @@ Return JSON with:
                 # Convert dict items to strings if needed
                 if issues and isinstance(issues[0], dict):
                     issues = [
-                        item.get("description", str(item)) if isinstance(item, dict) else str(item) for item in issues
+                        item.get("description", str(item))
+                        if isinstance(item, dict)
+                        else str(item)
+                        for item in issues
                     ]
 
                 if suggestions and isinstance(suggestions[0], dict):
                     suggestions = [
-                        item.get("description", str(item)) if isinstance(item, dict) else str(item)
+                        item.get("description", str(item))
+                        if isinstance(item, dict)
+                        else str(item)
                         for item in suggestions
                     ]
 
@@ -123,11 +139,15 @@ Return JSON with:
 
                 # Force needs_revision if score too low or issues found
                 if review_data["consistency_score"] < 0.7:
-                    logger.info(f"Consistency score {review_data['consistency_score']:.2f} < 0.7, forcing revision")
+                    logger.info(
+                        f"Consistency score {review_data['consistency_score']:.2f} < 0.7, forcing revision"
+                    )
                     review_data["needs_revision"] = True
 
                 if review_data["issues"] and len(review_data["issues"]) > 0:
-                    logger.info(f"Found {len(review_data['issues'])} style issues, forcing revision")
+                    logger.info(
+                        f"Found {len(review_data['issues'])} style issues, forcing revision"
+                    )
                     review_data["needs_revision"] = True
 
                 # Force needs_revision if tone or voice don't match
@@ -157,7 +177,9 @@ Return JSON with:
         lines.append(f"Tone: {profile.get('tone', 'conversational')}")
         lines.append(f"Voice: {profile.get('voice', 'active')}")
         lines.append(f"Vocabulary Level: {profile.get('vocabulary_level', 'moderate')}")
-        lines.append(f"Sentence Structure: {profile.get('sentence_structure', 'varied')}")
+        lines.append(
+            f"Sentence Structure: {profile.get('sentence_structure', 'varied')}"
+        )
         lines.append(f"Paragraph Length: {profile.get('paragraph_length', 'medium')}")
 
         if profile.get("common_phrases"):
@@ -192,7 +214,9 @@ Return JSON with:
 
         # Log thresholds
         logger.info("  Threshold: 0.7 (revision if below)")
-        logger.info(f"  Pass/Fail: {'FAIL - Revision Required' if review.needs_revision else 'PASS'}")
+        logger.info(
+            f"  Pass/Fail: {'FAIL - Revision Required' if review.needs_revision else 'PASS'}"
+        )
 
         # Log match status
         status = []

@@ -44,12 +44,37 @@ def main():
         sys.exit(1)
 
     parser = argparse.ArgumentParser(description="Runs the synthesis pipeline.")
-    parser.add_argument("-q", "--query", type=str, required=True, help="The high-level research query.")
-    parser.add_argument("-f", "--files", type=str, required=True, help="The directory of files to process.")
-    parser.add_argument("--use-triaged", action="store_true", help="Enable the triage step to filter files.")
-    parser.add_argument("--clear-cache", action="store_true", help="Force re-analysis even if cached versions exist.")
-    parser.add_argument("--max-procs", type=int, default=10, help="Maximum number of parallel processes.")
-    parser.add_argument("--notify", action="store_true", help="Send desktop notifications on completion.")
+    parser.add_argument(
+        "-q", "--query", type=str, required=True, help="The high-level research query."
+    )
+    parser.add_argument(
+        "-f",
+        "--files",
+        type=str,
+        required=True,
+        help="The directory of files to process.",
+    )
+    parser.add_argument(
+        "--use-triaged",
+        action="store_true",
+        help="Enable the triage step to filter files.",
+    )
+    parser.add_argument(
+        "--clear-cache",
+        action="store_true",
+        help="Force re-analysis even if cached versions exist.",
+    )
+    parser.add_argument(
+        "--max-procs",
+        type=int,
+        default=10,
+        help="Maximum number of parallel processes.",
+    )
+    parser.add_argument(
+        "--notify",
+        action="store_true",
+        help="Send desktop notifications on completion.",
+    )
     args = parser.parse_args()
 
     os.makedirs(CACHE_DIR, exist_ok=True)
@@ -64,12 +89,19 @@ def main():
 
     # --- Stage 1: Triage (Optional) ---
     if args.use_triaged:
-        print(f"--- Stage 1: Triaging {len(all_files)} documents (max_procs={args.max_procs}) ---")
+        print(
+            f"--- Stage 1: Triaging {len(all_files)} documents (max_procs={args.max_procs}) ---"
+        )
         try:
             relevant_files: set[str] = set()
             with ThreadPoolExecutor(max_workers=args.max_procs) as executor:
-                future_to_file = {executor.submit(run_triage, file, args.query): file for file in all_files}
-                for future in tqdm(as_completed(future_to_file), total=len(all_files), desc="Triage"):
+                future_to_file = {
+                    executor.submit(run_triage, file, args.query): file
+                    for file in all_files
+                }
+                for future in tqdm(
+                    as_completed(future_to_file), total=len(all_files), desc="Triage"
+                ):
                     if future.result():
                         relevant_files.add(future_to_file[future])
 
@@ -83,7 +115,9 @@ def main():
                     )
                 sys.exit(0)
 
-            print(f"\n--- Triage complete. Found {len(relevant_files)} relevant documents. ---")
+            print(
+                f"\n--- Triage complete. Found {len(relevant_files)} relevant documents. ---"
+            )
             files_to_process = list(relevant_files)
 
             if args.notify:
@@ -110,7 +144,9 @@ def main():
             raise
 
     # --- Stage 2: Analysis ---
-    print(f"\n--- Stage 2: Analyzing {len(files_to_process)} documents (max_procs={args.max_procs}) ---")
+    print(
+        f"\n--- Stage 2: Analyzing {len(files_to_process)} documents (max_procs={args.max_procs}) ---"
+    )
     try:
         if args.clear_cache:
             print("Clearing analysis cache...")
@@ -123,7 +159,10 @@ def main():
             # The run_analysis function handles its own caching and output.
             list(
                 tqdm(
-                    executor.map(lambda file: run_analysis(file, args.query, args.clear_cache), files_to_process),
+                    executor.map(
+                        lambda file: run_analysis(file, args.query, args.clear_cache),
+                        files_to_process,
+                    ),
                     total=len(files_to_process),
                     desc="Analysis",
                 )

@@ -77,7 +77,9 @@ class VideoLoader:
     def _load_from_url(self, url: str) -> VideoInfo:
         """Load video info from YouTube URL."""
         if not YT_DLP_AVAILABLE:
-            raise ValueError("yt-dlp is not installed. Install with: pip install yt-dlp")
+            raise ValueError(
+                "yt-dlp is not installed. Install with: pip install yt-dlp"
+            )
 
         logger.info(f"Loading video info from: {url}")
 
@@ -137,7 +139,11 @@ class VideoLoader:
         )
 
     def download_audio(
-        self, url: str, output_dir: Path, output_filename: str = "audio.mp3", use_cache: bool = True
+        self,
+        url: str,
+        output_dir: Path,
+        output_filename: str = "audio.mp3",
+        use_cache: bool = True,
     ) -> Path:
         """Download audio from YouTube URL.
 

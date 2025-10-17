@@ -43,7 +43,11 @@ class TranscriptManager:
         if not self.transcripts_dir.exists():
             return []
 
-        transcripts = sorted(self.transcripts_dir.glob("compact_*.txt"), key=lambda p: p.stat().st_mtime, reverse=True)
+        transcripts = sorted(
+            self.transcripts_dir.glob("compact_*.txt"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
 
         if last_n:
             return transcripts[:last_n]
@@ -87,14 +91,20 @@ class TranscriptManager:
 
                     # Extract session info from the transcript content if available
                     session_id_match = re.search(r"Session ID:\s*([a-f0-9-]+)", content)
-                    session_id_from_content = session_id_match.group(1) if session_id_match else "unknown"
+                    session_id_from_content = (
+                        session_id_match.group(1) if session_id_match else "unknown"
+                    )
 
                     # Add separator and content
                     combined_content.append(f"\n{'=' * 80}\n")
-                    combined_content.append(f"CONVERSATION SEGMENT {sessions_restored + 1}\n")
+                    combined_content.append(
+                        f"CONVERSATION SEGMENT {sessions_restored + 1}\n"
+                    )
                     combined_content.append(f"File: {transcript_file.name}\n")
                     if session_id_from_content != "unknown":
-                        combined_content.append(f"Session ID: {session_id_from_content}\n")
+                        combined_content.append(
+                            f"Session ID: {session_id_from_content}\n"
+                        )
                     combined_content.append(f"{'=' * 80}\n\n")
                     combined_content.append(content)
                     sessions_restored += 1
@@ -113,13 +123,18 @@ class TranscriptManager:
                     content = f.read()
                     if term.lower() in content.lower():
                         # Extract session ID from filename
-                        match = re.search(r"compact_\d+_\d+_([a-f0-9-]+)\.txt", transcript_file.name)
+                        match = re.search(
+                            r"compact_\d+_\d+_([a-f0-9-]+)\.txt", transcript_file.name
+                        )
                         session_id = match.group(1) if match else "unknown"
 
                         # Find all occurrences with context
                         lines = content.split("\n")
                         for i, line in enumerate(lines):
-                            if term.lower() in line.lower() and len(results) < max_results:
+                            if (
+                                term.lower() in line.lower()
+                                and len(results) < max_results
+                            ):
                                 # Get context (5 lines before and after)
                                 context_start = max(0, i - 5)
                                 context_end = min(len(lines), i + 6)
@@ -180,7 +195,9 @@ class TranscriptManager:
 
         return json.dumps(results, indent=2)
 
-    def export_transcript(self, session_id: str | None = None, output_format: str = "text") -> Path | None:
+    def export_transcript(
+        self, session_id: str | None = None, output_format: str = "text"
+    ) -> Path | None:
         """Export a transcript to a file"""
         if not session_id:
             session_id = self.current_session
@@ -216,12 +233,18 @@ class TranscriptManager:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Transcript Manager - Pure CLI for Claude Code transcripts")
+    parser = argparse.ArgumentParser(
+        description="Transcript Manager - Pure CLI for Claude Code transcripts"
+    )
     subparsers = parser.add_subparsers(dest="command", help="Commands")
 
     # Restore command - outputs full conversation lineage content
-    restore_parser = subparsers.add_parser("restore", help="Output entire conversation lineage content")
-    restore_parser.add_argument("--session-id", help="Session ID to restore (default: current/latest)")
+    restore_parser = subparsers.add_parser(
+        "restore", help="Output entire conversation lineage content"
+    )
+    restore_parser.add_argument(
+        "--session-id", help="Session ID to restore (default: current/latest)"
+    )
 
     # Load command - outputs specific transcript content
     load_parser = subparsers.add_parser("load", help="Output transcript content")
@@ -233,14 +256,20 @@ def main():
     list_parser.add_argument("--json", action="store_true", help="Output as JSON")
 
     # Search command - outputs matching content
-    search_parser = subparsers.add_parser("search", help="Search and output matching content")
+    search_parser = subparsers.add_parser(
+        "search", help="Search and output matching content"
+    )
     search_parser.add_argument("term", help="Search term")
     search_parser.add_argument("--max", type=int, default=10, help="Maximum results")
 
     # Export command - exports to file
     export_parser = subparsers.add_parser("export", help="Export transcript to file")
-    export_parser.add_argument("--session-id", help="Session ID to export (default: current)")
-    export_parser.add_argument("--format", choices=["text", "markdown"], default="text", help="Export format")
+    export_parser.add_argument(
+        "--session-id", help="Session ID to export (default: current)"
+    )
+    export_parser.add_argument(
+        "--format", choices=["text", "markdown"], default="text", help="Export format"
+    )
 
     args = parser.parse_args()
 
@@ -259,7 +288,9 @@ def main():
         if content:
             print(content)
         else:
-            print(f"Error: Transcript not found for '{args.session_id}'", file=sys.stderr)
+            print(
+                f"Error: Transcript not found for '{args.session_id}'", file=sys.stderr
+            )
             sys.exit(1)
 
     elif args.command == "list":
@@ -276,7 +307,9 @@ def main():
                     session_id = match.group(1) if match else "unknown"
                     mtime = datetime.fromtimestamp(t.stat().st_mtime)  # noqa: DTZ006
                     size_kb = t.stat().st_size / 1024
-                    print(f"{session_id[:8]}... | {mtime.strftime('%Y-%m-%d %H:%M')} | {size_kb:.1f}KB | {t.name}")
+                    print(
+                        f"{session_id[:8]}... | {mtime.strftime('%Y-%m-%d %H:%M')} | {size_kb:.1f}KB | {t.name}"
+                    )
 
     elif args.command == "search":
         results = manager.search_transcripts(args.term, max_results=args.max)
@@ -286,7 +319,9 @@ def main():
             print(f"No matches found for '{args.term}'")
 
     elif args.command == "export":
-        output_file = manager.export_transcript(session_id=args.session_id, output_format=args.format)
+        output_file = manager.export_transcript(
+            session_id=args.session_id, output_format=args.format
+        )
         if output_file:
             print(f"Exported to: {output_file}")
         else:

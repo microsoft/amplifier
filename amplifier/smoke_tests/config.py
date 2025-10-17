@@ -74,13 +74,30 @@ test:
                 "source_id": "test_article_001",
                 "title": "Test Article",
                 "concepts": [
-                    {"name": "Testing", "description": "The process of validating software functionality"},
-                    {"name": "Smoke Testing", "description": "Basic tests to ensure core functionality works"},
-                    {"name": "Amplifier", "description": "A knowledge synthesis and amplification system"},
+                    {
+                        "name": "Testing",
+                        "description": "The process of validating software functionality",
+                    },
+                    {
+                        "name": "Smoke Testing",
+                        "description": "Basic tests to ensure core functionality works",
+                    },
+                    {
+                        "name": "Amplifier",
+                        "description": "A knowledge synthesis and amplification system",
+                    },
                 ],
                 "relationships": [
-                    {"subject": "Smoke Testing", "predicate": "validates", "object": "Core Functionality"},
-                    {"subject": "Amplifier", "predicate": "uses", "object": "Knowledge Synthesis"},
+                    {
+                        "subject": "Smoke Testing",
+                        "predicate": "validates",
+                        "object": "Core Functionality",
+                    },
+                    {
+                        "subject": "Amplifier",
+                        "predicate": "uses",
+                        "object": "Knowledge Synthesis",
+                    },
                 ],
                 "insights": [
                     "Smoke tests provide quick validation of basic functionality",
@@ -116,7 +133,12 @@ test:
                     "stage": "extract",
                     "source_id": "test_article_001",
                     "timestamp": time.time() - 80,
-                    "data": {"title": "Test Article", "concepts": 3, "relationships": 2, "insights": 2},
+                    "data": {
+                        "title": "Test Article",
+                        "concepts": 3,
+                        "relationships": 2,
+                        "insights": 2,
+                    },
                 },
                 {
                     "event": "sync_finished",

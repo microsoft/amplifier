@@ -37,12 +37,16 @@ def _handle_io_error(attempt: int, max_retries: int = 3) -> bool:
 
     # Exponential backoff: 0.1s, 0.2s, 0.4s
     wait_time = 0.1 * (2**attempt)
-    logger.debug(f"Retrying file operation in {wait_time}s (attempt {attempt + 1}/{max_retries})")
+    logger.debug(
+        f"Retrying file operation in {wait_time}s (attempt {attempt + 1}/{max_retries})"
+    )
     time.sleep(wait_time)
     return True
 
 
-def write_json_with_retry(data: Any, filepath: Path | str, indent: int = 2, max_retries: int = 3) -> None:
+def write_json_with_retry(
+    data: Any, filepath: Path | str, indent: int = 2, max_retries: int = 3
+) -> None:
     """Write JSON to file with retry logic for cloud sync issues."""
     filepath = Path(filepath)
     filepath.parent.mkdir(parents=True, exist_ok=True)
@@ -74,7 +78,9 @@ def read_json_with_retry(filepath: Path | str, max_retries: int = 3) -> Any:
     raise OSError(f"Failed to read {filepath} after {max_retries} retries")
 
 
-def write_text_with_retry(text: str, filepath: Path | str, max_retries: int = 3) -> None:
+def write_text_with_retry(
+    text: str, filepath: Path | str, max_retries: int = 3
+) -> None:
     """Write text to file with retry logic for cloud sync issues."""
     filepath = Path(filepath)
     filepath.parent.mkdir(parents=True, exist_ok=True)
@@ -106,7 +112,9 @@ def read_text_with_retry(filepath: Path | str, max_retries: int = 3) -> str:
     raise OSError(f"Failed to read {filepath} after {max_retries} retries")
 
 
-def append_line_with_retry(line: str, filepath: Path | str, max_retries: int = 3) -> None:
+def append_line_with_retry(
+    line: str, filepath: Path | str, max_retries: int = 3
+) -> None:
     """Append a line to file with retry logic for cloud sync issues."""
     filepath = Path(filepath)
     filepath.parent.mkdir(parents=True, exist_ok=True)

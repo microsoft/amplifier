@@ -22,11 +22,21 @@ def ensure_not_in_worktree():
     """Ensure we're not running from within a worktree."""
     try:
         # Get the main git directory
-        result = subprocess.run(["git", "rev-parse", "--git-common-dir"], capture_output=True, text=True, check=True)
+        result = subprocess.run(
+            ["git", "rev-parse", "--git-common-dir"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
         git_common_dir = Path(result.stdout.strip()).resolve()
 
         # Get the current git directory
-        result = subprocess.run(["git", "rev-parse", "--git-dir"], capture_output=True, text=True, check=True)
+        result = subprocess.run(
+            ["git", "rev-parse", "--git-dir"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
         git_dir = Path(result.stdout.strip()).resolve()
 
         # If they differ, we're in a worktree
@@ -36,7 +46,9 @@ def ensure_not_in_worktree():
             print("❌ Error: Cannot create worktrees from within a worktree.")
             print("\nPlease run this command from the main repository:")
             print(f"  cd {main_repo}")
-            print(f"  make worktree {sys.argv[1] if len(sys.argv) > 1 else '<branch-name>'}")
+            print(
+                f"  make worktree {sys.argv[1] if len(sys.argv) > 1 else '<branch-name>'}"
+            )
             sys.exit(1)
     except subprocess.CalledProcessError:
         # Not in a git repository at all
@@ -50,10 +62,23 @@ def run_command(cmd, cwd=None, capture_output=False, env=None, eval_mode=False):
         # In eval mode, redirect stdout to stderr to avoid interfering with eval
         if eval_mode and not capture_output:
             result = subprocess.run(
-                cmd, cwd=cwd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, text=True, check=True, env=env
+                cmd,
+                cwd=cwd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                check=True,
+                env=env,
             )
         else:
-            result = subprocess.run(cmd, cwd=cwd, capture_output=capture_output, text=True, check=True, env=env)
+            result = subprocess.run(
+                cmd,
+                cwd=cwd,
+                capture_output=capture_output,
+                text=True,
+                check=True,
+                env=env,
+            )
         return result
     except subprocess.CalledProcessError as e:
         if capture_output:
@@ -92,7 +117,12 @@ def setup_worktree_venv(worktree_path, eval_mode=False):
         env.pop("VIRTUAL_ENV", None)  # Remove if exists
 
         # Run with clean environment and reduced verbosity (--quiet suppresses package list)
-        run_command(["uv", "sync", "--group", "dev", "--quiet"], cwd=worktree_path, env=env, eval_mode=eval_mode)
+        run_command(
+            ["uv", "sync", "--group", "dev", "--quiet"],
+            cwd=worktree_path,
+            env=env,
+            eval_mode=eval_mode,
+        )
         if not eval_mode:
             print("✅ Virtual environment created and dependencies installed!")
         return True
@@ -129,7 +159,10 @@ def main():
 
     # Get branch name from arguments
     if len(args) != 1:
-        print("Usage: python tools/create_worktree.py [--eval] <branch-name>", file=sys.stderr)
+        print(
+            "Usage: python tools/create_worktree.py [--eval] <branch-name>",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     branch_name = args[0]
@@ -150,14 +183,24 @@ def main():
         print(f"Creating worktree at {worktree_path}...")
     try:
         # Check if branch exists locally
-        result = subprocess.run(["git", "rev-parse", "--verify", branch_name], capture_output=True, text=True)
+        result = subprocess.run(
+            ["git", "rev-parse", "--verify", branch_name],
+            capture_output=True,
+            text=True,
+        )
 
         if result.returncode == 0:
             # Branch exists, use it
-            run_command(["git", "worktree", "add", str(worktree_path), branch_name], eval_mode=eval_mode)
+            run_command(
+                ["git", "worktree", "add", str(worktree_path), branch_name],
+                eval_mode=eval_mode,
+            )
         else:
             # Branch doesn't exist, create it
-            run_command(["git", "worktree", "add", "-b", branch_name, str(worktree_path)], eval_mode=eval_mode)
+            run_command(
+                ["git", "worktree", "add", "-b", branch_name, str(worktree_path)],
+                eval_mode=eval_mode,
+            )
             if not eval_mode:
                 print(f"Created new branch: {branch_name}")
     except subprocess.CalledProcessError as e:
@@ -200,7 +243,9 @@ def main():
         except (subprocess.CalledProcessError, FileNotFoundError):
             # Fallback to cp, quietly in eval mode
             try:
-                run_command(["cp", "-r", str(data_dir), str(worktree_path)], eval_mode=eval_mode)
+                run_command(
+                    ["cp", "-r", str(data_dir), str(worktree_path)], eval_mode=eval_mode
+                )
                 if not eval_mode:
                     print("Data copy complete!")
             except subprocess.CalledProcessError as e:
@@ -215,7 +260,9 @@ def main():
         # Being evaluated - output shell commands
         if venv_created:
             # Output commands to change directory and activate venv
-            print(f"cd {worktree_path} && source .venv/bin/activate && echo '\n✓ Switched to worktree: {feature_name}'")
+            print(
+                f"cd {worktree_path} && source .venv/bin/activate && echo '\n✓ Switched to worktree: {feature_name}'"
+            )
         else:
             # Just change directory if venv wasn't created
             print(

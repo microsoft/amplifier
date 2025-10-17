@@ -53,7 +53,9 @@ class WhisperTranscriber:
             model: Whisper model to use
         """
         if not OPENAI_AVAILABLE:
-            raise ValueError("openai package not installed. Install with: pip install openai")
+            raise ValueError(
+                "openai package not installed. Install with: pip install openai"
+            )
 
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
@@ -91,7 +93,9 @@ class WhisperTranscriber:
         # Validate file size
         max_size = 25 * 1024 * 1024  # 25MB
         if audio_path.stat().st_size > max_size:
-            raise ValueError(f"Audio file too large: {audio_path.stat().st_size / 1024 / 1024:.1f}MB (max 25MB)")
+            raise ValueError(
+                f"Audio file too large: {audio_path.stat().st_size / 1024 / 1024:.1f}MB (max 25MB)"
+            )
 
         # Attempt transcription with retries
         last_error = None
@@ -131,18 +135,24 @@ class WhisperTranscriber:
                     segments=segments,
                 )
 
-                logger.info(f"Transcription complete: {len(transcript.text)} chars, {len(segments)} segments")
+                logger.info(
+                    f"Transcription complete: {len(transcript.text)} chars, {len(segments)} segments"
+                )
                 return transcript
 
             except Exception as e:
                 last_error = e
                 if attempt < max_retries - 1:
                     wait_time = 2**attempt
-                    logger.warning(f"Attempt {attempt + 1} failed, retrying in {wait_time}s: {e}")
+                    logger.warning(
+                        f"Attempt {attempt + 1} failed, retrying in {wait_time}s: {e}"
+                    )
                     time.sleep(wait_time)
                     continue
 
-        raise ValueError(f"Transcription failed after {max_retries} attempts: {last_error}")
+        raise ValueError(
+            f"Transcription failed after {max_retries} attempts: {last_error}"
+        )
 
     def estimate_cost(self, duration_seconds: float) -> float:
         """Estimate transcription cost.

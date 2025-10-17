@@ -31,7 +31,9 @@ class SessionManager:
         self.session_dir = session_dir or (Path.home() / ".ccsdk" / "sessions")
         self.session_dir.mkdir(parents=True, exist_ok=True)
 
-    def create_session(self, name: str = "unnamed", tags: list[str] | None = None) -> SessionState:
+    def create_session(
+        self, name: str = "unnamed", tags: list[str] | None = None
+    ) -> SessionState:
         """Create a new session.
 
         Args:
@@ -63,9 +65,13 @@ class SessionManager:
         # Convert datetime strings back to datetime objects
         if "metadata" in data:
             if "created_at" in data["metadata"]:
-                data["metadata"]["created_at"] = datetime.fromisoformat(data["metadata"]["created_at"])
+                data["metadata"]["created_at"] = datetime.fromisoformat(
+                    data["metadata"]["created_at"]
+                )
             if "updated_at" in data["metadata"]:
-                data["metadata"]["updated_at"] = datetime.fromisoformat(data["metadata"]["updated_at"])
+                data["metadata"]["updated_at"] = datetime.fromisoformat(
+                    data["metadata"]["updated_at"]
+                )
 
         return SessionState(**data)
 
@@ -86,9 +92,13 @@ class SessionManager:
         # Convert datetime objects to ISO format strings
         if "metadata" in data:
             if "created_at" in data["metadata"]:
-                data["metadata"]["created_at"] = data["metadata"]["created_at"].isoformat()
+                data["metadata"]["created_at"] = data["metadata"][
+                    "created_at"
+                ].isoformat()
             if "updated_at" in data["metadata"]:
-                data["metadata"]["updated_at"] = data["metadata"]["updated_at"].isoformat()
+                data["metadata"]["updated_at"] = data["metadata"][
+                    "updated_at"
+                ].isoformat()
 
         with open(session_file, "w") as f:
             json.dump(data, f, indent=2, default=str)

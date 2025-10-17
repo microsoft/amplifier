@@ -72,9 +72,20 @@ def main():
     import argparse
     import subprocess
 
-    parser = argparse.ArgumentParser(description="Clean up WSL-related files from the repository")
-    parser.add_argument("--dry-run", action="store_true", help="Show what would be deleted without actually deleting")
-    parser.add_argument("--path", type=Path, default=Path.cwd(), help="Path to clean (defaults to current directory)")
+    parser = argparse.ArgumentParser(
+        description="Clean up WSL-related files from the repository"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be deleted without actually deleting",
+    )
+    parser.add_argument(
+        "--path",
+        type=Path,
+        default=Path.cwd(),
+        help="Path to clean (defaults to current directory)",
+    )
 
     args = parser.parse_args()
 
@@ -88,7 +99,9 @@ def main():
 
     # Find git root if we're in a git repository
     try:
-        git_root = subprocess.check_output(["git", "rev-parse", "--show-toplevel"], cwd=args.path, text=True).strip()
+        git_root = subprocess.check_output(
+            ["git", "rev-parse", "--show-toplevel"], cwd=args.path, text=True
+        ).strip()
         root_dir = Path(git_root)
         print(f"Cleaning WSL files from git repository: {root_dir}")
     except subprocess.CalledProcessError:

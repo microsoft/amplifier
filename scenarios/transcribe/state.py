@@ -89,10 +89,12 @@ class StateManager:
                 # Convert dicts back to dataclass instances
                 state = PipelineState(**data)
                 state.processed_videos = [
-                    VideoProcessingResult(**v) if isinstance(v, dict) else v for v in state.processed_videos
+                    VideoProcessingResult(**v) if isinstance(v, dict) else v
+                    for v in state.processed_videos
                 ]
                 state.failed_videos = [
-                    VideoProcessingResult(**v) if isinstance(v, dict) else v for v in state.failed_videos
+                    VideoProcessingResult(**v) if isinstance(v, dict) else v
+                    for v in state.failed_videos
                 ]
                 return state
             except Exception as e:
@@ -132,7 +134,9 @@ class StateManager:
         self.state.total_cost_estimate += result.cost_estimate
         self.save()
 
-        logger.info(f"✓ Processed {len(self.state.processed_videos)}/{self.state.total_videos}: {result.video_id}")
+        logger.info(
+            f"✓ Processed {len(self.state.processed_videos)}/{self.state.total_videos}: {result.video_id}"
+        )
 
     def add_failed(self, result: VideoProcessingResult) -> None:
         """Add failed video."""
@@ -143,7 +147,9 @@ class StateManager:
 
     def is_already_processed(self, video_id: str) -> bool:
         """Check if video was already processed."""
-        return any(result.video_id == video_id for result in self.state.processed_videos)
+        return any(
+            result.video_id == video_id for result in self.state.processed_videos
+        )
 
     def get_pending_sources(self) -> list[str]:
         """Get list of sources not yet processed."""
@@ -169,7 +175,9 @@ class StateManager:
         logger.info(f"  Processed: {total} videos")
         if failed > 0:
             logger.info(f"  Failed: {failed} videos")
-        logger.info(f"  Total Duration: {self.state.total_duration_seconds / 60:.1f} minutes")
+        logger.info(
+            f"  Total Duration: {self.state.total_duration_seconds / 60:.1f} minutes"
+        )
         logger.info(f"  Estimated Cost: ${self.state.total_cost_estimate:.2f}")
         logger.info("=" * 60)
 

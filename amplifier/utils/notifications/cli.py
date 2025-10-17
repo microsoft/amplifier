@@ -15,12 +15,20 @@ def main():
     """Main entry point for CLI usage."""
     parser = argparse.ArgumentParser(description="Send desktop notifications")
     parser.add_argument("message", nargs="?", help="Notification message")
-    parser.add_argument("-t", "--title", default="Claude Code", help="Notification title")
-    parser.add_argument("-s", "--subtitle", help="Notification subtitle (e.g., project name)")
+    parser.add_argument(
+        "-t", "--title", default="Claude Code", help="Notification title"
+    )
+    parser.add_argument(
+        "-s", "--subtitle", help="Notification subtitle (e.g., project name)"
+    )
     parser.add_argument("--session-id", help="Session ID for tracking")
     parser.add_argument("--debug", action="store_true", help="Enable debug mode")
-    parser.add_argument("--hook", action="store_true", help="Read Claude Code hook JSON from stdin")
-    parser.add_argument("--test", action="store_true", help="Test notification on current platform")
+    parser.add_argument(
+        "--hook", action="store_true", help="Read Claude Code hook JSON from stdin"
+    )
+    parser.add_argument(
+        "--test", action="store_true", help="Test notification on current platform"
+    )
 
     args = parser.parse_args()
 

@@ -62,7 +62,9 @@ class SubagentMapper:
             self.build_mapping()
         return self._mapping.get(session_id)
 
-    def get_subagent_sessions(self, parent_session_id: str) -> list[tuple[str, SubagentInfo]]:
+    def get_subagent_sessions(
+        self, parent_session_id: str
+    ) -> list[tuple[str, SubagentInfo]]:
         """Get all subagent sessions spawned from a parent.
 
         Returns list of (session_id, SubagentInfo) tuples.
@@ -100,12 +102,20 @@ class SubagentMapper:
 
                         # Look for assistant messages with tool use
                         # Handle both direct message format and nested message format
-                        if "message" in message and isinstance(message["message"], dict):
+                        if "message" in message and isinstance(
+                            message["message"], dict
+                        ):
                             msg = message["message"]
                             if msg.get("role") == "assistant" and "content" in msg:
-                                self._extract_task_invocations(session_id, msg["content"])
-                        elif message.get("role") == "assistant" and "content" in message:
-                            self._extract_task_invocations(session_id, message["content"])
+                                self._extract_task_invocations(
+                                    session_id, msg["content"]
+                                )
+                        elif (
+                            message.get("role") == "assistant" and "content" in message
+                        ):
+                            self._extract_task_invocations(
+                                session_id, message["content"]
+                            )
 
             except Exception as e:
                 logger.error(f"Error processing {session_path}: {e}")
@@ -133,7 +143,9 @@ class SubagentMapper:
                     # Add to index
                     if prompt_hash not in self._task_index:
                         self._task_index[prompt_hash] = []
-                    self._task_index[prompt_hash].append((session_id, subagent_type, prompt))
+                    self._task_index[prompt_hash].append(
+                        (session_id, subagent_type, prompt)
+                    )
 
     def _match_sessions_to_tasks(self):
         """Match sessions to tasks based on first user message"""
@@ -147,7 +159,9 @@ class SubagentMapper:
             self._process_sidechains(session_path)
 
             # Also check for v1.x separate files (first user message matching)
-            first_user_msg = self._get_first_user_message(session_path, exclude_sidechains=True)
+            first_user_msg = self._get_first_user_message(
+                session_path, exclude_sidechains=True
+            )
             if not first_user_msg:
                 continue
 
@@ -158,12 +172,16 @@ class SubagentMapper:
             # Look for matching Task invocation
             if prompt_hash in self._task_index:
                 # Use the first match (could be multiple if same prompt used multiple times)
-                parent_session_id, subagent_type, task_prompt = self._task_index[prompt_hash][0]
+                parent_session_id, subagent_type, task_prompt = self._task_index[
+                    prompt_hash
+                ][0]
 
                 # Don't map a session to itself (v1.x style)
                 if parent_session_id != session_id:
                     self._mapping[session_id] = SubagentInfo(
-                        parent_session_id=parent_session_id, subagent_type=subagent_type, task_prompt=task_prompt
+                        parent_session_id=parent_session_id,
+                        subagent_type=subagent_type,
+                        task_prompt=task_prompt,
                     )
 
     def _process_sidechains(self, session_path: Path):
@@ -185,7 +203,9 @@ class SubagentMapper:
                     if message.get("isSidechain") is True:
                         # Check if message has nested structure
                         content = None
-                        if "message" in message and isinstance(message["message"], dict):
+                        if "message" in message and isinstance(
+                            message["message"], dict
+                        ):
                             msg = message["message"]
                             if msg.get("role") == "user":
                                 content = msg.get("content", "")
@@ -195,7 +215,10 @@ class SubagentMapper:
                                 # Extract text from content blocks
                                 text_parts = []
                                 for block in content:
-                                    if isinstance(block, dict) and block.get("type") == "text":
+                                    if (
+                                        isinstance(block, dict)
+                                        and block.get("type") == "text"
+                                    ):
                                         text_parts.append(block.get("text", ""))
                                 content = " ".join(text_parts)
 
@@ -205,7 +228,11 @@ class SubagentMapper:
 
                             if prompt_hash in self._task_index:
                                 # Find the task that matches and is from this same session
-                                for task_session_id, subagent_type, task_prompt in self._task_index[prompt_hash]:
+                                for (
+                                    task_session_id,
+                                    subagent_type,
+                                    task_prompt,
+                                ) in self._task_index[prompt_hash]:
                                     if task_session_id == session_id:
                                         # Create a synthetic session ID for the sidechain
                                         sidechain_id = f"{session_id}_sidechain_{message.get('uuid', 'unknown')[:8]}"
@@ -219,7 +246,9 @@ class SubagentMapper:
         except Exception as e:
             logger.error(f"Error processing sidechains in {session_path}: {e}")
 
-    def _get_first_user_message(self, session_path: Path, exclude_sidechains: bool = False) -> str | None:
+    def _get_first_user_message(
+        self, session_path: Path, exclude_sidechains: bool = False
+    ) -> str | None:
         """Get the content of the first user message in a session"""
         try:
             with open(session_path, encoding="utf-8") as f:
@@ -254,7 +283,10 @@ class SubagentMapper:
                             # Extract text from content blocks
                             text_parts = []
                             for block in content:
-                                if isinstance(block, dict) and block.get("type") == "text":
+                                if (
+                                    isinstance(block, dict)
+                                    and block.get("type") == "text"
+                                ):
                                     text_parts.append(block.get("text", ""))
                             return " ".join(text_parts)
                         return content

@@ -43,10 +43,16 @@ def extract_metadata_from_json(transcript_folder: Path) -> dict:
     from amplifier.config.paths import paths
 
     # Look for JSON in .data location (new storage pattern)
-    data_json_path = paths.data_dir / "transcripts" / transcript_folder.name / "transcript.json"
+    data_json_path = (
+        paths.data_dir / "transcripts" / transcript_folder.name / "transcript.json"
+    )
 
     # Try new location first
-    json_path = data_json_path if data_json_path.exists() else transcript_folder / "transcript.json"
+    json_path = (
+        data_json_path
+        if data_json_path.exists()
+        else transcript_folder / "transcript.json"
+    )
 
     if json_path.exists():
         try:
@@ -146,7 +152,9 @@ def generate_index_markdown(transcripts: list[TranscriptInfo]) -> str:
     if not transcripts:
         lines.append("No transcripts found.")
         lines.append("")
-        lines.append("*Run `make transcribe` to generate transcripts from YouTube videos or local audio/video files.*")
+        lines.append(
+            "*Run `make transcribe` to generate transcripts from YouTube videos or local audio/video files.*"
+        )
     else:
         lines.append(f"Total transcripts: {len(transcripts)}")
         lines.append("")
@@ -160,9 +168,13 @@ def generate_index_markdown(transcripts: list[TranscriptInfo]) -> str:
             lines.append(f"### {transcript.title}")
 
             # Links line
-            link_parts = [f"**[Read Transcript]({transcript.folder_name}/transcript.md)**"]
+            link_parts = [
+                f"**[Read Transcript]({transcript.folder_name}/transcript.md)**"
+            ]
             if transcript.has_insights:
-                link_parts.append(f"[AI Insights]({transcript.folder_name}/insights.md)")
+                link_parts.append(
+                    f"[AI Insights]({transcript.folder_name}/insights.md)"
+                )
             lines.append(f"- {' | '.join(link_parts)}")
 
             # Metadata line
@@ -181,7 +193,9 @@ def generate_index_markdown(transcripts: list[TranscriptInfo]) -> str:
             if transcript.created_at:
                 try:
                     # Parse and format the date nicely
-                    dt = datetime.fromisoformat(transcript.created_at.replace("Z", "+00:00"))
+                    dt = datetime.fromisoformat(
+                        transcript.created_at.replace("Z", "+00:00")
+                    )
                     metadata_parts.append(f"Created: {dt.strftime('%Y-%m-%d')}")
                 except (ValueError, TypeError):
                     pass

@@ -89,9 +89,13 @@ def build_context_files(force=False) -> None:
         now = datetime.datetime.now()
         # Use appropriate format specifiers based on the platform
         if platform.system() == "Windows":
-            date_str = now.strftime("%#m/%#d/%Y, %#I:%M:%S %p")  # Windows non-padding format
+            date_str = now.strftime(
+                "%#m/%#d/%Y, %#I:%M:%S %p"
+            )  # Windows non-padding format
         else:
-            date_str = now.strftime("%-m/%-d/%Y, %-I:%M:%S %p")  # Unix non-padding format
+            date_str = now.strftime(
+                "%-m/%-d/%Y, %-I:%M:%S %p"
+            )  # Unix non-padding format
         header_lines = [
             f"# {' | '.join(patterns)}",
             "",

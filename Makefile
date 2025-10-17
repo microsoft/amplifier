@@ -22,12 +22,6 @@ default: ## Show essential commands
 	@echo "Quick Start:"
 	@echo "  make install         Install all dependencies"
 	@echo ""
-	@echo "Knowledge Base:"
-	@echo "  make knowledge-update        Full pipeline: extract & synthesize"
-	@echo "  make knowledge-query Q=\"...\" Query your knowledge base"
-	@echo "  make knowledge-graph-viz     Create interactive visualization"
-	@echo "  make knowledge-stats         Show knowledge base statistics"
-	@echo ""
 	@echo "Development:"
 	@echo "  make check          Format, lint, and type-check all code"
 	@echo "  make test           Run all tests"
@@ -67,33 +61,6 @@ help: ## Show ALL available commands
 	@echo ""
 	@echo "QUICK START:"
 	@echo "  make install         Install all dependencies"
-	@echo ""
-	@echo "KNOWLEDGE BASE:"
-	@echo "  make knowledge-update        Full pipeline: extract & synthesize"
-	@echo "  make knowledge-sync          Extract knowledge from content"
-	@echo "  make knowledge-sync-batch N=5  Process next N articles"
-	@echo "  make knowledge-synthesize    Find patterns across knowledge"
-	@echo "  make knowledge-query Q=\"...\" Query your knowledge base"
-	@echo "  make knowledge-search Q=\"...\" Search extracted knowledge"
-	@echo "  make knowledge-stats         Show knowledge statistics"
-	@echo "  make knowledge-export FORMAT=json|text  Export knowledge"
-	@echo ""
-	@echo "KNOWLEDGE GRAPH:"
-	@echo "  make knowledge-graph-build   Build graph from extractions"
-	@echo "  make knowledge-graph-update  Incremental graph update"
-	@echo "  make knowledge-graph-stats   Show graph statistics"
-	@echo "  make knowledge-graph-viz NODES=50  Create visualization"
-	@echo "  make knowledge-graph-search Q=\"...\"  Semantic search"
-	@echo "  make knowledge-graph-path FROM=\"...\" TO=\"...\"  Find paths"
-	@echo "  make knowledge-graph-neighbors CONCEPT=\"...\" HOPS=2"
-	@echo "  make knowledge-graph-tensions TOP=10  Find contradictions"
-	@echo "  make knowledge-graph-export FORMAT=gexf|graphml"
-	@echo "  make knowledge-graph-top-predicates N=15"
-	@echo ""
-	@echo "KNOWLEDGE EVENTS:"
-	@echo "  make knowledge-events N=50   Show recent pipeline events"
-	@echo "  make knowledge-events-tail N=20  Follow events (Ctrl+C stop)"
-	@echo "  make knowledge-events-summary SCOPE=last|all"
 	@echo ""
 	@echo "CONTENT:"
 	@echo "  make content-scan    Scan configured content directories"
@@ -275,68 +242,6 @@ content-status: ## Show content statistics
 	uv run python -m amplifier.content_loader status
 
 # Knowledge Synthesis (Simplified)
-knowledge-sync: ## Extract knowledge from all content files [NOTIFY=true]
-	@notify_flag=""; \
-	if [ "$$NOTIFY" = "true" ]; then notify_flag="--notify"; fi; \
-	echo "Syncing and extracting knowledge from content files..."; \
-	uv run python -m amplifier.knowledge_synthesis.cli sync $$notify_flag
-
-knowledge-sync-batch: ## Extract knowledge from next N articles. Usage: make knowledge-sync-batch N=5 [NOTIFY=true]
-	@n="$${N:-5}"; \
-	notify_flag=""; \
-	if [ "$$NOTIFY" = "true" ]; then notify_flag="--notify"; fi; \
-	echo "Processing next $$n articles..."; \
-	uv run python -m amplifier.knowledge_synthesis.cli sync --max-items $$n $$notify_flag
-
-knowledge-search: ## Search extracted knowledge. Usage: make knowledge-search Q="AI agents"
-	@if [ -z "$(Q)" ]; then \
-		echo "Error: Please provide a query. Usage: make knowledge-search Q=\"your search\""; \
-		exit 1; \
-	fi
-	@echo "Searching for: $(Q)"
-	uv run python -m amplifier.knowledge_synthesis.cli search "$(Q)"
-
-knowledge-stats: ## Show knowledge extraction statistics
-	@echo "Knowledge Base Statistics:"
-	uv run python -m amplifier.knowledge_synthesis.cli stats
-
-knowledge-export: ## Export all knowledge as JSON or text. Usage: make knowledge-export [FORMAT=json|text]
-	@format="$${FORMAT:-text}"; \
-	echo "Exporting knowledge as $$format..."; \
-	uv run python -m amplifier.knowledge_synthesis.cli export --format $$format
-
-# Knowledge Pipeline Commands
-knowledge-update: ## Full pipeline: extract knowledge + synthesize patterns [NOTIFY=true]
-	@notify_flag=""; \
-	if [ "$$NOTIFY" = "true" ]; then notify_flag="--notify"; fi; \
-	echo "🚀 Running full knowledge pipeline..."; \
-	echo "Step 1: Extracting knowledge..."; \
-	uv run python -m amplifier.knowledge_synthesis.cli sync $$notify_flag; \
-	echo ""; \
-	echo "Step 2: Synthesizing patterns..."; \
-	uv run python -m amplifier.knowledge_synthesis.run_synthesis $$notify_flag; \
-	echo ""; \
-	echo "✅ Knowledge pipeline complete!"
-
-knowledge-synthesize: ## Find patterns across all extracted knowledge [NOTIFY=true]
-	@notify_flag=""; \
-	if [ "$$NOTIFY" = "true" ]; then notify_flag="--notify"; fi; \
-	echo "🔍 Synthesizing patterns from knowledge base..."; \
-	uv run python -m amplifier.knowledge_synthesis.run_synthesis $$notify_flag; \
-	echo "✅ Synthesis complete! Results saved to knowledge base"
-
-knowledge-query: ## Query the knowledge base. Usage: make knowledge-query Q="your question"
-	@if [ -z "$(Q)" ]; then \
-		echo "Error: Please provide a query. Usage: make knowledge-query Q=\"your question\""; \
-		exit 1; \
-	fi
-	@echo "🔍 Querying knowledge base: $(Q)"
-	@uv run python -m amplifier.knowledge_synthesis.query "$(Q)"
-
-# Legacy command aliases (for backward compatibility)
-knowledge-mine: knowledge-sync  ## DEPRECATED: Use knowledge-sync instead
-knowledge-extract: knowledge-sync  ## DEPRECATED: Use knowledge-sync instead
-
 # Transcript Management
 transcript-list: ## List available conversation transcripts. Usage: make transcript-list [LAST=10]
 	@last="$${LAST:-10}"; \
@@ -370,100 +275,6 @@ transcript-export: ## Export transcript to file. Usage: make transcript-export S
 
 # Knowledge Graph Commands
 ## Graph Core Commands
-knowledge-graph-build: ## Build/rebuild graph from extractions
-	@echo "🔨 Building knowledge graph from extractions..."
-	@DATA_DIR=$$(python -c "from amplifier.config.paths import paths; print(paths.data_dir)"); \
-	uv run python -m amplifier.knowledge.graph_builder --export-gexf "$$DATA_DIR/knowledge/graph.gexf"
-	@echo "✅ Knowledge graph built successfully!"
-
-knowledge-graph-update: ## Incremental update with new extractions
-	@echo "🔄 Updating knowledge graph with new extractions..."
-	@uv run python -m amplifier.knowledge.graph_updater
-	@echo "✅ Knowledge graph updated successfully!"
-
-knowledge-graph-stats: ## Show graph statistics
-	@echo "📊 Knowledge Graph Statistics:"
-	@uv run python -m amplifier.knowledge.graph_builder --summary --top-concepts 20
-
-## Graph Query Commands
-knowledge-graph-search: ## Semantic search in graph. Usage: make knowledge-graph-search Q="AI agents"
-	@if [ -z "$(Q)" ]; then \
-		echo "Error: Please provide a query. Usage: make knowledge-graph-search Q=\"your search\""; \
-		exit 1; \
-	fi
-	@echo "🔍 Searching knowledge graph for: $(Q)"
-	@uv run python -m amplifier.knowledge.graph_search "$(Q)"
-
-knowledge-graph-path: ## Find path between concepts. Usage: make knowledge-graph-path FROM="concept1" TO="concept2"
-	@if [ -z "$(FROM)" ] || [ -z "$(TO)" ]; then \
-		echo "Error: Please provide FROM and TO concepts. Usage: make knowledge-graph-path FROM=\"concept1\" TO=\"concept2\""; \
-		exit 1; \
-	fi
-	@echo "🛤️ Finding path from '$(FROM)' to '$(TO)'..."
-	@uv run python -m amplifier.knowledge.graph_search path "$(FROM)" "$(TO)"
-
-knowledge-graph-neighbors: ## Explore concept neighborhood. Usage: make knowledge-graph-neighbors CONCEPT="AI" [HOPS=2]
-	@if [ -z "$(CONCEPT)" ]; then \
-		echo "Error: Please provide a concept. Usage: make knowledge-graph-neighbors CONCEPT=\"your concept\""; \
-		exit 1; \
-	fi
-	@hops="$${HOPS:-2}"; \
-	echo "🔗 Exploring $$hops-hop neighborhood of '$(CONCEPT)'..."; \
-	uv run python -m amplifier.knowledge.graph_search neighbors "$(CONCEPT)" --hops $$hops
-
-## Graph Analysis Commands
-knowledge-graph-tensions: ## Find productive contradictions. Usage: make knowledge-graph-tensions [TOP=10]
-	@top="$${TOP:-10}"; \
-	echo "⚡ Finding top $$top productive tensions..."; \
-	uv run python -m amplifier.knowledge.tension_detector --top $$top
-
-knowledge-graph-viz: ## Create interactive visualization. Usage: make knowledge-graph-viz [NODES=50]
-	@nodes="$${NODES:-50}"; \
-	DATA_DIR=$$(python -c "from amplifier.config.paths import paths; print(paths.data_dir)"); \
-	echo "🎨 Creating interactive visualization with $$nodes nodes..."; \
-	uv run python -m amplifier.knowledge.graph_visualizer --max-nodes $$nodes --output "$$DATA_DIR/knowledge/graph.html"
-	@DATA_DIR=$$(python -c "from amplifier.config.paths import paths; print(paths.data_dir)"); \
-	echo "✅ Visualization saved to $$DATA_DIR/knowledge/graph.html"
-
-knowledge-graph-export: ## Export for external tools. Usage: make knowledge-graph-export [FORMAT=gexf]
-	@format="$${FORMAT:-gexf}"; \
-	DATA_DIR=$$(python -c "from amplifier.config.paths import paths; print(paths.data_dir)"); \
-	echo "💾 Exporting knowledge graph as $$format..."; \
-	FLAGS=""; \
-	if [ -n "$$CLEAN" ]; then \
-		FLAGS="$$FLAGS --only-predicate-edges --drop-untype-nodes"; \
-	fi; \
-	if [ -n "$$ALLOWED_PREDICATES" ]; then \
-		FLAGS="$$FLAGS --allowed-predicates \"$$ALLOWED_PREDICATES\""; \
-	fi; \
-	if [ "$$format" = "gexf" ]; then \
-		uv run python -m amplifier.knowledge.graph_builder $$FLAGS --export-gexf "$$DATA_DIR/knowledge/graph.gexf"; \
-	elif [ "$$format" = "graphml" ]; then \
-		uv run python -m amplifier.knowledge.graph_builder $$FLAGS --export-graphml "$$DATA_DIR/knowledge/graph.graphml"; \
-	else \
-		echo "Error: Unsupported format $$format. Use gexf or graphml."; \
-		exit 1; \
-	fi
-	@format="$${FORMAT:-gexf}"; \
-	DATA_DIR=$$(python -c "from amplifier.config.paths import paths; print(paths.data_dir)"); \
-	echo "✅ Graph exported to $$DATA_DIR/knowledge/graph.$$format"
-
-knowledge-events: ## Show recent pipeline events. Usage: make knowledge-events [N=50]
-	@n="$${N:-50}"; \
-	uv run python -m amplifier.knowledge_synthesis.cli events --n $$n
-
-knowledge-events-tail: ## Follow pipeline events (like tail -f). Usage: make knowledge-events-tail [N=20]
-	@n="$${N:-20}"; \
-	uv run python -m amplifier.knowledge_synthesis.cli events --n $$n --follow
-
-knowledge-events-summary: ## Summarize pipeline events. Usage: make knowledge-events-summary [SCOPE=last|all]
-	@scope="$${SCOPE:-last}"; \
-	uv run python -m amplifier.knowledge_synthesis.cli events-summary --scope $$scope
-
-knowledge-graph-top-predicates: ## Show top predicates in the graph
-	@n="$${N:-15}"; \
-	uv run python -m amplifier.knowledge.graph_builder --top-predicates $$n --top-concepts 0
-
 # Synthesis Pipeline
 synthesize: ## Run the synthesis pipeline. Usage: make synthesize query="..." files="..." [args="..."]
 	@if [ -z "$(query)" ] || [ -z "$(files)" ]; then \

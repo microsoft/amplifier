@@ -34,12 +34,23 @@ async def main():
         # Check if memory system is enabled
         import os
 
-        memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "false").lower() in ["true", "1", "yes"]
+        memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "false").lower() in [
+            "true",
+            "1",
+            "yes",
+        ]
         if not memory_enabled:
             logger.info("Memory system disabled via MEMORY_SYSTEM_ENABLED env var")
             # Return empty response and exit gracefully
             json.dump(
-                {"metadata": {"memoriesExtracted": 0, "source": "amplifier_extraction", "disabled": True}}, sys.stdout
+                {
+                    "metadata": {
+                        "memoriesExtracted": 0,
+                        "source": "amplifier_extraction",
+                        "disabled": True,
+                    }
+                },
+                sys.stdout,
             )
             return
 
@@ -92,7 +103,9 @@ async def main():
                                     logger.error(f"Error parsing line {line_num}: {e}")
                                     logger.debug(f"Line content: {line[:200]}")
 
-                        logger.info(f"Loaded {len(raw_messages)} raw messages from transcript")
+                        logger.info(
+                            f"Loaded {len(raw_messages)} raw messages from transcript"
+                        )
 
                         # Filter and extract actual conversation messages
                         for msg in raw_messages:
@@ -111,14 +124,24 @@ async def main():
                                         # Extract text from content array
                                         text_parts = []
                                         for item in content:
-                                            if isinstance(item, dict) and item.get("type") == "text":
+                                            if (
+                                                isinstance(item, dict)
+                                                and item.get("type") == "text"
+                                            ):
                                                 text_parts.append(item.get("text", ""))
                                         content = " ".join(text_parts)
 
                                     if content:  # Only add if there's actual content
-                                        messages.append({"role": inner_msg["role"], "content": content})
+                                        messages.append(
+                                            {
+                                                "role": inner_msg["role"],
+                                                "content": content,
+                                            }
+                                        )
 
-                        logger.info(f"Filtered to {len(messages)} conversation messages (user/assistant)")
+                        logger.info(
+                            f"Filtered to {len(messages)} conversation messages (user/assistant)"
+                        )
 
                         # Debug: Show structure of first conversation message if available
                         if messages:
@@ -130,13 +153,19 @@ async def main():
                                 # Show message structure without full content
                                 msg_preview = {
                                     "role": first_msg.get("role", "NO_ROLE"),
-                                    "content_preview": str(first_msg.get("content", ""))[:100]
+                                    "content_preview": str(
+                                        first_msg.get("content", "")
+                                    )[:100]
                                     if "content" in first_msg
                                     else "NO_CONTENT",
                                 }
-                                logger.json_preview("First conversation message preview", msg_preview)
+                                logger.json_preview(
+                                    "First conversation message preview", msg_preview
+                                )
                     else:
-                        logger.warning(f"Transcript file does not exist: {transcript_file}")
+                        logger.warning(
+                            f"Transcript file does not exist: {transcript_file}"
+                        )
                 except Exception as e:
                     logger.error(f"Error reading transcript file: {e}")
 
@@ -174,21 +203,37 @@ async def main():
 
                 # Try looking for any list that looks like messages
                 if not messages:
-                    logger.info("No standard message location found, checking for message-like lists")
+                    logger.info(
+                        "No standard message location found, checking for message-like lists"
+                    )
                     for key, value in input_data.items():
                         if isinstance(value, list) and len(value) > 0:
                             # Check if first item looks like a message
                             first_item = value[0]
-                            if isinstance(first_item, dict) and "role" in first_item and "content" in first_item:
+                            if (
+                                isinstance(first_item, dict)
+                                and "role" in first_item
+                                and "content" in first_item
+                            ):
                                 messages = value
-                                logger.info(f"Found message-like list under '{key}' key")
+                                logger.info(
+                                    f"Found message-like list under '{key}' key"
+                                )
                                 break
 
             logger.info(f"Total messages found: {len(messages)}")
 
             if not messages:
                 logger.warning("No messages to process, exiting")
-                json.dump({"metadata": {"memoriesExtracted": 0, "source": "amplifier_extraction"}}, sys.stdout)
+                json.dump(
+                    {
+                        "metadata": {
+                            "memoriesExtracted": 0,
+                            "source": "amplifier_extraction",
+                        }
+                    },
+                    sys.stdout,
+                )
                 return
 
             # Get context from first user message
@@ -242,11 +287,21 @@ async def main():
     except TimeoutError:
         logger.error("Operation timed out after 60 seconds")
         json.dump(
-            {"metadata": {"memoriesExtracted": 0, "source": "amplifier_extraction", "error": "timeout"}}, sys.stdout
+            {
+                "metadata": {
+                    "memoriesExtracted": 0,
+                    "source": "amplifier_extraction",
+                    "error": "timeout",
+                }
+            },
+            sys.stdout,
         )
     except Exception as e:
         logger.exception("Unexpected error during memory extraction", e)
-        json.dump({"metadata": {"memoriesExtracted": 0, "source": "amplifier_extraction"}}, sys.stdout)
+        json.dump(
+            {"metadata": {"memoriesExtracted": 0, "source": "amplifier_extraction"}},
+            sys.stdout,
+        )
 
 
 if __name__ == "__main__":

@@ -28,7 +28,9 @@ except ImportError:
 class MemorySearcher:
     """Search memories using semantic similarity or keywords"""
 
-    def __init__(self, model_name: str = "all-MiniLM-L6-v2", data_dir: Path | None = None):
+    def __init__(
+        self, model_name: str = "all-MiniLM-L6-v2", data_dir: Path | None = None
+    ):
         """Initialize searcher
 
         Args:
@@ -48,7 +50,9 @@ class MemorySearcher:
             except Exception as e:
                 logger.warning(f"Failed to load embedding model: {e}")
 
-    def search(self, query: str, memories: list[StoredMemory], limit: int = 10) -> list[SearchResult]:
+    def search(
+        self, query: str, memories: list[StoredMemory], limit: int = 10
+    ) -> list[SearchResult]:
         """Search memories by query
 
         Args:
@@ -71,7 +75,9 @@ class MemorySearcher:
         # Fallback to keyword search
         return self._keyword_search(query, memories, limit)
 
-    def _semantic_search(self, query: str, memories: list[StoredMemory], limit: int) -> list[SearchResult]:
+    def _semantic_search(
+        self, query: str, memories: list[StoredMemory], limit: int
+    ) -> list[SearchResult]:
         """Search using semantic similarity"""
         try:
             # Encode query
@@ -83,13 +89,18 @@ class MemorySearcher:
 
             # Calculate cosine similarities
             similarities = np.dot(memory_embeddings, query_embedding) / (  # type: ignore
-                np.linalg.norm(memory_embeddings, axis=1) * np.linalg.norm(query_embedding)  # type: ignore
+                np.linalg.norm(memory_embeddings, axis=1)
+                * np.linalg.norm(query_embedding)  # type: ignore
             )
 
             # Create results with scores
             results = []
             for memory, score in zip(memories, similarities, strict=False):
-                results.append(SearchResult(memory=memory, score=float(score), match_type="semantic"))
+                results.append(
+                    SearchResult(
+                        memory=memory, score=float(score), match_type="semantic"
+                    )
+                )
 
             # Sort by score and return top results
             results.sort(key=lambda r: r.score, reverse=True)
@@ -99,7 +110,9 @@ class MemorySearcher:
             print(f"Semantic search failed: {e}")
             return []
 
-    def _keyword_search(self, query: str, memories: list[StoredMemory], limit: int) -> list[SearchResult]:
+    def _keyword_search(
+        self, query: str, memories: list[StoredMemory], limit: int
+    ) -> list[SearchResult]:
         """Fallback keyword search"""
         query_lower = query.lower()
         query_words = set(query_lower.split())
@@ -113,7 +126,9 @@ class MemorySearcher:
             overlap = query_words.intersection(content_words)
             if overlap:
                 score = len(overlap) / max(len(query_words), 1)
-                results.append(SearchResult(memory=memory, score=score, match_type="keyword"))
+                results.append(
+                    SearchResult(memory=memory, score=score, match_type="keyword")
+                )
 
         # Sort by score and return top results
         results.sort(key=lambda r: r.score, reverse=True)

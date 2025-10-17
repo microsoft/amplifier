@@ -60,7 +60,9 @@ def run_triage(doc_path: str, query: str) -> bool:
         return response.strip().lower() == "true"
     except Exception as e:
         # In case of an error, we can choose to be conservative and consider it not relevant.
-        print(f"Warning: Error processing {doc_path} during triage: {e}", file=sys.stderr)
+        print(
+            f"Warning: Error processing {doc_path} during triage: {e}", file=sys.stderr
+        )
         return False
 
 
@@ -70,9 +72,19 @@ def main():
         print("Error: OPENAI_API_KEY environment variable not set.", file=sys.stderr)
         sys.exit(1)
 
-    parser = argparse.ArgumentParser(description="Determines if a document is relevant to a query.")
-    parser.add_argument("-d", "--document", type=str, required=True, help="The path to the document to analyze.")
-    parser.add_argument("-q", "--query", type=str, required=True, help="The high-level research query.")
+    parser = argparse.ArgumentParser(
+        description="Determines if a document is relevant to a query."
+    )
+    parser.add_argument(
+        "-d",
+        "--document",
+        type=str,
+        required=True,
+        help="The path to the document to analyze.",
+    )
+    parser.add_argument(
+        "-q", "--query", type=str, required=True, help="The high-level research query."
+    )
     args = parser.parse_args()
 
     run_triage(args.document, args.query)

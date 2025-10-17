@@ -3,7 +3,7 @@
 Feature Demo #4: Specialized AI Agents
 Shows Amplifier's 23 specialized agents and how they work together
 """
-import subprocess
+
 from pathlib import Path
 
 
@@ -33,24 +33,34 @@ def main():
     # Categorize agents
     categories = {
         "🏗️ Architecture & Design": [
-            "zen-architect", "modular-builder", "module-intent-architect",
-            "api-contract-designer", "database-architect", "amplifier-cli-architect"
+            "zen-architect",
+            "modular-builder",
+            "module-intent-architect",
+            "api-contract-designer",
+            "database-architect",
+            "amplifier-cli-architect",
         ],
         "🐛 Debugging & Quality": [
-            "bug-hunter", "test-coverage", "post-task-cleanup",
-            "ambiguity-guardian"
+            "bug-hunter",
+            "test-coverage",
+            "post-task-cleanup",
+            "ambiguity-guardian",
         ],
-        "🔒 Security & Performance": [
-            "security-guardian", "performance-optimizer"
-        ],
+        "🔒 Security & Performance": ["security-guardian", "performance-optimizer"],
         "📚 Knowledge & Analysis": [
-            "concept-extractor", "insight-synthesizer", "knowledge-archaeologist",
-            "pattern-emergence", "analysis-engine", "content-researcher"
+            "concept-extractor",
+            "insight-synthesizer",
+            "pattern-emergence",
+            "analysis-engine",
+            "content-researcher",
         ],
         "🎨 Specialized Domains": [
-            "graph-builder", "visualization-architect", "integration-specialist",
-            "contract-spec-author", "subagent-architect"
-        ]
+            "graph-builder",
+            "visualization-architect",
+            "integration-specialist",
+            "contract-spec-author",
+            "subagent-architect",
+        ],
     }
 
     for category, agent_list in categories.items():
@@ -72,7 +82,7 @@ def main():
                             if not in_frontmatter and line.strip():
                                 desc = line.strip()[:60]
                                 break
-                except:
+                except Exception:
                     desc = "Specialized agent"
 
                 print(f"   • {agent:30} - {desc}...")
@@ -88,43 +98,43 @@ def main():
             "icon": "🏗️",
             "purpose": "Architecture design and planning",
             "when": "Designing new features, system architecture",
-            "example": '"Use zen-architect to design a caching layer"'
+            "example": '"Use zen-architect to design a caching layer"',
         },
         {
             "name": "bug-hunter",
             "icon": "🐛",
             "purpose": "Systematic bug investigation",
             "when": "Tracking down elusive bugs, debugging",
-            "example": '"Deploy bug-hunter to find why login fails"'
+            "example": '"Deploy bug-hunter to find why login fails"',
         },
         {
             "name": "security-guardian",
             "icon": "🔒",
             "purpose": "Security review and hardening",
             "when": "Code security audits, vulnerability checks",
-            "example": '"Have security-guardian review my API endpoints"'
+            "example": '"Have security-guardian review my API endpoints"',
         },
         {
             "name": "test-coverage",
             "icon": "✅",
             "purpose": "Comprehensive testing strategies",
             "when": "Adding tests, improving coverage",
-            "example": '"Use test-coverage to add tests for auth module"'
+            "example": '"Use test-coverage to add tests for auth module"',
         },
         {
             "name": "modular-builder",
             "icon": "🧱",
             "purpose": "Implements zen-architect's designs",
             "when": "Building new modules from specs",
-            "example": '"Use modular-builder to implement the cache design"'
+            "example": '"Use modular-builder to implement the cache design"',
         },
         {
             "name": "performance-optimizer",
             "icon": "⚡",
             "purpose": "Performance analysis and optimization",
             "when": "Speed issues, resource optimization",
-            "example": '"Have performance-optimizer analyze slow queries"'
-        }
+            "example": '"Have performance-optimizer analyze slow queries"',
+        },
     ]
 
     for agent in showcases:
@@ -193,8 +203,8 @@ def main():
                 "2. api-contract-designer: Specifies the API contract",
                 "3. modular-builder: Implements the code",
                 "4. test-coverage: Adds comprehensive tests",
-                "5. security-guardian: Security review"
-            ]
+                "5. security-guardian: Security review",
+            ],
         },
         {
             "task": "Fix a performance issue",
@@ -203,24 +213,23 @@ def main():
                 "2. bug-hunter: Investigates root cause",
                 "3. zen-architect: Designs optimization strategy",
                 "4. modular-builder: Implements improvements",
-                "5. test-coverage: Validates performance gains"
-            ]
+                "5. test-coverage: Validates performance gains",
+            ],
         },
         {
-            "task": "Extract and organize knowledge",
+            "task": "Extract and organize concepts",
             "workflow": [
                 "1. content-researcher: Scans documentation",
                 "2. concept-extractor: Pulls key concepts",
                 "3. insight-synthesizer: Finds patterns",
-                "4. knowledge-archaeologist: Organizes by themes",
-                "5. visualization-architect: Creates knowledge map"
-            ]
-        }
+                "4. visualization-architect: Creates concept map",
+            ],
+        },
     ]
 
     for i, scenario in enumerate(scenarios, 1):
         print(f"\n📌 Scenario {i}: {scenario['task']}")
-        for step in scenario['workflow']:
+        for step in scenario["workflow"]:
             print(f"   {step}")
 
     print("\n" + "=" * 70)

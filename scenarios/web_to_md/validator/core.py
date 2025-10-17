@@ -61,7 +61,11 @@ def validate_content(html: str, markdown: str, url: str) -> ValidationResult:
     html_lower = html.lower()
     for pattern in PAYWALL_PATTERNS:
         if pattern in html_lower:
-            return ValidationResult(is_valid=False, reason=f"Paywall detected: '{pattern}'", detected_pattern=pattern)
+            return ValidationResult(
+                is_valid=False,
+                reason=f"Paywall detected: '{pattern}'",
+                detected_pattern=pattern,
+            )
 
     # Check for common auth wall indicators in HTML structure
     # Count occurrences of auth-related class names in HTML
@@ -75,7 +79,9 @@ def validate_content(html: str, markdown: str, url: str) -> ValidationResult:
     if auth_indicator_count >= 3:
         logger.debug(f"Found {auth_indicator_count} auth-related class names in HTML")
         return ValidationResult(
-            is_valid=False, reason="Multiple authentication elements detected", detected_pattern="auth_forms"
+            is_valid=False,
+            reason="Multiple authentication elements detected",
+            detected_pattern="auth_forms",
         )
 
     # Check markdown content quality
@@ -96,7 +102,11 @@ def validate_content(html: str, markdown: str, url: str) -> ValidationResult:
     # Count actual content words (excluding links, navigation)
     words = content_text.split()
     # Filter out likely navigation/link text
-    content_words = [w for w in words if len(w) > 2 and not w.startswith("[") and not w.startswith("(http")]
+    content_words = [
+        w
+        for w in words
+        if len(w) > 2 and not w.startswith("[") and not w.startswith("(http")
+    ]
 
     word_count = len(content_words)
 
@@ -112,16 +122,24 @@ def validate_content(html: str, markdown: str, url: str) -> ValidationResult:
 
     # Count auth-related text in markdown
     auth_mentions = sum(
-        1 for pattern in ["sign in", "sign up", "log in", "subscribe", "member"] if pattern in content_text.lower()
+        1
+        for pattern in ["sign in", "sign up", "log in", "subscribe", "member"]
+        if pattern in content_text.lower()
     )
 
     # Only flag if there's a very high ratio of auth mentions to actual content
     if auth_mentions >= 5 and word_count < 150:
-        logger.debug(f"High auth mention ratio: {auth_mentions} mentions in {word_count} words")
+        logger.debug(
+            f"High auth mention ratio: {auth_mentions} mentions in {word_count} words"
+        )
         return ValidationResult(
-            is_valid=False, reason="High ratio of authentication prompts to content", detected_pattern="high_auth_ratio"
+            is_valid=False,
+            reason="High ratio of authentication prompts to content",
+            detected_pattern="high_auth_ratio",
         )
 
     # Content appears valid
-    logger.debug(f"Content validation passed: {word_count} words, {auth_mentions} auth mentions")
+    logger.debug(
+        f"Content validation passed: {word_count} words, {auth_mentions} auth mentions"
+    )
     return ValidationResult(is_valid=True)

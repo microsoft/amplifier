@@ -120,7 +120,9 @@ def load_history(history_path: Path) -> dict[str, list[HistoryEntry]]:
             try:
                 payload = json.loads(line)
             except json.JSONDecodeError as exc:
-                raise ValueError(f"Invalid JSON on line {line_number} of {history_path}") from exc
+                raise ValueError(
+                    f"Invalid JSON on line {line_number} of {history_path}"
+                ) from exc
 
             session_id = str(payload.get("session_id"))
             if not session_id:
@@ -137,7 +139,9 @@ def find_session_files(session_id: str, sessions_root: Path) -> list[Path]:
     return sorted(sessions_root.rglob(pattern))
 
 
-def load_rollout_items(session_id: str, sessions_root: Path) -> tuple[SessionMeta, list[dict[str, Any]]]:
+def load_rollout_items(
+    session_id: str, sessions_root: Path
+) -> tuple[SessionMeta, list[dict[str, Any]]]:
     files = find_session_files(session_id, sessions_root)
     meta: SessionMeta | None = None
     items: list[dict[str, Any]] = []
@@ -212,7 +216,9 @@ def select_start(meta: SessionMeta, history_entries: list[HistoryEntry]) -> date
     return min(candidates) if candidates else datetime.fromtimestamp(0, tz=UTC)
 
 
-def build_session_dir_name(meta: SessionMeta, history: list[HistoryEntry], tz_name: str, cwd_separator: str) -> str:
+def build_session_dir_name(
+    meta: SessionMeta, history: list[HistoryEntry], tz_name: str, cwd_separator: str
+) -> str:
     tz = ZoneInfo(tz_name)
     start = select_start(meta, history).astimezone(tz)
     date_str = start.strftime("%Y-%m-%d-%I-%M-%p").lower()
@@ -350,7 +356,9 @@ def collect_events(
             elif payload_type == "function_call":
                 args_raw = payload.get("arguments")
                 parsed_args = _maybe_parse_json(args_raw)
-                call_id = str(payload.get("call_id")) if payload.get("call_id") else None
+                call_id = (
+                    str(payload.get("call_id")) if payload.get("call_id") else None
+                )
                 add_event(
                     TimelineEvent(
                         timestamp=timestamp,
@@ -368,10 +376,14 @@ def collect_events(
                 if call_id:
                     call_registry[call_id] = {
                         "tool_name": payload.get("name"),
-                        "arguments": parsed_args if parsed_args is not None else args_raw,
+                        "arguments": parsed_args
+                        if parsed_args is not None
+                        else args_raw,
                     }
             elif payload_type == "function_call_output":
-                call_id = str(payload.get("call_id")) if payload.get("call_id") else None
+                call_id = (
+                    str(payload.get("call_id")) if payload.get("call_id") else None
+                )
                 call_meta = call_registry.get(call_id, {}) if call_id else {}
                 output_raw = payload.get("output")
                 parsed_output = _maybe_parse_json(output_raw)
@@ -392,11 +404,15 @@ def collect_events(
                         raw=item,
                         tool_name=call_meta.get("tool_name"),
                         tool_args=call_meta.get("arguments"),
-                        tool_result=parsed_output if parsed_output is not None else output_raw,
+                        tool_result=parsed_output
+                        if parsed_output is not None
+                        else output_raw,
                     )
                 )
             else:
-                text = _content_to_text(payload.get("content")) or str(payload.get("text") or payload_type)
+                text = _content_to_text(payload.get("content")) or str(
+                    payload.get("text") or payload_type
+                )
                 add_event(
                     TimelineEvent(
                         timestamp=timestamp,
@@ -546,7 +562,9 @@ def collect_events(
     return events
 
 
-def _extract_event_timestamp(item: dict[str, Any], fallback_start: datetime, index: int) -> datetime:
+def _extract_event_timestamp(
+    item: dict[str, Any], fallback_start: datetime, index: int
+) -> datetime:
     timestamp = item.get("timestamp") or item.get("created_at") or item.get("ts")
     if isinstance(timestamp, int | float):
         return datetime.fromtimestamp(float(timestamp), tz=UTC)
@@ -670,12 +688,20 @@ def write_conversation_transcript(
                 continue
             time_str = _format_local(event.timestamp, tz)
             if event.kind == "message":
-                role_label = "User" if event.role == "user" else "Assistant" if event.role == "assistant" else "Message"
+                role_label = (
+                    "User"
+                    if event.role == "user"
+                    else "Assistant"
+                    if event.role == "assistant"
+                    else "Message"
+                )
                 body = event.text or ""
                 normalized = body.lstrip()
                 if role_label == "User" and normalized.startswith("<user_instructions"):
                     continue
-                if role_label == "User" and normalized.startswith("<environment_context"):
+                if role_label == "User" and normalized.startswith(
+                    "<environment_context"
+                ):
                     continue
                 lines.append(f"- **{role_label}** · {time_str}")
                 if body:
@@ -716,7 +742,9 @@ def write_conversation_transcript(
     target.write_text("\n".join(lines), encoding="utf-8")
 
 
-def write_extended_transcript(session_dir: Path, meta: SessionMeta, events: list[TimelineEvent], tz_name: str) -> None:
+def write_extended_transcript(
+    session_dir: Path, meta: SessionMeta, events: list[TimelineEvent], tz_name: str
+) -> None:
     target = session_dir / "transcript_extended.md"
     tz = ZoneInfo(tz_name)
     lines: list[str] = [f"# Session {meta.session_id}", ""]
@@ -852,7 +880,9 @@ def process_session(
         if meta.started_at.timestamp() == 0 or earliest_event < meta.started_at:
             meta.started_at = earliest_event
 
-    session_dir_name = build_session_dir_name(meta, history_entries, tz_name, cwd_separator)
+    session_dir_name = build_session_dir_name(
+        meta, history_entries, tz_name, cwd_separator
+    )
     session_dir = ensure_session_dir(output_base, session_dir_name)
     write_history_jsonl(session_dir, history_entries)
     write_conversation_transcript(session_dir, meta, events, tz_name)

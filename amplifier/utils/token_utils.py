@@ -26,7 +26,9 @@ def count_tokens(text: str, model: str = "cl100k_base") -> int:
     return len(encoding.encode(text))
 
 
-def truncate_to_tokens(text: str, max_tokens: int = 80000, model: str = "cl100k_base") -> tuple[str, int, int]:
+def truncate_to_tokens(
+    text: str, max_tokens: int = 80000, model: str = "cl100k_base"
+) -> tuple[str, int, int]:
     """Truncate text to fit within a token limit.
 
     Args:

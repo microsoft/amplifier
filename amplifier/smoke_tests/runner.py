@@ -78,7 +78,9 @@ class AITestRunner:
 
         # Evaluate with AI (async)
         print(f"  {BOLD}AI Evaluation:{RESET}", end=" ")
-        passed, reasoning = await self.evaluator.evaluate(command, output, success_criteria, timeout=config.ai_timeout)
+        passed, reasoning = await self.evaluator.evaluate(
+            command, output, success_criteria, timeout=config.ai_timeout
+        )
 
         if passed:
             print(f"{GREEN}✓ PASS{RESET}")

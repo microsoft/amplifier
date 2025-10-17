@@ -61,7 +61,9 @@ class ImagenClient:
     def __init__(self):
         self.api_key = os.getenv("GOOGLE_API_KEY")
         # Check if API key is actually present and not empty
-        self.configured = bool(self.api_key and self.api_key.strip() and GENAI_AVAILABLE)
+        self.configured = bool(
+            self.api_key and self.api_key.strip() and GENAI_AVAILABLE
+        )
         self.client = None
         if self.configured and genai:
             try:
@@ -93,7 +95,9 @@ class ImagenClient:
             ValueError: If API key not configured or service unavailable
         """
         if not self.configured or not self.client:
-            raise ValueError("Google API key not configured. Please set GOOGLE_API_KEY environment variable.")
+            raise ValueError(
+                "Google API key not configured. Please set GOOGLE_API_KEY environment variable."
+            )
 
         logger.info(f"Generating Google image with prompt: {prompt[:100]}...")
 
@@ -206,7 +210,9 @@ class DalleClient:
             Exception: For API or download errors
         """
         if not self.configured or not self.client:
-            raise ValueError("OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.")
+            raise ValueError(
+                "OpenAI API key not configured. Please set OPENAI_API_KEY environment variable."
+            )
 
         # Extract parameters with defaults
         params = params or {}
@@ -233,7 +239,9 @@ class DalleClient:
             if not image_url:
                 raise ValueError("No image URL returned from DALL-E API")
 
-            logger.info(f"Image generated successfully. Downloading from: {image_url[:80]}...")
+            logger.info(
+                f"Image generated successfully. Downloading from: {image_url[:80]}..."
+            )
 
             # Download and save the image
             await self._download_image(image_url, output_path)
@@ -321,7 +329,9 @@ class GptImageClient:
             Exception: For API or download errors
         """
         if not self.configured or not self.client:
-            raise ValueError("OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.")
+            raise ValueError(
+                "OpenAI API key not configured. Please set OPENAI_API_KEY environment variable."
+            )
 
         # Extract parameters with defaults
         params = params or {}
@@ -364,7 +374,9 @@ class GptImageClient:
             output_path.write_bytes(image_bytes)
 
             # Calculate cost based on quality
-            cost = self.COST_PER_IMAGE.get(quality if quality else "auto", self.COST_PER_IMAGE["auto"])
+            cost = self.COST_PER_IMAGE.get(
+                quality if quality else "auto", self.COST_PER_IMAGE["auto"]
+            )
 
             logger.info(f"Image saved to: {output_path}")
             logger.info(f"Estimated cost: ${cost:.3f}")

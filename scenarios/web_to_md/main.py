@@ -27,7 +27,9 @@ try:
     logger = ToolkitLogger(name="web_to_md")
     AMPLIFIER_AVAILABLE = True
 except ImportError:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
     logger = logging.getLogger(__name__)
     AMPLIFIER_AVAILABLE = False
     paths = None  # type: ignore
@@ -62,9 +64,13 @@ def process_url(url: str, output_dir: Path, state: WebToMdState) -> bool:
         validation_result = validate_content(html, markdown, url)
         if not validation_result.is_valid:
             logger.error(f"✗ Content validation failed: {validation_result.reason}")
-            logger.error("  This page appears to be behind a paywall or requires authentication.")
+            logger.error(
+                "  This page appears to be behind a paywall or requires authentication."
+            )
             logger.error(f"  Detected pattern: {validation_result.detected_pattern}")
-            state.mark_failed(url, f"Content validation failed: {validation_result.reason}")
+            state.mark_failed(
+                url, f"Content validation failed: {validation_result.reason}"
+            )
             return False
 
         # Step 3: Process images
@@ -84,7 +90,9 @@ def process_url(url: str, output_dir: Path, state: WebToMdState) -> bool:
             for original_url, local_path in image_mappings:
                 # Convert to relative path from markdown file location
                 relative_path = f"images/{local_path.name}"
-                enhanced_markdown = enhanced_markdown.replace(original_url, relative_path)
+                enhanced_markdown = enhanced_markdown.replace(
+                    original_url, relative_path
+                )
         else:
             logger.info("Step 5/7: No images to update")
 
@@ -123,7 +131,9 @@ def extract_title_from_markdown(markdown: str) -> str:
 
 @click.command()
 @click.option("--url", "-u", multiple=True, required=True, help="URL(s) to convert")
-@click.option("--output", "-o", type=click.Path(path_type=Path), help="Output directory")
+@click.option(
+    "--output", "-o", type=click.Path(path_type=Path), help="Output directory"
+)
 @click.option("--resume", is_flag=True, help="Resume from saved state")
 @click.option("--verbose", "-v", is_flag=True, help="Verbose output")
 def main(url: tuple, output: Path | None, resume: bool, verbose: bool):
@@ -204,7 +214,9 @@ def main(url: tuple, output: Path | None, resume: bool, verbose: bool):
     logger.info(f"  Skipped: {skipped_count}")
 
     stats = state.get_stats()
-    logger.info(f"  Total in state: {stats['total']} ({stats['processed']} successful, {stats['failed']} failed)")
+    logger.info(
+        f"  Total in state: {stats['total']} ({stats['processed']} successful, {stats['failed']} failed)"
+    )
     logger.info(f"{'=' * 60}")
 
     # Exit with error code if any failures

@@ -37,7 +37,9 @@ async def query_claude_with_timeout(
     """
     if verbose:
         print(f"[Claude Query] Max turns: {max_turns}")
-        print(f"[Claude Query] Streaming: {stream_output}, Has callback: {progress_callback is not None}")
+        print(
+            f"[Claude Query] Streaming: {stream_output}, Has callback: {progress_callback is not None}"
+        )
 
     options = SessionOptions(
         system_prompt=system_prompt,

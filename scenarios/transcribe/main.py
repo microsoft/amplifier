@@ -25,7 +25,12 @@ logger = get_logger(__name__)
 class TranscriptionPipeline:
     """Orchestrates the transcription pipeline."""
 
-    def __init__(self, state_manager: StateManager | None = None, enhance: bool = True, force_download: bool = False):
+    def __init__(
+        self,
+        state_manager: StateManager | None = None,
+        enhance: bool = True,
+        force_download: bool = False,
+    ):
         """Initialize pipeline.
 
         Args:
@@ -95,7 +100,10 @@ class TranscriptionPipeline:
             if video_info.type == "url":
                 # Download audio directly to output directory (with caching)
                 audio_path = self.video_loader.download_audio(
-                    source, output_dir, output_filename="audio.mp3", use_cache=(not self.force_download)
+                    source,
+                    output_dir,
+                    output_filename="audio.mp3",
+                    use_cache=(not self.force_download),
                 )
             else:
                 # Extract audio from local file
@@ -111,7 +119,9 @@ class TranscriptionPipeline:
 
             # Stage 4: Transcribe
             self.state.update_stage("transcribing", video_info.id)
-            transcript = self.transcriber.transcribe(audio_path, prompt=f"Transcription of: {video_info.title}")
+            transcript = self.transcriber.transcribe(
+                audio_path, prompt=f"Transcription of: {video_info.title}"
+            )
 
             # Stage 5: Save outputs
             self.state.update_stage("saving", video_info.id)
@@ -124,11 +134,15 @@ class TranscriptionPipeline:
                     logger.info("Generating AI enhancements...")
 
                     # Generate summary
-                    summary = self.summary_generator.generate(transcript.text, video_info.title)
+                    summary = self.summary_generator.generate(
+                        transcript.text, video_info.title
+                    )
 
                     # Extract quotes
                     video_url = source if "youtube" in source.lower() else None
-                    quotes = self.quote_extractor.extract(transcript, video_url, video_info.id)
+                    quotes = self.quote_extractor.extract(
+                        transcript, video_url, video_info.id
+                    )
 
                     # Save combined insights document
                     self.storage.save_insights(
@@ -224,7 +238,9 @@ class TranscriptionPipeline:
             logger.info("\nUpdating transcript index...")
             write_index(self.storage.output_dir)
         except Exception as e:
-            logger.warning(f"Failed to update index (transcripts saved successfully): {e}")
+            logger.warning(
+                f"Failed to update index (transcripts saved successfully): {e}"
+            )
 
         return all_success
 
@@ -244,7 +260,11 @@ def index():
 
     # Get transcripts directory
     content_dirs = paths.get_all_content_paths()
-    transcripts_dir = content_dirs[0] / "transcripts" if content_dirs else paths.data_dir / "transcripts"
+    transcripts_dir = (
+        content_dirs[0] / "transcripts"
+        if content_dirs
+        else paths.data_dir / "transcripts"
+    )
 
     if not transcripts_dir.exists():
         logger.error(f"No transcripts directory found at {transcripts_dir}")
@@ -259,11 +279,23 @@ def index():
 @click.argument("sources", nargs=-1, required=True)
 @click.option("--resume", is_flag=True, help="Resume from last saved state")
 @click.option(
-    "--session-dir", type=click.Path(path_type=Path), help="Session directory for state (for resuming specific session)"
+    "--session-dir",
+    type=click.Path(path_type=Path),
+    help="Session directory for state (for resuming specific session)",
 )
-@click.option("--output-dir", type=click.Path(path_type=Path), help="Output directory for transcripts")
-@click.option("--no-enhance", is_flag=True, help="Skip AI enhancements (summaries/quotes)")
-@click.option("--force-download", is_flag=True, help="Skip cache and re-download audio even if it exists")
+@click.option(
+    "--output-dir",
+    type=click.Path(path_type=Path),
+    help="Output directory for transcripts",
+)
+@click.option(
+    "--no-enhance", is_flag=True, help="Skip AI enhancements (summaries/quotes)"
+)
+@click.option(
+    "--force-download",
+    is_flag=True,
+    help="Skip cache and re-download audio even if it exists",
+)
 def transcribe(
     sources: tuple[str],
     resume: bool,
@@ -287,7 +319,9 @@ def transcribe(
 
         # Create pipeline with enhancement setting
         enhance = not no_enhance
-        pipeline = TranscriptionPipeline(state_manager, enhance=enhance, force_download=force_download)
+        pipeline = TranscriptionPipeline(
+            state_manager, enhance=enhance, force_download=force_download
+        )
 
         # Override output directory if specified
         if output_dir:

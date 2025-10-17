@@ -17,7 +17,9 @@ try:
     CLAUDE_SDK_AVAILABLE = True
 except ImportError:
     CLAUDE_SDK_AVAILABLE = False
-    logger.warning("Claude Code SDK not available - tests will pass without AI evaluation")
+    logger.warning(
+        "Claude Code SDK not available - tests will pass without AI evaluation"
+    )
 
 
 class AIEvaluator:
@@ -27,7 +29,9 @@ class AIEvaluator:
         """Initialize the AI evaluator."""
         self.sdk_available = CLAUDE_SDK_AVAILABLE
 
-    async def evaluate(self, command: str, output: str, success_criteria: str, timeout: int = 30) -> tuple[bool, str]:
+    async def evaluate(
+        self, command: str, output: str, success_criteria: str, timeout: int = 30
+    ) -> tuple[bool, str]:
         """Evaluate command output against success criteria.
 
         Args:
@@ -81,7 +85,9 @@ Format: PASS|FAIL: Brief explanation"""
                 return self._parse_response(response)
 
         except TimeoutError:
-            logger.warning("Claude Code SDK timeout - likely running outside Claude Code environment")
+            logger.warning(
+                "Claude Code SDK timeout - likely running outside Claude Code environment"
+            )
             from .config import config
 
             if config.skip_on_ai_unavailable:

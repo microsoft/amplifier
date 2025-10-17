@@ -31,7 +31,9 @@ async def basic_session_example():
 
     try:
         # Create session with options
-        options = SessionOptions(system_prompt="You are a helpful code assistant", max_turns=1)
+        options = SessionOptions(
+            system_prompt="You are a helpful code assistant", max_turns=1
+        )
 
         async with ClaudeSession(options) as session:
             response = await session.query("Write a Python hello world function")
@@ -77,7 +79,9 @@ async def session_persistence_example():
     manager = SessionManager(session_dir=Path("/tmp/ccsdk_sessions"))
 
     # Create new session
-    session_state = manager.create_session(name="example-session", tags=["demo", "test"])
+    session_state = manager.create_session(
+        name="example-session", tags=["demo", "test"]
+    )
 
     # Add messages
     session_state.add_message("user", "What is Python?")
@@ -130,7 +134,9 @@ def cli_builder_example():
     print(f"Available templates: {templates}")
 
     # Create a basic tool
-    tool_path = builder.create_template(name="my_analyzer", description="Analyze code files", template_type="analyzer")
+    tool_path = builder.create_template(
+        name="my_analyzer", description="Analyze code files", template_type="analyzer"
+    )
     print(f"Created tool: {tool_path}")
 
     # Get template description
@@ -143,10 +149,14 @@ async def integrated_example():
     print("\n=== Example 6: Integrated Usage ===")
 
     # Set up logger
-    logger = ToolkitLogger(name="integrated", level=LogLevel.INFO, format=LogFormat.PLAIN)
+    logger = ToolkitLogger(
+        name="integrated", level=LogLevel.INFO, format=LogFormat.PLAIN
+    )
 
     # Load configuration
-    config = AgentConfig(name="assistant", system_prompt="You are a helpful assistant", max_turns=1)
+    config = AgentConfig(
+        name="assistant", system_prompt="You are a helpful assistant", max_turns=1
+    )
 
     # Create session manager
     manager = SessionManager()
@@ -157,7 +167,9 @@ async def integrated_example():
 
     try:
         # Use Claude session
-        options = SessionOptions(system_prompt=config.system_prompt, max_turns=config.max_turns)
+        options = SessionOptions(
+            system_prompt=config.system_prompt, max_turns=config.max_turns
+        )
 
         async with ClaudeSession(options) as claude:
             # Query Claude
@@ -178,7 +190,12 @@ async def integrated_example():
                 print(f"Q: {prompt}")
                 print(f"A: {response.content}")
             else:
-                logger.error("Query failed", error=Exception(response.error if response.error else "Unknown error"))
+                logger.error(
+                    "Query failed",
+                    error=Exception(
+                        response.error if response.error else "Unknown error"
+                    ),
+                )
 
     except SDKNotAvailableError as e:
         logger.error("SDK not available", error=e)

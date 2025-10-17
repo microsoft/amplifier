@@ -34,7 +34,9 @@ class TranscriptStorage:
             if content_dirs:
                 self.output_dir = content_dirs[0] / "transcripts"
             else:
-                logger.warning("No content directories found, using .data/transcripts instead")
+                logger.warning(
+                    "No content directories found, using .data/transcripts instead"
+                )
                 self.output_dir = paths.data_dir / "transcripts"
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -90,7 +92,9 @@ class TranscriptStorage:
 
         if save_json:
             # JSON goes to .data directory
-            json_path = self._save_json(transcript, video_info, data_video_dir, video_dir, saved_audio_path)
+            json_path = self._save_json(
+                transcript, video_info, data_video_dir, video_dir, saved_audio_path
+            )
             saved_files.append(f"JSON: {json_path.name}")
 
         if save_markdown:
@@ -204,7 +208,9 @@ class TranscriptStorage:
 
         return json_path
 
-    def _save_markdown(self, transcript: Transcript, video_info: VideoInfo, output_dir: Path) -> Path:
+    def _save_markdown(
+        self, transcript: Transcript, video_info: VideoInfo, output_dir: Path
+    ) -> Path:
         """Save transcript as readable Markdown using the new formatter."""
         from ..transcript_formatter import format_transcript
 
@@ -214,7 +220,9 @@ class TranscriptStorage:
         formatted_content = format_transcript(
             transcript=transcript,
             video_info=video_info,
-            video_url=video_info.source if "youtube" in video_info.source.lower() else None,
+            video_url=video_info.source
+            if "youtube" in video_info.source.lower()
+            else None,
         )
 
         with open(md_path, "w", encoding="utf-8") as f:
@@ -320,7 +328,9 @@ class TranscriptStorage:
         if quotes:
             validated_quotes = [q for q in quotes if isinstance(q, Quote)]
             if len(validated_quotes) < len(quotes):
-                logger.warning(f"Filtered out {len(quotes) - len(validated_quotes)} invalid quote objects")
+                logger.warning(
+                    f"Filtered out {len(quotes) - len(validated_quotes)} invalid quote objects"
+                )
 
         # Generate insights document
         insights_content = generate_insights(

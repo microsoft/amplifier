@@ -119,7 +119,9 @@ class WorktreeManager:
         it will be stripped to just the feature name.
         """
         # Strip username prefix if present (part after last '/')
-        feature_name = feature_name.split("/")[-1] if "/" in feature_name else feature_name
+        feature_name = (
+            feature_name.split("/")[-1] if "/" in feature_name else feature_name
+        )
 
         path = self.resolve_worktree_path(feature_name)
         if not path:
@@ -136,7 +138,9 @@ class WorktreeManager:
         it will be stripped to just the feature name.
         """
         # Strip username prefix if present (part after last '/')
-        feature_name = feature_name.split("/")[-1] if "/" in feature_name else feature_name
+        feature_name = (
+            feature_name.split("/")[-1] if "/" in feature_name else feature_name
+        )
 
         path = self.resolve_worktree_path(feature_name)
         if not path:
@@ -202,7 +206,11 @@ class WorktreeManager:
         # Add to stash manifest
         manifest = self._load_stash_manifest()
 
-        stash_entry = {"path": str(path), "branch": info.get("branch", ""), "head": info.get("head", "")}
+        stash_entry = {
+            "path": str(path),
+            "branch": info.get("branch", ""),
+            "head": info.get("head", ""),
+        }
 
         # Avoid duplicates
         if not any(s["path"] == str(path) for s in manifest["stashed"]):
@@ -251,7 +259,9 @@ class WorktreeManager:
         import tempfile
 
         # Create a temporary directory name
-        temp_path = Path(tempfile.mkdtemp(dir=path.parent, prefix=f".{path.name}_temp_"))
+        temp_path = Path(
+            tempfile.mkdtemp(dir=path.parent, prefix=f".{path.name}_temp_")
+        )
 
         try:
             # Move existing directory to temp location
@@ -280,7 +290,9 @@ class WorktreeManager:
             sys.exit(1)
 
         # Remove from stash manifest
-        manifest["stashed"] = [s for s in manifest["stashed"] if Path(s["path"]).resolve() != path]
+        manifest["stashed"] = [
+            s for s in manifest["stashed"] if Path(s["path"]).resolve() != path
+        ]
         self._save_stash_manifest(manifest)
 
         print(f"✓ Unstashed worktree: {path}")
@@ -313,7 +325,9 @@ class WorktreeManager:
 
             # Create directory name with dot separator
             # Extract feature name (part after last '/' if present, otherwise full name)
-            feature_name = local_branch.split("/")[-1] if "/" in local_branch else local_branch
+            feature_name = (
+                local_branch.split("/")[-1] if "/" in local_branch else local_branch
+            )
             dir_name = f"{repo_name}.{feature_name}"
 
         # Create worktree path (sibling to main repo)
@@ -329,11 +343,15 @@ class WorktreeManager:
 
         # Create worktree
         print(f"Creating worktree at {worktree_path}...")
-        code, _, stderr = self._run_git("worktree", "add", str(worktree_path), "-b", local_branch, remote_branch)
+        code, _, stderr = self._run_git(
+            "worktree", "add", str(worktree_path), "-b", local_branch, remote_branch
+        )
 
         if code != 0:
             # Try without creating new branch (if it already exists locally)
-            code, _, stderr = self._run_git("worktree", "add", str(worktree_path), local_branch)
+            code, _, stderr = self._run_git(
+                "worktree", "add", str(worktree_path), local_branch
+            )
 
             if code != 0:
                 print(f"Error creating worktree: {stderr}")
@@ -347,7 +365,9 @@ class WorktreeManager:
 
             os.chdir(worktree_path)
 
-            code, _, stderr = self._run_git("branch", "--set-upstream-to", remote_branch)
+            code, _, stderr = self._run_git(
+                "branch", "--set-upstream-to", remote_branch
+            )
 
             if code != 0:
                 print(f"Warning: Could not set upstream: {stderr}")

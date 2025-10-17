@@ -28,7 +28,10 @@ ANALYST_PROMPT = ChatPromptTemplate.from_messages(
             "You are a meticulous research analyst. Your goal is to read the following document and produce a structured 'Analyst Brief' based on a high-level research query. The brief should not be a simple summary. It should deconstruct the document into its core components. "
             "Provide your output as a JSON object with the following keys: 'core_thesis', 'key_concepts', 'arguments_and_evidence', 'proposed_solutions', 'connections_and_implications'.",
         ),
-        ("human", "High-Level Query: {query}\n\nDocument Content:\n---\n{document}\n---"),
+        (
+            "human",
+            "High-Level Query: {query}\n\nDocument Content:\n---\n{document}\n---",
+        ),
     ]
 )
 

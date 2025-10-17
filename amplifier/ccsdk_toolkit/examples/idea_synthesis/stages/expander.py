@@ -54,9 +54,13 @@ class ExpanderStage:
             return state.expanded_ideas
 
         with Progress(
-            SpinnerColumn(), TextColumn("[progress.description]{task.description}"), console=self.console
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=self.console,
         ) as progress:
-            task = progress.add_task(f"Expanding {len(themes)} themes...", total=len(themes))
+            task = progress.add_task(
+                f"Expanding {len(themes)} themes...", total=len(themes)
+            )
 
             expanded_ideas = []
 
@@ -70,17 +74,24 @@ class ExpanderStage:
                     state.current_stage = "expander"
                     self._save_state(state)
 
-                    progress.update(task, advance=1, description=f"Expanded: {theme.theme[:30]}...")
+                    progress.update(
+                        task, advance=1, description=f"Expanded: {theme.theme[:30]}..."
+                    )
 
                 except Exception as e:
-                    self.console.print(f"[red]Error expanding theme '{theme.theme}': {e}[/red]")
+                    self.console.print(
+                        f"[red]Error expanding theme '{theme.theme}': {e}[/red]"
+                    )
                     progress.update(task, advance=1)
                     continue
 
             return expanded_ideas
 
     async def _expand_theme(
-        self, theme: CrossCuttingTheme, summaries: list[FileSummary], source_files: list[SourceFile]
+        self,
+        theme: CrossCuttingTheme,
+        summaries: list[FileSummary],
+        source_files: list[SourceFile],
     ) -> ExpandedIdea:
         """Expand a single theme with full context.
 
@@ -99,7 +110,9 @@ class ExpanderStage:
             source = next((s for s in source_files if s.path == source_path), None)
             if source:
                 # Find summary for this file
-                summary = next((s for s in summaries if s.file_path == source_path), None)
+                summary = next(
+                    (s for s in summaries if s.file_path == source_path), None
+                )
                 if summary and summary.important_quotes:
                     for quote in summary.important_quotes[:2]:  # Limit quotes per file
                         relevant_quotes.append((source_path, quote))
@@ -133,7 +146,9 @@ Return JSON:
     "action_items": ["action 1", "action 2", "action 3"]
 }}"""
 
-        response = await query_claude_with_timeout(prompt=prompt, system_prompt=system_prompt, parse_json=True)
+        response = await query_claude_with_timeout(
+            prompt=prompt, system_prompt=system_prompt, parse_json=True
+        )
 
         # Handle both dict and list responses
         if isinstance(response, dict):
@@ -191,7 +206,9 @@ Return JSON:
                     "title": e.title,
                     "synthesis": e.synthesis,
                     "themes": [t.theme for t in e.themes],
-                    "supporting_quotes": [[str(q[0]), q[1]] for q in e.supporting_quotes],
+                    "supporting_quotes": [
+                        [str(q[0]), q[1]] for q in e.supporting_quotes
+                    ],
                     "action_items": e.action_items,
                     "metadata": e.metadata,
                     "timestamp": e.timestamp.isoformat(),

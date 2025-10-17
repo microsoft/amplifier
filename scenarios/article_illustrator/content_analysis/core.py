@@ -68,7 +68,9 @@ class ContentAnalyzer:
 
             # Convert to IllustrationPoint objects
             points = []
-            for point_data in analysis.get("illustration_points", [])[: self.max_images]:
+            for point_data in analysis.get("illustration_points", [])[
+                : self.max_images
+            ]:
                 points.append(IllustrationPoint(**point_data))
 
             logger.info(f"Identified {len(points)} illustration points")

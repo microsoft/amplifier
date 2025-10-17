@@ -266,7 +266,11 @@ def find_default_session(projects_dir: Path):
     best_match_score = 0
 
     for project_dir in projects_dir.iterdir():
-        if project_dir.is_dir() and project_dir.name.startswith("-") and cwd_encoded.startswith(project_dir.name):
+        if (
+            project_dir.is_dir()
+            and project_dir.name.startswith("-")
+            and cwd_encoded.startswith(project_dir.name)
+        ):
             # Check if the encoded CWD starts with this project directory name
             # This handles both exact matches and parent directories
             # Score based on the length of the match (longer = more specific)
@@ -317,13 +321,21 @@ def main():
 
     parser.add_argument("input_file", nargs="?", help="Path to session file (optional)")
 
-    parser.add_argument("output_file", nargs="?", help="Output transcript file (optional)")
+    parser.add_argument(
+        "output_file", nargs="?", help="Output transcript file (optional)"
+    )
 
-    parser.add_argument("--project", "-p", help="Project name or directory (fuzzy match supported)")
+    parser.add_argument(
+        "--project", "-p", help="Project name or directory (fuzzy match supported)"
+    )
 
-    parser.add_argument("--list", "-l", action="store_true", help="List available projects and sessions")
+    parser.add_argument(
+        "--list", "-l", action="store_true", help="List available projects and sessions"
+    )
 
-    parser.add_argument("--session", "-s", help="Session UUID or filename within project")
+    parser.add_argument(
+        "--session", "-s", help="Session UUID or filename within project"
+    )
 
     parser.add_argument(
         "--include-system",
@@ -374,7 +386,9 @@ def main():
                 for session_file, mtime in sessions[:2]:
                     dt = datetime.fromtimestamp(mtime, tz=UTC)
                     size_kb = session_file.stat().st_size / 1024
-                    print(f"       - {session_file.name} ({dt.strftime('%Y-%m-%d %H:%M')}, {size_kb:.1f}KB)")
+                    print(
+                        f"       - {session_file.name} ({dt.strftime('%Y-%m-%d %H:%M')}, {size_kb:.1f}KB)"
+                    )
                 if len(sessions) > 2:
                     print(f"       ... and {len(sessions) - 2} more")
             print()
@@ -432,7 +446,11 @@ def main():
     # Build transcript
     print(f"📄 Reading: {input_file}")
     project_dir_name = input_file.parent.name  # e.g., "-home-user-repos-amplifier"
-    project_name = project_dir_name[1:].replace("-", "/") if project_dir_name.startswith("-") else project_dir_name
+    project_name = (
+        project_dir_name[1:].replace("-", "/")
+        if project_dir_name.startswith("-")
+        else project_dir_name
+    )
     print(f"📂 Project: {project_name}")
 
     file_size = input_file.stat().st_size

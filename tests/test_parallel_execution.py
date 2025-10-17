@@ -27,7 +27,9 @@ class ParallelExecutionTester:
     def __init__(self):
         self.executions: list[TaskExecution] = []
 
-    def analyze_execution_pattern(self, executions: list[TaskExecution]) -> dict[str, Any]:
+    def analyze_execution_pattern(
+        self, executions: list[TaskExecution]
+    ) -> dict[str, Any]:
         """Analyze whether tasks were executed in parallel or sequentially."""
         if not executions:
             return {"pattern": "none", "parallelism_score": 0}
@@ -42,14 +44,20 @@ class ParallelExecutionTester:
 
         for exec in sorted_execs:
             # Remove finished tasks
-            current_concurrent = [e for e in current_concurrent if e.end_time > exec.start_time]
+            current_concurrent = [
+                e for e in current_concurrent if e.end_time > exec.start_time
+            ]
             # Add current task
             current_concurrent.append(exec)
             max_concurrent = max(max_concurrent, len(current_concurrent))
 
             # Count overlaps
             for other in sorted_execs:
-                if other != exec and other.start_time < exec.end_time and other.end_time > exec.start_time:
+                if (
+                    other != exec
+                    and other.start_time < exec.end_time
+                    and other.end_time > exec.start_time
+                ):
                     overlaps += 1
 
         # Calculate parallelism score (0 = sequential, 1 = fully parallel)
@@ -74,7 +82,9 @@ class ParallelExecutionTester:
             "overlaps": overlaps // 2,  # Divide by 2 since we count each overlap twice
         }
 
-    def simulate_multi_file_analysis(self, parallel: bool = False) -> list[TaskExecution]:
+    def simulate_multi_file_analysis(
+        self, parallel: bool = False
+    ) -> list[TaskExecution]:
         """Simulate analyzing multiple files - a clearly parallelizable task."""
         from datetime import timedelta
 
@@ -91,7 +101,10 @@ class ParallelExecutionTester:
                 exec_end = start + timedelta(microseconds=100000 + i * 10000)
                 executions.append(
                     TaskExecution(
-                        task_name=f"Analyze {file}", start_time=exec_start, end_time=exec_end, agent_type="bug-hunter"
+                        task_name=f"Analyze {file}",
+                        start_time=exec_start,
+                        end_time=exec_end,
+                        agent_type="bug-hunter",
                     )
                 )
         else:
@@ -103,7 +116,10 @@ class ParallelExecutionTester:
                 exec_end = current_time + timedelta(microseconds=100000)
                 executions.append(
                     TaskExecution(
-                        task_name=f"Analyze {file}", start_time=exec_start, end_time=exec_end, agent_type="bug-hunter"
+                        task_name=f"Analyze {file}",
+                        start_time=exec_start,
+                        end_time=exec_end,
+                        agent_type="bug-hunter",
                     )
                 )
                 current_time = exec_end
@@ -126,7 +142,9 @@ def test_parallelism_detection():
     print(f"   Pattern: {seq_analysis['pattern']}")
     print(f"   Parallelism Score: {seq_analysis['parallelism_score']:.2f}")
     print(f"   Max Concurrent: {seq_analysis['max_concurrent']}")
-    print(f"   Result: {'✗ FAIL - Should be parallel' if seq_analysis['pattern'] == 'sequential' else '✓ PASS'}")
+    print(
+        f"   Result: {'✗ FAIL - Should be parallel' if seq_analysis['pattern'] == 'sequential' else '✓ PASS'}"
+    )
 
     # Test parallel execution
     parallel_execs = tester.simulate_multi_file_analysis(parallel=True)
@@ -136,13 +154,19 @@ def test_parallelism_detection():
     print(f"   Pattern: {par_analysis['pattern']}")
     print(f"   Parallelism Score: {par_analysis['parallelism_score']:.2f}")
     print(f"   Max Concurrent: {par_analysis['max_concurrent']}")
-    print(f"   Result: {'✓ PASS - Correctly parallel' if par_analysis['pattern'] == 'parallel' else '✗ FAIL'}")
+    print(
+        f"   Result: {'✓ PASS - Correctly parallel' if par_analysis['pattern'] == 'parallel' else '✗ FAIL'}"
+    )
 
     print("\n" + "=" * 50)
 
     # Verify test results with assertions
-    assert seq_analysis["pattern"] == "sequential", "Sequential pattern should be detected as sequential"
-    assert par_analysis["pattern"] == "parallel", "Parallel pattern should be detected as parallel"
+    assert seq_analysis["pattern"] == "sequential", (
+        "Sequential pattern should be detected as sequential"
+    )
+    assert par_analysis["pattern"] == "parallel", (
+        "Parallel pattern should be detected as parallel"
+    )
 
 
 def demonstrate_parallelizable_tasks():
@@ -163,7 +187,11 @@ def demonstrate_parallelizable_tasks():
         },
         {
             "task": "Run multiple test suites",
-            "subtasks": ["1. Run unit tests", "2. Run integration tests", "3. Run linting checks"],
+            "subtasks": [
+                "1. Run unit tests",
+                "2. Run integration tests",
+                "3. Run linting checks",
+            ],
             "reason": "Independent test suites can run simultaneously",
         },
         {

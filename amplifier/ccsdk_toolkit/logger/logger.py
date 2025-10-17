@@ -45,7 +45,13 @@ class ToolkitLogger:
         self.min_level = LogLevel.DEBUG if debug else LogLevel.INFO
         self.enable_notifications = enable_notifications
 
-    def log(self, level: LogLevel, message: str, metadata: dict[str, Any] | None = None, source: str | None = None):
+    def log(
+        self,
+        level: LogLevel,
+        message: str,
+        metadata: dict[str, Any] | None = None,
+        source: str | None = None,
+    ):
         """Log a message.
 
         Args:
@@ -58,7 +64,12 @@ class ToolkitLogger:
         if level == LogLevel.DEBUG and not self.debug_mode:
             return
 
-        entry = LogEntry(level=level, message=message, metadata=metadata or {}, source=source or self.source)
+        entry = LogEntry(
+            level=level,
+            message=message,
+            metadata=metadata or {},
+            source=source or self.source,
+        )
 
         # Format output
         if self.output_format == "json":
@@ -67,7 +78,9 @@ class ToolkitLogger:
             output = entry.to_text() + "\n"
 
         # Write to appropriate stream
-        stream = sys.stderr if level in [LogLevel.ERROR, LogLevel.CRITICAL] else sys.stdout
+        stream = (
+            sys.stderr if level in [LogLevel.ERROR, LogLevel.CRITICAL] else sys.stdout
+        )
         stream.write(output)
         stream.flush()
 
@@ -159,7 +172,9 @@ class ToolkitLogger:
 
         # No longer send progress notifications - only final completion
 
-    def task_complete(self, message: str, duration: float | None = None, success: bool = True):
+    def task_complete(
+        self, message: str, duration: float | None = None, success: bool = True
+    ):
         """Mark task completion and send final notification.
 
         Args:
@@ -191,6 +206,8 @@ class ToolkitLogger:
                     cwd=os.getcwd(),
                 )
             except ImportError:
-                self.debug("Notifications not available - amplifier.utils.notifications not found")
+                self.debug(
+                    "Notifications not available - amplifier.utils.notifications not found"
+                )
             except Exception as e:
                 self.debug(f"Failed to send notification: {e}")

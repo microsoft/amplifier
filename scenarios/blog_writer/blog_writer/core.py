@@ -38,12 +38,23 @@ class BlogWriter:
         """
         if previous_draft and feedback:
             logger.info("Revising blog based on feedback")
-            return await self._revise_blog(previous_draft, feedback, style_profile, brain_dump, additional_instructions)
+            return await self._revise_blog(
+                previous_draft,
+                feedback,
+                style_profile,
+                brain_dump,
+                additional_instructions,
+            )
         logger.info("Writing initial blog draft")
-        return await self._write_initial(brain_dump, style_profile, additional_instructions)
+        return await self._write_initial(
+            brain_dump, style_profile, additional_instructions
+        )
 
     async def _write_initial(
-        self, brain_dump: str, style_profile: dict[str, Any], additional_instructions: str | None = None
+        self,
+        brain_dump: str,
+        style_profile: dict[str, Any],
+        additional_instructions: str | None = None,
     ) -> str:
         """Write initial blog post from brain dump.
 
@@ -182,11 +193,15 @@ Return ONLY the revised blog post content in markdown format."""
         desc.append(f"Tone: {style_profile.get('tone', 'conversational')}")
         desc.append(f"Vocabulary: {style_profile.get('vocabulary_level', 'moderate')}")
         desc.append(f"Sentences: {style_profile.get('sentence_structure', 'varied')}")
-        desc.append(f"Paragraphs: {style_profile.get('paragraph_length', 'medium')} length")
+        desc.append(
+            f"Paragraphs: {style_profile.get('paragraph_length', 'medium')} length"
+        )
         desc.append(f"Voice: {style_profile.get('voice', 'active')}")
 
         if style_profile.get("common_phrases"):
-            desc.append(f"Common phrases: {', '.join(style_profile['common_phrases'][:3])}")
+            desc.append(
+                f"Common phrases: {', '.join(style_profile['common_phrases'][:3])}"
+            )
 
         if style_profile.get("examples"):
             desc.append("Example sentences:")

@@ -26,7 +26,9 @@ class ClaimValidator:
         self.searcher = MemorySearcher()
         self.claim_patterns = self._compile_claim_patterns()
 
-    def validate_text(self, text: str, memories: list[StoredMemory]) -> ValidationResult:
+    def validate_text(
+        self, text: str, memories: list[StoredMemory]
+    ) -> ValidationResult:
         """Validate all claims in text
 
         Args:
@@ -55,10 +57,15 @@ class ClaimValidator:
         overall_confidence = total_confidence / max(len(validations), 1)
 
         return ValidationResult(
-            text=text, claims=validations, has_contradictions=has_contradictions, overall_confidence=overall_confidence
+            text=text,
+            claims=validations,
+            has_contradictions=has_contradictions,
+            overall_confidence=overall_confidence,
         )
 
-    async def validate_claims(self, claims: list[str], memories: list[StoredMemory]) -> list[dict[str, Any]]:
+    async def validate_claims(
+        self, claims: list[str], memories: list[StoredMemory]
+    ) -> list[dict[str, Any]]:
         """Validate multiple claims (compatibility method)
 
         Args:
@@ -82,11 +89,20 @@ class ClaimValidator:
                 )
             except Exception as e:
                 logger.warning(f"Failed to validate claim '{claim}': {e}")
-                results.append({"claim": claim, "verdict": "unknown", "confidence": 0.0, "error": str(e)})
+                results.append(
+                    {
+                        "claim": claim,
+                        "verdict": "unknown",
+                        "confidence": 0.0,
+                        "error": str(e),
+                    }
+                )
 
         return results
 
-    def validate_claim(self, claim: str, memories: list[StoredMemory]) -> ClaimValidation:
+    def validate_claim(
+        self, claim: str, memories: list[StoredMemory]
+    ) -> ClaimValidation:
         """Validate a single claim with enhanced logic
 
         Args:
@@ -115,7 +131,11 @@ class ClaimValidator:
             claim_numbers = re.findall(r"\b(\d+(?:\.\d+)?)\b", claim_lower)
             memory_numbers = re.findall(r"\b(\d+(?:\.\d+)?)\b", memory_content)
 
-            if claim_numbers and memory_numbers and overlap > min(3, len(claim_words) // 2):
+            if (
+                claim_numbers
+                and memory_numbers
+                and overlap > min(3, len(claim_words) // 2)
+            ):
                 # Compare numbers
                 claim_num = float(claim_numbers[0])
                 memory_num = float(memory_numbers[0])
@@ -152,7 +172,11 @@ class ClaimValidator:
                 and "fastapi" in memory_content
                 or "fastapi" in claim_lower
                 and "django" in memory_content
-            ) and ("framework" in claim_lower or "api" in claim_lower or "endpoints" in claim_lower):
+            ) and (
+                "framework" in claim_lower
+                or "api" in claim_lower
+                or "endpoints" in claim_lower
+            ):
                 contradicting.append(memory)
                 continue
 
@@ -162,7 +186,10 @@ class ClaimValidator:
                 and "typescript" in memory_content
                 and "prefer" in memory_content
                 and ("frontend" in claim_lower or "frontend" in memory_content)
-                and any(word in claim_lower for word in ["should", "stick", "use", "better", "simpler"])
+                and any(
+                    word in claim_lower
+                    for word in ["should", "stick", "use", "better", "simpler"]
+                )
             ):
                 # Claim is advocating for JavaScript over TypeScript
                 contradicting.append(memory)
@@ -192,7 +219,9 @@ class ClaimValidator:
                 supporting_memory=supporting[0],
             )
         else:
-            validation = ClaimValidation(claim=claim, verdict="unknown", confidence=0.3, evidence=[])
+            validation = ClaimValidation(
+                claim=claim, verdict="unknown", confidence=0.3, evidence=[]
+            )
 
         return validation
 
@@ -218,11 +247,16 @@ class ClaimValidator:
                 continue
 
             # Skip imperative/command sentences
-            if sentence.startswith(("Please", "Try", "Run", "Check", "Make", "Let's", "Let me")):
+            if sentence.startswith(
+                ("Please", "Try", "Run", "Check", "Make", "Let's", "Let me")
+            ):
                 continue
 
             # Skip conversational phrases
-            if any(phrase in sentence.lower() for phrase in ["i think", "i believe", "maybe", "probably", "might be"]):
+            if any(
+                phrase in sentence.lower()
+                for phrase in ["i think", "i believe", "maybe", "probably", "might be"]
+            ):
                 continue
 
             sentence_lower = sentence.lower()
@@ -240,7 +274,9 @@ class ClaimValidator:
             ]
 
             # Check if sentence contains factual patterns
-            has_factual_pattern = any(re.search(pattern, sentence_lower) for pattern in strong_indicators)
+            has_factual_pattern = any(
+                re.search(pattern, sentence_lower) for pattern in strong_indicators
+            )
 
             # Also check for specific technical claims
             technical_terms = [
@@ -261,13 +297,16 @@ class ClaimValidator:
                 "api",
                 "sdk",
             ]
-            has_technical_claim = any(term in sentence_lower for term in technical_terms)
+            has_technical_claim = any(
+                term in sentence_lower for term in technical_terms
+            )
 
             # Include if it has factual patterns or makes technical claims with verbs
             if has_factual_pattern or (
                 has_technical_claim
                 and any(
-                    verb in sentence_lower.split() for verb in ["is", "are", "was", "were", "will", "uses", "using"]
+                    verb in sentence_lower.split()
+                    for verb in ["is", "are", "was", "were", "will", "uses", "using"]
                 )
             ):
                 # Clean up the sentence
@@ -288,7 +327,9 @@ class ClaimValidator:
     def _compile_claim_patterns(self) -> list[re.Pattern]:
         """Compile patterns that indicate claims"""
         return [
-            re.compile(r"\b(i|we|user|they)\s+(always|never|prefer|like|want|need|use|avoid)"),
+            re.compile(
+                r"\b(i|we|user|they)\s+(always|never|prefer|like|want|need|use|avoid)"
+            ),
             re.compile(r"\b(should|must|will|would|could)\s+\w+"),
             re.compile(r"\b(is|are|was|were)\s+\w+"),
             re.compile(r"\b(my|our|their)\s+\w+\s+(is|are)"),
