@@ -8,7 +8,7 @@ Make sure to include any prerequisites, such as setting up the development envir
 
 Consider any other relevant information that would help a junior developer understand the task at hand and successfully implement the required changes. The plan should be comprehensive, yet concise enough to be easily digestible.
 
-Create a todo list, break this work down into subtasks, use sub-agents at each step, adhere to @ai_context/IMPLEMENTATION_PHILOSOPHY.md and @ai_context/MODULAR_DESIGN_PHILOSOPHY.md while designing the plan.
+Create a todo list, break this work down into subtasks, use sub-agents at each step, adhere to @IMPLEMENTATION_PHILOSOPHY.md and @MODULAR_DESIGN_PHILOSOPHY.md while designing the plan.
 
 ## Additional Guidance
 

@@ -88,9 +88,9 @@ class MemorySearcher:
             memory_embeddings = self.model.encode(memory_texts, convert_to_numpy=True)  # type: ignore
 
             # Calculate cosine similarities
-            similarities = np.dot(memory_embeddings, query_embedding) / (  # type: ignore
-                np.linalg.norm(memory_embeddings, axis=1)
-                * np.linalg.norm(query_embedding)  # type: ignore
+            similarities = np.dot(memory_embeddings, query_embedding) / (  # type: ignore[reportOptionalMemberAccess]
+                np.linalg.norm(memory_embeddings, axis=1)  # type: ignore[reportOptionalMemberAccess]
+                * np.linalg.norm(query_embedding)  # type: ignore[reportOptionalMemberAccess]
             )
 
             # Create results with scores

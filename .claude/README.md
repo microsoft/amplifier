@@ -159,6 +159,8 @@ Edit `settings.json`:
 
 ## 📚 Learn More
 
-- [Command Reference](../.ai/docs/commands.md)
-- [Automation Guide](../.ai/docs/automation.md)
-- [Notifications Setup](../.ai/docs/notifications.md)
+- [Command Reference](docs/commands.md)
+- [Automation Guide](docs/automation.md)
+- [Notifications Setup](docs/notifications.md)
+- [AI Context Management](docs/ai-context.md)
+- [Philosophy Guide](docs/philosophy.md)

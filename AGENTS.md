@@ -63,33 +63,17 @@ This approach maximizes value from long-running batch processes. A 4-hour unatte
 with partial results is better than one that fails early with nothing to show. Users can then
 fix issues and retry only what failed.
 
-## Decision Tracking System
+## Decision Documentation
 
-Significant architectural and implementation decisions are documented in `ai_working/decisions/`. This preserves context across AI sessions and prevents uninformed reversals of past choices.
+Document significant architectural and implementation decisions to preserve context across sessions and prevent uninformed reversals.
 
-### When to Consult Decision Records
+When documenting decisions, include:
+- Context and problem being solved
+- Alternatives considered and their trade-offs
+- Rationale for chosen approach
+- Review triggers for reconsidering the decision
 
-1. **Before proposing major changes** - Check if relevant decisions exist
-2. **When questioning existing patterns** - Understand the original rationale
-3. **During architecture reviews** - Reference historical context
-4. **When choosing between approaches** - Learn from past trade-offs
-
-### When to Create Decision Records
-
-Create a new decision record for:
-
-- Architectural choices affecting system structure
-- Selection between multiple viable approaches
-- Adoption of new patterns, tools, or libraries
-- Reversal or significant modification of previous decisions
-
-### Format
-
-See `ai_working/decisions/README.md` for the decision record template. Each decision includes context, rationale, alternatives considered, and review triggers.
-
-### Remember
-
-Decisions CAN change, but should change with full understanding of why they were originally made. This prevents cycling through the same alternatives without learning.
+Decisions can change, but should change with full understanding of why they were originally made.
 
 ## Configuration Management: Single Source of Truth
 
@@ -319,7 +303,7 @@ Every function must work or not exist. Every file must be complete or not create
 **For detailed guidance on organizing amplifier CLI tools, consult the `amplifier-cli-architect` agent.**
 
 This specialized agent has comprehensive context on:
-- Progressive Maturity Model (scenarios/ vs ai_working/ vs amplifier/)
+- Progressive Maturity Model (scenarios/ vs amplifier/)
 - Tool creation patterns and templates
 - Documentation requirements
 - Philosophy alignment (@scenarios/README.md)
