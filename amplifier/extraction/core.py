@@ -150,6 +150,16 @@ class MemoryExtractor:
             if not content:
                 continue
 
+            # Handle structured content (list of content blocks)
+            if isinstance(content, list):
+                text_parts = []
+                for item in content:
+                    if isinstance(item, dict) and item.get("type") == "text":
+                        text_parts.append(item.get("text", ""))
+                content = " ".join(text_parts)
+                if not content:
+                    continue
+
             # Truncate content to configured length
             if len(content) > max_content_length:
                 content = content[:max_content_length] + "..."
@@ -207,6 +217,17 @@ Context: {json.dumps(context or {})}
                                         response += getattr(block, "text", "")
 
                     # Clean and parse response
+                    logger.info(f"[EXTRACTION] Raw response: {response[:200]}...")
+
+                    # Debug: write full response to file
+                    import tempfile
+
+                    debug_file = (
+                        tempfile.gettempdir() + "/extraction_response_debug.txt"
+                    )
+                    with open(debug_file, "w") as f:
+                        f.write(f"RAW RESPONSE:\n{response}\n\n")
+
                     cleaned = response.strip()
                     if cleaned.startswith("```json"):
                         cleaned = cleaned[7:]
@@ -216,18 +237,35 @@ Context: {json.dumps(context or {})}
                         cleaned = cleaned[:-3]
                     cleaned = cleaned.strip()
 
+                    # Debug: append cleaned to file
+                    with open(debug_file, "a") as f:
+                        f.write(f"CLEANED RESPONSE:\n{cleaned}\n")
+
+                    logger.info(f"[EXTRACTION] Cleaned response: {cleaned[:200]}...")
+                    logger.info(f"[EXTRACTION] Debug written to: {debug_file}")
+
                     if cleaned:
                         data = json.loads(cleaned)
+                        # Handle both old format (list) and new format (dict with "memories" key)
+                        memories_list = (
+                            data.get("memories", data)
+                            if isinstance(data, dict)
+                            else data
+                        )
                         return [
                             Memory(
                                 content=item["content"],
-                                category=item["category"],
+                                category=item.get(
+                                    "type", item.get("category", "learning")
+                                ),
                                 metadata={
+                                    "importance": item.get("importance", 0.5),
+                                    "tags": item.get("tags", []),
                                     **item.get("metadata", {}),
                                     **(context or {}),
                                 },
                             )
-                            for item in data
+                            for item in memories_list
                         ]
         except TimeoutError:
             logger.warning(
@@ -235,6 +273,8 @@ Context: {json.dumps(context or {})}
             )
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse extraction response: {e}")
+            logger.error(f"Raw response was: {response}")
+            logger.error(f"Cleaned response was: {cleaned}")
         except Exception as e:
             logger.error(f"Claude Code SDK extraction error: {e}")
 
