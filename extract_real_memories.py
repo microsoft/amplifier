@@ -106,7 +106,7 @@ async def extract_from_real_session():
         return
 
     # Load real messages (use more for better context)
-    messages = load_real_messages(session_dir, limit=100)
+    messages = load_real_messages(session_dir, limit=200)
 
     if not messages:
         print("\n❌ No messages found in session")
@@ -203,16 +203,38 @@ async def store_real_memories(memories):
     # Convert to Memory objects and store
     from amplifier.memory import Memory
 
+    # Map extracted categories to valid Memory categories
+    category_map = {
+        "philosophy": "pattern",  # Philosophy → pattern
+        "approach": "pattern",  # Approach → pattern
+        "best_practice": "pattern",  # Best practice → pattern
+    }
+
     stored_count = 0
     for mem_data in memories:
+        extracted_category = mem_data.get("type", "learning")
+        # Map to valid category if needed
+        valid_category = category_map.get(extracted_category, extracted_category)
+
+        # Ensure it's a valid category, default to 'learning'
+        if valid_category not in [
+            "learning",
+            "decision",
+            "issue_solved",
+            "preference",
+            "pattern",
+        ]:
+            valid_category = "learning"
+
         memory = Memory(
             content=mem_data.get("content", ""),
-            category=mem_data.get("type", "learning"),
+            category=valid_category,  # type: ignore
             metadata={
                 "importance": mem_data.get("importance", 0.5),
                 "tags": mem_data.get("tags", []),
                 "source": "real_conversation",
                 "extracted_at": datetime.now().isoformat(),
+                "original_type": extracted_category,  # Preserve original
             },
         )
 
