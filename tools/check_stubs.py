@@ -18,7 +18,7 @@ except ImportError:
 
 def read_pyproject_exclusions():
     """Read exclude patterns from pyproject.toml."""
-    default_excludes = {".venv", "__pycache__", ".git", "node_modules", ".tox"}
+    default_excludes = {".venv", "__pycache__", ".git", "node_modules", ".tox", "templates"}
 
     if not tomllib or not Path("pyproject.toml").exists():
         return default_excludes
