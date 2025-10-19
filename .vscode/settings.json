@@ -13,6 +13,9 @@
   "files.eol": "\n",
   "files.trimTrailingWhitespace": true,
 
+  // === GIT CONFIGURATION ===
+  "git.detectSubmodulesLimit": 50,
+
   // === GIT/GITHUB CONFIGURATION ===
   "githubPullRequests.defaultMergeMethod": "squash",
 
@@ -137,6 +140,7 @@
     "markdownify",
     "metadatas",
     "mixtape",
+    "monokai",
     "networkidle",
     "ollama",
     "pathlib",

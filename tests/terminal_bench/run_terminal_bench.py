@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from terminal_bench import Harness
+from terminal_bench import Harness  # type: ignore[import-untyped]
 
 
 def main(agent: str) -> None:

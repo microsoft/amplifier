@@ -53,6 +53,11 @@ ai_working/tmp
 **/*sec.endpointdlp
 **/*:sec.endpointdlp
 
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
 # Default data directory
 .data/
 
@@ -61,3 +66,4 @@ ai_working/tmp
 
 # Smoke test runtime logs
 .smoke_test_data/data
+*.log.jsonl

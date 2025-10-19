@@ -54,8 +54,7 @@ venvPath = "."
 venv = ".venv"
 exclude = [
     "**/__pycache__",
-    ".venv/**",
-    "scenarios/*/.venv/**",
+    "**/.venv/**",
     "node_modules/**",
     ".git/**",
     ".ruff_cache/**",
