@@ -1,0 +1,33 @@
+[project]
+name = "research-assistant"
+version = "0.1.0"
+description = "Interactive CLI tool for web research with AI assistance"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.40.0",
+    "httpx>=0.28.1",
+    "beautifulsoup4>=4.12.0",
+    "duckduckgo-search>=7.0.0",
+    "rich>=13.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+    "black>=23.0",
+    "ruff>=0.1",
+]
+
+[project.scripts]
+research-assistant = "research_assistant.__main__:main"
+
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["research_assistant*"]
+
+[tool.pyright]
+exclude = [".venv", "**/__pycache__"]

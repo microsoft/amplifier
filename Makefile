@@ -54,6 +54,9 @@ default: ## Show essential commands
 	@echo "Web to Markdown:"
 	@echo "  make web-to-md       Convert web pages to markdown"
 	@echo ""
+	@echo "Research Assistant:"
+	@echo "  make research Q=\"...\"  Interactive AI-powered web research"
+	@echo ""
 	@echo "Other:"
 	@echo "  make clean          Clean build artifacts"
 	@echo "  make help           Show ALL available commands"
@@ -131,6 +134,10 @@ help: ## Show ALL available commands
 	@echo ""
 	@echo "WEB TO MARKDOWN:"
 	@echo "  make web-to-md URL=<url> [URL2=<url>] [OUTPUT=<path>]  Convert web pages to markdown (saves to content_dirs[0]/sites/)"
+	@echo ""
+	@echo "RESEARCH ASSISTANT:"
+	@echo "  make research Q=\"...\"  Interactive AI-powered web research with themes and verification"
+	@echo "  make research-resume   Resume interrupted research session"
 	@echo ""
 	@echo "UTILITIES:"
 	@echo "  make clean           Clean build artifacts"
@@ -640,6 +647,19 @@ web-to-md: ## Convert web pages to markdown. Usage: make web-to-md URL=https://e
 	if [ -n "$(URL5)" ]; then CMD="$$CMD --url \"$(URL5)\""; fi; \
 	if [ -n "$(OUTPUT)" ]; then CMD="$$CMD --output \"$(OUTPUT)\""; fi; \
 	eval $$CMD
+
+# Research Assistant
+research: ## Interactive AI-powered web research. Usage: make research Q="your research question"
+	@if [ -z "$(Q)" ]; then \
+		echo "Error: Please provide a research question. Usage: make research Q=\"your question\""; \
+		exit 1; \
+	fi
+	@echo "🔍 Starting research assistant..."
+	@uv run python -m scenarios.research_assistant "$(Q)"
+
+research-resume: ## Resume interrupted research session
+	@echo "🔍 Resuming research session..."
+	@uv run python -m scenarios.research_assistant --resume
 
 # Clean WSL Files
 clean-wsl-files: ## Clean up WSL-related files (Zone.Identifier, sec.endpointdlp)
