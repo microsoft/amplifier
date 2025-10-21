@@ -74,20 +74,20 @@ The workspace pattern solves these problems by inverting the relationship: inste
 
 Think of it like a workshop. Amplifier is your workbench with all your tools organized and ready. Your projects are the pieces you're actively working on, each with its own space on the bench but sharing the same tool set.
 
-```
+```bash
 my-workspace/               # Your Amplifier workspace
 ├── .claude/                # Agent + command definitions
 ├── docs/                   # Amplifier docs
 ├── scenarios/              # Amplifier tools
 │
-├── my-blog/                   # Your first project
-│   ├── AGENTS.md              # Project context (AI guidance)
-│   ├── docs/                  # Project documentation
-│   ├── src/                   # Project code
-│   └── ai_working/            # Temporary work files
+├── my-blog/                # Your first project
+│   ├── AGENTS.md           # Project context (AI guidance)
+│   ├── docs/               # Project documentation
+│   ├── src/                # Project code
+│   └── ai_working/         # Temporary work files
 │
-└── client-portal/             # Your second project
-    ├── AGENTS.md              # Different project, different context
+└── client-portal/          # Your second project
+    ├── AGENTS.md           # Different project, different context
     ├── backend/
     ├── frontend/
     └── ai_working/
@@ -147,7 +147,7 @@ cd my-project
 
 Create `AGENTS.md` with your project's context:
 
-```markdown
+````markdown
 # My Blog Platform Context
 
 This file provides guidance to AI assistants working on this blog platform.
@@ -174,17 +174,16 @@ flexibility—we'd rather have less features done well than many features done p
 - remark/rehype for Markdown processing
 
 ## Project Structure
-```
 
+```bash
 src/
-├── app/ # Next.js app router pages
+├── app/        # Next.js app router pages
 ├── components/ # React components
-├── lib/ # Utilities and shared logic
-└── types/ # TypeScript type definitions
+├── lib/        # Utilities and shared logic
+└── types/      # TypeScript type definitions
 
-content/ # Blog posts (Markdown)
-public/ # Static assets
-
+content/        # Blog posts (Markdown)
+public/         # Static assets
 ```
 
 ## Development Workflow
@@ -206,7 +205,7 @@ public/ # Static assets
 - Don't add a database (we're committed to file-based)
 - Don't create complex state management (keep it simple)
 - Don't add build-time external API calls (they slow builds)
-```
+````
 
 The key is making this document useful for both AI assistants and human developers. It should answer: What is this project? How is it architected? What conventions do we follow? What should I avoid?
 
@@ -317,9 +316,9 @@ git commit -m "Add responsive header"
 git push origin main
 
 # Updating Amplifier in your workspace
-cd ..  # Back to workspace root
-git pull origin main  # Updates Amplifier
-git submodule update  # Syncs submodule references
+cd ..                   # Back to workspace root
+git pull origin main    # Updates Amplifier
+git submodule update    # Syncs submodule references
 ```
 
 The workspace tracks which version of your project it expects, but your project's git history is entirely separate. This means you can:
