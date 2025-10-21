@@ -104,6 +104,35 @@ amplifier.
 claude
 ```
 
+**Option 3** - Use the workspace pattern for serious projects
+
+For projects that need clean boundaries, independent version control, and persistent AI context:
+
+```bash
+# Fork/clone Amplifier as your workspace
+git clone https://github.com/microsoft/amplifier.git my-workspace
+cd my-workspace
+
+# Add your project as a submodule
+git submodule add <your-project-url> my-project
+
+# Set up project context (see guide for AGENTS.md template)
+cd my-project
+# Create AGENTS.md with project guidance
+
+# Start working
+cd ..
+claude
+```
+
+_In Claude Code:_
+```
+I'm working on the @my-project/ project within this workspace.
+Please read @my-project/AGENTS.md for project-specific guidance.
+```
+
+**Why use this?** Clean git history per component, independent Amplifier updates, persistent context across sessions, scalable to multiple projects. See the [Workspace Pattern Guide](docs/WORKSPACE_PATTERN.md) for full details.
+
 ---
 
 ## What Is Amplifier?
@@ -200,6 +229,27 @@ Enable with:
 - Using transcript tools to capture and improve workflows
 - Demo-driven development patterns
 - Practical tips for effective AI-assisted development
+
+### Workspace Pattern for Serious Projects
+
+**For long-term development**, consider using the workspace pattern where Amplifier hosts your project as a git submodule. This architectural approach provides:
+
+- **Clean boundaries** - Project files stay in project directory, Amplifier stays pristine and updatable
+- **Version control isolation** - Each component maintains independent git history
+- **Context persistence** - AGENTS.md preserves project guidance across sessions
+- **Scalability** - Work on multiple projects simultaneously without interference
+- **Philosophy alignment** - Project-specific decision filters and architectural principles
+
+Perfect for:
+- Projects that will live for months or years
+- Codebases with their own git repository
+- Teams collaborating on shared projects
+- When you want to update Amplifier without affecting your projects
+- Working on multiple projects that need isolation
+
+The pattern inverts the typical relationship: instead of your project containing Amplifier, Amplifier becomes a dedicated workspace that hosts your projects. Each project gets persistent context through AGENTS.md (AI guidance), philosophy documents (decision filters), and clear namespace boundaries using `@project-name/` syntax.
+
+See the [Workspace Pattern Guide](docs/WORKSPACE_PATTERN.md) for complete setup, usage patterns, and migration from `ai_working/`.
 
 ## 🎯 Key Features
 
