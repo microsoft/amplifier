@@ -95,7 +95,11 @@ Choose your path:
 - [📦 **Option 3 - Quick Setup**](#-option-3---quick-setup) - Try Amplifier with my GitHub project
 - [🚀 **Option 4 - Production Setup**](#-option-4---production-setup) - I'm ready to fully integrate
 
+---
+
 #### 🎯 Option 1 - Quick Exploration
+
+_"Just show me what it can do."_
 
 ```bash
 # Start Claude Code
@@ -121,11 +125,13 @@ _Tell Claude Code:_
   "Why and when should I use `/ultrathink-task`?"
   ```
 
+---
+
 #### 🔗 Option 2 - Quick Access
 
-```bash
-# "Try Amplifier with my local project"
+_"I want to try Amplifier with my local project."_
 
+```bash
 # Create a symbolic link to your project for easy access
 cd ai_working
 ln -s /path/to/your/project yourproject
@@ -145,9 +151,11 @@ Use bug-hunter to find issues, or zen-architect to review the architecture.
 > [!IMPORTANT]
 > Claude Code has full filesystem access. The symlink is for convenience, not isolation.
 
+---
+
 #### 📦 Option 3 - Quick Setup
 
-_"Try Amplifier with my GitHub project"_
+_"I want to try Amplifier with my GitHub project."_
 
 ```bash
 # Clone your project into ai_working for easy access
@@ -169,9 +177,11 @@ Are there any parts of my project that could benefit from a new scnario? If so, 
 > [!TIP]
 > Think of Amplifier v1.0 as your development workspace. You need to bring your project into the workspace (clone your project into Amplifier), as opposed to bringing the workspace into your project (don't clone Amplifier into your project).
 
+---
+
 #### 🚀 Option 4 - Production Setup
 
-_"I'm ready to fully integrate"_
+_"I'm ready to fully integrate."_
 
 1. For existing GitHub projects
 
