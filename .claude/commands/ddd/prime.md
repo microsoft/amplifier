@@ -65,6 +65,7 @@ You now have complete understanding of Document-Driven Development:
 **Core Principle**: Documentation IS the specification. Code implements what documentation describes.
 
 **Workflow**:
+
 1. `/ddd:1-plan` - Planning & Design
 2. `/ddd:2-docs` - Update All Non-Code Files
 3. `/ddd:3-code-plan` - Plan Code Changes
@@ -72,6 +73,7 @@ You now have complete understanding of Document-Driven Development:
 5. `/ddd:5-finish` - Wrap-Up & Cleanup
 
 **Utilities**:
+
 - `/ddd:status` - Check current progress
 - `/ddd:0-help` - Complete guide and help
 
@@ -139,11 +141,13 @@ You now have complete understanding of Document-Driven Development:
 **This loading happens once per session.**
 
 For subsequent work in the same session:
+
 - Context is already loaded
 - Just run the commands
 - No need to re-prime
 
 **If starting new session:**
+
 - Run `/ddd:prime` again to reload context
 - Or just start with `/ddd:1-plan` and it will load relevant context
 
@@ -172,5 +176,15 @@ You're ready to use Document-Driven Development!
 ```
 
 ---
+
+## Process
+
+- Ultrathink step-by-step, laying out assumptions and unknowns, use the TodoWrite tool to capture all tasks and subtasks.
+  - VERY IMPORTANT: Make sure to use the actual TodoWrite tool for todo lists, don't do your own task tracking, there is code behind use of the TodoWrite tool that is invisible to you that ensures that all tasks are completed fully.
+  - Adhere to the @ai_context/IMPLEMENTATION_PHILOSOPHY.md and @ai_context/MODULAR_DESIGN_PHILOSOPHY.md files.
+- For each sub-agent, clearly delegate its task, capture its output, and summarise insights.
+- Perform an "ultrathink" reflection phase where you combine all insights to form a cohesive solution.
+- If gaps remain, iterate (spawn sub-agents again) until confident.
+- Where possible, spawn sub-agents in parallel to expedite the process.
 
 **Context loaded. Ready to build! 🚀**

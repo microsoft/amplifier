@@ -33,6 +33,7 @@ User feedback/instructions: $ARGUMENTS
 #### Step 1: Load Full Context
 
 Before implementing chunk:
+
 - Read the code plan for this chunk
 - Read ALL relevant documentation (the specs)
 - Read current code in affected files
@@ -43,12 +44,14 @@ Before implementing chunk:
 #### Step 2: Implement Exactly as Documented
 
 **Code MUST match documentation**:
+
 - If docs say "function returns X", code returns X
 - If docs show config format, code parses that format
 - If docs describe behavior, code implements that behavior
 - Examples in docs must actually work
 
 **If conflict arises**:
+
 ```
 STOP ✋
 
@@ -65,6 +68,7 @@ c) Something else?"
 #### Step 3: Verify Chunk Works
 
 After implementing chunk:
+
 - Run relevant tests
 - Check for syntax errors
 - Basic smoke test
@@ -75,28 +79,36 @@ After implementing chunk:
 **IMPORTANT**: Each commit requires EXPLICIT user authorization
 
 Show user:
+
 ```markdown
 ## Chunk [N] Complete: [Description]
 
 ### Files Changed
+
 [list with brief description of changes]
 
 ### What This Does
+
 [plain English explanation]
 
 ### Tests
+
 [which tests pass]
 
 ### Diff Summary
 ```
+
 git diff --stat
+
 ```
 
 ### Proposed Commit
 ```
+
 feat: [Chunk description]
 
 [Detailed commit message based on code plan]
+
 ```
 
 ⚠️ **Request explicit authorization**:
@@ -138,6 +150,7 @@ amplifier run --with-new-feature
 ```
 
 **Observe and record**:
+
 - Actual output (what did you see?)
 - Actual behavior (what happened?)
 - Logs generated (what was logged?)
@@ -148,7 +161,7 @@ amplifier run --with-new-feature
 
 Write `ai_working/ddd/test_report.md`:
 
-```markdown
+````markdown
 # User Testing Report
 
 Feature: [name]
@@ -158,6 +171,7 @@ Date: [timestamp]
 ## Test Scenarios
 
 ### Scenario 1: Basic Usage
+
 **Tested**: [what you tested]
 **Command**: `[actual command run]`
 **Expected** (per docs): [what docs say should happen]
@@ -166,6 +180,7 @@ Date: [timestamp]
 **Notes**: [any observations]
 
 ### Scenario 2: Error Handling
+
 **Tested**: [what you tested]
 **Command**: `[actual command with invalid input]`
 **Expected**: [error message from docs]
@@ -177,9 +192,12 @@ Date: [timestamp]
 ## Documentation Examples Verification
 
 ### Example from docs/feature.md:123
+
 ```bash
 [exact example from docs]
 ```
+````
+
 **Status**: ✅ Works as documented / ❌ Doesn't work
 **Issue**: [if doesn't work, what's wrong]
 
@@ -188,6 +206,7 @@ Date: [timestamp]
 ## Integration Testing
 
 ### With Feature X
+
 **Tested**: [integration test]
 **Status**: ✅ PASS / ❌ FAIL
 **Notes**: [observations]
@@ -195,6 +214,7 @@ Date: [timestamp]
 ## Issues Found
 
 ### Issue 1: [Description]
+
 **Severity**: High/Medium/Low
 **What**: [description]
 **Where**: [file:line or command]
@@ -207,24 +227,30 @@ Date: [timestamp]
 ## Code-Based Test Verification
 
 **Unit tests**:
+
 ```bash
 make test
 # [output]
 ```
+
 Status: ✅ All passing / ❌ [N] failures
 
 **Integration tests**:
+
 ```bash
 make test-integration
 # [output]
 ```
+
 Status: ✅ All passing / ❌ [N] failures
 
 **Linting/Type checking**:
+
 ```bash
 make check
 # [output]
 ```
+
 Status: ✅ Clean / ❌ Issues found
 
 ## Summary
@@ -241,12 +267,14 @@ Status: ✅ Clean / ❌ Issues found
 User should verify:
 
 1. **Basic functionality**:
+
    ```bash
    [command]
    # Should see: [expected output]
    ```
 
 2. **Edge case**:
+
    ```bash
    [command]
    # Should see: [expected output]
@@ -263,7 +291,8 @@ User should verify:
 ## Next Steps
 
 [Based on status, recommend next action]
-```
+
+````
 
 ### Step 3: Address Issues Found
 
@@ -319,24 +348,27 @@ Track implementation and testing tasks:
 - [ ] Test report written
 - [ ] All issues resolved
 - [ ] User confirms working
-```
+````
 
 ---
 
 ## Agent Suggestions
 
 **modular-builder** - For module implementation:
+
 ```
 Task modular-builder: "Implement [chunk] according to code_plan.md
 and documentation specifications"
 ```
 
 **bug-hunter** - When issues found:
+
 ```
 Task bug-hunter: "Debug [specific issue] found during testing"
 ```
 
 **test-coverage** - For test suggestions:
+
 ```
 Task test-coverage: "Suggest comprehensive test cases for [feature]"
 ```
@@ -346,18 +378,21 @@ Task test-coverage: "Suggest comprehensive test cases for [feature]"
 ## Important Notes
 
 **Code must match docs EXACTLY**:
+
 - Docs are the contract
 - If code needs to differ, update docs first
 - Examples in docs MUST work when copy-pasted
 - Error messages should match what docs describe
 
 **Each commit needs authorization**:
+
 - Never assume user wants to commit
 - Show clear summary of changes
 - Get explicit "yes" before committing
 - User can provide feedback instead
 
 **Test as REAL user would**:
+
 - Don't just run unit tests
 - Actually use the CLI/feature
 - Try the examples from docs
@@ -365,6 +400,7 @@ Task test-coverage: "Suggest comprehensive test cases for [feature]"
 - Experience what user will experience
 
 **Stay in phase until working**:
+
 - Don't rush to Phase 5
 - Iterate as many times as needed
 - Address all user feedback
@@ -396,6 +432,7 @@ Issues found: [count]
 ## User Feedback Log
 
 ### Feedback 1 (timestamp)
+
 **User said**: [feedback]
 **Action taken**: [what we did]
 **Status**: Resolved/In progress
@@ -439,23 +476,36 @@ If YES, proceed to cleanup and finalization:
 If NO, provide feedback and we'll continue iterating in Phase 4.
 ```
 
+## Process
+
+- Ultrathink step-by-step, laying out assumptions and unknowns, use the TodoWrite tool to capture all tasks and subtasks.
+  - VERY IMPORTANT: Make sure to use the actual TodoWrite tool for todo lists, don't do your own task tracking, there is code behind use of the TodoWrite tool that is invisible to you that ensures that all tasks are completed fully.
+  - Adhere to the @ai_context/IMPLEMENTATION_PHILOSOPHY.md and @ai_context/MODULAR_DESIGN_PHILOSOPHY.md files.
+- For each sub-agent, clearly delegate its task, capture its output, and summarise insights.
+- Perform an "ultrathink" reflection phase where you combine all insights to form a cohesive solution.
+- If gaps remain, iterate (spawn sub-agents again) until confident.
+- Where possible, spawn sub-agents in parallel to expedite the process.
+
 ---
 
 ## Troubleshooting
 
 **"Code doesn't match docs"**
+
 - Read docs again carefully
 - Implement exactly what docs describe
 - If docs are unclear, ask user to clarify docs
 - Don't implement what docs don't describe
 
 **"Tests are failing"**
+
 - Fix the implementation
 - Don't change tests to pass
 - Tests verify documented behavior
 - If behavior changed, update docs first
 
 **"User says 'not working'"**
+
 - Ask specific questions: "What's not working?"
 - Test that specific scenario
 - Reproduce the issue
@@ -463,12 +513,14 @@ If NO, provide feedback and we'll continue iterating in Phase 4.
 - Show results to user
 
 **"Too many issues found"**
+
 - That's why we test!
 - Better to find now than after release
 - Fix them systematically
 - Stay in phase until all resolved
 
 **"Performance is slow"**
+
 - Profile if needed
 - Check for obvious inefficiencies
 - But remember: working > fast initially

@@ -81,6 +81,7 @@ make check
 **Status**: ✅ All passing / ❌ Issues found
 
 If issues found:
+
 - List all issues clearly
 - Ask user: "Fix these before finishing?"
 - If yes, fix and re-run
@@ -93,6 +94,7 @@ git status
 ```
 
 **Questions to answer**:
+
 - Are there uncommitted changes? (Should there be?)
 - Are there untracked files? (Should they be added/ignored?)
 - Is working tree clean? (Or remaining work?)
@@ -108,6 +110,7 @@ git log --oneline [start-commit]..HEAD
 ```
 
 **Show user**:
+
 - Number of commits
 - Summary of each commit
 - Overall changes (insertions/deletions)
@@ -125,12 +128,14 @@ If changes exist:
 **Ask user**: "There are uncommitted changes. Commit them?"
 
 If YES:
+
 - Show the diff
 - Ask for commit message or suggest one
 - Request explicit authorization
 - Commit with provided/suggested message
 
 If NO:
+
 - Leave changes uncommitted
 - Note in final summary
 
@@ -139,6 +144,7 @@ If NO:
 **Ask user**: "Push to remote?"
 
 Show context:
+
 ```bash
 # Current branch
 git branch --show-current
@@ -151,17 +157,20 @@ git ls-remote --heads origin $(git branch --show-current)
 ```
 
 If YES:
+
 - Confirm which remote and branch
 - Push with: `git push -u origin [branch]`
 - Show result
 
 If NO:
+
 - Leave local only
 - Note in final summary
 
 ### Step 5: Create Pull Request (If Appropriate)
 
 **Determine if PR is appropriate**:
+
 - Are we on a feature branch? (not main/master)
 - Has branch been pushed?
 - Does user want a PR?
@@ -169,6 +178,7 @@ If NO:
 If appropriate, **ask user**: "Create pull request?"
 
 Show context:
+
 ```bash
 # Current branch vs main
 git log --oneline main..HEAD
@@ -189,12 +199,15 @@ If YES:
 ## Changes
 
 ### Documentation
+
 [List docs changed]
 
 ### Code
+
 [List code changed]
 
 ### Tests
+
 [List tests added]
 
 ## Testing
@@ -211,6 +224,7 @@ If YES:
 ```
 
 **Create PR** (using existing /commit command or gh pr create):
+
 ```bash
 gh pr create --title "[Feature name]" --body "[generated description]"
 ```
@@ -218,6 +232,7 @@ gh pr create --title "[Feature name]" --body "[generated description]"
 Show PR URL to user.
 
 If NO:
+
 - Skip PR creation
 - Note in final summary
 
@@ -247,7 +262,7 @@ make check
 
 Create comprehensive completion summary:
 
-```markdown
+````markdown
 # DDD Workflow Complete! 🎉
 
 ## Feature: [Name from plan.md]
@@ -258,16 +273,19 @@ Create comprehensive completion summary:
 ## Changes Made
 
 ### Documentation (Phase 2)
+
 - Files updated: [count]
 - Key docs: [list 3-5 most important]
 - Commit: [hash and message]
 
 ### Code (Phase 4)
+
 - Files changed: [count]
 - Implementation chunks: [count]
 - Commits: [list all commit hashes and messages]
 
 ### Tests
+
 - Unit tests added: [count]
 - Integration tests added: [count]
 - All tests passing: ✅ / ❌
@@ -304,8 +322,10 @@ Please verify the following:
    [command]
    # Expected: [output]
    ```
+````
 
 2. **Edge cases**:
+
    ```bash
    [command]
    # Expected: [output]
@@ -322,6 +342,7 @@ Please verify the following:
 ### If Issues Found
 
 If you find any issues:
+
 1. Provide specific feedback
 2. Re-run `/ddd:4-code` with feedback
 3. Iterate until resolved
@@ -340,7 +361,8 @@ If you find any issues:
 ---
 
 **DDD workflow complete. Ready for next work!**
-```
+
+````
 
 ---
 
@@ -356,13 +378,14 @@ Track finalization tasks:
 - [ ] PR created (if authorized)
 - [ ] Post-cleanup check complete
 - [ ] Final summary generated
-```
+````
 
 ---
 
 ## Agent Suggestions
 
 **post-task-cleanup** - For thorough cleanup:
+
 ```
 Task post-task-cleanup: "Review entire workspace for any remaining
 temporary files, test artifacts, or unnecessary complexity after
@@ -374,33 +397,45 @@ DDD workflow completion"
 ## Authorization Checkpoints
 
 ### 1. Delete DDD Working Files
+
 ⚠️ **Ask**: "Delete ai_working/ddd/ directory?"
+
 - Show what will be deleted
 - Get explicit yes/no
 
 ### 2. Delete Temporary Files
+
 ⚠️ **Ask**: "Delete temporary/test artifacts?"
+
 - Show what will be deleted
 - Get explicit yes/no
 
 ### 3. Remove Debug Code
+
 ⚠️ **Ask**: "Remove debug code?"
+
 - Show locations found
 - Get explicit yes/no
 
 ### 4. Commit Remaining Changes
+
 ⚠️ **Ask**: "Commit these changes?"
+
 - Show git diff
 - Get explicit yes/no
 - If yes, get/suggest commit message
 
 ### 5. Push to Remote
+
 ⚠️ **Ask**: "Push to remote?"
+
 - Show branch and commit count
 - Get explicit yes/no
 
 ### 6. Create PR
+
 ⚠️ **Ask**: "Create pull request?"
+
 - Show PR description preview
 - Get explicit yes/no
 - If yes, create and show URL
@@ -410,24 +445,28 @@ DDD workflow completion"
 ## Important Notes
 
 **Never assume**:
+
 - Always ask before git operations
 - Show what will happen
 - Get explicit authorization
 - Respect user's decisions
 
 **Clean thoroughly**:
+
 - DDD artifacts served their purpose
 - Test artifacts aren't needed
 - Debug code shouldn't ship
 - Working tree should be clean
 
 **Verify completely**:
+
 - All tests passing
 - Quality checks clean
 - No unintended changes
 - Ready for production
 
 **Document everything**:
+
 - Final summary should be comprehensive
 - Include verification steps
 - Note any follow-up items
@@ -463,27 +502,41 @@ Or check current status anytime:
 Need help? Run: /ddd:0-help
 ```
 
+## Process
+
+- Ultrathink step-by-step, laying out assumptions and unknowns, use the TodoWrite tool to capture all tasks and subtasks.
+  - VERY IMPORTANT: Make sure to use the actual TodoWrite tool for todo lists, don't do your own task tracking, there is code behind use of the TodoWrite tool that is invisible to you that ensures that all tasks are completed fully.
+  - Adhere to the @ai_context/IMPLEMENTATION_PHILOSOPHY.md and @ai_context/MODULAR_DESIGN_PHILOSOPHY.md files.
+- For each sub-agent, clearly delegate its task, capture its output, and summarise insights.
+- Perform an "ultrathink" reflection phase where you combine all insights to form a cohesive solution.
+- If gaps remain, iterate (spawn sub-agents again) until confident.
+- Where possible, spawn sub-agents in parallel to expedite the process.
+
 ---
 
 ## Troubleshooting
 
 **"Make check is failing"**
+
 - Fix the issues before finishing
 - Or ask user if acceptable to finish with issues
 - Note failures in final summary
 
 **"Uncommitted changes remain"**
+
 - That might be intentional
 - Ask user what to do with them
 - Document decision in summary
 
 **"Can't push to remote"**
+
 - Check remote exists
 - Check permissions
 - Check branch name
 - Provide error details to user
 
 **"PR creation failed"**
+
 - Check gh CLI is installed and authenticated
 - Check remote branch exists
 - Provide error details to user

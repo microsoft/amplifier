@@ -20,6 +20,7 @@ Loading DDD context for comprehensive help...
 **Core Principle**: Documentation IS the specification. Code implements what documentation describes.
 
 **Why it works**:
+
 - Prevents context poisoning (inconsistent docs)
 - Clear contracts before complexity
 - Reviewable design before expensive implementation
@@ -27,6 +28,7 @@ Loading DDD context for comprehensive help...
 - Docs and code never drift
 
 **Philosophy Foundation**:
+
 - Ruthless Simplicity (IMPLEMENTATION_PHILOSOPHY)
 - Modular Design / Bricks & Studs (MODULAR_DESIGN_PHILOSOPHY)
 
@@ -37,30 +39,35 @@ Loading DDD context for comprehensive help...
 ### Main Workflow Commands (Run in Order)
 
 **1. `/ddd:1-plan`** - Planning & Design
+
 - Design feature before touching files
 - Create comprehensive plan
 - Get shared understanding
 - **Output**: `ai_working/ddd/plan.md`
 
 **2. `/ddd:2-docs`** - Update All Non-Code Files
+
 - Update docs, configs, READMEs
 - Apply retcon writing (as if already exists)
 - Iterate until approved
 - **Requires**: User must commit when satisfied
 
 **3. `/ddd:3-code-plan`** - Plan Code Changes
+
 - Assess current code vs new docs
 - Plan all implementation changes
 - Break into chunks
 - **Requires**: User approval to proceed
 
 **4. `/ddd:4-code`** - Implement & Verify
+
 - Write code matching docs exactly
 - Test as user would
 - Iterate until working
 - **Requires**: User authorization for each commit
 
 **5. `/ddd:5-finish`** - Wrap-Up & Cleanup
+
 - Clean temporary files
 - Final verification
 - Push/PR with explicit authorization
@@ -69,10 +76,12 @@ Loading DDD context for comprehensive help...
 ### Utility Commands
 
 **`/ddd:prime`** - Load all DDD context
+
 - Loads complete methodology documentation
 - Use at session start for full context
 
 **`/ddd:status`** - Check current progress
+
 - Shows current phase
 - Lists artifacts created
 - Recommends next command
@@ -157,26 +166,34 @@ ai_working/ddd/
 ## Key Design Decisions
 
 ### No Auto-Commits
+
 **Every git operation requires explicit user authorization**:
+
 - You review changes before committing
 - You control commit messages
 - You decide when to push
 - You approve PR creation
 
 ### Iteration Support
+
 **Phases 2 and 4 are designed for back-and-forth**:
+
 - Provide feedback at any time
 - Commands stay active until you're satisfied
 - Easy to iterate without restarting
 
 ### Artifact-Driven
+
 **Each phase creates artifacts for next phase**:
+
 - Can run without arguments (uses artifacts)
 - Can override with arguments if needed
 - State preserved across sessions
 
 ### Agent Orchestration
+
 **Each phase suggests specialized agents**:
+
 - zen-architect for design
 - modular-builder for implementation
 - bug-hunter for debugging
@@ -188,16 +205,19 @@ ai_working/ddd/
 ## Authorization Checkpoints
 
 ### Phase 2 (Docs)
+
 - ⚠️ **YOU must commit docs after review**
 - Command stages changes but does NOT commit
 - Review diff, iterate if needed, then commit when satisfied
 
 ### Phase 4 (Code)
+
 - ⚠️ **Each code chunk requires explicit commit authorization**
 - Command asks before each commit
 - You control commit messages and timing
 
 ### Phase 5 (Finish)
+
 - ⚠️ **Explicit authorization for**: commit remaining, push, create PR
 - Clear prompts at each decision point
 - You control what happens to your code
@@ -207,15 +227,19 @@ ai_working/ddd/
 ## Common Workflows
 
 ### Feature Development
+
 1-plan → 2-docs → 3-code-plan → 4-code → 5-finish
 
 ### Bug Fix with Docs
+
 1-plan → 2-docs → 3-code-plan → 4-code → 5-finish
 
 ### Documentation-Only Change
+
 1-plan → 2-docs → 5-finish (skip code phases)
 
 ### Refactoring
+
 1-plan → 2-docs → 3-code-plan → 4-code → 5-finish
 
 ---
@@ -223,27 +247,34 @@ ai_working/ddd/
 ## Troubleshooting
 
 ### "I'm lost, where am I?"
+
 ```bash
 /ddd:status
 ```
 
 ### "I made a mistake in planning"
+
 Edit `ai_working/ddd/plan.md` or re-run `/ddd:1-plan` with corrections
 
 ### "Docs aren't right"
+
 Stay in phase 2, provide feedback, command will iterate
 
 ### "Code isn't working"
+
 Stay in phase 4, provide feedback, iterate until working
 
 ### "I want to start over"
+
 ```bash
 rm -rf ai_working/ddd/
 /ddd:1-plan [your feature]
 ```
 
 ### "I need to understand a concept better"
+
 Check the loaded documentation:
+
 - @docs/document_driven_development/overview.md
 - @docs/document_driven_development/core_concepts/file_crawling.md
 - @docs/document_driven_development/core_concepts/context_poisoning.md
@@ -254,6 +285,7 @@ Check the loaded documentation:
 ## Tips for Success
 
 ### For Humans
+
 - Start with `/ddd:prime` to load full context
 - Use `/ddd:status` frequently to stay oriented
 - Trust the process - it prevents expensive mistakes
@@ -261,6 +293,7 @@ Check the loaded documentation:
 - Iterate as much as needed in phases 2 and 4
 
 ### For AI Assistants
+
 - Follow the phase strictly
 - Use TodoWrite in every phase
 - Suggest appropriate agents
@@ -275,12 +308,14 @@ Check the loaded documentation:
 Every phase checks against:
 
 **Ruthless Simplicity**:
+
 - Start minimal, grow as needed
 - Avoid future-proofing
 - Question every abstraction
 - Clear over clever
 
 **Modular Design**:
+
 - Clear interfaces (studs)
 - Self-contained modules (bricks)
 - Regeneratable from specs
@@ -290,26 +325,28 @@ Every phase checks against:
 
 ## Quick Reference Card
 
-| Command | Purpose | Output Artifact | Next Step |
-|---------|---------|----------------|-----------|
-| `/ddd:prime` | Load context | - | Start workflow |
-| `/ddd:status` | Check progress | - | Shows next command |
-| `/ddd:1-plan` | Design feature | plan.md | `/ddd:2-docs` |
-| `/ddd:2-docs` | Update non-code | docs_status.md | User commits, then `/ddd:3-code-plan` |
-| `/ddd:3-code-plan` | Plan code | code_plan.md | User approves, then `/ddd:4-code` |
-| `/ddd:4-code` | Implement & test | impl_status.md, test_report.md | User confirms working, then `/ddd:5-finish` |
-| `/ddd:5-finish` | Cleanup & finalize | - | Done! |
+| Command            | Purpose            | Output Artifact                | Next Step                                   |
+| ------------------ | ------------------ | ------------------------------ | ------------------------------------------- |
+| `/ddd:prime`       | Load context       | -                              | Start workflow                              |
+| `/ddd:status`      | Check progress     | -                              | Shows next command                          |
+| `/ddd:1-plan`      | Design feature     | plan.md                        | `/ddd:2-docs`                               |
+| `/ddd:2-docs`      | Update non-code    | docs_status.md                 | User commits, then `/ddd:3-code-plan`       |
+| `/ddd:3-code-plan` | Plan code          | code_plan.md                   | User approves, then `/ddd:4-code`           |
+| `/ddd:4-code`      | Implement & test   | impl_status.md, test_report.md | User confirms working, then `/ddd:5-finish` |
+| `/ddd:5-finish`    | Cleanup & finalize | -                              | Done!                                       |
 
 ---
 
 ## Need More Help?
 
 **Loaded Documentation**:
+
 - Overview is now in your context
 - Tips and common pitfalls are loaded
 - FAQ is available
 
 **Ask Specific Questions**:
+
 - "How do I handle X?"
 - "What if Y happens?"
 - "Explain Z concept"

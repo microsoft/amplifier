@@ -34,6 +34,7 @@ Override instructions: $ARGUMENTS
 **The docs you updated in Phase 2 are now the SPEC**:
 
 Read ALL documentation that describes what the code should do:
+
 - User-facing docs (how it works)
 - API documentation (interfaces)
 - Configuration docs (settings)
@@ -46,12 +47,14 @@ This is what the code MUST implement.
 For each code file in the plan (Phase 1):
 
 **Understand current state**:
+
 - Read the existing code
 - Understand current architecture
 - Identify current behavior
 - Note existing tests
 
 **Gap analysis**:
+
 - What does code do now?
 - What should code do (per docs)?
 - What's missing?
@@ -59,6 +62,7 @@ For each code file in the plan (Phase 1):
 - What needs to be removed?
 
 Use Grep and Glob to explore related code:
+
 ```bash
 # Find all references to a module
 grep -r "import module_name"
@@ -92,6 +96,7 @@ Based on: Phase 1 plan + Phase 2 documentation
 [What needs to change to match documentation]
 
 **Specific Modifications**:
+
 - Add function `do_something()` - [description]
 - Modify function `existing_func()` - [changes needed]
 - Remove deprecated code - [what to remove]
@@ -112,6 +117,7 @@ Based on: Phase 1 plan + Phase 2 documentation
 Break implementation into logical, testable chunks:
 
 ### Chunk 1: Core Interfaces / Data Models
+
 **Files**: [list]
 **Description**: [what this chunk does]
 **Why first**: [usually: other chunks depend on these]
@@ -120,6 +126,7 @@ Break implementation into logical, testable chunks:
 **Commit point**: After unit tests pass
 
 ### Chunk 2: Business Logic
+
 **Files**: [list]
 **Description**: [what this chunk does]
 **Why second**: [dependency reasoning]
@@ -136,6 +143,7 @@ Break implementation into logical, testable chunks:
 If any new files needed:
 
 ### File: src/new_module.py
+
 **Purpose**: [why needed]
 **Exports**: [public interface]
 **Dependencies**: [what it imports]
@@ -146,6 +154,7 @@ If any new files needed:
 If any files should be removed:
 
 ### File: src/deprecated.py
+
 **Reason**: [why removing]
 **Migration**: [how existing users migrate, if applicable]
 
@@ -155,33 +164,43 @@ If any files should be removed:
 
 **modular-builder** - For module implementation:
 ```
+
 Task modular-builder: "Implement [module] according to spec in
 code_plan.md and updated documentation"
+
 ```
 
 **bug-hunter** - If issues arise:
 ```
+
 Task bug-hunter: "Debug issue with [specific problem]"
+
 ```
 
 **test-coverage** - For test planning:
 ```
+
 Task test-coverage: "Suggest comprehensive tests for [module]"
+
 ```
 
 ### Sequential vs Parallel
 
 **Sequential** (dependencies between chunks):
 ```
+
 Chunk 1 → Chunk 2 → Chunk 3
+
 ```
 
 **Parallel** (independent chunks):
 ```
+
 Chunk 1 ⎤
 Chunk 2 ⎥ → Merge
 Chunk 3 ⎦
-```
+
+````
 
 Use sequential for this project: [reason]
 
@@ -215,7 +234,7 @@ command --invalid
 
 # Test integration
 command1 && command2
-```
+````
 
 **Expected behavior**:
 [What user should see]
@@ -223,11 +242,13 @@ command1 && command2
 ## Philosophy Compliance
 
 ### Ruthless Simplicity
+
 - [How this implementation stays simple]
 - [What we're NOT doing (YAGNI)]
 - [Where we're removing complexity]
 
 ### Modular Design
+
 - [Clear module boundaries]
 - [Well-defined interfaces (studs)]
 - [Self-contained components (bricks)]
@@ -237,6 +258,7 @@ command1 && command2
 Detailed commit plan:
 
 **Commit 1**: [Chunk 1] - [description]
+
 ```
 feat: Add core interfaces for [feature]
 
@@ -246,6 +268,7 @@ feat: Add core interfaces for [feature]
 ```
 
 **Commit 2**: [Chunk 2] - [description]
+
 ```
 feat: Implement [feature] business logic
 
@@ -259,17 +282,21 @@ feat: Implement [feature] business logic
 ## Risk Assessment
 
 **High Risk Changes**:
+
 - [Change that might break things] - [mitigation]
 
 **Dependencies to Watch**:
+
 - [External library] - [version constraints]
 
 **Breaking Changes**:
+
 - [If any] - [how to handle]
 
 ## Success Criteria
 
 Code is ready when:
+
 - [ ] All documented behavior implemented
 - [ ] All tests passing (make check)
 - [ ] User testing works as documented
@@ -282,7 +309,8 @@ Code is ready when:
 ✅ Code plan complete and detailed
 ➡️ Get user approval
 ➡️ When approved, run: `/ddd:4-code`
-```
+
+````
 
 ### 4. Verify Completeness
 
@@ -322,19 +350,21 @@ Track code planning tasks:
 - [ ] Chunks defined
 - [ ] Test strategy defined
 - [ ] User approval obtained
-```
+````
 
 ---
 
 ## Agent Suggestions
 
 **zen-architect** - For architecture review:
+
 ```
 Task zen-architect: "Review code plan for architecture compliance
 with IMPLEMENTATION_PHILOSOPHY and MODULAR_DESIGN_PHILOSOPHY"
 ```
 
 **modular-builder** - To validate buildability:
+
 ```
 Task modular-builder: "Review code plan, assess if specs are complete
 enough for implementation"
@@ -345,17 +375,20 @@ enough for implementation"
 ## Important Notes
 
 **Documentation is the spec**:
+
 - Code MUST match what docs describe
 - If docs are ambiguous, ask user to clarify docs first
 - If implementing reveals docs need changes, update docs first
 
 **Right-sizing chunks**:
+
 - Each chunk should fit in context window
 - Each chunk should be independently testable
 - Each chunk should have clear commit point
 - Breaking into too many chunks is better than too few
 
 **DO NOT write code yet**:
+
 - This phase is PLANNING only
 - All actual implementation happens in Phase 4
 - Get user approval on plan before coding
@@ -389,28 +422,42 @@ Phase 4 will implement the plan incrementally, with your
 authorization required for each commit.
 ```
 
+## Process
+
+- Ultrathink step-by-step, laying out assumptions and unknowns, use the TodoWrite tool to capture all tasks and subtasks.
+  - VERY IMPORTANT: Make sure to use the actual TodoWrite tool for todo lists, don't do your own task tracking, there is code behind use of the TodoWrite tool that is invisible to you that ensures that all tasks are completed fully.
+  - Adhere to the @ai_context/IMPLEMENTATION_PHILOSOPHY.md and @ai_context/MODULAR_DESIGN_PHILOSOPHY.md files.
+- For each sub-agent, clearly delegate its task, capture its output, and summarise insights.
+- Perform an "ultrathink" reflection phase where you combine all insights to form a cohesive solution.
+- If gaps remain, iterate (spawn sub-agents again) until confident.
+- Where possible, spawn sub-agents in parallel to expedite the process.
+
 ---
 
 ## Troubleshooting
 
 **"Current code is very different from docs"**
+
 - That's expected - docs show target state
 - Plan the transformation from current → target
 - May need multiple chunks to bridge the gap
 
 **"Unsure how to break into chunks"**
+
 - Start with interfaces/data models (others depend on these)
 - Then implement business logic
 - Then wire up integrations
 - Each should be independently testable
 
 **"Implementation seems too complex"**
+
 - Check against ruthless simplicity principle
 - Is there a simpler approach?
 - Are we future-proofing unnecessarily?
 - Consult with user
 
 **"Conflicts between code reality and docs"**
+
 - Docs are the spec (we updated them in Phase 2)
 - If docs are wrong, go back and fix docs first
 - Don't implement what docs don't describe

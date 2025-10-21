@@ -51,11 +51,13 @@ This index is your working checklist - mark files complete as you process them.
 For each file in the index:
 
 1. **Load full context**:
+
    - Read the file
    - Read relevant parts of plan
    - Load related docs if needed
 
 2. **Update with retcon writing**:
+
    - Write as if feature ALREADY EXISTS
    - No "will be", "going to", "planned"
    - Present tense: "The system does X"
@@ -63,18 +65,21 @@ For each file in the index:
    - No migration notes in docs
 
 3. **Apply Maximum DRY**:
+
    - Each concept in ONE place only
    - No duplicate documentation
    - Use references/links instead of duplication
    - If found elsewhere, consolidate to best location
 
 4. **Check for context poisoning**:
+
    - Conflicts with other docs?
    - Inconsistent terminology?
    - Contradictory statements?
    - If found: PAUSE, document conflicts, ask user
 
 5. **Mark complete in index**:
+
    ```bash
    # Change [ ] to [x]
    [x] docs/file1.md
@@ -83,6 +88,7 @@ For each file in the index:
 6. **Move to next file** - REPEAT until all files processed
 
 **Why file crawling?**:
+
 - Token efficiency (99.5% reduction for large batches)
 - Prevents missing files
 - Clear progress tracking
@@ -94,17 +100,20 @@ For each file in the index:
 As you update docs:
 
 **Keep it right-sized**:
+
 - Not over-compressed (missing critical info)
 - Not overly detailed (lost in noise)
 - Balance clarity vs completeness
 
 **Follow structure**:
+
 - README → Overview → Details
 - High-level concepts first
 - Specific details later
 - Examples that actually work
 
 **Audience-appropriate**:
+
 - User docs: How to use it
 - Developer docs: How it works
 - Architecture docs: Why designed this way
@@ -143,9 +152,11 @@ Create `ai_working/ddd/docs_status.md`:
 ## Key Changes
 
 ### docs/file1.md
+
 - [What changed and why]
 
 ### README.md
+
 - [What changed and why]
 
 [... for each file]
@@ -168,9 +179,10 @@ Please review the changes:
 - [ ] No implementation details leaked into user docs?
 
 ## Git Diff Summary
-
 ```
+
 [Insert: git diff --stat]
+
 ```
 
 ## Review Instructions
@@ -205,6 +217,7 @@ git diff --cached
 **This phase stays active until user approves**:
 
 If user provides feedback:
+
 1. Note the feedback
 2. Make requested changes
 3. Update docs_status.md
@@ -212,6 +225,7 @@ If user provides feedback:
 5. Repeat until user says "approved"
 
 **Common feedback examples**:
+
 - "This section needs more detail"
 - "Example doesn't match our style"
 - "Add documentation for X feature"
@@ -229,7 +243,7 @@ Track doc update tasks:
 - [ ] Generate file index
 - [ ] Process file 1 of N
 - [ ] Process file 2 of N
-...
+      ...
 - [ ] Verification pass complete
 - [ ] Review materials generated
 - [ ] User review in progress
@@ -240,12 +254,14 @@ Track doc update tasks:
 ## Agent Suggestions
 
 **concept-extractor** - For extracting knowledge from complex docs:
+
 ```
 Task concept-extractor: "Extract key concepts from [source] to include
 in [target doc]"
 ```
 
 **ambiguity-guardian** - If docs have tensions/contradictions:
+
 ```
 Task ambiguity-guardian: "Analyze apparent contradiction between
 [doc1] and [doc2], determine if both views are valid"
@@ -256,6 +272,7 @@ Task ambiguity-guardian: "Analyze apparent contradiction between
 ## Retcon Writing Examples
 
 **❌ BAD (Traditional)**:
+
 ```markdown
 ## Authentication (Coming in v2.0)
 
@@ -266,20 +283,24 @@ Migration: Update your config to add `auth: jwt` section.
 ```
 
 **✅ GOOD (Retcon)**:
-```markdown
+
+````markdown
 ## Authentication
 
 The system uses JWT authentication. Users authenticate with tokens
 that expire after 24 hours.
 
 Configure authentication in your config file:
+
 ```yaml
 auth:
   type: jwt
   expiry: 24h
 ```
+````
 
 See [Authentication Guide](auth.md) for details.
+
 ```
 
 ---
@@ -326,6 +347,7 @@ See [Authentication Guide](auth.md) for details.
 ### Exit Message
 
 ```
+
 ✅ Phase 2 Complete: Non-Code Changes Approved
 
 All documentation updated and staged.
@@ -340,7 +362,18 @@ After committing, proceed to code planning:
     /ddd:3-code-plan
 
 The updated docs are now the specification that code must match.
+
 ```
+
+## Process
+
+- Ultrathink step-by-step, laying out assumptions and unknowns, use the TodoWrite tool to capture all tasks and subtasks.
+  - VERY IMPORTANT: Make sure to use the actual TodoWrite tool for todo lists, don't do your own task tracking, there is code behind use of the TodoWrite tool that is invisible to you that ensures that all tasks are completed fully.
+  - Adhere to the @ai_context/IMPLEMENTATION_PHILOSOPHY.md and @ai_context/MODULAR_DESIGN_PHILOSOPHY.md files.
+- For each sub-agent, clearly delegate its task, capture its output, and summarise insights.
+- Perform an "ultrathink" reflection phase where you combine all insights to form a cohesive solution.
+- If gaps remain, iterate (spawn sub-agents again) until confident.
+- Where possible, spawn sub-agents in parallel to expedite the process.
 
 ---
 
@@ -370,3 +403,4 @@ The updated docs are now the specification that code must match.
 ---
 
 Need help? Run `/ddd:0-help` for complete guide
+```

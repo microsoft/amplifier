@@ -66,28 +66,34 @@ Based on the artifacts detected above, here's your current status:
 **Determining phase...**
 
 If `ai_working/ddd/` doesn't exist:
+
 - **Status**: No active DDD session
 - **Recommendation**: Start new feature with `/ddd:1-plan [feature]`
 
 If `plan.md` exists but not `docs_status.md`:
+
 - **Status**: Phase 1 complete (Planning done)
 - **Next**: Update documentation with `/ddd:2-docs`
 
 If `docs_status.md` exists but not `code_plan.md`:
+
 - **Status**: Phase 2 in progress or awaiting commit
 - **Next**:
   - If docs not committed yet: Review and commit them
   - If docs committed: Plan code with `/ddd:3-code-plan`
 
 If `code_plan.md` exists but not `impl_status.md`:
+
 - **Status**: Phase 3 complete (Code planned)
 - **Next**: Implement code with `/ddd:4-code`
 
 If `impl_status.md` exists:
+
 - **Status**: Phase 4 in progress (Implementation)
 - **Next**: Continue `/ddd:4-code` or finalize with `/ddd:5-finish`
 
 If no `ai_working/ddd/` but recent DDD commits:
+
 - **Status**: DDD workflow previously completed
 - **Next**: Start new feature with `/ddd:1-plan [feature]`
 
@@ -100,26 +106,31 @@ If no `ai_working/ddd/` but recent DDD commits:
 If artifacts exist, you can read them:
 
 **Plan** (Phase 1 output):
+
 ```bash
 Read ai_working/ddd/plan.md
 ```
 
 **Docs Status** (Phase 2 output):
+
 ```bash
 Read ai_working/ddd/docs_status.md
 ```
 
 **Code Plan** (Phase 3 output):
+
 ```bash
 Read ai_working/ddd/code_plan.md
 ```
 
 **Implementation Status** (Phase 4 tracking):
+
 ```bash
 Read ai_working/ddd/impl_status.md
 ```
 
 **Test Report** (Phase 4 output):
+
 ```bash
 Read ai_working/ddd/test_report.md
 ```
@@ -131,16 +142,19 @@ Read ai_working/ddd/test_report.md
 Based on current phase:
 
 **If no active session**:
+
 ```bash
 /ddd:1-plan [describe your feature]
 ```
 
 **If plan exists, docs not updated**:
+
 ```bash
 /ddd:2-docs
 ```
 
 **If docs updated but not committed**:
+
 ```bash
 # Review changes:
 git diff
@@ -153,21 +167,25 @@ git commit -m "docs: [your description]"
 ```
 
 **If docs committed, code not planned**:
+
 ```bash
 /ddd:3-code-plan
 ```
 
 **If code planned but not implemented**:
+
 ```bash
 /ddd:4-code
 ```
 
 **If code implemented but not finalized**:
+
 ```bash
 /ddd:5-finish
 ```
 
 **If workflow complete**:
+
 ```bash
 # Start next feature:
 /ddd:1-plan [next feature]
@@ -203,14 +221,28 @@ Phase 5: Finish ━━━━━━━━┛
 
 ---
 
+## Process
+
+- Ultrathink step-by-step, laying out assumptions and unknowns, use the TodoWrite tool to capture all tasks and subtasks.
+  - VERY IMPORTANT: Make sure to use the actual TodoWrite tool for todo lists, don't do your own task tracking, there is code behind use of the TodoWrite tool that is invisible to you that ensures that all tasks are completed fully.
+  - Adhere to the @ai_context/IMPLEMENTATION_PHILOSOPHY.md and @ai_context/MODULAR_DESIGN_PHILOSOPHY.md files.
+- For each sub-agent, clearly delegate its task, capture its output, and summarise insights.
+- Perform an "ultrathink" reflection phase where you combine all insights to form a cohesive solution.
+- If gaps remain, iterate (spawn sub-agents again) until confident.
+- Where possible, spawn sub-agents in parallel to expedite the process.
+
+---
+
 ## Need Help?
 
 **For complete DDD guide**:
+
 ```bash
 /ddd:0-help
 ```
 
 **To load all DDD context**:
+
 ```bash
 /ddd:prime
 ```
@@ -223,17 +255,20 @@ Run the command for that phase - each has detailed instructions.
 ## Troubleshooting
 
 **"I'm lost, not sure where I am"**
+
 - Review the Phase Detection section above
 - Check which artifacts exist
 - Follow Recommended Next Command
 
 **"I made a mistake in [phase]"**
+
 - **Planning**: Edit `ai_working/ddd/plan.md` or re-run `/ddd:1-plan`
 - **Docs**: Re-run `/ddd:2-docs` with feedback
 - **Code Planning**: Edit `ai_working/ddd/code_plan.md` or re-run `/ddd:3-code-plan`
 - **Code**: Provide feedback to `/ddd:4-code`
 
 **"I want to start over"**
+
 ```bash
 # Delete DDD artifacts
 rm -rf ai_working/ddd/
@@ -243,6 +278,7 @@ rm -rf ai_working/ddd/
 ```
 
 **"I want to abandon this feature"**
+
 ```bash
 # Delete DDD artifacts
 rm -rf ai_working/ddd/
