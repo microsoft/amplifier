@@ -16,11 +16,21 @@ Amplifier is a coordinated and accelerated development system that provides spec
 
 1. Check if prerequisites are already met.
 
-   - `python3 --version  # Need 3.11+`
-   - `uv --version       # Need any version`
-   - `node --version     # Need any version`
-   - `pnpm --version     # Need any version`
-   - `git --version      # Need any version`
+   - ```bash
+     python3 --version  # Need 3.11+
+     ```
+   - ```bash
+     uv --version       # Need any version
+     ```
+   - ```bash
+     node --version     # Need any version
+     ```
+   - ```bash
+     pnpm --version     # Need any version
+     ```
+   - ```bash
+     git --version      # Need any version
+     ```
 
 2. Install what is missing.
 
@@ -65,7 +75,7 @@ Amplifier is a coordinated and accelerated development system that provides spec
 
 ```bash
 # Clone Amplifier repository
-git clone https://github.com/microsoft/amplifier
+git clone https://github.com/microsoft/amplifier.git amplifier
 cd amplifier
 
 # Install dependencies
@@ -76,19 +86,24 @@ source .venv/bin/activate  # Linux/Mac/WSL
 # .venv\Scripts\Activate.ps1  # Windows PowerShell
 ```
 
-### Use Amplifier via Claude Code
+---
+
+### Start
 
 #### 🎯 Option 1 - Quick Exploration
 
 _"Just show me what it can do"_
 
 ```bash
-# You're already in the amplifier directory, just start Claude
+# You're already in the amplifier directory, just start Claude Code
 claude
 ```
 
 _Tell Claude Code:_
 
+- ```
+  "What is a scenario and how do I create one?"
+  ```
 - ```
   "Run the blog writer scenario on the sample content"
   ```
@@ -103,7 +118,7 @@ _Tell Claude Code:_
   "Why and when should I use `/ultrathink-task`?
   ```
 
-#### 🧪 Option 2 - Quick Access
+#### 🔗 Option 2 - Quick Access
 
 _"Try Amplifier with my local project"_
 
@@ -124,9 +139,9 @@ I want to try Amplifier features on ai_working/yourproject.
 Use bug-hunter to find issues, or zen-architect to review the architecture.
 ```
 
-> [!NOTE] Claude Code has full filesystem access. The symlink is for convenience, not isolation.
+> [!IMPORTANT] Claude Code has full filesystem access. The symlink is for convenience, not isolation.
 
-#### 🔍 Option 3 - Quick Setup
+#### 📦 Option 3 - Quick Setup
 
 _"Try Amplifier with my GitHub project"_
 
@@ -144,14 +159,14 @@ _Tell Claude Code:_
 
 ```
 I'm evaluating Amplifier features on ai_working/yourproject.
-Run security-guardian for security review, or test-coverage for test analysis.
+Are there any parts of my project that could benefit from a new scnario? If so, what should I create?
 ```
 
-> [!NOTE] Think of Amplifier v1.0 as your development workspace. You need to bring your project into the workspace (clone your project into Amplifier), as opposed to bringing the workspace into your project (don't clone Amplifier into your project).
+> [!TIP] Think of Amplifier v1.0 as your development workspace. You need to bring your project into the workspace (clone your project into Amplifier), as opposed to bringing the workspace into your project (don't clone Amplifier into your project).
 
 ---
 
-**🚀 Option 4 - Production Setup**
+#### 🚀 Option 4 - Production Setup
 
 _"I'm ready to fully integrate"_
 
@@ -161,7 +176,23 @@ _"I'm ready to fully integrate"_
 ```bash
 # Add your project as a submodule
 git submodule add https://github.com/yourusername/yourproject.git yourproject
+```
 
+</details>
+
+<details>
+<summary><b>For new projects</b> (click to expand)</summary>
+
+```bash
+# Create new project
+mkdir yourproject & cd yourproject
+git init
+cd ..
+```
+
+</details>
+
+```bash
 # Set up project context & start Claude
 echo "# Project-specific AI guidance" > yourproject/AGENTS.md
 claude
@@ -175,45 +206,7 @@ Read @yourproject/AGENTS.md for project context.
 Let's use /ddd:1-plan to design the architecture.
 ```
 
-</details>
-
-<details>
-<summary><b>For new projects</b> (click to expand)</summary>
-
-```bash
-# Create new project
-mkdir yourproject
-cd yourproject
-git init
-cd ..
-
-# Set up project context & start Claude
-echo "# Project-specific AI guidance" > yourproject/AGENTS.md
-claude
-```
-
-_Tell Claude Code:_
-
-```
-I'm starting a new project in @yourproject/ with Amplifier.
-Read @yourproject/AGENTS.md for project context.
-Let's use /ddd:1-plan to design the architecture.
-```
-
-</details>
-
 **Why use this?** Clean git history per component, independent Amplifier updates, persistent context across sessions, scalable to multiple projects. See the [Workspace Pattern Guide](docs/WORKSPACE_PATTERN.md) for full details.
-
----
-
-#### 🏢 Path E: "Multiple projects / Team setup"
-
-**See [Workspace Pattern Guide](docs/WORKSPACE_PATTERN.md) for:**
-
-- Managing multiple projects
-- Team collaboration patterns
-- Shared knowledge bases
-- Custom domain agents
 
 ---
 
