@@ -177,13 +177,13 @@ flexibility—we'd rather have less features done well than many features done p
 
 ```bash
 src/
-├── app/        # Next.js app router pages
-├── components/ # React components
-├── lib/        # Utilities and shared logic
-└── types/      # TypeScript type definitions
+├── app/            # Next.js app router pages
+├── components/     # React components
+├── lib/            # Utilities and shared logic
+└── types/          # TypeScript type definitions
 
-content/        # Blog posts (Markdown)
-public/         # Static assets
+content/            # Blog posts (Markdown)
+public/             # Static assets
 ```
 
 ## Development Workflow
@@ -205,7 +205,6 @@ public/         # Static assets
 - Don't add a database (we're committed to file-based)
 - Don't create complex state management (keep it simple)
 - Don't add build-time external API calls (they slow builds)
-````
 
 The key is making this document useful for both AI assistants and human developers. It should answer: What is this project? How is it architected? What conventions do we follow? What should I avoid?
 
@@ -216,6 +215,7 @@ For larger projects, consider documenting your architectural principles separate
 ```bash
 mkdir -p docs
 ```
+````
 
 Create `docs/DESIGN_PHILOSOPHY.md`:
 
@@ -537,3 +537,7 @@ The workspace pattern is about treating your development environment as seriousl
 It's more setup than dropping code in `ai_working/`, but the payoff grows over time. Each project accumulates context through AGENTS.md. Amplifier stays updatable. Version control stays clean. And you can work on multiple projects without them interfering with each other.
 
 Start simple with `ai_working/` for experiments. Graduate to the workspace pattern when projects get serious. Your future self will thank you.
+
+```
+
+```
