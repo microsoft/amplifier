@@ -137,6 +137,24 @@ Try out one of the specialized experts:
 - "Deploy bug-hunter to find why my login system is failing"
 - "Have security-guardian review my API implementation for vulnerabilities"
 
+### Document-Driven Development
+
+**Why use this?** Eliminate doc drift and context poisoning. When docs lead and code follows, your specifications stay perfectly in sync with reality.
+
+Execute a complete feature workflow with numbered slash commands:
+
+```bash
+/ddd:1-plan         # Design the feature
+/ddd:2-docs         # Update all docs (iterate until approved)
+/ddd:3-code-plan    # Plan code changes
+/ddd:4-code         # Implement and test (iterate until working)
+/ddd:5-finish       # Clean up and finalize
+```
+
+Each phase creates artifacts the next phase reads. You control all git operations with explicit authorization at every step. The workflow prevents expensive mistakes by catching design flaws before implementation.
+
+See the [Document-Driven Development Guide](docs/document_driven_development/) for complete documentation, or run `/ddd:0-help` in Claude Code.
+
 ### Parallel Development
 
 **Why use this?** Stop wondering "what if" — build multiple solutions simultaneously and pick the winner.

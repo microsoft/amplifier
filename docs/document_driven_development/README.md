@@ -14,6 +14,52 @@
 
 ---
 
+## Using DDD with Slash Commands
+
+**The easiest way to execute the DDD workflow** is through numbered slash commands in Claude Code:
+
+```bash
+/ddd:0-help         # Complete guide and help
+/ddd:1-plan         # Phase 1: Planning & Design
+/ddd:2-docs         # Phase 2: Update All Non-Code Files
+/ddd:3-code-plan    # Phase 3: Plan Code Changes
+/ddd:4-code         # Phase 4: Implement & Verify
+/ddd:5-finish       # Phase 5: Wrap-Up & Cleanup
+
+# Utilities
+/ddd:prime          # Load all DDD context
+/ddd:status         # Check current progress
+```
+
+**Key Features**:
+- **Numbered for easy sequential use** - Just follow 1→2→3→4→5
+- **Stateful with artifacts** - Each phase creates files the next phase reads
+- **Optional arguments** - Run without args if continuing from previous phase
+- **Explicit authorization** - NO auto-commits, you control all git operations
+- **Iteration support** - Phases 2 and 4 stay active for back-and-forth until you're satisfied
+
+**Example Usage**:
+```bash
+# Start a new feature
+/ddd:1-plan Add JWT authentication with refresh tokens
+
+# Update docs (iterate until approved, then commit yourself)
+/ddd:2-docs
+
+# Plan code changes (review and approve)
+/ddd:3-code-plan
+
+# Implement and test (iterate until working)
+/ddd:4-code
+
+# Clean up and finalize
+/ddd:5-finish
+```
+
+All commands include comprehensive help and guide you through each phase. Run `/ddd:0-help` for complete documentation.
+
+---
+
 ## Core Principle
 
 **"Documentation IS the specification. Code implements what documentation describes."**
