@@ -86,16 +86,21 @@ source .venv/bin/activate  # Linux/Mac/WSL
 # .venv\Scripts\Activate.ps1  # Windows PowerShell
 ```
 
----
+### Get Started
 
-### Start
+Choose your path:
+
+- [🎯 **Option 1 - Quick Exploration**](#-option-1---quick-exploration) - Just show me what it can do (no project needed)
+- [🔗 **Option 2 - Quick Access**](#-option-2---quick-access) - Try Amplifier with my local project
+- [📦 **Option 3 - Quick Setup**](#-option-3---quick-setup) - Try Amplifier with my GitHub project
+- [🚀 **Option 4 - Production Setup**](#-option-4---production-setup) - I'm ready to fully integrate
 
 #### 🎯 Option 1 - Quick Exploration
 
-_"Just show me what it can do"_
-
 ```bash
-# You're already in the amplifier directory, just start Claude Code
+# "Just show me what it can do"
+
+# Start Claude Code
 claude
 ```
 
@@ -120,9 +125,9 @@ _Tell Claude Code:_
 
 #### 🔗 Option 2 - Quick Access
 
-_"Try Amplifier with my local project"_
-
 ```bash
+# "Try Amplifier with my local project"
+
 # Create a symbolic link to your project for easy access
 cd ai_working
 ln -s /path/to/your/project yourproject
@@ -164,33 +169,25 @@ Are there any parts of my project that could benefit from a new scnario? If so, 
 
 > [!TIP] Think of Amplifier v1.0 as your development workspace. You need to bring your project into the workspace (clone your project into Amplifier), as opposed to bringing the workspace into your project (don't clone Amplifier into your project).
 
----
-
 #### 🚀 Option 4 - Production Setup
 
 _"I'm ready to fully integrate"_
 
-<details>
-<summary><b>For existing GitHub projects</b> (click to expand)</summary>
+1. For existing GitHub projects
 
-```bash
-# Add your project as a submodule
-git submodule add https://github.com/yourusername/yourproject.git yourproject
-```
+   ```bash
+   # Add your project as a submodule
+   git submodule add https://github.com/yourusername/yourproject.git yourproject
+   ```
 
-</details>
+2. For new projects
 
-<details>
-<summary><b>For new projects</b> (click to expand)</summary>
-
-```bash
-# Create new project
-mkdir yourproject && cd yourproject
-git init
-cd ..
-```
-
-</details>
+   ```bash
+   # Create new project
+   mkdir yourproject && cd yourproject
+   git init
+   cd ..
+   ```
 
 ```bash
 # Set up project context & start Claude
@@ -206,7 +203,7 @@ Read @yourproject/AGENTS.md for project context.
 Let's use /ddd:1-plan to design the architecture.
 ```
 
-**Why use this?** Clean git history per component, independent Amplifier updates, persistent context across sessions, scalable to multiple projects. See the [Workspace Pattern Guide](docs/WORKSPACE_PATTERN.md) for full details.
+> [!NOTE] **Why use this?** Clean git history per component, independent Amplifier updates, persistent context across sessions, scalable to multiple projects. See the [Workspace Pattern Guide](docs/WORKSPACE_PATTERN.md) for full details.
 
 ---
 
