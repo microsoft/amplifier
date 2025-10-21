@@ -223,11 +223,23 @@ Let's use /ddd:1-plan to design the architecture.
 
 After your initial exploration:
 
+#### 🤖 Ask Claude Code
+_Tell Claude Code any of these:_
+
+1. **"Walk me through creating my own scenario tool"** - Build custom AI-powered tools
+2. **"What are the best practices for using Amplifier?"** - Learn proven patterns
+3. **"Show me how Document-Driven Development works"** - Try the `/ddd:1-plan` workflow
+4. **"What agents are available for my task?"** - Discover specialized experts
+5. **"What commands can I use?"** - Explore available slash commands
+
+#### 📚 Explore Yourself
+_Or dive into the documentation:_
+
 1. **Create your own tools** → [Scenario Creation Guide](docs/CREATE_YOUR_OWN_TOOLS.md)
-1. **Best practices** → [The Amplifier Way](docs/THIS_IS_THE_WAY.md)
-1. **Advanced workflows** → [Document-Driven Development](/ddd:0-help)
-1. **Learn more agents** → [Agents](.claude/agents)
-1. **Learn more commands** -> [Commands](.claude/commands)
+2. **Best practices** → [The Amplifier Way](docs/THIS_IS_THE_WAY.md)
+3. **Advanced workflows** → [Document-Driven Development](/ddd:0-help)
+4. **Learn more agents** → [Agents](.claude/agents)
+5. **Learn more commands** → [Commands](.claude/commands)
 
 ---
 
