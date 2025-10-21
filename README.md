@@ -109,13 +109,13 @@ _Tell Claude Code:_
   ```
 - ```
   "Show me what the zen-architect agent does. Do I need to call it explicitly
-  or does the system call it automatically?"`
+  or does the system call it automatically?"
   ```
 - ```
   "What are the commands and what value do they add?"
   ```
 - ```
-  "Why and when should I use `/ultrathink-task`?
+  "Why and when should I use `/ultrathink-task`?"
   ```
 
 #### 🔗 Option 2 - Quick Access
@@ -185,7 +185,7 @@ git submodule add https://github.com/yourusername/yourproject.git yourproject
 
 ```bash
 # Create new project
-mkdir yourproject & cd yourproject
+mkdir yourproject && cd yourproject
 git init
 cd ..
 ```
