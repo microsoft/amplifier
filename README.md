@@ -64,74 +64,168 @@ Amplifier is a coordinated and accelerated development system that provides spec
 ### Setup
 
 ```bash
-# Clone the repository
-git clone https://github.com/microsoft/amplifier.git
+# Clone Amplifier repository
+git clone https://github.com/microsoft/amplifier
 cd amplifier
-```
 
-```bash
-# Install Python dependencies
+# Install dependencies
 make install
-```
 
-```bash
 # Activate virtual environment
-source .venv/bin/activate # Linux/Mac/WSL
-# .venv\Scripts\Activate.ps1 # Windows PowerShell
+source .venv/bin/activate  # Linux/Mac/WSL
+# .venv\Scripts\Activate.ps1  # Windows PowerShell
 ```
 
 ### Use Amplifier via Claude Code
 
-**Option 1** -
-Work on a new (or existing) project
+#### 🎯 Option 1 - Quick Exploration
+
+_"Just show me what it can do"_
 
 ```bash
-mkdir ai_working/<my-new-project-name> # new
-# ln -s ../<relative-path-to-my-existing-project> ai_working/<mt-existing-project-name> # existing
+# You're already in the amplifier directory, just start Claude
 claude
 ```
 
-_Type into Claude Code:_
+_Tell Claude Code:_
 
-```
-I'm working in ai_working/<project-name>, and using the capabilities from
-amplifier.
-```
+- ```
+  "Run the blog writer scenario on the sample content"
+  ```
+- ```
+  "Show me what the zen-architect agent does. Do I need to call it explicitly
+  or does the system call it automatically?"`
+  ```
+- ```
+  "What are the commands and what value do they add?"
+  ```
+- ```
+  "Why and when should I use `/ultrathink-task`?
+  ```
 
-**Option 2** - Work on the Amplifier project itself
+#### 🧪 Option 2 - Quick Access
+
+_"Try Amplifier with my local project"_
 
 ```bash
-claude
-```
-
-**Option 3** - Use the workspace pattern for serious projects
-
-For projects that need clean boundaries, independent version control, and persistent AI context:
-
-```bash
-# Fork/clone Amplifier as your workspace
-git clone https://github.com/microsoft/amplifier.git my-workspace
-cd my-workspace
-
-# Add your project as a submodule
-git submodule add <your-project-url> my-project
-
-# Set up project context (see guide for AGENTS.md template)
-cd my-project
-# Create AGENTS.md with project guidance
-
-# Start working
+# Create a symbolic link to your project for easy access
+cd ai_working
+ln -s /path/to/your/project yourproject
 cd ..
+
+# Start Claude
 claude
 ```
 
-_In Claude Code:_
+_Tell Claude Code:_
+
 ```
-I'm working on the @my-project/ project within this workspace.
-Please read @my-project/AGENTS.md for project-specific guidance.
+I want to try Amplifier features on ai_working/yourproject.
+Use bug-hunter to find issues, or zen-architect to review the architecture.
 ```
+
+> [!NOTE] Claude Code has full filesystem access. The symlink is for convenience, not isolation.
+
+#### 🔍 Option 3 - Quick Setup
+
+_"Try Amplifier with my GitHub project"_
+
+```bash
+# Clone your project into ai_working for easy access
+cd ai_working
+git clone https://github.com/yourusername/yourproject.git
+cd ..
+
+# Start Claude
+claude
+```
+
+_Tell Claude Code:_
+
+```
+I'm evaluating Amplifier features on ai_working/yourproject.
+Run security-guardian for security review, or test-coverage for test analysis.
+```
+
+> [!NOTE] Think of Amplifier v1.0 as your development workspace. You need to bring your project into the workspace (clone your project into Amplifier), as opposed to bringing the workspace into your project (don't clone Amplifier into your project).
+
+---
+
+**🚀 Option 4 - Production Setup**
+
+_"I'm ready to fully integrate"_
+
+<details>
+<summary><b>For existing GitHub projects</b> (click to expand)</summary>
+
+```bash
+# Add your project as a submodule
+git submodule add https://github.com/yourusername/yourproject.git yourproject
+
+# Set up project context & start Claude
+echo "# Project-specific AI guidance" > yourproject/AGENTS.md
+claude
+```
+
+_Tell Claude Code:_
+
+```
+I'm working on @yourproject/ with Amplifier.
+Read @yourproject/AGENTS.md for project context.
+Let's use /ddd:1-plan to design the architecture.
+```
+
+</details>
+
+<details>
+<summary><b>For new projects</b> (click to expand)</summary>
+
+```bash
+# Create new project
+mkdir yourproject
+cd yourproject
+git init
+cd ..
+
+# Set up project context & start Claude
+echo "# Project-specific AI guidance" > yourproject/AGENTS.md
+claude
+```
+
+_Tell Claude Code:_
+
+```
+I'm starting a new project in @yourproject/ with Amplifier.
+Read @yourproject/AGENTS.md for project context.
+Let's use /ddd:1-plan to design the architecture.
+```
+
+</details>
 
 **Why use this?** Clean git history per component, independent Amplifier updates, persistent context across sessions, scalable to multiple projects. See the [Workspace Pattern Guide](docs/WORKSPACE_PATTERN.md) for full details.
+
+---
+
+#### 🏢 Path E: "Multiple projects / Team setup"
+
+**See [Workspace Pattern Guide](docs/WORKSPACE_PATTERN.md) for:**
+
+- Managing multiple projects
+- Team collaboration patterns
+- Shared knowledge bases
+- Custom domain agents
+
+---
+
+### What's Next?
+
+After your initial exploration:
+
+1. **Create your own tools** → [Scenario Creation Guide](docs/CREATE_YOUR_OWN_TOOLS.md)
+1. **Best practices** → [The Amplifier Way](docs/THIS_IS_THE_WAY.md)
+1. **Advanced workflows** → [Document-Driven Development](/ddd:0-help)
+1. **Learn more agents** → [Agents](.claude/agents)
+1. **Learn more commands** -> [Commands](.claude/commands)
 
 ---
 
@@ -241,6 +335,7 @@ Enable with:
 - **Philosophy alignment** - Project-specific decision filters and architectural principles
 
 Perfect for:
+
 - Projects that will live for months or years
 - Codebases with their own git repository
 - Teams collaborating on shared projects
@@ -334,9 +429,9 @@ The transcript system helps you:
 **Transcript Commands** (via Makefile):
 
 ```bash
-make transcript-list            # List available transcripts
+make transcript-list                # List available transcripts
 make transcript-search TERM="auth"  # Search past conversations
-make transcript-restore         # Restore full lineage (for CLI use)
+make transcript-restore             # Restore full lineage (for CLI use)
 ```
 
 ### Modular Builder (Lite)
