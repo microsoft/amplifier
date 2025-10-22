@@ -10,12 +10,12 @@ This directory contains utilities for the recipe-tool project.
 - `collect_files.py` - Core utility for pattern-based file collection with glob support
 - `build_git_collector_files.py` - Downloads external documentation using git-collector
 
-### Claude Code Session Transcript Builder
+### Gemini Cli Session Transcript Builder
 
-A comprehensive tool for building readable transcripts from Claude Code session JSONL files.
+A comprehensive tool for building readable transcripts from Gemini Cli session JSONL files.
 
 **Files:**
-- `claude_transcript_builder.py` - Main CLI entry point
+- `gemini_transcript_builder.py` - Main CLI entry point
 - `dag_loader.py` - Session data loader and validator
 - `dag_navigator.py` - DAG traversal and branch reconstruction
 - `transcript_formatter.py` - Markdown transcript generation
@@ -23,16 +23,16 @@ A comprehensive tool for building readable transcripts from Claude Code session 
 **Quick Start:**
 ```bash
 # Process most recent session from current project
-python tools/claude_transcript_builder.py
+python tools/gemini_transcript_builder.py
 
 # List all available sessions
-python tools/claude_transcript_builder.py --list
+python tools/gemini_transcript_builder.py --list
 
 # Process specific project
-python tools/claude_transcript_builder.py --project amplifier
+python tools/gemini_transcript_builder.py --project amplifier
 
 # Get help
-python tools/claude_transcript_builder.py --help
+python tools/gemini_transcript_builder.py --help
 ```
 
 **Key Features:**
@@ -42,7 +42,7 @@ python tools/claude_transcript_builder.py --help
 - Multiple output formats - Simple and extended transcripts
 - Auto-discovery - Finds sessions from current project automatically
 
-For detailed documentation, see the full README in the Claude Code transcript builder files.
+For detailed documentation, see the full README in the Gemini Cli transcript builder files.
 
 ### Other Tools
 

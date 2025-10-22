@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Transcript Manager - CLI tool for managing Claude Code conversation transcripts
+Transcript Manager - CLI tool for managing Gemini Cli conversation transcripts
 A pure CLI that outputs transcript content directly for consumption by agents
 """
 
@@ -23,7 +23,7 @@ class TranscriptManager:
     def _get_current_session(self) -> str | None:
         """Get current session ID from environment or recent activity"""
         # Check if there's a current_session file
-        current_session_file = Path(".claude/current_session")
+        current_session_file = Path(".gemini/current_session")
         if current_session_file.exists():
             with open(current_session_file) as f:
                 return f.read().strip()
@@ -216,7 +216,7 @@ class TranscriptManager:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Transcript Manager - Pure CLI for Claude Code transcripts")
+    parser = argparse.ArgumentParser(description="Transcript Manager - Pure CLI for Gemini Cli transcripts")
     subparsers = parser.add_subparsers(dest="command", help="Commands")
 
     # Restore command - outputs full conversation lineage content

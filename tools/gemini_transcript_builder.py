@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Claude Code Session Transcript Builder
+Gemini Cli Session Transcript Builder
 
-This tool builds comprehensive transcripts from Claude Code session JSONL files.
+This tool builds comprehensive transcripts from Gemini Cli session JSONL files.
 It reconstructs the conversation DAG, handles branches and sidechains, and
 produces readable markdown transcripts.
 """
@@ -27,12 +27,12 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
 
-def find_claude_projects_dir():
-    """Find the Claude Code projects directory."""
-    claude_dir = Path.home() / ".claude" / "projects"
-    if not claude_dir.exists():
+def find_gemini_projects_dir():
+    """Find the Gemini Cli projects directory."""
+    gemini_dir = Path.home() / ".gemini" / "projects"
+    if not gemini_dir.exists():
         return None
-    return claude_dir
+    return gemini_dir
 
 
 def list_projects(projects_dir: Path):
@@ -66,7 +66,7 @@ def find_default_session(projects_dir: Path):
     # Get current working directory
     cwd = os.getcwd()
 
-    # Convert CWD to Claude Code project directory format
+    # Convert CWD to Gemini Cli project directory format
     cwd_encoded = cwd.replace("/", "-").replace(".", "-")
     if not cwd_encoded.startswith("-"):
         cwd_encoded = "-" + cwd_encoded
@@ -336,7 +336,7 @@ def _should_process_at_root(session_file: Path, subagent_mapper: SubagentMapper 
 def main():
     """Main entry point with CLI argument parsing."""
     parser = argparse.ArgumentParser(
-        description="Build transcripts from Claude Code session files",
+        description="Build transcripts from Gemini Cli session files",
         epilog="Examples:\n"
         "  %(prog)s                     # Process most recent session\n"
         "  %(prog)s --list              # List all projects and sessions\n"
@@ -372,15 +372,15 @@ def main():
     if args.debug:
         logging.getLogger().setLevel(logging.DEBUG)
 
-    # Find Claude projects directory
-    projects_dir = find_claude_projects_dir()
+    # Find Gemini projects directory
+    projects_dir = find_gemini_projects_dir()
     if not projects_dir:
-        logger.error("Error: Claude Code projects directory not found at ~/.claude/projects")
+        logger.error("Error: Gemini Cli projects directory not found at ~/.gemini/projects")
         sys.exit(1)
 
     # Handle --list flag
     if args.list:
-        logger.info("📁 Available Claude Code Projects:\n")
+        logger.info("📁 Available Gemini Cli Projects:\n")
         projects = list_projects(projects_dir)
 
         if not projects:

@@ -1,12 +1,12 @@
-# Desktop Notifications Guide [Claude Code only]
+# Desktop Notifications Guide [Gemini Cli only]
 
-Never miss important Claude Code events with native desktop notifications on all platforms.
+Never miss important Gemini Cli events with native desktop notifications on all platforms.
 
 ## 🔔 Overview
 
 The notification system keeps you in flow by alerting you when:
 
-- Claude Code needs permission to proceed
+- Gemini Cli needs permission to proceed
 - Tasks complete successfully
 - Errors require your attention
 - Long-running operations finish
@@ -69,7 +69,7 @@ The system automatically:
 ### Notification Flow
 
 ```
-Claude Code Event
+Gemini Cli Event
     ↓
 Notification Hook Triggered
     ↓
@@ -110,7 +110,7 @@ Example: `MyProject (abc123): Build completed successfully`
 
 ### Custom Messages
 
-Edit `.claude/settings.json` to customize when notifications appear:
+Edit `.gemini/settings.json` to customize when notifications appear:
 
 ```json
 {
@@ -121,7 +121,7 @@ Edit `.claude/settings.json` to customize when notifications appear:
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/tools/notify-error.sh"
+            "command": ".gemini/tools/notify-error.sh"
           }
         ]
       }
@@ -164,7 +164,7 @@ notify-send -i "/path/to/icon.png" "Title" "Message"
 **macOS** (using terminal-notifier):
 
 ```bash
-terminal-notifier -title "Claude Code" -message "Done!" -appIcon "/path/to/icon.png"
+terminal-notifier -title "Gemini Cli" -message "Done!" -appIcon "/path/to/icon.png"
 ```
 
 ### Notification Categories
@@ -200,26 +200,26 @@ notify-send -u "$URGENCY" -t "$TIMEOUT" "$TITLE" "$MESSAGE"
 
    ```bash
    # Make script executable
-   chmod +x .claude/tools/notify.sh
+   chmod +x .gemini/tools/notify.sh
    ```
 
 2. **Test manually**:
 
    ```bash
-   echo '{"message": "Test notification", "cwd": "'$(pwd)'"}' | .claude/tools/notify.sh
+   echo '{"message": "Test notification", "cwd": "'$(pwd)'"}' | .gemini/tools/notify.sh
    ```
 
 3. **Enable debug mode**:
    ```bash
-   echo '{"message": "Test"}' | .claude/tools/notify.sh --debug
-   # Check /tmp/claude-code-notify-*.log
+   echo '{"message": "Test"}' | .gemini/tools/notify.sh --debug
+   # Check /tmp/gemini-cli-notify-*.log
    ```
 
 ### Platform-Specific Issues
 
 **macOS**:
 
-- Check System Preferences → Notifications → Terminal/Claude Code
+- Check System Preferences → Notifications → Terminal/Gemini Cli
 - Ensure notifications are allowed
 - Try: `osascript -e 'display notification "Test"'`
 
@@ -253,7 +253,7 @@ Track all notifications:
 
 ```bash
 # Add to notify.sh
-echo "$(date): $MESSAGE" >> ~/.claude-notifications.log
+echo "$(date): $MESSAGE" >> ~/.gemini-notifications.log
 ```
 
 ### Conditional Notifications
@@ -311,7 +311,7 @@ osascript -e "display notification \"$MESSAGE\" with title \"Amplifier\" subtitl
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/tools/notify-build.sh"
+            "command": ".gemini/tools/notify-build.sh"
           }
         ]
       }

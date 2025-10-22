@@ -80,7 +80,7 @@ source .venv/bin/activate # Linux/Mac/WSL
 # .venv\Scripts\Activate.ps1 # Windows PowerShell
 ```
 
-### Use Amplifier via Claude Code
+### Use Amplifier via Gemini Cli
 
 **Option 1** -
 Work on a new (or existing) project
@@ -88,10 +88,10 @@ Work on a new (or existing) project
 ```bash
 mkdir ai_working/<my-new-project-name> # new
 # ln -s ../<relative-path-to-my-existing-project> ai_working/<mt-existing-project-name> # existing
-claude
+gemini
 ```
 
-_Type into Claude Code:_
+_Type into Gemini Cli:_
 
 ```
 I'm working in ai_working/<project-name>, and using the capabilities from
@@ -101,7 +101,7 @@ amplifier.
 **Option 2** - Work on the Amplifier project itself
 
 ```bash
-claude
+gemini
 ```
 
 ---
@@ -170,7 +170,7 @@ Shows:
 Enable with:
 
 ```
-/statusline use the script at .claude/tools/statusline-example.sh
+/statusline use the script at .gemini/tools/statusline-example.sh
 ```
 
 ### Best Practices & Tips
@@ -217,11 +217,11 @@ Instead of one generalist AI, you get 20+ specialists:
 - `post-task-cleanup` - Maintains codebase hygiene
 - `content-researcher` - Researches from content collection
 
-[See `.claude/AGENTS_CATALOG.md` for the complete list]
+[See `.gemini/AGENTS_CATALOG.md` for the complete list]
 
 ### Knowledge Base
 
-**Why use this?** Stop losing insights. Every document, specification, design decision, and lesson learned becomes part of your permanent knowledge that Claude can instantly access.
+**Why use this?** Stop losing insights. Every document, specification, design decision, and lesson learned becomes part of your permanent knowledge that Gemini can instantly access.
 
 > [!NOTE]
 > Knowledge extraction is an evolving feature that continues to improve with each update.
@@ -242,7 +242,7 @@ Instead of one generalist AI, you get 20+ specialists:
 
 ### Conversation Transcripts
 
-**Never lose context again.** Amplifier automatically exports your entire conversation before compaction, preserving all the details that would otherwise be lost. When Claude Code compacts your conversation to stay within token limits, you can instantly restore the full history.
+**Never lose context again.** Amplifier automatically exports your entire conversation before compaction, preserving all the details that would otherwise be lost. When Gemini Cli compacts your conversation to stay within token limits, you can instantly restore the full history.
 
 **Automatic Export**: A PreCompact hook captures your conversation before any compaction event:
 
@@ -250,7 +250,7 @@ Instead of one generalist AI, you get 20+ specialists:
 - Timestamps and organizes transcripts in `.data/transcripts/`
 - Works for both manual (`/compact`) and auto-compact events
 
-**Easy Restoration**: Use the `/transcripts` command in Claude Code to restore your full conversation:
+**Easy Restoration**: Use the `/transcripts` command in Gemini Cli to restore your full conversation:
 
 ```
 /transcripts  # Restores entire conversation history
@@ -273,9 +273,9 @@ make transcript-restore         # Restore full lineage (for CLI use)
 
 ### Modular Builder (Lite)
 
-A one-command workflow to go from an idea to a module (**Contract & Spec → Plan → Generate → Review**) inside the Amplifier Claude Code environment.
+A one-command workflow to go from an idea to a module (**Contract & Spec → Plan → Generate → Review**) inside the Amplifier Gemini Cli environment.
 
-- **Run inside a Claude Code session:**
+- **Run inside a Gemini Cli session:**
   ```
   /modular-build Build a module that reads markdown summaries, synthesizes net-new ideas with provenance, and expands them into plans. mode: auto level: moderate
   ```
@@ -398,7 +398,7 @@ See [AMPLIFIER_VISION.md](AMPLIFIER_VISION.md) for details.
 
 ## Current Limitations
 
-- Knowledge extraction works best in Claude environment
+- Knowledge extraction works best in Gemini environment
 - Processing time: ~10-30 seconds per document
 - Memory system still in development
 
