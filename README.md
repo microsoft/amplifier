@@ -108,20 +108,20 @@ claude
 _Tell Claude Code:_
 
 - ```
-  "What is a scenario and how do I create one?"
+  What is a scenario and how do I create one?
   ```
 - ```
-  "Run the blog writer scenario on the sample content"
+  Run the blog writer scenario on the sample content
   ```
 - ```
-  "Show me what the zen-architect agent does. Do I need to call it explicitly
-  or does the system call it automatically?"
+  Show me what the zen-architect agent does. Do I need to call it explicitly
+  or does the system call it automatically?
   ```
 - ```
-  "What are the commands and what value do they add?"
+  What are the commands and what value do they add?
   ```
 - ```
-  "Why and when should I use `/ultrathink-task`?"
+  Why and when should I use `/ultrathink-task`?
   ```
 
 ---
