@@ -147,7 +147,6 @@ cd my-project
 
 Create `AGENTS.md` with your project's context:
 
-````markdown
 # My Blog Platform Context
 
 This file provides guidance to AI assistants working on this blog platform.
@@ -215,7 +214,6 @@ For larger projects, consider documenting your architectural principles separate
 ```bash
 mkdir -p docs
 ```
-````
 
 Create `docs/DESIGN_PHILOSOPHY.md`:
 
