@@ -535,7 +535,3 @@ The workspace pattern is about treating your development environment as seriousl
 It's more setup than dropping code in `ai_working/`, but the payoff grows over time. Each project accumulates context through AGENTS.md. Amplifier stays updatable. Version control stays clean. And you can work on multiple projects without them interfering with each other.
 
 Start simple with `ai_working/` for experiments. Graduate to the workspace pattern when projects get serious. Your future self will thank you.
-
-```
-
-```
