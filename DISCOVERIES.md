@@ -2,6 +2,67 @@
 
 This file documents non-obvious problems, solutions, and patterns discovered during development. Make sure these are regularly reviewed and updated, removing outdated entries or those replaced by better practices or code or tools, updating those where the best practice has evolved.
 
+## DevContainer Setup: Using Official Features Instead of Custom Scripts (2025-10-22)
+
+### Issue
+
+Claude CLI was not reliably available in DevContainers, and there was no visibility into what tools were installed during container creation.
+
+### Root Cause
+
+1. **Custom installation approach**: Previously attempted to install Claude CLI via npm in post-create script (was commented out, indicating unreliability)
+2. **Broken pipx feature URL**: Used `devcontainers-contrib` which was incorrect
+3. **No logging**: Post-create script had no output to help diagnose issues
+4. **No status reporting**: Users couldn't easily see what tools were available
+
+### Solution
+
+Switched to declarative DevContainer features instead of custom installation scripts:
+
+**devcontainer.json changes:**
+```json
+// Fixed broken pipx feature URL
+"ghcr.io/devcontainers-extra/features/pipx-package:1": { ... }
+
+// Added official Claude Code feature
+"ghcr.io/anthropics/devcontainer-features/claude-code:1": {},
+
+// Added VSCode extension
+"extensions": ["anthropic.claude-code", ...]
+
+// Named container for easier identification
+"runArgs": ["--name=amplifier_devcontainer"]
+```
+
+**post-create.sh improvements:**
+```bash
+# Added logging to persistent file for troubleshooting
+LOG_FILE="/tmp/devcontainer-post-create.log"
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+# Added development environment status report
+echo "📋 Development Environment Ready:"
+echo "  • Python: $(python3 --version 2>&1 | cut -d' ' -f2)"
+echo "  • Claude CLI: $(claude --version 2>&1 || echo 'NOT INSTALLED')"
+# ... other tools
+```
+
+### Key Learnings
+
+1. **Use official DevContainer features over custom scripts**: Features are tested, maintained, and more reliable than custom npm installs
+2. **Declarative > imperative**: Define what you need in devcontainer.json rather than scripting installations
+3. **Add logging for troubleshooting**: Persistent logs help diagnose container build issues
+4. **Provide status reporting**: Show users what tools are available after container creation
+5. **Test with fresh containers**: Only way to verify DevContainer configuration works
+
+### Prevention
+
+- Prefer official DevContainer features from `ghcr.io/anthropics/`, `ghcr.io/devcontainers/`, etc.
+- Add logging (`tee` to a log file) in post-create scripts for troubleshooting
+- Include tool version reporting to confirm installations
+- Use named containers (`runArgs`) for easier identification in Docker Desktop
+- Test DevContainer changes by rebuilding containers from scratch
+
 ## OneDrive/Cloud Sync File I/O Errors (2025-01-21)
 
 ### Issue

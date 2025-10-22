@@ -13,7 +13,7 @@
   "features": {
     "ghcr.io/jungaretti/features/make:1": {},
     "ghcr.io/jungaretti/features/vim:1": {},
-    "ghcr.io/devcontainers-contrib/features/pipx-package:1": {
+    "ghcr.io/devcontainers-extra/features/pipx-package:1": {
       "package": "uv",
       "version": "latest"
     },
@@ -24,6 +24,7 @@
       "nvmVersion": "latest",
       "pnpmVersion": "latest"
     },
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1": {},
     "ghcr.io/devcontainers/features/sshd:1": {},
     "ghcr.io/devcontainers/features/azure-cli:1": {},
     "ghcr.io/devcontainers/features/github-cli:1": {},
@@ -45,6 +46,7 @@
   // "otherPortsAttributes": {},
   // "updateContentCommand": "make -C ${containerWorkspaceFolder} install",
   "postCreateCommand": "./.devcontainer/post-create.sh",
+  "runArgs": ["--name=amplifier_devcontainer"],
   // Configure tool-specific properties.
   "customizations": {
     "codespaces": {
@@ -52,6 +54,7 @@
     },
     "vscode": {
       "extensions": [
+        "anthropic.claude-code",
         "GitHub.copilot",
         "github.codespaces",
         "aaron-bond.better-comments",

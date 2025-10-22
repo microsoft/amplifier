@@ -2,6 +2,32 @@
 
 The steps below will help you get started with the project.
 
+## Post-Create Setup
+
+When the dev container builds, a post-create script automatically runs to:
+- ✅ Install the Claude CLI (`@anthropic-ai/claude-code`)
+- ✅ Configure Git settings (auto-setup remote on push)
+
+**Container Name**: The dev container is configured to always use the name `amplifier_devcontainer` in Docker Desktop (instead of random names like "sharp_galois").
+
+### Verifying Installation
+
+To verify everything installed correctly:
+
+```bash
+# Check Claude CLI is installed
+claude --version
+
+# View the post-create logs
+cat /tmp/devcontainer-post-create.log
+```
+
+If the `claude` command is not found, the post-create script may have failed. Check the logs at `/tmp/devcontainer-post-create.log` for details, or manually run:
+
+```bash
+./.devcontainer/post-create.sh
+```
+
 ## How to use
 
 See the [README](../README.md) for more details on how to use the project.
