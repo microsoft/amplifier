@@ -91,9 +91,8 @@ source .venv/bin/activate  # Linux/Mac/WSL
 Choose your path:
 
 - [🎯 **Option 1 - Quick Exploration**](#-option-1---quick-exploration) - Just show me what it can do (no project needed)
-- [🔗 **Option 2 - Quick Access**](#-option-2---quick-access) - Try Amplifier with my local project
-- [📦 **Option 3 - Quick Setup**](#-option-3---quick-setup) - Try Amplifier with my GitHub project
-- [🚀 **Option 4 - Production Setup**](#-option-4---production-setup) - I'm ready to fully integrate
+- [📦 **Option 2 - Quick Setup**](#-option-2---quick-setup) - Try Amplifier with my GitHub project
+- [🚀 **Option 3 - Production Setup**](#-option-3---production-setup) - I'm ready to fully integrate
 
 ---
 
@@ -127,33 +126,7 @@ _Tell Claude Code:_
 
 ---
 
-#### 🔗 Option 2 - Quick Access
-
-_"I want to try Amplifier with my local project."_
-
-```bash
-# Create a symbolic link to your project for easy access
-cd ai_working
-ln -s /path/to/your/project yourproject
-cd ..
-
-# Start Claude
-claude
-```
-
-_Tell Claude Code:_
-
-```
-I want to try Amplifier features on ai_working/yourproject.
-Use bug-hunter to find issues, or zen-architect to review the architecture.
-```
-
-> [!IMPORTANT]
-> Claude Code has full filesystem access. The symlink is for convenience, not isolation.
-
----
-
-#### 📦 Option 3 - Quick Setup
+#### 🔗 Option 2 - Quick Setup
 
 _"I want to try Amplifier with my GitHub project."_
 
@@ -179,7 +152,7 @@ Are there any parts of my project that could benefit from a new scnario? If so, 
 
 ---
 
-#### 🚀 Option 4 - Production Setup
+#### 🚀 Option 3 - Production Setup
 
 _"I'm ready to fully integrate."_
 
@@ -224,22 +197,20 @@ Let's use /ddd:1-plan to design the architecture.
 After your initial exploration:
 
 #### 🤖 Ask Claude Code
+
 _Tell Claude Code any of these:_
 
 1. **"Walk me through creating my own scenario tool"** - Build custom AI-powered tools
 2. **"What are the best practices for using Amplifier?"** - Learn proven patterns
-3. **"Show me how Document-Driven Development works"** - Try the `/ddd:1-plan` workflow
-4. **"What agents are available for my task?"** - Discover specialized experts
-5. **"What commands can I use?"** - Explore available slash commands
+3. **"Show me how Document-Driven Development works"** - Try the workflow
 
 #### 📚 Explore Yourself
+
 _Or dive into the documentation:_
 
 1. **Create your own tools** → [Scenario Creation Guide](docs/CREATE_YOUR_OWN_TOOLS.md)
 2. **Best practices** → [The Amplifier Way](docs/THIS_IS_THE_WAY.md)
-3. **Advanced workflows** → [Document-Driven Development](/ddd:0-help)
-4. **Learn more agents** → [Agents](.claude/agents)
-5. **Learn more commands** → [Commands](.claude/commands)
+3. **Advanced workflows** → [Document-Driven Development](docs/document_driven_development/README.md)
 
 ---
 
