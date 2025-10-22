@@ -44,6 +44,7 @@ claude
 ```
 
 In Claude Code, start with:
+
 ```
 I'm working on the @my-project/ project within this Amplifier workspace.
 Please read @my-project/AGENTS.md for project-specific guidance.
@@ -67,27 +68,26 @@ But as projects grow, you'll hit friction points:
 
 **Scaling is awkward.** Want to work on multiple projects? You end up with `ai_working/project1/`, `ai_working/project2/`, each fighting for the same namespace.
 
-The workspace pattern solves these problems by inverting the relationship: instead of projects living inside Amplifier, Amplifier becomes a dedicated workspace that hosts projects as first-class citizens.
+The workspace pattern solves these problems by inverting the relationship: instead of projects living nested deeper within Amplifier, Amplifier becomes a dedicated workspace that hosts projects as first-class citizens.
 
 ## The Architecture
 
 Think of it like a workshop. Amplifier is your workbench with all your tools organized and ready. Your projects are the pieces you're actively working on, each with its own space on the bench but sharing the same tool set.
 
-```
-my-workspace/                    # Your Amplifier workspace
-├── amplifier/                   # The tools (Amplifier itself)
-│   ├── .claude/                # Agent definitions
-│   ├── docs/                   # Amplifier docs
-│   └── scenarios/              # Amplifier tools
+```bash
+my-workspace/               # Your Amplifier workspace
+├── .claude/                # Agent + command definitions
+├── docs/                   # Amplifier docs
+├── scenarios/              # Amplifier tools
 │
-├── my-blog/                    # Your first project
-│   ├── AGENTS.md              # Project context (AI guidance)
-│   ├── docs/                  # Project documentation
-│   ├── src/                   # Project code
-│   └── ai_working/            # Temporary work files
+├── my-blog/                # Your first project
+│   ├── AGENTS.md           # Project context (AI guidance)
+│   ├── docs/               # Project documentation
+│   ├── src/                # Project code
+│   └── ai_working/         # Temporary work files
 │
-└── client-portal/              # Your second project
-    ├── AGENTS.md              # Different project, different context
+└── client-portal/          # Your second project
+    ├── AGENTS.md           # Different project, different context
     ├── backend/
     ├── frontend/
     └── ai_working/
@@ -117,12 +117,14 @@ Why make it your own? Because you might want to add custom agents, adjust config
 A git submodule is just a way to include one git repository inside another while keeping their histories separate. Think of it as a bookmark: the outer repository (workspace) remembers which commit of the inner repository (project) to use, but the inner repository maintains its own version control.
 
 For an existing project:
+
 ```bash
 cd my-workspace
 git submodule add git@github.com:yourname/your-project.git my-project
 ```
 
 For a new project:
+
 ```bash
 cd my-workspace
 mkdir my-project
@@ -145,7 +147,6 @@ cd my-project
 
 Create `AGENTS.md` with your project's context:
 
-```markdown
 # My Blog Platform Context
 
 This file provides guidance to AI assistants working on this blog platform.
@@ -173,15 +174,15 @@ flexibility—we'd rather have less features done well than many features done p
 
 ## Project Structure
 
-```
+```bash
 src/
-├── app/              # Next.js app router pages
-├── components/       # React components
-├── lib/             # Utilities and shared logic
-└── types/           # TypeScript type definitions
+├── app/            # Next.js app router pages
+├── components/     # React components
+├── lib/            # Utilities and shared logic
+└── types/          # TypeScript type definitions
 
-content/             # Blog posts (Markdown)
-public/              # Static assets
+content/            # Blog posts (Markdown)
+public/             # Static assets
 ```
 
 ## Development Workflow
@@ -203,7 +204,6 @@ public/              # Static assets
 - Don't add a database (we're committed to file-based)
 - Don't create complex state management (keep it simple)
 - Don't add build-time external API calls (they slow builds)
-```
 
 The key is making this document useful for both AI assistants and human developers. It should answer: What is this project? How is it architected? What conventions do we follow? What should I avoid?
 
@@ -292,7 +292,7 @@ Use the project's `ai_working/` directory for drafts, experiments, and temporary
 
 ```bash
 my-blog/
-├── ai_working/                 # Temporary work
+├── ai_working/                # Temporary work
 │   ├── refactor-ideas.md      # Planning documents
 │   ├── test-output/           # Test artifacts
 │   └── experiments/           # Code experiments
@@ -314,9 +314,9 @@ git commit -m "Add responsive header"
 git push origin main
 
 # Updating Amplifier in your workspace
-cd ..  # Back to workspace root
-git pull origin main  # Updates Amplifier
-git submodule update  # Syncs submodule references
+cd ..                   # Back to workspace root
+git pull origin main    # Updates Amplifier
+git submodule update    # Syncs submodule references
 ```
 
 The workspace tracks which version of your project it expects, but your project's git history is entirely separate. This means you can:
@@ -345,12 +345,14 @@ The beauty of AGENTS.md is that it compounds over time. Each session, you might 
 The workspace pattern isn't always the right choice. Here's a decision framework:
 
 **Use `ai_working/` for:**
+
 - Quick experiments and prototypes
 - Learning exercises and tutorials
 - Throwaway code and one-off scripts
 - When you need something fast and don't care about long-term maintenance
 
 **Use the workspace pattern for:**
+
 - Projects that will live for months or years
 - Codebases with their own git repository
 - Work you'll share with others or deploy to production
@@ -504,6 +506,7 @@ claude
 ```
 
 In Claude:
+
 ```
 Working on @personal-blog/. Read @personal-blog/AGENTS.md.
 
@@ -515,6 +518,7 @@ philosophy. What's the best approach?
 Claude reads your AGENTS.md, understands your tech stack (Next.js) and principles (static-first, simple), and proposes a solution that fits your architecture. No need to re-explain your project every time.
 
 When you're done:
+
 ```bash
 cd personal-blog
 git add .
