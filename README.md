@@ -1,11 +1,62 @@
-# Amplifier: Self-Building AI Development System
+# Amplifier: Metacognitive AI Development System
 
-> _"A system that grows its own capabilities through modular composition."_
+> _"A system that exponentially grows its own capabilities through modular composition."_
 
 > [!CAUTION]
 > This project is a research demonstrator. It is in early development and may change significantly. Using permissive AI tools in your repository requires careful attention to security considerations and careful human supervision, and even then things can still go wrong. Use it with caution, and at your own risk. See [Disclaimer](#disclaimer).
 
-Amplifier is a self-building development system that transforms how you work with AI. Unlike single-shot LLM requests or static applications, Amplifier accumulates and multiplies capabilities through use. Describe how an expert would approach a task (a "metacognitive recipe"), and Amplifier builds a modular tool. As you create more tools, they combine and build on each other—each contribution becomes infrastructure for the next. This compounding architecture enables you to work in ways that no single conversation or fixed application can match.
+Amplifier is a development system whose architecture is driven by modular philosophy. **Our thesis:** this architecture enables exponential capability growth—not just for code, but for natural language + code scenarios. The system builds on itself, providing more capability as it builds itself out.
+
+**What we're seeing now (early evidence):**
+
+Current capabilities emerge from composing modules into linear workflows (1-D). Examples you can use today:
+- **Scenarios** like [`blog_writer`](scenarios/blog_writer/) - multi-stage pipelines that transform rough ideas into polished content
+- **DDD workflow** - structured feature development through connected phases
+- **Specialized agents** - modular experts that combine to solve complex problems
+
+As the modular foundation accumulates, capabilities will grow exponentially through increasingly complex compositions:
+
+**0-D (Points):** Individual modules like [`StyleExtractor`](scenarios/blog_writer/style_extractor/) - each solves one focused problem
+
+**1-D (Lines):** Linear workflows we're building now:
+- [`blog_writer`](scenarios/blog_writer/) - Five modules in sequence transform ideas → polished posts
+- DDD workflow - Connected phases ensure docs and code stay synchronized
+- Each scenario composes existing modules into new capabilities
+
+**2-D (Surfaces):** Complex interconnections we're moving toward:
+- Modules with feedback loops (reviews trigger revisions, quality gates control flow)
+- Multiple workflows branching and merging
+- Dynamic composition based on context
+- The `blog_writer` pipeline shows early 2-D characteristics with its iteration and feedback
+
+**The scalability thesis:** As we build more foundational modules ([`ccsdk_toolkit`](amplifier/ccsdk_toolkit/), [`content_loader`](amplifier/content_loader/), specialized agents), each new capability becomes easier to create. Five modules enable fifteen new combinations. Fifteen enable hundreds. The architecture scales without limit because composition is the core mechanism.
+
+**This is why it's a research demonstrator:** We're exploring whether modular composition can truly enable exponential capability growth in AI development systems. Early evidence suggests yes—each scenario we build makes the next one easier. But we're still discovering the patterns, tools, and workflows that make this real.
+
+---
+
+### What You Can Use Today
+
+These are the "leaves" - end-user capabilities built through modular composition:
+
+**Scenario Tools** (composing multiple modules into workflows):
+- **[`blog_writer`](scenarios/blog_writer/)** - Transform rough ideas → polished posts in your voice
+- **[`tips_synthesizer`](scenarios/tips_synthesizer/)** - Scattered tips → comprehensive guides
+- **[`article_illustrator`](scenarios/article_illustrator/)** - Articles → contextually illustrated content
+- **[`transcribe`](scenarios/transcribe/)** - Audio/video → structured transcripts
+- **[`web_to_md`](scenarios/web_to_md/)** - Web content → clean markdown
+
+**Development Workflows** (structured processes):
+- **[DDD workflow](docs/document_driven_development/)** - `/ddd:1-plan → /ddd:2-docs → /ddd:3-code-plan → /ddd:4-code → /ddd:5-finish`
+- Feature development with synchronized docs and code
+
+**Behind the scenes:** Each capability is built from foundational modules:
+- [`ccsdk_toolkit`](amplifier/ccsdk_toolkit/) - Claude Code SDK utilities
+- [`content_loader`](amplifier/content_loader/) - Document processing
+- [Specialized agents](.claude/agents/) - Domain experts (concept-extractor, modular-builder, zen-architect, etc.)
+- Scenario-specific modules that combine into pipelines
+
+**The pattern:** What looks like a single capability is actually modules composed together. As the foundation grows, building new capabilities becomes exponentially easier.
 
 ## 🚀 QuickStart
 
@@ -153,6 +204,7 @@ claude
 **Everything in Amplifier starts with the modular philosophy.** Build systems from small, self-contained modules that snap together like bricks. Each module has clear boundaries and defined connection points—this lets you regenerate any piece independently without breaking the whole.
 
 **Think "bricks and studs":**
+
 - A **brick** = a self-contained component that delivers one clear responsibility
 - A **stud** = the public interface where other modules connect
 - **Regeneration over patching** - Rebuild components cleanly from their specifications rather than accumulating technical debt
@@ -166,50 +218,57 @@ See `@ai_context/MODULAR_DESIGN_PHILOSOPHY.md` for the complete philosophy.
 Amplifier's architecture enables dimensional growth—from simple modules to increasingly complex systems:
 
 **0-D: Single Modules (Points)**
+
 - One self-contained component
 - Example: A document parser module, a metadata extractor
 
 **1-D: Linear Workflows (Lines)**
+
 - Modules connected in sequence
 - **Metacognitive recipes** - Tools that execute step-by-step thinking processes
 - **DDD workflow** - `/ddd:1-plan → /ddd:2-docs → /ddd:3-code-plan → /ddd:4-code → /ddd:5-finish`
 - **/ultrathink-task** - Enforces agents in specific order, modularizes tasks into smaller groupings
 
 **2-D: Planar Architectures (Surfaces)**
+
 - Modules connected in more complex patterns (future direction)
 - Multiple workflows interacting and branching
 
-**The Compounding Effect:** As you build more modular components and workflows, they become building blocks for increasingly complex systems. Each tool you create makes future tools easier to build. This self-building architecture is what enables Amplifier to continuously grow its capabilities.
+**The Exponential Effect:** As you build more modular components and workflows, they become building blocks that enable multiple new capabilities. Each tool you create makes future tools easier to build—not just one, but many. This architecture, driven by modular philosophy, is what enables exponential growth: the system builds on itself and builds itself out.
 
 ---
 
 ### Why Amplifier is a System, Not Just a Tool
 
-**This is the fundamental difference:** Traditional LLM applications and development environments provide fixed capabilities—you use what's built into them. Amplifier is a **system** that accumulates and multiplies capabilities through use.
+**What makes Amplifier different is its architecture, driven by its modular philosophy.** Traditional LLM applications and development environments provide fixed capabilities—you use what's built into them. Amplifier is a **system** whose architecture enables exponential growth through use.
 
 **The contrast:**
 
 **Single-shot LLM requests:**
+
 - Start from zero each time
 - Capabilities don't accumulate
 - Each task is independent
 - Results don't compound
 
 **Existing LLM software applications:**
+
 - Fixed architecture built once
 - Static wrapper around the model
 - Predetermined capabilities
 - Can't grow beyond initial design
 
 **Amplifier as a system:**
-- **Accumulates** - Each tool built becomes infrastructure for the next tool
-- **Multiplies** - Capabilities compound rather than add; Tool A enables Tool B which enables Tools C, D, E
-- **Self-builds** - The system grows its own architecture through use
+
+- **Architecture-driven foundation** - Modular philosophy enables infinite composition
+- **Exponential growth** - Each tool built enables multiple new tools
+- **Builds on itself** - The system builds on itself AND builds itself out
+- **Natural language + code** - Works across the full spectrum of automation scenarios
 - **Infinite potential** - Modular foundation supports arbitrary complexity without hitting a ceiling
 
-**Why this enables you to work in a multiplied (amplified) way:** You're not limited to what a single LLM conversation can do, or what a static application provides. You're building on an accumulating foundation where each contribution multiplies what's possible. A few conversations in, you have tools. A few weeks in, you have workflows. A few months in, you have a compounding automation system that does things no single-shot approach could accomplish.
+**Why this enables exponential (not just linear) growth:** You're not limited to what a single LLM conversation can do, or what a static application provides. You're building on an accumulating foundation where each contribution doesn't just add one capability—it enables many. A few conversations in, you have tools. A few weeks in, you have workflows. A few months in, you have a compounding automation system that does things no single-shot approach could accomplish.
 
-**This is why Amplifier keeps getting better while other systems stay static.** The modular architecture doesn't just allow growth—it *enables* growth through use. Every problem solved becomes capability added. Every tool built becomes leverage gained. The system builds upon itself infinitely.
+**This is why Amplifier keeps getting better while other systems stay static.** The modular architecture doesn't just allow growth—it _enables_ exponential growth through use. Every problem solved becomes capability added. Every tool built becomes leverage that enables multiple new tools. The system builds upon itself infinitely.
 
 ---
 
@@ -222,6 +281,7 @@ These are different ways to apply the modular philosophy and participate in Ampl
 Describe how an expert would approach a task step-by-step (a "metacognitive recipe"), and Amplifier builds a tool that executes that thinking process.
 
 **The pattern:**
+
 1. **Identify a workflow** you want to automate
 2. **Describe the thinking process** - How would you approach it step-by-step?
 3. **Generate with `/ultrathink-task`** - Amplifier builds the tool
@@ -254,6 +314,7 @@ See [Document-Driven Development Guide](docs/document_driven_development/) for c
 #### 3. Ultrathink-Task: Modularized Problem Solving
 
 The `/ultrathink-task` command applies modularity to problem-solving:
+
 - Enforces specific agents in specific order
 - Breaks tasks into smaller groupings (modularizes the task)
 - Different agents handle different modules of the work
@@ -287,9 +348,9 @@ See [Worktree Guide](docs/WORKTREE_GUIDE.md) for advanced features.
 
 ---
 
-### Growing Amplifier: The Self-Building System
+### Growing Amplifier: How the System Builds Itself Out
 
-**This is where the magic happens:** When you solve a problem or build a tool, that solution can become a new module in Amplifier's growing architecture. Your work doesn't just solve your immediate need—it adds capability to the system that everyone benefits from.
+**This is where the magic happens:** When you solve a problem or build a tool, that solution can become a new module in Amplifier's growing architecture. Your work doesn't just solve your immediate need—it adds capability to the system that everyone benefits from. This is how the system builds on itself and builds itself out.
 
 **The growth pattern when things don't work initially:**
 
@@ -298,6 +359,7 @@ See [Worktree Guide](docs/WORKTREE_GUIDE.md) for advanced features.
    Instead of: "Process 100 files and extract metadata"
 
    Try: "I need to process 100 files. Here's the modular approach:
+
    - Module 1: Tool that reads the file list
    - Module 2: Status tracking system
    - Module 3: File iterator with progress updates
@@ -310,7 +372,7 @@ See [Worktree Guide](docs/WORKTREE_GUIDE.md) for advanced features.
 
 4. **Build tools that become modules** - Every tool you create becomes part of Amplifier's growing module library
 
-**This is how dimensional growth happens:** Start with individual modules (0-D), connect them into workflows (1-D), then eventually compose them into more complex architectures (2-D). Each contribution adds to the foundation that everyone builds upon.
+**This is how dimensional growth happens:** Start with individual modules (0-D), connect them into workflows (1-D), then eventually compose them into more complex architectures (2-D). Each contribution adds to the foundation that everyone builds upon, enabling exponential growth.
 
 ---
 
@@ -319,6 +381,7 @@ See [Worktree Guide](docs/WORKTREE_GUIDE.md) for advanced features.
 **Context Over Capability**
 
 Most "can't do this" problems are "doesn't have the right context for this module" problems. Provide:
+
 - **Task context** - What module you're trying to create and why
 - **Metacognitive context** - The step-by-step modular approach (see example above)
 - **Project context** - Your modular architectural principles (use AGENTS.md in workspace pattern)
@@ -326,6 +389,7 @@ Most "can't do this" problems are "doesn't have the right context for this modul
 **Decomposition is Modularization**
 
 Big asks fail because they're monolithic. Break them into small, self-contained modules first. Each module:
+
 - Has clear boundaries and interfaces
 - Can be regenerated independently
 - Serves multiple purposes in different compositions
@@ -334,12 +398,13 @@ Big asks fail because they're monolithic. Break them into small, self-contained 
 **Transcript-Driven Module Creation**
 
 After collaborative problem-solving:
+
 1. Run `/transcripts` or `./tools/claude_transcript_builder.py`
 2. Have Amplifier analyze where you provided guidance
 3. Convert that guidance into reusable modules
 4. Improvements get merged, adding to Amplifier's module library
 
-This is how Amplifier grows from usage—each solved problem becomes a new building block.
+This is how Amplifier grows from usage—each solved problem becomes a new building block that enables exponential growth.
 
 ---
 
@@ -379,9 +444,9 @@ git submodule add <url> <name>  # Add project module to workspace
 # Create AGENTS.md for persistent modular context
 ```
 
-**Getting started:** Begin by thinking modularly. Describe a workflow you want to automate in modular terms—what are the self-contained pieces and how do they connect? As you create more modules, they naturally build on each other (0-D → 1-D → 2-D), creating the compounding effect that enables Amplifier's continuous growth.
+**Getting started:** Begin by thinking modularly. Describe a workflow you want to automate in modular terms—what are the self-contained pieces and how do they connect? As you create more modules, they naturally build on each other (0-D → 1-D → 2-D), creating the compounding effect that enables Amplifier's exponential growth.
 
-**The vision:** You're not just using Amplifier—you're participating in building it. Each module you create adds to the foundation that everyone builds upon. This is the self-building system in action.
+**The vision:** You're not just using Amplifier—you're participating in building it. Each module you create adds to the foundation that everyone builds upon. This is the system in action—architecture driven by modular philosophy, enabling the system to build on itself and build itself out.
 
 For deeper strategies and advanced techniques, see [The Amplifier Way](docs/THIS_IS_THE_WAY.md).
 
