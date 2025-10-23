@@ -172,7 +172,7 @@ claude
    mkdir my-project
    cd my-project
    git init
-   git remote add origin git@github.com:yourname/your-project.git
+   git remote add origin git@github.com:yourname/my-project.git
    cd ..
    git submodule add ./my-project my-project
    ```
