@@ -161,7 +161,7 @@ claude
    ```bash
    # Add your project as a submodule
    cd amplifier
-   git submodule add git@github.com:yourname/your-project.git my-project
+   git submodule add git@github.com:yourname/my-project.git my-project
    ```
 
 2. For new projects
