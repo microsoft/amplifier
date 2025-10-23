@@ -260,15 +260,13 @@ _Or dive into the documentation:_
 
 We've taken our learnings about what works in AI-assisted development and made them available for you, ready-to-use. Instead of starting from scratch every session, you get immediate access to proven patterns, specialized agents for different tasks, and workflows that actually work.
 
----
-
 ## 📖 How to Use Amplifier
 
-### Create Amplifier-powered Tools for Scenarios
+### 🔧 Create Amplifier-powered Tools for Scenarios
 
 Amplifier is designed so **you can create new AI-powered tools** just by describing how they should think. See the [Create Your Own Tools](docs/CREATE_YOUR_OWN_TOOLS.md) guide for more information.
 
-### Explore Ampifier's agents on your code
+### 🤖 Explore Amplifier's agents on your code
 
 Try out one of the specialized experts:
 
@@ -276,7 +274,7 @@ Try out one of the specialized experts:
 - "Deploy bug-hunter to find why my login system is failing"
 - "Have security-guardian review my API implementation for vulnerabilities"
 
-### Document-Driven Development
+### 📝 Document-Driven Development
 
 **Why use this?** Eliminate doc drift and context poisoning. When docs lead and code follows, your specifications stay perfectly in sync with reality.
 
@@ -294,7 +292,7 @@ Each phase creates artifacts the next phase reads. You control all git operation
 
 See the [Document-Driven Development Guide](docs/document_driven_development/) for complete documentation, or run `/ddd:0-help` in Claude Code.
 
-### Parallel Development
+### 🌳 Parallel Development
 
 **Why use this?** Stop wondering "what if" — build multiple solutions simultaneously and pick the winner.
 
@@ -312,7 +310,7 @@ Each worktree is completely isolated with its own branch, environment, and conte
 
 See the [Worktree Guide](docs/WORKTREE_GUIDE.md) for advanced features, such as hiding worktrees from VSCode when not in use, adopting branches from other machines, and more.
 
-### Enhanced Status Line
+### 📊 Enhanced Status Line
 
 See costs, model, and session info at a glance:
 
@@ -330,7 +328,7 @@ Enable with:
 /statusline use the script at .claude/tools/statusline-example.sh
 ```
 
-### Conversation Transcripts
+### 💬 Conversation Transcripts
 
 **Never lose context again.** Amplifier automatically exports your entire conversation before compaction, preserving all the details that would otherwise be lost. When Claude Code compacts your conversation to stay within token limits, you can instantly restore the full history.
 
@@ -361,7 +359,7 @@ make transcript-search TERM="auth"  # Search past conversations
 make transcript-restore             # Restore full lineage (for CLI use)
 ```
 
-### Workspace Pattern for Serious Projects
+### 🏗️ Workspace Pattern for Serious Projects
 
 **For long-term development**, consider using the workspace pattern where Amplifier hosts your project as a git submodule. This architectural approach provides:
 
@@ -383,7 +381,7 @@ The pattern inverts the typical relationship: instead of your project containing
 
 See the [Workspace Pattern Guide](docs/WORKSPACE_PATTERN.md) for complete setup, usage patterns, and migration from `ai_working/`.
 
-### Best Practices & Tips
+### 💡 Best Practices & Tips
 
 **Want to get the most out of Amplifier?** Check out [The Amplifier Way](docs/THIS_IS_THE_WAY.md) for battle-tested strategies including:
 
@@ -393,7 +391,7 @@ See the [Workspace Pattern Guide](docs/WORKSPACE_PATTERN.md) for complete setup,
 - Demo-driven development patterns
 - Practical tips for effective AI-assisted development
 
-### Development Commands
+### ⚙️ Development Commands
 
 ```bash
 make check            # Format, lint, type-check
@@ -401,7 +399,7 @@ make test             # Run tests
 make ai-context-files # Rebuild AI context
 ```
 
-## 🧪 Testing & Benchmarks
+### 🧪 Testing & Benchmarks
 
 Testing and benchmarking are critical to ensuring that any product leveraging AI, including Amplifier, is quantitatively measured for performance and reliability.
 Currently, we leverage [terminal-bench](https://github.com/laude-institute/terminal-bench) to reproducibly benchmark Amplifier against other agents.
