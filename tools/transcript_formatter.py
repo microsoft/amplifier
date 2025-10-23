@@ -50,7 +50,7 @@ class TranscriptFormatter:
         # Check if this is a legacy subagent session (entire session is subagent conversation)
         if hasattr(self.session_data, "session_type") and self.session_data.session_type == "legacy_subagent":
             if msg.type == "user":
-                return "Claude (delegating)"
+                return "Gemini (delegating)"
             if msg.type == "assistant":
                 agent_name = self.session_data.subagent_name or "Unknown Agent"
                 return f"Subagent ({agent_name})"
@@ -58,7 +58,7 @@ class TranscriptFormatter:
         # Check if this specific message is part of a modern sidechain
         if msg.is_sidechain:
             if msg.type == "user":
-                return "Claude (delegating)"
+                return "Gemini (delegating)"
             if msg.type == "assistant":
                 # Try to get agent name from session data if available
                 agent_name = getattr(self.session_data, "subagent_name", None) or "Unknown Agent"
@@ -189,7 +189,7 @@ class TranscriptFormatter:
 
     def _format_header(self) -> list[str]:
         """Format the transcript header."""
-        return ["# Claude Code Session Transcript"]
+        return ["# Gemini Cli Session Transcript"]
 
     def _format_metadata(self) -> list[str]:
         """Format session metadata."""

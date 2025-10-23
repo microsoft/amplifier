@@ -201,11 +201,11 @@ Check our patterns in IMPLEMENTATION_PHILOSOPHY.md
 
 ## 🛠️ Creating Custom Commands
 
-### Claude Code
+### Gemini Cli
 
 #### Command Structure
 
-Create a new file in `.claude/commands/your-command.md`:
+Create a new file in `.gemini/commands/your-command.md`:
 
 ```markdown
 ## Usage
@@ -234,42 +234,6 @@ Describe what the user will see:
 - Error handling
 - Next steps
 - Any generated artifacts
-```
-
-### Gemini CLI
-
-#### Command Structure
-
-Create a new file in `.gemini/commands/your-command.toml`:
-
-```toml
-description = "Brief description of the command"
-prompt = """## Usage
-
-`/your-command <required-arg> [optional-arg]`
-
-## Context
-
-- Brief description of what the command does
-- When and why to use it
-- Any important notes or warnings
-
-## Process
-
-1. First step with clear description
-2. Second step with details
-3. Continue for all steps
-4. Include decision points
-5. Handle edge cases
-
-## Output Format
-
-Describe what the user will see:
-- Success messages
-- Error handling
-- Next steps
-- Any generated artifacts
-"""
 ```
 
 ### Best Practices

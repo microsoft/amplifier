@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-DAG Loader Module - Load and validate Claude Code session JSONL data.
+DAG Loader Module - Load and validate Gemini Cli session JSONL data.
 
 This module is responsible for loading session files and building the DAG structure.
 It handles various message types and ensures data integrity.
@@ -103,7 +103,7 @@ class Message:
 
 @dataclass
 class SessionData:
-    """Contains all data from a Claude Code session."""
+    """Contains all data from a Gemini Cli session."""
 
     messages: dict[str, Message] = field(default_factory=dict)
     parent_child_map: dict[str, list[str]] = field(default_factory=dict)
@@ -140,7 +140,7 @@ class SessionData:
 
 
 class DAGLoader:
-    """Loads Claude Code session JSONL files and builds DAG structure."""
+    """Loads Gemini Cli session JSONL files and builds DAG structure."""
 
     def __init__(self, subagent_mapper: SubagentMapper | None = None):
         """Initialize DAGLoader with optional subagent mapper."""

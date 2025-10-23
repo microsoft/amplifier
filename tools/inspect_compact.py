@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Diagnostic tool to inspect compact operations in Claude Code session files.
+Diagnostic tool to inspect compact operations in Gemini Cli session files.
 
 This tool helps understand:
 - Where compact boundaries occur
@@ -179,7 +179,7 @@ def main():
     if len(sys.argv) < 2:
         print("Usage: python inspect_compact.py <session_file>")
         print("\nExample:")
-        print("  python inspect_compact.py ~/.claude/projects/my-project/session-id.jsonl")
+        print("  python inspect_compact.py ~/.gemini/projects/my-project/session-id.jsonl")
         sys.exit(1)
 
     session_file = Path(sys.argv[1]).expanduser()

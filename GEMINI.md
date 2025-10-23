@@ -1,10 +1,10 @@
-# CLAUDE.md
+# GEMINI.md
 
-This file provides guidance to Claude Code when working with code in this repository.
+This file provides guidance to Gemini Cli when working with code in this repository.
 
 This project uses a shared context file (`AGENTS.md`) for common project guidelines. Please refer to it for information on build commands, code style, and design philosophy.
 
-This file is reserved for Claude Code-specific instructions.
+This file is reserved for Gemini Cli-specific instructions.
 
 # import the following files (using the `@` syntax):
 
@@ -13,7 +13,7 @@ This file is reserved for Claude Code-specific instructions.
 - @ai_context/IMPLEMENTATION_PHILOSOPHY.md
 - @ai_context/MODULAR_DESIGN_PHILOSOPHY.md
 
-# Claude's Working Philosophy and Memory System
+# Gemini's Working Philosophy and Memory System
 
 ## Critical Operating Principles
 
@@ -138,7 +138,7 @@ Single message with multiple Task calls:
 - Specialized and focused > generalized and generic
 - Request that user creates them via user's `/agents` command
 - You provide the user with a detailed description
-- New agents undergo Claude Code optimization
+- New agents undergo Gemini Cli optimization
 - Better to have too many specialized tools than struggle with generic ones
 
 ### 4. My Role as Orchestrator
@@ -150,12 +150,12 @@ Single message with multiple Task calls:
 
 ### 5. Code-Based Utilities Strategy
 
-- Wrap sub-agent capabilities into code utilities using Claude Code SDK
-  - See docs in `ai_context/claude_code/CLAUDE_CODE_SDK.md`
-  - See examples in `ai_context/git_collector/CLAUDE_CODE_SDK_PYTHON.md`
+- Wrap sub-agent capabilities into code utilities using Gemini Cli SDK
+  - See docs in `ai_context/gemini_cli/GEMINI_CLI_SDK.md`
+  - See examples in `ai_context/git_collector/GEMINI_CLI_SDK_PYTHON.md`
 - Create "recipes" for dependable workflow execution that are "more code than model"
-  - Orchestrates the use of the Claude Code sub-agents for subtasks, using code where more structure is beneficial
-  - Reserve use of Claude Code sub-agents for tasks that are hard to codify
+  - Orchestrates the use of the Gemini Cli sub-agents for subtasks, using code where more structure is beneficial
+  - Reserve use of Gemini Cli sub-agents for tasks that are hard to codify
 - Balance structured data needs with valuable natural language
 - Build these progressively as patterns emerge
 

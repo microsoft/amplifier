@@ -1,12 +1,12 @@
-# Automation Guide [Claude Code only]
+# Automation Guide [Gemini Cli only]
 
-This guide explains how automation works for Claude Code and how to extend it for your needs.
+This guide explains how automation works for Gemini Cli and how to extend it for your needs.
 
 ## 🔄 How Automation Works
 
 ### The Hook System
 
-Claude Code supports hooks that trigger actions based on events:
+Gemini Cli supports hooks that trigger actions based on events:
 
 ```json
 {
@@ -31,7 +31,7 @@ Claude Code supports hooks that trigger actions based on events:
 #### 1. **Automatic Quality Checks**
 
 - **Trigger**: After any file edit/write
-- **Script**: `.claude/tools/make-check.sh`
+- **Script**: `.gemini/tools/make-check.sh`
 - **What it does**:
   - Finds the nearest Makefile
   - Runs `make check`
@@ -40,8 +40,8 @@ Claude Code supports hooks that trigger actions based on events:
 
 #### 2. **Desktop Notifications**
 
-- **Trigger**: Any Claude Code notification event
-- **Script**: `.claude/tools/notify.sh`
+- **Trigger**: Any Gemini Cli notification event
+- **Script**: `.gemini/tools/notify.sh`
 - **Features**:
   - Native notifications on all platforms
   - Shows project context
@@ -168,7 +168,7 @@ test:
 
 ### How Notifications Work
 
-1. **Event Occurs**: Claude Code needs attention
+1. **Event Occurs**: Gemini Cli needs attention
 2. **Hook Triggered**: Notification hook activates
 3. **Context Gathered**: Project name, session ID extracted
 4. **Platform Detection**: Appropriate notification method chosen
@@ -176,7 +176,7 @@ test:
 
 ### Customizing Notifications
 
-Edit `.claude/tools/notify.sh`:
+Edit `.gemini/tools/notify.sh`:
 
 ```bash
 # Add custom notification categories
@@ -232,7 +232,7 @@ paplay /usr/share/sounds/freedesktop/stereo/complete.oga
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/tools/auto-format.sh"
+            "command": ".gemini/tools/auto-format.sh"
           }
         ]
       }
@@ -241,7 +241,7 @@ paplay /usr/share/sounds/freedesktop/stereo/complete.oga
 }
 ```
 
-Create `.claude/tools/auto-format.sh`:
+Create `.gemini/tools/auto-format.sh`:
 
 ```bash
 #!/usr/bin/env bash
@@ -278,7 +278,7 @@ esac
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/tools/auto-commit.sh"
+            "command": ".gemini/tools/auto-commit.sh"
           }
         ]
       }
@@ -287,7 +287,7 @@ esac
 }
 ```
 
-Create `.claude/tools/auto-commit.sh`:
+Create `.gemini/tools/auto-commit.sh`:
 
 ```bash
 #!/usr/bin/env bash
@@ -314,7 +314,7 @@ git commit -m "$COMMIT_MSG" --no-verify || true
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/tools/run-tests.sh"
+            "command": ".gemini/tools/run-tests.sh"
           }
         ]
       }
@@ -402,7 +402,7 @@ fi
 
 ```bash
 # Add to any automation script
-DEBUG_LOG="/tmp/claude-automation-debug.log"
+DEBUG_LOG="/tmp/gemini-automation-debug.log"
 echo "[$(date)] Script started" >> "$DEBUG_LOG"
 echo "Input: $JSON_INPUT" >> "$DEBUG_LOG"
 ```
@@ -411,14 +411,14 @@ echo "Input: $JSON_INPUT" >> "$DEBUG_LOG"
 
 ```bash
 # Test with sample input
-echo '{"file_path": "/path/to/test.py", "success": true}' | .claude/tools/make-check.sh
+echo '{"file_path": "/path/to/test.py", "success": true}' | .gemini/tools/make-check.sh
 ```
 
 ### Common Issues
 
 1. **Script Not Executing**
 
-   - Check file permissions: `chmod +x .claude/tools/*.sh`
+   - Check file permissions: `chmod +x .gemini/tools/*.sh`
    - Verify path in settings.json
 
 2. **No Output**
@@ -433,7 +433,7 @@ echo '{"file_path": "/path/to/test.py", "success": true}' | .claude/tools/make-c
 ## 🚀 Best Practices
 
 1. **Fast Execution**: Keep automations under 5 seconds
-2. **Fail Gracefully**: Don't break Claude Code workflow
+2. **Fail Gracefully**: Don't break Gemini Cli workflow
 3. **User Feedback**: Provide clear success/failure messages
 4. **Cross-Platform**: Test on Mac, Linux, Windows, WSL
 5. **Configurable**: Allow users to customize behavior
@@ -444,7 +444,7 @@ echo '{"file_path": "/path/to/test.py", "success": true}' | .claude/tools/make-c
 
 ```bash
 # Cache expensive operations
-CACHE_FILE="/tmp/claude-check-cache"
+CACHE_FILE="/tmp/gemini-check-cache"
 CACHE_AGE=$(($(date +%s) - $(stat -f %m "$CACHE_FILE" 2>/dev/null || echo 0)))
 
 if [ $CACHE_AGE -lt 300 ]; then  # 5 minutes
