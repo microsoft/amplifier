@@ -171,7 +171,7 @@ claude
 _Tell Claude Code:_
 
 ```
-/ultrathink-task I'm evaluating Amplifier features on ai_working/yourproject.
+/ultrathink-task I'm evaluating Amplifier features on @ai_working/yourproject/
 Are there any parts of my project that could benefit from a new scenario or tool? If so, what should I create?
 ```
 
