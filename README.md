@@ -1,11 +1,15 @@
-# Amplifier: Supercharged AI Development Environment
+# Amplifier: Metacognitive AI Development
 
-> _"I have more ideas than time to try them out"_ — The problem we're solving.
+> _"Automate complex workflows by describing how you think through them."_
 
 > [!CAUTION]
 > This project is a research demonstrator. It is in early development and may change significantly. Using permissive AI tools in your repository requires careful attention to security considerations and careful human supervision, and even then things can still go wrong. Use it with caution, and at your own risk.
 
-Amplifier is a coordinated and accelerated development system that provides specialized AI agents, persistent knowledge that compounds over time, and workflows that execute complex methodologies.
+Amplifier is a coordinated and accelerated development system that turns your expertise into
+reusable AI tools without requiring code. Describe the step-by-step thinking process for handling a
+task—a "metacognitive recipe"—and Amplifier builds a tool that executes it reliably. As you create
+more tools, they combine and build on each other, transforming individual solutions into a
+compounding automation system.
 
 ## 🚀 QuickStart
 
@@ -90,39 +94,77 @@ source .venv/bin/activate  # Linux/Mac/WSL
 
 Choose your path:
 
-- [🎯 **Option 1 - Quick Exploration**](#-option-1---quick-exploration) - Just show me what it can do (no project needed)
+- [🎯 **Option 1 - Quick Try Out**](#-option-1---quick-try-out) - Just show me how to build a tool
 - [📦 **Option 2 - Quick Setup**](#-option-2---quick-setup) - Try Amplifier with my GitHub project
 - [🚀 **Option 3 - Production Setup**](#-option-3---production-setup) - I'm ready to fully integrate
 
 ---
 
-#### 🎯 Option 1 - Quick Exploration
+#### 🎯 Option 1 - Quick Try Out
 
-_"Just show me what it can do."_
+_"Just show me how to build a tool."_
 
 ```bash
 # Start Claude Code
 claude
 ```
 
-_Tell Claude Code:_
+**Create your first tool in 5 steps:**
 
-- ```
-  What is a scenario and how do I create one?
-  ```
-- ```
-  Run the blog writer scenario on the sample content
-  ```
-- ```
-  Show me what the zen-architect agent does. Do I need to call it explicitly
-  or does the system call it automatically?
-  ```
-- ```
-  What are the commands and what value do they add?
-  ```
-- ```
-  Why and when should I use `/ultrathink-task`?
-  ```
+1. **Identify a task** you want to automate (e.g., "weekly learning digest")
+
+   Need ideas? Try This:
+
+   ```
+   /ultrathink-task I'm new to "metacognitive recipes". What are some useful
+   tools I could create with Amplifier that show how recipes can self-evaluate
+   and improve via feedback loops? Just brainstorm ideas, don't build them yet.
+   ```
+
+2. **Describe the thinking process** - How would an expert handle it step-by-step?
+
+   Need help? Try This:
+
+   ```
+   /ultrathink-task This is my idea: <your idea here>. Can you help me describe the
+   thinking process to handle it step-by-step?
+   ```
+
+   Example of a metacognitive recipe:
+
+   ```markdown
+   I want to create a tool called "Research Synthesizer". Goal: help me research a topic by finding sources, extracting key themes, then asking me to choose which themes to explore in depth, and finally producing a summarized report.
+
+   Steps:
+
+   1. Do a preliminary web research on the topic and collect notes.
+   2. Extract the broad themes from the notes.
+   3. Present me the list of themes and highlight the top 2-3 you recommend focusing on (with reasons).
+   4. Allow me to refine or add to that theme list.
+   5. Do in-depth research on the refined list of themes.
+   6. Draft a report based on the deep research, ensuring the report stays within my requested length and style.
+   7. Offer the draft for my review and incorporate any feedback.
+   ```
+
+3. **Generate with `/ultrathink-task`** - Let Amplifier build the tool
+
+   ```
+   /ultrathink-task <your metacognitive recipe here>
+   ```
+
+4. **Refine through feedback** - "Make connections more insightful"
+
+   ```
+   Let's see how it works. Run <your generated tool>.
+   ```
+
+   Then:
+
+   - Observe and note issues.
+   - Provide feedback in context.
+   - Iterate until satisfied.
+
+**Learn more** with [Create Your Own Tools](docs/CREATE_YOUR_OWN_TOOLS.md) - Deep dive into the process.
 
 ---
 
@@ -143,8 +185,8 @@ claude
 _Tell Claude Code:_
 
 ```
-I'm evaluating Amplifier features on ai_working/yourproject.
-Are there any parts of my project that could benefit from a new scnario? If so, what should I create?
+/ultrathink-task I'm evaluating Amplifier features on ai_working/yourproject.
+Are there any parts of my project that could benefit from a new scenario or tool? If so, what should I create?
 ```
 
 > [!TIP]
