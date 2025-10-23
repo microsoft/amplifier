@@ -1,11 +1,11 @@
-# Amplifier: Metacognitive AI Development
+# Amplifier: Self-Building AI Development System
 
-> _"Automate complex workflows by describing how you think through them."_
+> _"A system that grows its own capabilities through modular composition."_
 
 > [!CAUTION]
 > This project is a research demonstrator. It is in early development and may change significantly. Using permissive AI tools in your repository requires careful attention to security considerations and careful human supervision, and even then things can still go wrong. Use it with caution, and at your own risk. See [Disclaimer](#disclaimer).
 
-Amplifier is a coordinated and accelerated development system that turns your expertise into reusable AI tools without requiring code. Describe the step-by-step thinking process for handling a task—a "metacognitive recipe"—and Amplifier builds a tool that executes it reliably. As you create more tools, they combine and build on each other, transforming individual solutions into a compounding automation system.
+Amplifier is a self-building development system that transforms how you work with AI. Unlike single-shot LLM requests or static applications, Amplifier accumulates and multiplies capabilities through use. Describe how an expert would approach a task (a "metacognitive recipe"), and Amplifier builds a modular tool. As you create more tools, they combine and build on each other—each contribution becomes infrastructure for the next. This compounding architecture enables you to work in ways that no single conversation or fixed application can match.
 
 ## 🚀 QuickStart
 
@@ -111,23 +111,17 @@ claude
 
    ```
    /ultrathink-task This is my idea: <your idea here>. Can you help me describe the
-   thinking process to handle it step-by-step?
-   ```
+   thinking process to handle it step-by-step?  Please present the final description
+   in the following format:
 
-   Example of a metacognitive recipe:
-
-   ```markdown
-   I want to create a tool called "Research Synthesizer". Goal: help me research a topic by finding sources, extracting key themes, then asking me to choose which themes to explore in depth, and finally producing a summarized report.
-
+   I want to create a tool called "<tool-name>".
+   Goal: help me <your-goal>.
    Steps:
 
-   1. Do a preliminary web research on the topic and collect notes.
-   2. Extract the broad themes from the notes.
-   3. Present me the list of themes and highlight the top 2-3 you recommend focusing on (with reasons).
-   4. Allow me to refine or add to that theme list.
-   5. Do in-depth research on the refined list of themes.
-   6. Draft a report based on the deep research, ensuring the report stays within my requested length and style.
-   7. Offer the draft for my review and incorporate any feedback.
+   1. <step 1>
+   2. <step 2>
+   3. <step 3>
+   ...
    ```
 
 3. **Generate with `/ultrathink-task`** - Let Amplifier build the tool
@@ -153,6 +147,247 @@ claude
 ---
 
 ## 📖 How to Use Amplifier
+
+### The Foundation: Modular Philosophy
+
+**Everything in Amplifier starts with the modular philosophy.** Build systems from small, self-contained modules that snap together like bricks. Each module has clear boundaries and defined connection points—this lets you regenerate any piece independently without breaking the whole.
+
+**Think "bricks and studs":**
+- A **brick** = a self-contained component that delivers one clear responsibility
+- A **stud** = the public interface where other modules connect
+- **Regeneration over patching** - Rebuild components cleanly from their specifications rather than accumulating technical debt
+
+See `@ai_context/MODULAR_DESIGN_PHILOSOPHY.md` for the complete philosophy.
+
+---
+
+### The Amplifier Vision: Dimensional Growth
+
+Amplifier's architecture enables dimensional growth—from simple modules to increasingly complex systems:
+
+**0-D: Single Modules (Points)**
+- One self-contained component
+- Example: A document parser module, a metadata extractor
+
+**1-D: Linear Workflows (Lines)**
+- Modules connected in sequence
+- **Metacognitive recipes** - Tools that execute step-by-step thinking processes
+- **DDD workflow** - `/ddd:1-plan → /ddd:2-docs → /ddd:3-code-plan → /ddd:4-code → /ddd:5-finish`
+- **/ultrathink-task** - Enforces agents in specific order, modularizes tasks into smaller groupings
+
+**2-D: Planar Architectures (Surfaces)**
+- Modules connected in more complex patterns (future direction)
+- Multiple workflows interacting and branching
+
+**The Compounding Effect:** As you build more modular components and workflows, they become building blocks for increasingly complex systems. Each tool you create makes future tools easier to build. This self-building architecture is what enables Amplifier to continuously grow its capabilities.
+
+---
+
+### Why Amplifier is a System, Not Just a Tool
+
+**This is the fundamental difference:** Traditional LLM applications and development environments provide fixed capabilities—you use what's built into them. Amplifier is a **system** that accumulates and multiplies capabilities through use.
+
+**The contrast:**
+
+**Single-shot LLM requests:**
+- Start from zero each time
+- Capabilities don't accumulate
+- Each task is independent
+- Results don't compound
+
+**Existing LLM software applications:**
+- Fixed architecture built once
+- Static wrapper around the model
+- Predetermined capabilities
+- Can't grow beyond initial design
+
+**Amplifier as a system:**
+- **Accumulates** - Each tool built becomes infrastructure for the next tool
+- **Multiplies** - Capabilities compound rather than add; Tool A enables Tool B which enables Tools C, D, E
+- **Self-builds** - The system grows its own architecture through use
+- **Infinite potential** - Modular foundation supports arbitrary complexity without hitting a ceiling
+
+**Why this enables you to work in a multiplied (amplified) way:** You're not limited to what a single LLM conversation can do, or what a static application provides. You're building on an accumulating foundation where each contribution multiplies what's possible. A few conversations in, you have tools. A few weeks in, you have workflows. A few months in, you have a compounding automation system that does things no single-shot approach could accomplish.
+
+**This is why Amplifier keeps getting better while other systems stay static.** The modular architecture doesn't just allow growth—it *enables* growth through use. Every problem solved becomes capability added. Every tool built becomes leverage gained. The system builds upon itself infinitely.
+
+---
+
+### Leveraging Modularity: Four Key Approaches
+
+These are different ways to apply the modular philosophy and participate in Amplifier's growth:
+
+#### 1. Metacognitive Recipes: Build Tools That Think
+
+Describe how an expert would approach a task step-by-step (a "metacognitive recipe"), and Amplifier builds a tool that executes that thinking process.
+
+**The pattern:**
+1. **Identify a workflow** you want to automate
+2. **Describe the thinking process** - How would you approach it step-by-step?
+3. **Generate with `/ultrathink-task`** - Amplifier builds the tool
+4. **Use that tool to build more tools** - Each tool becomes a building block
+
+**Example:** Create a document processor tool → use it to build a content analysis tool → use both to build a knowledge synthesis system. Each tool amplifies what you can do next.
+
+See [Create Your Own Tools](docs/CREATE_YOUR_OWN_TOOLS.md) for the complete guide.
+
+---
+
+#### 2. Document-Driven Development (DDD): Modular Feature Workflows
+
+Execute complete feature development as a linear workflow with explicit phases:
+
+```bash
+/ddd:1-plan         # Design the feature
+/ddd:2-docs         # Update all docs (iterate until approved)
+/ddd:3-code-plan    # Plan code changes
+/ddd:4-code         # Implement and test (iterate until working)
+/ddd:5-finish       # Clean up and finalize
+```
+
+**Why this is modular:** Each phase is a self-contained module that produces artifacts for the next phase. Docs stay synchronized with code because documentation leads implementation.
+
+See [Document-Driven Development Guide](docs/document_driven_development/) for complete details.
+
+---
+
+#### 3. Ultrathink-Task: Modularized Problem Solving
+
+The `/ultrathink-task` command applies modularity to problem-solving:
+- Enforces specific agents in specific order
+- Breaks tasks into smaller groupings (modularizes the task)
+- Different agents handle different modules of the work
+- Ensures right-sized tasks that fit within context windows
+
+**Use this to:** Build scenario tools, solve complex problems through structured decomposition, ensure thorough analysis before implementation.
+
+---
+
+#### 4. Parallel Development: Modular Exploration
+
+Use worktrees to create isolated modules of work that don't interfere with each other:
+
+```bash
+# Try multiple modular approaches
+make worktree feature-jwt        # One approach module
+make worktree feature-oauth      # Another approach module
+
+# Work on different task modules in parallel
+make worktree feature-dashboard  # Feature module
+make worktree fix-security-bug   # Bug fix module
+
+# Manage your modular workspaces
+make worktree-list              # See all modules
+make worktree-rm feature-jwt    # Clean up finished module
+```
+
+**Why this is modular:** Each worktree is an isolated module with its own branch and environment. Explore different approaches without interference, then merge the winner.
+
+See [Worktree Guide](docs/WORKTREE_GUIDE.md) for advanced features.
+
+---
+
+### Growing Amplifier: The Self-Building System
+
+**This is where the magic happens:** When you solve a problem or build a tool, that solution can become a new module in Amplifier's growing architecture. Your work doesn't just solve your immediate need—it adds capability to the system that everyone benefits from.
+
+**The growth pattern when things don't work initially:**
+
+1. **Provide metacognitive context** - Describe the modular approach:
+
+   Instead of: "Process 100 files and extract metadata"
+
+   Try: "I need to process 100 files. Here's the modular approach:
+   - Module 1: Tool that reads the file list
+   - Module 2: Status tracking system
+   - Module 3: File iterator with progress updates
+   - Module 4: Metadata extractor per file
+   - This ensures each piece can be regenerated and recovered independently"
+
+2. **Break down into smaller modules** - If the task is too large, create useful building blocks first, then compose them
+
+3. **Capture and modularize learning** - Use `/transcripts` to capture collaborative problem-solving, then have Amplifier analyze it to create new reusable modules
+
+4. **Build tools that become modules** - Every tool you create becomes part of Amplifier's growing module library
+
+**This is how dimensional growth happens:** Start with individual modules (0-D), connect them into workflows (1-D), then eventually compose them into more complex architectures (2-D). Each contribution adds to the foundation that everyone builds upon.
+
+---
+
+### Supporting Strategies for Modular Growth
+
+**Context Over Capability**
+
+Most "can't do this" problems are "doesn't have the right context for this module" problems. Provide:
+- **Task context** - What module you're trying to create and why
+- **Metacognitive context** - The step-by-step modular approach (see example above)
+- **Project context** - Your modular architectural principles (use AGENTS.md in workspace pattern)
+
+**Decomposition is Modularization**
+
+Big asks fail because they're monolithic. Break them into small, self-contained modules first. Each module:
+- Has clear boundaries and interfaces
+- Can be regenerated independently
+- Serves multiple purposes in different compositions
+- Makes future systems easier to build
+
+**Transcript-Driven Module Creation**
+
+After collaborative problem-solving:
+1. Run `/transcripts` or `./tools/claude_transcript_builder.py`
+2. Have Amplifier analyze where you provided guidance
+3. Convert that guidance into reusable modules
+4. Improvements get merged, adding to Amplifier's module library
+
+This is how Amplifier grows from usage—each solved problem becomes a new building block.
+
+---
+
+### Project Organization: The Workspace Pattern
+
+For serious projects, organize with Amplifier hosting your project as a git submodule:
+
+- **Clean boundaries** - Project files in project directory, Amplifier stays pristine
+- **Context persistence** - AGENTS.md preserves project guidance across sessions
+- **Scalability** - Work on multiple projects without interference
+
+See [Workspace Pattern Guide](docs/WORKSPACE_PATTERN.md) for complete details.
+
+---
+
+### Quick Reference: Modular Commands
+
+```bash
+# Build modular tools with metacognitive recipes
+/ultrathink-task <describe the modular thinking process>
+
+# Execute modular feature workflow
+/ddd:1-plan → /ddd:2-docs → /ddd:3-code-plan → /ddd:4-code → /ddd:5-finish
+
+# Create isolated modules for parallel exploration
+make worktree <name>       # Create isolated module workspace
+make worktree-list         # View all module workspaces
+make worktree-rm <name>    # Clean up finished module
+
+# Capture and modularize learning
+/transcripts               # Restore full conversation
+make transcript-list       # Browse past sessions
+./tools/claude_transcript_builder.py  # Build transcript modules
+
+# Organize as modular workspace
+git submodule add <url> <name>  # Add project module to workspace
+# Create AGENTS.md for persistent modular context
+```
+
+**Getting started:** Begin by thinking modularly. Describe a workflow you want to automate in modular terms—what are the self-contained pieces and how do they connect? As you create more modules, they naturally build on each other (0-D → 1-D → 2-D), creating the compounding effect that enables Amplifier's continuous growth.
+
+**The vision:** You're not just using Amplifier—you're participating in building it. Each module you create adds to the foundation that everyone builds upon. This is the self-building system in action.
+
+For deeper strategies and advanced techniques, see [The Amplifier Way](docs/THIS_IS_THE_WAY.md).
+
+---
+
+## 🎯 Project Setup
 
 ### Setup Your Project
 
@@ -248,23 +483,16 @@ Each phase creates artifacts the next phase reads. You control all git operation
 
 - _View the documentation:_ [Document-Driven Development Guide](docs/document_driven_development/)
 
-### 🌳 Parallel Development
+### 🌳 Advanced Worktree Workflows
 
-**Why use this?** Stop wondering "what if" — build multiple solutions simultaneously and pick the winner.
+**You've learned the basics above.** Here are advanced worktree patterns for power users:
 
-```bash
-# Try different approaches in parallel
-make worktree feature-jwt     # JWT authentication approach
-make worktree feature-oauth   # OAuth approach in parallel
+- **Hide worktrees from VSCode** when not actively using them to reduce clutter
+- **Adopt branches from other machines** to continue work across environments
+- **Manage long-running experiments** with organized naming conventions
+- **Archive completed worktrees** while preserving their git history
 
-# Compare and choose
-make worktree-list            # See all experiments
-make worktree-rm feature-jwt  # Remove the one you don't want
-```
-
-Each worktree is completely isolated with its own branch, environment, and context.
-
-See the [Worktree Guide](docs/WORKTREE_GUIDE.md) for advanced features, such as hiding worktrees from VSCode when not in use, adopting branches from other machines, and more.
+See the [Worktree Guide](docs/WORKTREE_GUIDE.md) for complete details on these advanced techniques.
 
 - _Tell Claude Code:_ `What make worktree commands are available to me?`
 
@@ -343,15 +571,15 @@ The pattern inverts the typical relationship: instead of your project containing
 
 - _View the documentation:_ [Workspace Pattern Guide](docs/WORKSPACE_PATTERN.md) - complete setup, usage patterns, and migration from `ai_working/`.
 
-### 💡 Best Practices & Tips
+### 💡 Going Deeper
 
-**Want to get the most out of Amplifier?** Check out [The Amplifier Way](docs/THIS_IS_THE_WAY.md) for battle-tested strategies including:
+**Already using the core philosophy above?** Ready to level up? Check out [The Amplifier Way](docs/THIS_IS_THE_WAY.md) for advanced strategies including:
 
-- Understanding capability vs. context
-- Decomposition strategies for complex tasks
-- Using transcript tools to capture and improve workflows
+- Deep-dive on decomposition patterns for complex tasks
+- Advanced transcript tools and workflow capture techniques
 - Demo-driven development patterns
-- Practical tips for effective AI-assisted development
+- Expert techniques for AI-assisted development
+- Context engineering for maximum effectiveness
 
 - _Tell Claude Code:_ `What are the best practices to get the MOST out of Amplifier?`
 
