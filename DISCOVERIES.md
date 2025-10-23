@@ -63,6 +63,65 @@ echo "  • Claude CLI: $(claude --version 2>&1 || echo 'NOT INSTALLED')"
 - Use named containers (`runArgs`) for easier identification in Docker Desktop
 - Test DevContainer changes by rebuilding containers from scratch
 
+## pnpm Global Bin Directory Not Configured (2025-10-23)
+
+### Issue
+
+`make install` fails with `ERR_PNPM_NO_GLOBAL_BIN_DIR` error when trying to install global npm packages via pnpm in fresh DevContainer builds.
+
+### Root Cause
+
+Two issues combined to cause the failure:
+
+1. **Missing SHELL environment variable**: During DevContainer post-create script execution, the `SHELL` environment variable is not set
+2. **pnpm setup requires SHELL**: The `pnpm setup` command fails with `ERR_PNPM_UNKNOWN_SHELL` when `SHELL` is not set
+3. **Silent failure**: The error was hidden by `|| true` in the script, allowing the script to continue and report success even though pnpm wasn't configured
+
+From the post-create log:
+```
+🔧  Setting up pnpm global bin directory...
+ ERR_PNPM_UNKNOWN_SHELL  Could not infer shell type.
+Set the SHELL environment variable to your active shell.
+    ✅ pnpm configured  # <-- False success!
+```
+
+### Solution
+
+Fixed post-create script to explicitly set SHELL before running pnpm setup:
+
+**post-create.sh addition:**
+```bash
+echo "🔧  Setting up pnpm global bin directory..."
+# Ensure SHELL is set for pnpm setup
+export SHELL="${SHELL:-/bin/bash}"
+# Configure pnpm to use a global bin directory
+pnpm setup 2>&1 | grep -v "^$" || true
+# Export for current session (will also be in ~/.bashrc for future sessions)
+export PNPM_HOME="/home/vscode/.local/share/pnpm"
+export PATH="$PNPM_HOME:$PATH"
+echo "    ✅ pnpm configured"
+```
+
+This ensures:
+1. SHELL is explicitly set before pnpm setup runs
+2. pnpm's global bin directory is configured on first container build
+3. The configuration is added to `~/.bashrc` for all future sessions
+4. The environment variables are set for the post-create script itself
+
+### Key Learnings
+
+1. **SHELL not set in post-create context** - DevContainer post-create scripts run in an environment where SHELL may not be set
+2. **pnpm requires SHELL** - Unlike npm, pnpm needs to know the shell type to modify the correct config file
+3. **Silent failures are dangerous** - Using `|| true` hid the actual error; consider logging errors even when continuing
+4. **Check the logs** - The `/tmp/devcontainer-post-create.log` revealed the actual error that was hidden from the console
+
+### Prevention
+
+- Always set SHELL explicitly in post-create scripts before running shell-dependent commands
+- Check post-create logs (`/tmp/devcontainer-post-create.log`) after rebuilding containers
+- Consider conditional error handling instead of blanket `|| true` to catch real failures
+- Test `make install` as part of DevContainer validation
+
 ## OneDrive/Cloud Sync File I/O Errors (2025-01-21)
 
 ### Issue

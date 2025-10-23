@@ -38,7 +38,11 @@ MAKE_FILES = $(shell dir Makefile /b /s)
 ALL_MAKE_DIRS = $(sort $(filter-out $(subst /,\,$(abspath ./)),$(patsubst %\,%,$(dir $(MAKE_FILES)))))
 endif
 
-MAKE_DIRS := $(call FILTER_OUT,site-packages,$(call FILTER_OUT,node_modules,$(ALL_MAKE_DIRS)))
+# Filter out dependency and cache directories from recursive make targets
+MAKE_DIRS_TMP := $(ALL_MAKE_DIRS)
+MAKE_DIRS_TMP := $(call FILTER_OUT,node_modules,$(MAKE_DIRS_TMP))
+MAKE_DIRS_TMP := $(call FILTER_OUT,site-packages,$(MAKE_DIRS_TMP))
+MAKE_DIRS := $(call FILTER_OUT,.cache,$(MAKE_DIRS_TMP))
 
 .PHONY: .clean-error-log .print-error-log
 
