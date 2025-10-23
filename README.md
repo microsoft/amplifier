@@ -176,7 +176,7 @@ Are there any parts of my project that could benefit from a new scenario or tool
 ```
 
 > [!TIP]
-> Think of Amplifier v1.0 as your development workspace. You need to bring your project into the workspace (clone your project into Amplifier), as opposed to bringing the workspace into your project (don't clone Amplifier into your project).
+> Think of Amplifier as your development workspace. You need to bring your project into the workspace (clone your project into Amplifier), as opposed to bringing the workspace into your project (don't clone Amplifier into your project).
 
 #### Advanced
 
