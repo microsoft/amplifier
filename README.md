@@ -6,10 +6,7 @@
 > This project is a research demonstrator. It is in early development and may change significantly. Using permissive AI tools in your repository requires careful attention to security considerations and careful human supervision, and even then things can still go wrong. Use it with caution, and at your own risk. See [Disclaimer](#disclaimer).
 
 Amplifier is a coordinated and accelerated development system that turns your expertise into
-reusable AI tools without requiring code. Describe the step-by-step thinking process for handling a
-task—a "metacognitive recipe"—and Amplifier builds a tool that executes it reliably. As you create
-more tools, they combine and build on each other, transforming individual solutions into a
-compounding automation system.
+reusable AI tools without requiring code. Describe the step-by-step thinking process for handling a task—a "metacognitive recipe"—and Amplifier builds a tool that executes it reliably. As you create more tools, they combine and build on each other, transforming individual solutions into a compounding automation system.
 
 ## 🚀 QuickStart
 
@@ -92,18 +89,6 @@ source .venv/bin/activate  # Linux/Mac/WSL
 
 ### Get Started
 
-Choose your path:
-
-- [🎯 **Option 1 - Quick Try Out**](#-option-1---quick-try-out) - Just show me how to build a tool
-- [📦 **Option 2 - Quick Setup**](#-option-2---quick-setup) - Try Amplifier with my GitHub project
-- [🚀 **Option 3 - Production Setup**](#-option-3---production-setup) - I'm ready to fully integrate
-
----
-
-#### 🎯 Option 1 - Quick Try Out
-
-_"Just show me how to build a tool."_
-
 ```bash
 # Start Claude Code
 claude
@@ -168,9 +153,11 @@ claude
 
 ---
 
-#### 🔗 Option 2 - Quick Setup
+## 📖 How to Use Amplifier
 
-_"I want to try Amplifier with my GitHub project."_
+### Setup With Your GitHub Project
+
+#### Basic
 
 ```bash
 # Clone your project into ai_working for easy access
@@ -192,11 +179,7 @@ Are there any parts of my project that could benefit from a new scenario or tool
 > [!TIP]
 > Think of Amplifier v1.0 as your development workspace. You need to bring your project into the workspace (clone your project into Amplifier), as opposed to bringing the workspace into your project (don't clone Amplifier into your project).
 
----
-
-#### 🚀 Option 3 - Production Setup
-
-_"I'm ready to fully integrate."_
+#### Advanced
 
 1. For existing GitHub projects
 
@@ -230,49 +213,33 @@ Let's use /ddd:1-plan to design the architecture.
 
 > [!NOTE]
 >
-> **Why use this?** Clean git history per component, independent Amplifier updates, persistent context across sessions, scalable to multiple projects. See the [Workspace Pattern Guide](docs/WORKSPACE_PATTERN.md) for full details.
+> **Why use this?** Clean git history per component, independent Amplifier updates, persistent context across sessions, scalable to multiple projects. See [Workspace Pattern for Serious Projects](#workspace-pattern-for-serious-projects) below for full details.
 
 ---
 
-### What's Next?
-
-After your initial exploration:
-
-#### 🤖 Ask Claude Code
-
-_Tell Claude Code any of these:_
-
-1. **"Walk me through creating my own scenario tool"** - Build custom AI-powered tools
-2. **"What are the best practices for using Amplifier?"** - Learn proven patterns
-3. **"Show me how Document-Driven Development works"** - Try the workflow
-
-#### 📚 Explore Yourself
-
-_Or dive into the documentation:_
-
-1. **Create your own tools** → [Scenario Creation Guide](docs/CREATE_YOUR_OWN_TOOLS.md)
-2. **Best practices** → [The Amplifier Way](docs/THIS_IS_THE_WAY.md)
-3. **Advanced workflows** → [Document-Driven Development](docs/document_driven_development/README.md)
-
----
-
-## What Is Amplifier?
-
-We've taken our learnings about what works in AI-assisted development and made them available for you, ready-to-use. Instead of starting from scratch every session, you get immediate access to proven patterns, specialized agents for different tasks, and workflows that actually work.
-
-## 📖 How to Use Amplifier
+## ✨ Features To Try
 
 ### 🔧 Create Amplifier-powered Tools for Scenarios
 
 Amplifier is designed so **you can create new AI-powered tools** just by describing how they should think. See the [Create Your Own Tools](docs/CREATE_YOUR_OWN_TOOLS.md) guide for more information.
 
+- _Tell Claude Code:_ `Walk me through creating my own scenario tool`
+
+- _View the documentation:_ [Scenario Creation Guide](docs/CREATE_YOUR_OWN_TOOLS.md)
+
 ### 🤖 Explore Amplifier's agents on your code
 
 Try out one of the specialized experts:
 
-- "Use the zen-architect agent to design my application's caching layer"
-- "Deploy bug-hunter to find why my login system is failing"
-- "Have security-guardian review my API implementation for vulnerabilities"
+- _Tell Claude Code:_
+
+  `Use the zen-architect agent to design my application's caching layer`
+
+  `Deploy bug-hunter to find why my login system is failing`
+
+  `Have security-guardian review my API implementation for vulnerabilities`
+
+- _View the files:_ [Agents](.claude/agents/)
 
 ### 📝 Document-Driven Development
 
@@ -290,7 +257,9 @@ Execute a complete feature workflow with numbered slash commands:
 
 Each phase creates artifacts the next phase reads. You control all git operations with explicit authorization at every step. The workflow prevents expensive mistakes by catching design flaws before implementation.
 
-See the [Document-Driven Development Guide](docs/document_driven_development/) for complete documentation, or run `/ddd:0-help` in Claude Code.
+- _Tell Claude Code:_ `/ddd:0-help`
+
+- _View the documentation:_ [Document-Driven Development Guide](docs/document_driven_development/)
 
 ### 🌳 Parallel Development
 
@@ -309,6 +278,10 @@ make worktree-rm feature-jwt  # Remove the one you don't want
 Each worktree is completely isolated with its own branch, environment, and context.
 
 See the [Worktree Guide](docs/WORKTREE_GUIDE.md) for advanced features, such as hiding worktrees from VSCode when not in use, adopting branches from other machines, and more.
+
+- _Tell Claude Code:_ `What make worktree commands are available to me?`
+
+- _View the documentation:_ [Worktree Guide](docs/WORKTREE_GUIDE.md)
 
 ### 📊 Enhanced Status Line
 
@@ -379,7 +352,9 @@ Perfect for:
 
 The pattern inverts the typical relationship: instead of your project containing Amplifier, Amplifier becomes a dedicated workspace that hosts your projects. Each project gets persistent context through AGENTS.md (AI guidance), philosophy documents (decision filters), and clear namespace boundaries using `@project-name/` syntax.
 
-See the [Workspace Pattern Guide](docs/WORKSPACE_PATTERN.md) for complete setup, usage patterns, and migration from `ai_working/`.
+- _Tell Claude Code:_ `What are the recommended workspace patterns for serious projects?`
+
+- _View the documentation:_ [Workspace Pattern Guide](docs/WORKSPACE_PATTERN.md) - complete setup, usage patterns, and migration from `ai_working/`.
 
 ### 💡 Best Practices & Tips
 
@@ -390,6 +365,10 @@ See the [Workspace Pattern Guide](docs/WORKSPACE_PATTERN.md) for complete setup,
 - Using transcript tools to capture and improve workflows
 - Demo-driven development patterns
 - Practical tips for effective AI-assisted development
+
+- _Tell Claude Code:_ `What are the best practices to get the MOST out of Amplifier?`
+
+- _View the documentation:_ [The Amplifier Way](docs/THIS_IS_THE_WAY.md)
 
 ### ⚙️ Development Commands
 
