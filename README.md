@@ -154,31 +154,7 @@ claude
 
 ## 📖 How to Use Amplifier
 
-### Setup With Your GitHub Project
-
-#### Basic
-
-```bash
-# Clone your project into ai_working for easy access
-cd ai_working
-git clone https://github.com/yourusername/yourproject.git
-cd ..
-
-# Start Claude
-claude
-```
-
-_Tell Claude Code:_
-
-```
-/ultrathink-task I'm evaluating Amplifier features on @ai_working/yourproject/
-Are there any parts of my project that could benefit from a new scenario or tool? If so, what should I create?
-```
-
-> [!TIP]
-> Think of Amplifier as your development workspace. You need to bring your project into the workspace (clone your project into Amplifier), as opposed to bringing the workspace into your project (don't clone Amplifier into your project).
-
-#### Advanced
+### Setup Your Project
 
 1. For existing GitHub projects
 

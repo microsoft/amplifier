@@ -68,7 +68,7 @@ But as projects grow, you'll hit friction points:
 
 **Scaling is awkward.** Want to work on multiple projects? You end up with `ai_working/project1/`, `ai_working/project2/`, each fighting for the same namespace.
 
-The workspace pattern solves these problems by inverting the relationship: instead of projects living nested deeper within Amplifier, Amplifier becomes a dedicated workspace that hosts projects as first-class citizens.
+The workspace pattern solves these problems by inverting the relationship: instead of projects living inside Amplifier, Amplifier becomes a dedicated workspace that hosts projects as first-class citizens.
 
 ## The Architecture
 
