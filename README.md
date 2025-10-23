@@ -160,21 +160,33 @@ claude
 
    ```bash
    # Add your project as a submodule
-   git submodule add https://github.com/yourusername/yourproject.git yourproject
+   cd amplifier
+   git submodule add git@github.com:yourname/your-project.git my-project
    ```
 
 2. For new projects
 
    ```bash
-   # Create new project
-   mkdir yourproject && cd yourproject
+   # Create new project and add as a submodule
+   cd amplifier
+   mkdir my-project
+   cd my-project
    git init
+   git remote add origin git@github.com:yourname/your-project.git
    cd ..
+   git submodule add ./my-project my-project
    ```
 
 ```bash
+# Install dependencies
+make install
+
+# Activate virtual environment
+source .venv/bin/activate  # Linux/Mac/WSL
+# .venv\Scripts\Activate.ps1  # Windows PowerShell
+
 # Set up project context & start Claude
-echo "# Project-specific AI guidance" > yourproject/AGENTS.md
+echo "# Project-specific AI guidance" > my-project/AGENTS.md
 claude
 ```
 
