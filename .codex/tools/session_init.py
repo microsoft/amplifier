@@ -4,14 +4,13 @@ Codex session initialization script - loads relevant memories before starting a 
 Standalone script that detects context and writes output to files.
 """
 
+import argparse
 import asyncio
 import json
-import sys
 import os
-import argparse
-from pathlib import Path
+import sys
 from datetime import datetime
-
+from pathlib import Path
 
 # Add amplifier to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -59,6 +58,7 @@ class SessionLogger:
 
     def exception(self, message: str, exc=None):
         import traceback
+
         if exc:
             self.error(f"{message}: {exc}")
             self.error(f"Traceback:\n{traceback.format_exc()}")
@@ -68,7 +68,9 @@ class SessionLogger:
 
     def cleanup_old_logs(self, days_to_keep: int = 7):
         try:
-            from datetime import date, timedelta
+            from datetime import date
+            from datetime import timedelta
+
             today = datetime.now().date()
             cutoff = today - timedelta(days=days_to_keep)
             for log_file in self.log_dir.glob(f"{self.log_name}_*.log"):
@@ -123,7 +125,7 @@ async def main():
                 "recentCount": 0,
                 "source": "disabled",
                 "contextFile": str(context_file),
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
             metadata_file.write_text(json.dumps(metadata, indent=2))
             print("✓ Session initialized (memory system disabled)")
@@ -227,7 +229,7 @@ async def main():
             "recentCount": recent_count,
             "source": "amplifier_memory",
             "contextFile": str(context_file),
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
         metadata_file = Path(".codex/session_init_metadata.json")
@@ -253,7 +255,7 @@ async def main():
             "source": "error",
             "contextFile": str(context_file),
             "timestamp": datetime.now().isoformat(),
-            "error": str(e)
+            "error": str(e),
         }
         metadata_file.write_text(json.dumps(metadata, indent=2))
         sys.exit(0)

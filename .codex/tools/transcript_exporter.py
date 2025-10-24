@@ -18,18 +18,16 @@ from typing import Any
 sys.path.append(str(Path(__file__).parent.parent.parent / "tools"))
 
 try:
-    from codex_transcripts_builder import (
-        load_history,
-        load_rollout_items,
-        collect_events,
-        write_conversation_transcript,
-        write_extended_transcript,
-        load_session_meta,
-        write_session_metadata,
-        SessionMeta,
-        HISTORY_DEFAULT,
-        SESSIONS_DEFAULT,
-    )
+    from codex_transcripts_builder import HISTORY_DEFAULT
+    from codex_transcripts_builder import SESSIONS_DEFAULT
+    from codex_transcripts_builder import SessionMeta
+    from codex_transcripts_builder import collect_events
+    from codex_transcripts_builder import load_history
+    from codex_transcripts_builder import load_rollout_items
+    from codex_transcripts_builder import load_session_meta
+    from codex_transcripts_builder import write_conversation_transcript
+    from codex_transcripts_builder import write_extended_transcript
+    from codex_transcripts_builder import write_session_metadata
 except ImportError as e:
     print(f"Error importing codex_transcripts_builder: {e}", file=sys.stderr)
     print("Make sure tools/codex_transcripts_builder.py is available", file=sys.stderr)
@@ -302,50 +300,21 @@ class CodexTranscriptExporter:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Export Codex session transcripts")
+    parser.add_argument("--session-id", help="Export specific session ID (full or short form)")
+    parser.add_argument("--current", action="store_true", help="Export current/latest session")
+    parser.add_argument("--project-only", action="store_true", help="Filter sessions by current project directory")
     parser.add_argument(
-        "--session-id",
-        help="Export specific session ID (full or short form)"
+        "--format", choices=["standard", "extended", "both", "compact"], default="standard", help="Output format"
     )
     parser.add_argument(
-        "--current",
-        action="store_true",
-        help="Export current/latest session"
+        "--output-dir", type=Path, default=Path(".codex/transcripts"), help="Output directory for transcripts"
     )
-    parser.add_argument(
-        "--project-only",
-        action="store_true",
-        help="Filter sessions by current project directory"
-    )
-    parser.add_argument(
-        "--format",
-        choices=["standard", "extended", "both", "compact"],
-        default="standard",
-        help="Output format"
-    )
-    parser.add_argument(
-        "--output-dir",
-        type=Path,
-        default=Path(".codex/transcripts"),
-        help="Output directory for transcripts"
-    )
-    parser.add_argument(
-        "--sessions-root",
-        type=Path,
-        default=SESSIONS_DEFAULT,
-        help="Codex sessions directory"
-    )
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help="Enable verbose output"
-    )
+    parser.add_argument("--sessions-root", type=Path, default=SESSIONS_DEFAULT, help="Codex sessions directory")
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
 
     args = parser.parse_args()
 
-    exporter = CodexTranscriptExporter(
-        sessions_root=args.sessions_root,
-        verbose=args.verbose
-    )
+    exporter = CodexTranscriptExporter(sessions_root=args.sessions_root, verbose=args.verbose)
 
     # Determine which session(s) to export
     sessions_to_export = []
@@ -376,7 +345,7 @@ def main() -> None:
             session_id=session_id,
             output_dir=args.output_dir,
             format_type=args.format,
-            project_dir=Path.cwd() if args.project_only else None
+            project_dir=Path.cwd() if args.project_only else None,
         )
         if result:
             success_count += 1

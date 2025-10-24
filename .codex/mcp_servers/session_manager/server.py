@@ -6,24 +6,19 @@ Replaces Claude Code SessionStart and Stop hooks with explicit MCP tools.
 
 import asyncio
 import json
-import sys
-from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Any
 
 # Import FastMCP for server framework
 from mcp.server.fastmcp import FastMCP
 
 # Import base utilities
-from ..base import (
-    MCPLogger,
-    get_project_root,
-    setup_amplifier_path,
-    check_memory_system_enabled,
-    success_response,
-    error_response,
-    metadata_response,
-    safe_import
-)
+from ..base import MCPLogger
+from ..base import check_memory_system_enabled
+from ..base import error_response
+from ..base import get_project_root
+from ..base import metadata_response
+from ..base import setup_amplifier_path
+from ..base import success_response
 
 # Initialize FastMCP server
 mcp = FastMCP("amplifier-session")
@@ -33,14 +28,14 @@ logger = MCPLogger("session_manager")
 
 
 @mcp.tool()
-async def initialize_session(prompt: str, context: Optional[str] = None) -> Dict[str, Any]:
+async def initialize_session(prompt: str, context: str | None = None) -> dict[str, Any]:
     """
     Load relevant memories at session start to provide context.
-    
+
     Args:
         prompt: The initial prompt or query for the session
         context: Optional additional context about the session
-        
+
     Returns:
         Dictionary containing formatted memory context and metadata
     """
@@ -54,11 +49,7 @@ async def initialize_session(prompt: str, context: Optional[str] = None) -> Dict
         memory_enabled = check_memory_system_enabled()
         if not memory_enabled:
             logger.info("Memory system disabled via MEMORY_SYSTEM_ENABLED env var")
-            return metadata_response({
-                "memories_loaded": 0,
-                "source": "amplifier_memory",
-                "disabled": True
-            })
+            return metadata_response({"memories_loaded": 0, "source": "amplifier_memory", "disabled": True})
 
         # Set up amplifier path
         project_root = get_project_root()
@@ -147,14 +138,14 @@ async def initialize_session(prompt: str, context: Optional[str] = None) -> Dict
 
 
 @mcp.tool()
-async def finalize_session(messages: List[Dict[str, Any]], context: Optional[str] = None) -> Dict[str, Any]:
+async def finalize_session(messages: list[dict[str, Any]], context: str | None = None) -> dict[str, Any]:
     """
     Extract and store memories from conversation at session end.
-    
+
     Args:
         messages: List of conversation messages with role and content
         context: Optional context about the session
-        
+
     Returns:
         Dictionary containing extraction results and metadata
     """
@@ -166,11 +157,7 @@ async def finalize_session(messages: List[Dict[str, Any]], context: Optional[str
         memory_enabled = check_memory_system_enabled()
         if not memory_enabled:
             logger.info("Memory system disabled via MEMORY_SYSTEM_ENABLED env var")
-            return metadata_response({
-                "memories_extracted": 0,
-                "source": "amplifier_extraction",
-                "disabled": True
-            })
+            return metadata_response({"memories_extracted": 0, "source": "amplifier_extraction", "disabled": True})
 
         # Set up amplifier path
         project_root = get_project_root()
@@ -235,7 +222,7 @@ async def finalize_session(messages: List[Dict[str, Any]], context: Optional[str
             logger.info(f"Session finalized with {memories_count} memories extracted")
             return success_response(output)
 
-    except asyncio.TimeoutError:
+    except TimeoutError:
         logger.error("Memory extraction timed out after 60 seconds")
         return error_response("Memory extraction timed out", {"timeout": True})
     except Exception as e:
@@ -244,10 +231,10 @@ async def finalize_session(messages: List[Dict[str, Any]], context: Optional[str
 
 
 @mcp.tool()
-async def health_check() -> Dict[str, Any]:
+async def health_check() -> dict[str, Any]:
     """
     Verify server is running and amplifier modules are accessible.
-    
+
     Returns:
         Dictionary containing server status and module availability
     """
@@ -270,18 +257,21 @@ async def health_check() -> Dict[str, Any]:
         if amplifier_available:
             try:
                 from amplifier.memory import MemoryStore
+
                 status["memory_store_import"] = True
             except ImportError:
                 status["memory_store_import"] = False
 
             try:
                 from amplifier.search import MemorySearcher
+
                 status["memory_searcher_import"] = True
             except ImportError:
                 status["memory_searcher_import"] = False
 
             try:
                 from amplifier.extraction import MemoryExtractor
+
                 status["memory_extractor_import"] = True
             except ImportError:
                 status["memory_extractor_import"] = False

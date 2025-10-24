@@ -3,14 +3,17 @@ Shared base classes and utilities for MCP servers.
 Provides logging, common initialization, and error handling for all MCP servers.
 """
 
-import asyncio
 import json
 import os
 import sys
-from datetime import datetime, date, timedelta
-from pathlib import Path
-from typing import Any, Dict, Optional, Callable, Awaitable, Union
 import traceback
+from collections.abc import Awaitable
+from collections.abc import Callable
+from datetime import date
+from datetime import datetime
+from datetime import timedelta
+from pathlib import Path
+from typing import Any
 
 
 class MCPLogger:
@@ -125,35 +128,33 @@ class MCPLogger:
             self.warning(f"Failed to cleanup old logs: {e}")
 
 
-def get_project_root(start_path: Optional[Path] = None) -> Optional[Path]:
+def get_project_root(start_path: Path | None = None) -> Path | None:
     """Find project root by looking for .git, pyproject.toml, or Makefile"""
     if start_path is None:
         start_path = Path.cwd()
-    
+
     current = start_path
     while current != current.parent:
         # Check for common project root indicators
-        if (current / ".git").exists() or \
-           (current / "pyproject.toml").exists() or \
-           (current / "Makefile").exists():
+        if (current / ".git").exists() or (current / "pyproject.toml").exists() or (current / "Makefile").exists():
             return current
         current = current.parent
-    
+
     return None
 
 
-def setup_amplifier_path(project_root: Optional[Path] = None) -> bool:
+def setup_amplifier_path(project_root: Path | None = None) -> bool:
     """Add amplifier to Python path for imports"""
     try:
         if project_root is None:
             project_root = get_project_root()
-        
+
         if project_root:
             amplifier_path = project_root / "amplifier"
             if amplifier_path.exists():
                 sys.path.insert(0, str(project_root))
                 return True
-        
+
         return False
     except Exception:
         return False
@@ -173,7 +174,7 @@ def safe_import(module_path: str, fallback: Any = None) -> Any:
         return fallback
 
 
-def success_response(data: Any, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def success_response(data: Any, metadata: dict[str, Any] | None = None) -> dict[str, Any]:
     """Build successful tool response with metadata"""
     response = {"success": True, "data": data}
     if metadata:
@@ -181,7 +182,7 @@ def success_response(data: Any, metadata: Optional[Dict[str, Any]] = None) -> Di
     return response
 
 
-def error_response(error: str, details: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def error_response(error: str, details: dict[str, Any] | None = None) -> dict[str, Any]:
     """Build error response with details"""
     response = {"success": False, "error": error}
     if details:
@@ -189,7 +190,7 @@ def error_response(error: str, details: Optional[Dict[str, Any]] = None) -> Dict
     return response
 
 
-def metadata_response(metadata: Dict[str, Any]) -> Dict[str, Any]:
+def metadata_response(metadata: dict[str, Any]) -> dict[str, Any]:
     """Build metadata-only response"""
     return {"success": True, "metadata": metadata}
 
@@ -202,24 +203,25 @@ class AmplifierMCPServer:
         self.server_name = server_name
         self.mcp = fastmcp_instance
         self.logger = MCPLogger(server_name)
-        
+
         # Common initialization
         self.project_root = get_project_root()
         self.amplifier_available = setup_amplifier_path(self.project_root)
         self.memory_enabled = check_memory_system_enabled()
-        
+
         # Log initialization status
         self.logger.info(f"Project root: {self.project_root}")
         self.logger.info(f"Amplifier available: {self.amplifier_available}")
         self.logger.info(f"Memory system enabled: {self.memory_enabled}")
-        
+
         # Register common tools
         self._register_health_check()
 
     def _register_health_check(self):
         """Register the common health check tool"""
+
         @self.mcp.tool()
-        async def health_check() -> Dict[str, Any]:
+        async def health_check() -> dict[str, Any]:
             """Check server health and module availability"""
             try:
                 status = {
@@ -227,32 +229,35 @@ class AmplifierMCPServer:
                     "project_root": str(self.project_root) if self.project_root else None,
                     "amplifier_available": self.amplifier_available,
                     "memory_enabled": self.memory_enabled,
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 }
-                
+
                 # Test basic imports if amplifier is available
                 if self.amplifier_available:
                     try:
                         from amplifier.memory import MemoryStore
+
                         status["memory_store_import"] = True
                     except ImportError:
                         status["memory_store_import"] = False
-                    
+
                     try:
                         from amplifier.search import MemorySearcher
+
                         status["memory_searcher_import"] = True
                     except ImportError:
                         status["memory_searcher_import"] = False
-                
+
                 self.logger.info("Health check completed successfully")
                 return success_response(status, {"checked_at": datetime.now().isoformat()})
-                
+
             except Exception as e:
                 self.logger.exception("Health check failed", e)
                 return error_response("Health check failed", {"error": str(e)})
 
     def tool_error_handler(self, tool_func: Callable[..., Awaitable[Any]]) -> Callable[..., Awaitable[Any]]:
         """Decorator to wrap tool functions with error handling"""
+
         async def wrapper(*args, **kwargs):
             try:
                 self.logger.cleanup_old_logs()  # Clean up logs on each tool call
@@ -260,11 +265,10 @@ class AmplifierMCPServer:
                 return result
             except Exception as e:
                 self.logger.exception(f"Tool {tool_func.__name__} failed", e)
-                return error_response(f"Tool execution failed: {str(e)}", {
-                    "tool": tool_func.__name__,
-                    "error_type": type(e).__name__
-                })
-        
+                return error_response(
+                    f"Tool execution failed: {str(e)}", {"tool": tool_func.__name__, "error_type": type(e).__name__}
+                )
+
         # Preserve function metadata for FastMCP
         wrapper.__name__ = tool_func.__name__
         wrapper.__doc__ = tool_func.__doc__

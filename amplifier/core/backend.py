@@ -5,7 +5,7 @@ import logging
 import os
 import subprocess
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -13,11 +13,13 @@ logger = logging.getLogger(__name__)
 
 class BackendNotAvailableError(Exception):
     """Raised when requested backend is not available."""
+
     pass
 
 
 class BackendOperationError(Exception):
     """Raised when backend operation fails."""
+
     pass
 
 
@@ -25,7 +27,7 @@ class AmplifierBackend(abc.ABC):
     """Abstract base class for amplifier backends."""
 
     @abc.abstractmethod
-    def initialize_session(self, prompt: str, context: Optional[str] = None) -> Dict[str, Any]:
+    def initialize_session(self, prompt: str, context: str | None = None) -> dict[str, Any]:
         """
         Load memories at session start.
 
@@ -39,7 +41,7 @@ class AmplifierBackend(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def finalize_session(self, messages: List[Dict[str, Any]], context: Optional[str] = None) -> Dict[str, Any]:
+    def finalize_session(self, messages: list[dict[str, Any]], context: str | None = None) -> dict[str, Any]:
         """
         Extract and store memories at session end.
 
@@ -53,7 +55,7 @@ class AmplifierBackend(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def run_quality_checks(self, file_paths: List[str], cwd: Optional[str] = None) -> Dict[str, Any]:
+    def run_quality_checks(self, file_paths: list[str], cwd: str | None = None) -> dict[str, Any]:
         """
         Run code quality checks.
 
@@ -67,7 +69,9 @@ class AmplifierBackend(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def export_transcript(self, session_id: Optional[str] = None, format: str = "standard", output_dir: Optional[str] = None) -> Dict[str, Any]:
+    def export_transcript(
+        self, session_id: str | None = None, format: str = "standard", output_dir: str | None = None
+    ) -> dict[str, Any]:
         """
         Export session transcript.
 
@@ -82,7 +86,7 @@ class AmplifierBackend(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def manage_tasks(self, action: str, **kwargs) -> Dict[str, Any]:
+    def manage_tasks(self, action: str, **kwargs) -> dict[str, Any]:
         """
         Manage tasks.
 
@@ -96,7 +100,7 @@ class AmplifierBackend(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def search_web(self, query: str, num_results: int = 5) -> Dict[str, Any]:
+    def search_web(self, query: str, num_results: int = 5) -> dict[str, Any]:
         """
         Search the web.
 
@@ -110,7 +114,7 @@ class AmplifierBackend(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def fetch_url(self, url: str) -> Dict[str, Any]:
+    def fetch_url(self, url: str) -> dict[str, Any]:
         """
         Fetch content from URL.
 
@@ -123,7 +127,7 @@ class AmplifierBackend(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get_capabilities(self) -> Dict[str, Any]:
+    def get_capabilities(self) -> dict[str, Any]:
         """Return backend capabilities."""
         pass
 
@@ -155,7 +159,7 @@ class ClaudeCodeBackend(AmplifierBackend):
         except (subprocess.CalledProcessError, FileNotFoundError):
             return False
 
-    def initialize_session(self, prompt: str, context: Optional[str] = None) -> Dict[str, Any]:
+    def initialize_session(self, prompt: str, context: str | None = None) -> dict[str, Any]:
         try:
             memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "false").lower() in ["true", "1", "yes"]
             if not memory_enabled:
@@ -194,13 +198,13 @@ class ClaudeCodeBackend(AmplifierBackend):
             return {
                 "success": True,
                 "data": {"additionalContext": context_str},
-                "metadata": {"memoriesLoaded": memories_loaded, "source": "amplifier_memory"}
+                "metadata": {"memoriesLoaded": memories_loaded, "source": "amplifier_memory"},
             }
         except Exception as e:
             logger.error(f"Claude initialize_session error: {e}")
             raise BackendOperationError(f"Session initialization failed: {e}")
 
-    def finalize_session(self, messages: List[Dict[str, Any]], context: Optional[str] = None) -> Dict[str, Any]:
+    def finalize_session(self, messages: list[dict[str, Any]], context: str | None = None) -> dict[str, Any]:
         try:
             memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "false").lower() in ["true", "1", "yes"]
             if not memory_enabled:
@@ -224,22 +228,26 @@ class ClaudeCodeBackend(AmplifierBackend):
             return {
                 "success": True,
                 "data": {},
-                "metadata": {"memoriesExtracted": memories_count, "source": "amplifier_extraction"}
+                "metadata": {"memoriesExtracted": memories_count, "source": "amplifier_extraction"},
             }
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.error("Claude finalize_session timeout")
             return {"success": False, "data": {}, "metadata": {"error": "timeout"}}
         except Exception as e:
             logger.error(f"Claude finalize_session error: {e}")
             raise BackendOperationError(f"Session finalization failed: {e}")
 
-    def run_quality_checks(self, file_paths: List[str], cwd: Optional[str] = None) -> Dict[str, Any]:
+    def run_quality_checks(self, file_paths: list[str], cwd: str | None = None) -> dict[str, Any]:
         try:
             # Find project root
             start_dir = Path(cwd) if cwd else Path.cwd()
             project_root = None
             for dir_path in [start_dir] + list(start_dir.parents):
-                if (dir_path / "Makefile").exists() or (dir_path / ".git").exists() or (dir_path / "pyproject.toml").exists():
+                if (
+                    (dir_path / "Makefile").exists()
+                    or (dir_path / ".git").exists()
+                    or (dir_path / "pyproject.toml").exists()
+                ):
                     project_root = dir_path
                     break
             if not project_root:
@@ -259,13 +267,15 @@ class ClaudeCodeBackend(AmplifierBackend):
             return {
                 "success": result.returncode == 0,
                 "data": {"output": result.stdout + result.stderr},
-                "metadata": {"returncode": result.returncode}
+                "metadata": {"returncode": result.returncode},
             }
         except Exception as e:
             logger.error(f"Claude run_quality_checks error: {e}")
             raise BackendOperationError(f"Quality checks failed: {e}")
 
-    def export_transcript(self, session_id: Optional[str] = None, format: str = "standard", output_dir: Optional[str] = None) -> Dict[str, Any]:
+    def export_transcript(
+        self, session_id: str | None = None, format: str = "standard", output_dir: str | None = None
+    ) -> dict[str, Any]:
         try:
             # Use transcript_manager.py logic from hook_precompact.py
             # Simplified implementation
@@ -281,43 +291,38 @@ class ClaudeCodeBackend(AmplifierBackend):
             return {
                 "success": True,
                 "data": {"path": str(output_path)},
-                "metadata": {"format": format, "session_id": session_id}
+                "metadata": {"format": format, "session_id": session_id},
             }
         except Exception as e:
             logger.error(f"Claude export_transcript error: {e}")
             raise BackendOperationError(f"Transcript export failed: {e}")
 
-    def manage_tasks(self, action: str, **kwargs) -> Dict[str, Any]:
+    def manage_tasks(self, action: str, **kwargs) -> dict[str, Any]:
         # Claude Code has built-in TodoWrite tool
         return {
             "success": True,
             "data": {"message": f"Task {action} handled by Claude Code's TodoWrite tool"},
-            "metadata": {"native": True, "action": action}
+            "metadata": {"native": True, "action": action},
         }
 
-    def search_web(self, query: str, num_results: int = 5) -> Dict[str, Any]:
+    def search_web(self, query: str, num_results: int = 5) -> dict[str, Any]:
         # Claude Code has built-in WebFetch tool
         return {
             "success": True,
             "data": {"message": f"Web search for '{query}' handled by Claude Code's WebFetch tool"},
-            "metadata": {"native": True, "query": query, "num_results": num_results}
+            "metadata": {"native": True, "query": query, "num_results": num_results},
         }
 
-    def fetch_url(self, url: str) -> Dict[str, Any]:
+    def fetch_url(self, url: str) -> dict[str, Any]:
         # Claude Code has built-in WebFetch tool
         return {
             "success": True,
             "data": {"message": f"URL fetch for '{url}' handled by Claude Code's WebFetch tool"},
-            "metadata": {"native": True, "url": url}
+            "metadata": {"native": True, "url": url},
         }
 
-    def get_capabilities(self) -> Dict[str, Any]:
-        return {
-            "task_management": True,
-            "web_search": True,
-            "url_fetch": True,
-            "native_tools": True
-        }
+    def get_capabilities(self) -> dict[str, Any]:
+        return {"task_management": True, "web_search": True, "url_fetch": True, "native_tools": True}
 
 
 class CodexBackend(AmplifierBackend):
@@ -337,7 +342,7 @@ class CodexBackend(AmplifierBackend):
         except (subprocess.CalledProcessError, FileNotFoundError):
             return False
 
-    def initialize_session(self, prompt: str, context: Optional[str] = None) -> Dict[str, Any]:
+    def initialize_session(self, prompt: str, context: str | None = None) -> dict[str, Any]:
         try:
             memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "true").lower() in ["true", "1", "yes"]
             if not memory_enabled:
@@ -387,7 +392,7 @@ class CodexBackend(AmplifierBackend):
                 "relevantCount": len(search_results),
                 "recentCount": memories_loaded - len(search_results),
                 "source": "amplifier_memory",
-                "contextFile": str(context_file)
+                "contextFile": str(context_file),
             }
             metadata_file = Path(".codex/session_init_metadata.json")
             metadata_file.write_text(json.dumps(metadata))
@@ -395,13 +400,13 @@ class CodexBackend(AmplifierBackend):
             return {
                 "success": True,
                 "data": {"context": context_md, "contextFile": str(context_file)},
-                "metadata": metadata
+                "metadata": metadata,
             }
         except Exception as e:
             logger.error(f"Codex initialize_session error: {e}")
             raise BackendOperationError(f"Session initialization failed: {e}")
 
-    def finalize_session(self, messages: List[Dict[str, Any]], context: Optional[str] = None) -> Dict[str, Any]:
+    def finalize_session(self, messages: list[dict[str, Any]], context: str | None = None) -> dict[str, Any]:
         try:
             memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "true").lower() in ["true", "1", "yes"]
             if not memory_enabled:
@@ -430,6 +435,7 @@ class CodexBackend(AmplifierBackend):
             transcript_path = None
             try:
                 from ...codex.tools.transcript_exporter import CodexTranscriptExporter
+
                 exporter = CodexTranscriptExporter()
                 transcript_path = exporter.export_codex_transcript("session_id", Path(".codex/transcripts"))
             except Exception:
@@ -439,107 +445,149 @@ class CodexBackend(AmplifierBackend):
                 "memoriesExtracted": memories_count,
                 "transcriptExported": transcript_path is not None,
                 "transcriptPath": transcript_path,
-                "source": "amplifier_cleanup"
+                "source": "amplifier_cleanup",
             }
             metadata_file = Path(".codex/session_cleanup_metadata.json")
             metadata_file.write_text(json.dumps(metadata))
 
-            return {
-                "success": True,
-                "data": {"transcriptPath": transcript_path},
-                "metadata": metadata
-            }
-        except asyncio.TimeoutError:
+            return {"success": True, "data": {"transcriptPath": transcript_path}, "metadata": metadata}
+        except TimeoutError:
             logger.error("Codex finalize_session timeout")
             return {"success": False, "data": {}, "metadata": {"error": "timeout"}}
         except Exception as e:
             logger.error(f"Codex finalize_session error: {e}")
             raise BackendOperationError(f"Session finalization failed: {e}")
 
-    def run_quality_checks(self, file_paths: List[str], cwd: Optional[str] = None) -> Dict[str, Any]:
+    def run_quality_checks(self, file_paths: list[str], cwd: str | None = None) -> dict[str, Any]:
         # Same as Claude
         return ClaudeCodeBackend().run_quality_checks(file_paths, cwd)
 
-    def export_transcript(self, session_id: Optional[str] = None, format: str = "standard", output_dir: Optional[str] = None) -> Dict[str, Any]:
+    def export_transcript(
+        self, session_id: str | None = None, format: str = "standard", output_dir: str | None = None
+    ) -> dict[str, Any]:
         try:
             from ...codex.tools.transcript_exporter import CodexTranscriptExporter
+
             exporter = CodexTranscriptExporter()
             output_dir = Path(output_dir) if output_dir else Path(".codex/transcripts")
             result = exporter.export_codex_transcript(session_id or "unknown", output_dir, format)
             return {
                 "success": result is not None,
                 "data": {"path": str(result)} if result else {},
-                "metadata": {"format": format, "session_id": session_id}
+                "metadata": {"format": format, "session_id": session_id},
             }
         except Exception as e:
             logger.error(f"Codex export_transcript error: {e}")
             raise BackendOperationError(f"Transcript export failed: {e}")
 
-    def manage_tasks(self, action: str, **kwargs) -> Dict[str, Any]:
+    def manage_tasks(self, action: str, **kwargs) -> dict[str, Any]:
         try:
-            if action == "create":
-                from ...codex.mcp_servers.task_tracker.server import create_task
-                result = create_task(**kwargs)
-            elif action == "list":
-                from ...codex.mcp_servers.task_tracker.server import list_tasks
-                result = list_tasks(**kwargs)
-            elif action == "update":
-                from ...codex.mcp_servers.task_tracker.server import update_task
-                result = update_task(**kwargs)
-            elif action == "complete":
-                from ...codex.mcp_servers.task_tracker.server import complete_task
-                result = complete_task(**kwargs)
-            elif action == "delete":
-                from ...codex.mcp_servers.task_tracker.server import delete_task
-                result = delete_task(**kwargs)
-            elif action == "export":
-                from ...codex.mcp_servers.task_tracker.server import export_tasks
-                result = export_tasks(**kwargs)
-            else:
-                return {"success": False, "data": {}, "metadata": {"error": f"Unknown action: {action}"}}
-            return {"success": True, "data": result, "metadata": {"action": action}}
-        except ImportError:
-            return {"success": False, "data": {}, "metadata": {"error": "MCP task tracker server not available"}}
+            # Use MCP client to invoke task tracker tools via Codex CLI
+            import sys
+
+            codex_tools_path = Path(__file__).parent.parent.parent / ".codex" / "tools"
+            sys.path.insert(0, str(codex_tools_path))
+
+            try:
+                from codex_mcp_client import CodexMCPClient
+
+                client = CodexMCPClient(profile=os.getenv("CODEX_PROFILE", "development"))
+
+                # Map action to tool name
+                tool_map = {
+                    "create": "create_task",
+                    "list": "list_tasks",
+                    "update": "update_task",
+                    "complete": "complete_task",
+                    "delete": "delete_task",
+                    "export": "export_tasks",
+                }
+
+                tool_name = tool_map.get(action)
+                if not tool_name:
+                    return {"success": False, "data": {}, "metadata": {"error": f"Unknown action: {action}"}}
+
+                # Call tool via MCP protocol
+                result = client.call_tool("amplifier_tasks", tool_name, **kwargs)
+
+                # Ensure consistent response shape
+                if not isinstance(result, dict):
+                    result = {"success": False, "data": {}, "metadata": {"error": "Invalid response from MCP tool"}}
+
+                return result
+
+            finally:
+                # Remove from path
+                if str(codex_tools_path) in sys.path:
+                    sys.path.remove(str(codex_tools_path))
+
         except Exception as e:
             logger.error(f"Codex manage_tasks error: {e}")
             return {"success": False, "data": {}, "metadata": {"error": str(e)}}
 
-    def search_web(self, query: str, num_results: int = 5) -> Dict[str, Any]:
+    def search_web(self, query: str, num_results: int = 5) -> dict[str, Any]:
         try:
-            from ...codex.mcp_servers.web_research.server import search_web
-            result = search_web(query, num_results)
-            return {"success": True, "data": result, "metadata": {"query": query, "num_results": num_results}}
-        except ImportError:
-            return {"success": False, "data": {}, "metadata": {"error": "MCP web research server not available"}}
+            # Use MCP client to invoke web research tools via Codex CLI
+            import sys
+
+            codex_tools_path = Path(__file__).parent.parent.parent / ".codex" / "tools"
+            sys.path.insert(0, str(codex_tools_path))
+
+            try:
+                from codex_mcp_client import CodexMCPClient
+
+                client = CodexMCPClient(profile=os.getenv("CODEX_PROFILE", "development"))
+                result = client.call_tool("amplifier_web", "search_web", query=query, num_results=num_results)
+
+                if not isinstance(result, dict):
+                    result = {"success": False, "data": {}, "metadata": {"error": "Invalid response from MCP tool"}}
+
+                return result
+
+            finally:
+                if str(codex_tools_path) in sys.path:
+                    sys.path.remove(str(codex_tools_path))
+
         except Exception as e:
             logger.error(f"Codex search_web error: {e}")
             return {"success": False, "data": {}, "metadata": {"error": str(e)}}
 
-    def fetch_url(self, url: str) -> Dict[str, Any]:
+    def fetch_url(self, url: str) -> dict[str, Any]:
         try:
-            from ...codex.mcp_servers.web_research.server import fetch_url
-            result = fetch_url(url)
-            return {"success": True, "data": result, "metadata": {"url": url}}
-        except ImportError:
-            return {"success": False, "data": {}, "metadata": {"error": "MCP web research server not available"}}
+            # Use MCP client to invoke web research tools via Codex CLI
+            import sys
+
+            codex_tools_path = Path(__file__).parent.parent.parent / ".codex" / "tools"
+            sys.path.insert(0, str(codex_tools_path))
+
+            try:
+                from codex_mcp_client import CodexMCPClient
+
+                client = CodexMCPClient(profile=os.getenv("CODEX_PROFILE", "development"))
+                result = client.call_tool("amplifier_web", "fetch_url", url=url)
+
+                if not isinstance(result, dict):
+                    result = {"success": False, "data": {}, "metadata": {"error": "Invalid response from MCP tool"}}
+
+                return result
+
+            finally:
+                if str(codex_tools_path) in sys.path:
+                    sys.path.remove(str(codex_tools_path))
+
         except Exception as e:
             logger.error(f"Codex fetch_url error: {e}")
             return {"success": False, "data": {}, "metadata": {"error": str(e)}}
 
-    def get_capabilities(self) -> Dict[str, Any]:
-        return {
-            "task_management": True,
-            "web_search": True,
-            "url_fetch": True,
-            "mcp_tools": True
-        }
+    def get_capabilities(self) -> dict[str, Any]:
+        return {"task_management": True, "web_search": True, "url_fetch": True, "mcp_tools": True}
 
 
 class BackendFactory:
     """Factory for creating backend instances."""
 
     @staticmethod
-    def create_backend(backend_type: Optional[str] = None) -> AmplifierBackend:
+    def create_backend(backend_type: str | None = None) -> AmplifierBackend:
         if backend_type is None:
             backend_type = os.getenv("AMPLIFIER_BACKEND", "claude")
         if backend_type not in ["claude", "codex"]:
@@ -554,7 +602,7 @@ class BackendFactory:
         return backend
 
     @staticmethod
-    def get_available_backends() -> List[str]:
+    def get_available_backends() -> list[str]:
         available = []
         if ClaudeCodeBackend().is_available():
             available.append("claude")
@@ -571,13 +619,12 @@ class BackendFactory:
         raise BackendNotAvailableError("No backend available")
 
     @staticmethod
-    def get_backend_capabilities(backend_type: str) -> Dict[str, Any]:
+    def get_backend_capabilities(backend_type: str) -> dict[str, Any]:
         if backend_type == "claude":
             return ClaudeCodeBackend().get_capabilities()
-        elif backend_type == "codex":
+        if backend_type == "codex":
             return CodexBackend().get_capabilities()
-        else:
-            return {}
+        return {}
 
 
 def get_backend() -> AmplifierBackend:

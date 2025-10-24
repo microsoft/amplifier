@@ -7,47 +7,42 @@ including factory patterns, session management, quality checks, transcript expor
 agent spawning, configuration, and integration scenarios.
 """
 
-import json
 import os
 import subprocess
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import pytest
 
 # Import modules under test (will be mocked where necessary)
 try:
-    from amplifier.core.backend import (
-        AmplifierBackend,
-        ClaudeCodeBackend,
-        CodexBackend,
-        BackendFactory,
-        get_backend,
-        set_backend,
-    )
-    from amplifier.core.agent_backend import (
-        AgentBackend,
-        ClaudeCodeAgentBackend,
-        CodexAgentBackend,
-        AgentBackendFactory,
-        spawn_agent,
-        get_agent_backend,
-    )
-    from amplifier.core.config import (
-        BackendConfig,
-        backend_config,
-        get_backend_config,
-        detect_backend,
-        is_backend_available,
-        get_backend_info,
-    )
+    from amplifier.core.agent_backend import AgentBackend
+    from amplifier.core.agent_backend import AgentBackendFactory
+    from amplifier.core.agent_backend import ClaudeCodeAgentBackend
+    from amplifier.core.agent_backend import CodexAgentBackend
+    from amplifier.core.agent_backend import get_agent_backend
+    from amplifier.core.agent_backend import spawn_agent
+    from amplifier.core.backend import AmplifierBackend
+    from amplifier.core.backend import BackendFactory
+    from amplifier.core.backend import ClaudeCodeBackend
+    from amplifier.core.backend import CodexBackend
+    from amplifier.core.backend import get_backend
+    from amplifier.core.backend import set_backend
+    from amplifier.core.config import BackendConfig
+    from amplifier.core.config import backend_config
+    from amplifier.core.config import detect_backend
+    from amplifier.core.config import get_backend_config
+    from amplifier.core.config import get_backend_info
+    from amplifier.core.config import is_backend_available
 except ImportError:
     # Modules not yet implemented - tests will use mocks
     pass
 
 
 # Test Fixtures
+
 
 @pytest.fixture
 def temp_dir() -> Path:
@@ -61,7 +56,7 @@ def temp_project_dir(temp_dir) -> Path:
     """Create temporary project directory with common structure."""
     project_dir = temp_dir / "project"
     project_dir.mkdir()
-    
+
     # Create Makefile
     makefile = project_dir / "Makefile"
     makefile.write_text("""
@@ -80,7 +75,7 @@ lint:
 format:
 	uv run ruff format --check .
 """)
-    
+
     # Create pyproject.toml
     pyproject = project_dir / "pyproject.toml"
     pyproject.write_text("""
@@ -91,11 +86,11 @@ version = "0.1.0"
 [tool.uv]
 dev-dependencies = ["pytest", "ruff", "pyright"]
 """)
-    
+
     # Create .git directory
     git_dir = project_dir / ".git"
     git_dir.mkdir()
-    
+
     return project_dir
 
 
@@ -146,22 +141,22 @@ def mock_claude_backend():
     backend.initialize_session.return_value = {
         "success": True,
         "data": {"context": "Mock context"},
-        "metadata": {"memoriesLoaded": 2}
+        "metadata": {"memoriesLoaded": 2},
     }
     backend.finalize_session.return_value = {
         "success": True,
         "data": {"memoriesExtracted": 3},
-        "metadata": {"source": "session_finalize"}
+        "metadata": {"source": "session_finalize"},
     }
     backend.run_quality_checks.return_value = {
         "success": True,
         "data": {"output": "Checks passed"},
-        "metadata": {"command": "make check"}
+        "metadata": {"command": "make check"},
     }
     backend.export_transcript.return_value = {
         "success": True,
         "data": {"path": "/exported/transcript.md"},
-        "metadata": {"format": "standard"}
+        "metadata": {"format": "standard"},
     }
     backend.get_backend_name.return_value = "claude"
     backend.is_available.return_value = True
@@ -175,22 +170,22 @@ def mock_codex_backend():
     backend.initialize_session.return_value = {
         "success": True,
         "data": {"context": "Mock context"},
-        "metadata": {"memoriesLoaded": 2}
+        "metadata": {"memoriesLoaded": 2},
     }
     backend.finalize_session.return_value = {
         "success": True,
         "data": {"memoriesExtracted": 3},
-        "metadata": {"source": "session_finalize"}
+        "metadata": {"source": "session_finalize"},
     }
     backend.run_quality_checks.return_value = {
         "success": True,
         "data": {"output": "Checks passed"},
-        "metadata": {"command": "make check"}
+        "metadata": {"command": "make check"},
     }
     backend.export_transcript.return_value = {
         "success": True,
         "data": {"path": "/exported/transcript.md"},
-        "metadata": {"format": "standard"}
+        "metadata": {"format": "standard"},
     }
     backend.get_backend_name.return_value = "codex"
     backend.is_available.return_value = True
@@ -231,20 +226,15 @@ def temp_backend_env():
 
 # Test Utilities
 
+
 def create_mock_messages(count=3):
     """Create mock conversation messages."""
-    return [
-        {"role": "user", "content": f"User message {i}"}
-        for i in range(count)
-    ]
+    return [{"role": "user", "content": f"User message {i}"} for i in range(count)]
 
 
 def create_mock_memories(count=2):
     """Create mock memory objects."""
-    return [
-        {"content": f"Memory {i}", "type": "fact", "score": 0.8}
-        for i in range(count)
-    ]
+    return [{"content": f"Memory {i}", "type": "fact", "score": 0.8} for i in range(count)]
 
 
 def assert_backend_response(response, expected_success=True):
@@ -257,6 +247,7 @@ def assert_backend_response(response, expected_success=True):
 
 
 # Backend Tests
+
 
 class TestAmplifierBackend:
     """Test backend factory and basic functionality."""
@@ -283,8 +274,8 @@ class TestAmplifierBackend:
         # Create .claude directory
         claude_dir = temp_dir / ".claude"
         claude_dir.mkdir()
-        
-        with patch('amplifier.core.backend.Path.cwd', return_value=temp_dir):
+
+        with patch("amplifier.core.backend.Path.cwd", return_value=temp_dir):
             backend = ClaudeCodeBackend()
             assert backend.is_available() is True
 
@@ -293,8 +284,8 @@ class TestAmplifierBackend:
         # Create .codex directory
         codex_dir = temp_dir / ".codex"
         codex_dir.mkdir()
-        
-        with patch('amplifier.core.backend.Path.cwd', return_value=temp_dir):
+
+        with patch("amplifier.core.backend.Path.cwd", return_value=temp_dir):
             backend = CodexBackend()
             assert backend.is_available() is True
 
@@ -302,14 +293,16 @@ class TestAmplifierBackend:
         """Verify backend name methods."""
         claude_backend = ClaudeCodeBackend()
         codex_backend = CodexBackend()
-        
+
         assert claude_backend.get_backend_name() == "claude"
         assert codex_backend.get_backend_name() == "codex"
 
     def test_get_available_backends(self):
         """Test listing available backends."""
-        with patch('amplifier.core.backend.ClaudeCodeBackend.is_available', return_value=True), \
-             patch('amplifier.core.backend.CodexBackend.is_available', return_value=False):
+        with (
+            patch("amplifier.core.backend.ClaudeCodeBackend.is_available", return_value=True),
+            patch("amplifier.core.backend.CodexBackend.is_available", return_value=False),
+        ):
             available = BackendFactory.get_available_backends()
             assert "claude" in available
             assert "codex" not in available
@@ -319,37 +312,40 @@ class TestAmplifierBackend:
         # Create .claude directory
         claude_dir = temp_dir / ".claude"
         claude_dir.mkdir()
-        
-        with patch('amplifier.core.backend.Path.cwd', return_value=temp_dir):
+
+        with patch("amplifier.core.backend.Path.cwd", return_value=temp_dir):
             backend_type = BackendFactory.auto_detect_backend()
             assert backend_type == "claude"
 
 
 # Session Management Tests
 
+
 class TestSessionManagement:
     """Test session initialization and finalization."""
 
     def test_initialize_session_claude(self, mock_memory_store, mock_memory_searcher):
         """Test Claude Code session initialization."""
-        with patch('amplifier.core.backend.MemoryStore', return_value=mock_memory_store), \
-             patch('amplifier.core.backend.MemorySearcher', return_value=mock_memory_searcher):
-            
+        with (
+            patch("amplifier.core.backend.MemoryStore", return_value=mock_memory_store),
+            patch("amplifier.core.backend.MemorySearcher", return_value=mock_memory_searcher),
+        ):
             backend = ClaudeCodeBackend()
             result = backend.initialize_session("Test prompt")
-            
+
             assert_backend_response(result)
             assert "memoriesLoaded" in result["metadata"]
             mock_memory_searcher.search.assert_called_once()
 
     def test_initialize_session_codex(self, mock_memory_store, mock_memory_searcher):
         """Test Codex session initialization."""
-        with patch('amplifier.core.backend.MemoryStore', return_value=mock_memory_store), \
-             patch('amplifier.core.backend.MemorySearcher', return_value=mock_memory_searcher):
-            
+        with (
+            patch("amplifier.core.backend.MemoryStore", return_value=mock_memory_store),
+            patch("amplifier.core.backend.MemorySearcher", return_value=mock_memory_searcher),
+        ):
             backend = CodexBackend()
             result = backend.initialize_session("Test prompt")
-            
+
             assert_backend_response(result)
             assert "memoriesLoaded" in result["metadata"]
 
@@ -358,64 +354,68 @@ class TestSessionManagement:
         with patch.dict(os.environ, {"MEMORY_SYSTEM_ENABLED": "false"}):
             backend = ClaudeCodeBackend()
             result = backend.initialize_session("Test prompt")
-            
+
             assert_backend_response(result)
             assert result["metadata"]["disabled"] is True
 
     def test_finalize_session_claude(self, mock_memory_store, mock_memory_extractor):
         """Test Claude Code session finalization."""
-        with patch('amplifier.core.backend.MemoryStore', return_value=mock_memory_store), \
-             patch('amplifier.core.backend.MemoryExtractor', return_value=mock_memory_extractor):
-            
+        with (
+            patch("amplifier.core.backend.MemoryStore", return_value=mock_memory_store),
+            patch("amplifier.core.backend.MemoryExtractor", return_value=mock_memory_extractor),
+        ):
             backend = ClaudeCodeBackend()
             messages = create_mock_messages()
             result = backend.finalize_session(messages)
-            
+
             assert_backend_response(result)
             assert "memoriesExtracted" in result["metadata"]
             mock_memory_store.add_memories_batch.assert_called_once()
 
     def test_finalize_session_codex(self, mock_memory_store, mock_memory_extractor):
         """Test Codex session finalization."""
-        with patch('amplifier.core.backend.MemoryStore', return_value=mock_memory_store), \
-             patch('amplifier.core.backend.MemoryExtractor', return_value=mock_memory_extractor):
-            
+        with (
+            patch("amplifier.core.backend.MemoryStore", return_value=mock_memory_store),
+            patch("amplifier.core.backend.MemoryExtractor", return_value=mock_memory_extractor),
+        ):
             backend = CodexBackend()
             messages = create_mock_messages()
             result = backend.finalize_session(messages)
-            
+
             assert_backend_response(result)
             assert "memoriesExtracted" in result["metadata"]
 
     def test_finalize_session_timeout(self, mock_memory_extractor):
         """Test timeout handling."""
-        with patch('amplifier.core.backend.MemoryExtractor', return_value=mock_memory_extractor), \
-             patch('asyncio.timeout', side_effect=Exception("Timeout")):
-            
+        with (
+            patch("amplifier.core.backend.MemoryExtractor", return_value=mock_memory_extractor),
+            patch("asyncio.timeout", side_effect=Exception("Timeout")),
+        ):
             backend = ClaudeCodeBackend()
             messages = create_mock_messages()
             result = backend.finalize_session(messages)
-            
+
             assert result["success"] is False
             assert "timeout" in str(result).lower()
 
     def test_session_roundtrip(self, mock_memory_store, mock_memory_searcher, mock_memory_extractor):
         """Test initialize + finalize workflow."""
-        with patch('amplifier.core.backend.MemoryStore', return_value=mock_memory_store), \
-             patch('amplifier.core.backend.MemorySearcher', return_value=mock_memory_searcher), \
-             patch('amplifier.core.backend.MemoryExtractor', return_value=mock_memory_extractor):
-            
+        with (
+            patch("amplifier.core.backend.MemoryStore", return_value=mock_memory_store),
+            patch("amplifier.core.backend.MemorySearcher", return_value=mock_memory_searcher),
+            patch("amplifier.core.backend.MemoryExtractor", return_value=mock_memory_extractor),
+        ):
             backend = ClaudeCodeBackend()
-            
+
             # Initialize
             init_result = backend.initialize_session("Test prompt")
             assert_backend_response(init_result)
-            
+
             # Finalize
             messages = create_mock_messages()
             finalize_result = backend.finalize_session(messages)
             assert_backend_response(finalize_result)
-            
+
             # Verify workflow
             assert init_result["metadata"]["memoriesLoaded"] == 2
             assert finalize_result["metadata"]["memoriesExtracted"] == 2
@@ -423,15 +423,16 @@ class TestSessionManagement:
 
 # Quality Checks Tests
 
+
 class TestQualityChecks:
     """Test code quality checking functionality."""
 
     def test_run_quality_checks_success(self, temp_project_dir, mock_subprocess):
         """Test successful quality checks."""
-        with patch('subprocess.run', return_value=mock_subprocess):
+        with patch("subprocess.run", return_value=mock_subprocess):
             backend = ClaudeCodeBackend()
             result = backend.run_quality_checks(["test.py"], cwd=str(temp_project_dir))
-            
+
             assert_backend_response(result)
             assert "Checks passed" in result["data"]["output"]
 
@@ -441,11 +442,11 @@ class TestQualityChecks:
         failed_result.returncode = 1
         failed_result.stdout = ""
         failed_result.stderr = "Syntax error in test.py"
-        
-        with patch('subprocess.run', return_value=failed_result):
+
+        with patch("subprocess.run", return_value=failed_result):
             backend = ClaudeCodeBackend()
             result = backend.run_quality_checks(["test.py"], cwd=str(temp_project_dir))
-            
+
             assert result["success"] is False
             assert "Syntax error" in result["data"]["output"]
 
@@ -453,19 +454,19 @@ class TestQualityChecks:
         """Test graceful handling when Makefile missing."""
         project_dir = temp_dir / "no_makefile"
         project_dir.mkdir()
-        
+
         backend = ClaudeCodeBackend()
         result = backend.run_quality_checks(["test.py"], cwd=str(project_dir))
-        
+
         assert result["success"] is False
         assert "makefile" in result["data"]["error"].lower()
 
     def test_run_quality_checks_custom_cwd(self, temp_project_dir, mock_subprocess):
         """Test with custom working directory."""
-        with patch('subprocess.run', return_value=mock_subprocess):
+        with patch("subprocess.run", return_value=mock_subprocess):
             backend = ClaudeCodeBackend()
             result = backend.run_quality_checks(["test.py"], cwd=str(temp_project_dir))
-            
+
             assert_backend_response(result)
             # Verify subprocess was called with correct cwd
             subprocess.run.assert_called_once()
@@ -473,62 +474,60 @@ class TestQualityChecks:
 
 # Transcript Export Tests
 
+
 class TestTranscriptExport:
     """Test transcript export functionality."""
 
     def test_export_transcript_claude(self):
         """Test Claude Code transcript export."""
-        with patch('amplifier.core.backend.transcript_manager') as mock_manager:
+        with patch("amplifier.core.backend.transcript_manager") as mock_manager:
             mock_manager.export_transcript.return_value = "/exported/transcript.md"
-            
+
             backend = ClaudeCodeBackend()
             result = backend.export_transcript(format="standard")
-            
+
             assert_backend_response(result)
             assert result["data"]["path"] == "/exported/transcript.md"
 
     def test_export_transcript_codex(self):
         """Test Codex transcript export."""
-        with patch('amplifier.core.backend.codex_transcripts_builder') as mock_builder:
+        with patch("amplifier.core.backend.codex_transcripts_builder") as mock_builder:
             mock_builder.process_session.return_value = "/exported/transcript.md"
-            
+
             backend = CodexBackend()
             result = backend.export_transcript(format="standard")
-            
+
             assert_backend_response(result)
             assert result["data"]["path"] == "/exported/transcript.md"
 
     def test_export_transcript_formats(self):
         """Test different format options."""
-        with patch('amplifier.core.backend.transcript_manager') as mock_manager:
+        with patch("amplifier.core.backend.transcript_manager") as mock_manager:
             mock_manager.export_transcript.return_value = "/exported/transcript.md"
-            
+
             backend = ClaudeCodeBackend()
             result = backend.export_transcript(format="extended")
-            
+
             assert_backend_response(result)
             # Verify format parameter was passed
-            mock_manager.export_transcript.assert_called_with(
-                session_id=None,
-                format="extended",
-                output_dir=None
-            )
+            mock_manager.export_transcript.assert_called_with(session_id=None, format="extended", output_dir=None)
 
     def test_export_transcript_custom_output(self, temp_dir):
         """Test custom output directory."""
         output_dir = temp_dir / "custom_output"
-        
-        with patch('amplifier.core.backend.transcript_manager') as mock_manager:
+
+        with patch("amplifier.core.backend.transcript_manager") as mock_manager:
             mock_manager.export_transcript.return_value = str(output_dir / "transcript.md")
-            
+
             backend = ClaudeCodeBackend()
             result = backend.export_transcript(output_dir=str(output_dir))
-            
+
             assert_backend_response(result)
             assert str(output_dir) in result["data"]["path"]
 
 
 # Agent Backend Tests
+
 
 class TestAgentBackend:
     """Test agent backend functionality."""
@@ -543,15 +542,15 @@ class TestAgentBackend:
         """List Claude Code agents."""
         agents_dir = temp_dir / ".claude" / "agents"
         agents_dir.mkdir(parents=True)
-        
+
         # Create agent files
         (agents_dir / "agent1.md").write_text("Agent 1")
         (agents_dir / "agent2.md").write_text("Agent 2")
-        
-        with patch('amplifier.core.agent_backend.Path.cwd', return_value=temp_dir):
+
+        with patch("amplifier.core.agent_backend.Path.cwd", return_value=temp_dir):
             backend = ClaudeCodeAgentBackend()
             agents = backend.list_available_agents()
-            
+
             assert "agent1" in agents
             assert "agent2" in agents
 
@@ -559,15 +558,15 @@ class TestAgentBackend:
         """List Codex agents."""
         agents_dir = temp_dir / ".codex" / "agents"
         agents_dir.mkdir(parents=True)
-        
+
         # Create agent files
         (agents_dir / "agent1.md").write_text("Agent 1")
         (agents_dir / "agent2.md").write_text("Agent 2")
-        
-        with patch('amplifier.core.agent_backend.Path.cwd', return_value=temp_dir):
+
+        with patch("amplifier.core.agent_backend.Path.cwd", return_value=temp_dir):
             backend = CodexAgentBackend()
             agents = backend.list_available_agents()
-            
+
             assert "agent1" in agents
             assert "agent2" in agents
 
@@ -575,45 +574,46 @@ class TestAgentBackend:
         """Get agent definition content."""
         agents_dir = temp_dir / ".claude" / "agents"
         agents_dir.mkdir(parents=True)
-        
+
         agent_file = agents_dir / "test-agent.md"
         agent_file.write_text(mock_agent_definition)
-        
-        with patch('amplifier.core.agent_backend.Path.cwd', return_value=temp_dir):
+
+        with patch("amplifier.core.agent_backend.Path.cwd", return_value=temp_dir):
             backend = ClaudeCodeAgentBackend()
             content = backend.get_agent_definition("test-agent")
-            
+
             assert content == mock_agent_definition
 
     def test_validate_agent_exists(self, temp_dir):
         """Validate agent existence."""
         agents_dir = temp_dir / ".claude" / "agents"
         agents_dir.mkdir(parents=True)
-        
+
         (agents_dir / "existing-agent.md").write_text("Content")
-        
-        with patch('amplifier.core.agent_backend.Path.cwd', return_value=temp_dir):
+
+        with patch("amplifier.core.agent_backend.Path.cwd", return_value=temp_dir):
             backend = ClaudeCodeAgentBackend()
-            
+
             assert backend.validate_agent_exists("existing-agent") is True
             assert backend.validate_agent_exists("nonexistent-agent") is False
 
 
 # Agent Spawning Tests
 
+
 class TestAgentSpawning:
     """Test agent spawning functionality."""
 
     def test_spawn_agent_claude(self):
         """Test Claude Code agent spawning (mock SDK)."""
-        with patch('amplifier.core.agent_backend.ClaudeSDKClient') as mock_sdk:
+        with patch("amplifier.core.agent_backend.ClaudeSDKClient") as mock_sdk:
             mock_client = Mock()
             mock_client.send_task.return_value = {"result": "Agent response"}
             mock_sdk.return_value = mock_client
-            
+
             backend = ClaudeCodeAgentBackend()
             result = backend.spawn_agent("test-agent", "Test task")
-            
+
             assert result["success"] is True
             assert result["result"] == "Agent response"
 
@@ -623,11 +623,11 @@ class TestAgentSpawning:
         mock_result.returncode = 0
         mock_result.stdout = "Agent response"
         mock_result.stderr = ""
-        
-        with patch('subprocess.run', return_value=mock_result):
+
+        with patch("subprocess.run", return_value=mock_result):
             backend = CodexAgentBackend()
             result = backend.spawn_agent("test-agent", "Test task")
-            
+
             assert result["success"] is True
             assert result["result"] == "Agent response"
 
@@ -635,37 +635,38 @@ class TestAgentSpawning:
         """Test error when agent doesn't exist."""
         backend = ClaudeCodeAgentBackend()
         result = backend.spawn_agent("nonexistent-agent", "Test task")
-        
+
         assert result["success"] is False
         assert "not found" in result["error"].lower()
 
     def test_spawn_agent_timeout(self):
         """Test timeout handling."""
-        with patch('amplifier.core.agent_backend.ClaudeSDKClient') as mock_sdk:
+        with patch("amplifier.core.agent_backend.ClaudeSDKClient") as mock_sdk:
             mock_client = Mock()
             mock_client.send_task.side_effect = Exception("Timeout")
             mock_sdk.return_value = mock_client
-            
+
             backend = ClaudeCodeAgentBackend()
             result = backend.spawn_agent("test-agent", "Test task")
-            
+
             assert result["success"] is False
             assert "timeout" in str(result).lower()
 
     def test_spawn_agent_convenience_function(self):
         """Test high-level spawn_agent() function."""
-        with patch('amplifier.core.agent_backend.AgentBackendFactory.create_agent_backend') as mock_factory:
+        with patch("amplifier.core.agent_backend.AgentBackendFactory.create_agent_backend") as mock_factory:
             mock_backend = Mock()
             mock_backend.spawn_agent.return_value = {"success": True, "result": "Response"}
             mock_factory.return_value = mock_backend
-            
+
             result = spawn_agent("test-agent", "Test task")
-            
+
             assert result["success"] is True
             assert result["result"] == "Response"
 
 
 # Configuration Tests
+
 
 class TestBackendConfig:
     """Test backend configuration functionality."""
@@ -673,29 +674,26 @@ class TestBackendConfig:
     def test_config_defaults(self):
         """Verify default configuration values."""
         config = BackendConfig()
-        
+
         assert config.amplifier_backend == "claude"
         assert config.amplifier_backend_auto_detect is True
         assert config.memory_system_enabled is True
 
     def test_config_from_env(self):
         """Load configuration from environment variables."""
-        with patch.dict(os.environ, {
-            "AMPLIFIER_BACKEND": "codex",
-            "MEMORY_SYSTEM_ENABLED": "false"
-        }):
+        with patch.dict(os.environ, {"AMPLIFIER_BACKEND": "codex", "MEMORY_SYSTEM_ENABLED": "false"}):
             config = BackendConfig()
-            
+
             assert config.amplifier_backend == "codex"
             assert config.memory_system_enabled is False
 
     def test_config_validation(self):
         """Test configuration validation."""
         config = BackendConfig()
-        
+
         # Valid backend
         assert config.validate_backend() is None
-        
+
         # Invalid backend
         config.amplifier_backend = "invalid"
         with pytest.raises(ValueError):
@@ -706,8 +704,8 @@ class TestBackendConfig:
         # Create .claude directory
         claude_dir = temp_dir / ".claude"
         claude_dir.mkdir()
-        
-        with patch('amplifier.core.config.Path.cwd', return_value=temp_dir):
+
+        with patch("amplifier.core.config.Path.cwd", return_value=temp_dir):
             backend = detect_backend()
             assert backend == "claude"
 
@@ -716,8 +714,8 @@ class TestBackendConfig:
         # Create .claude directory
         claude_dir = temp_dir / ".claude"
         claude_dir.mkdir()
-        
-        with patch('amplifier.core.config.Path.cwd', return_value=temp_dir):
+
+        with patch("amplifier.core.config.Path.cwd", return_value=temp_dir):
             assert is_backend_available("claude") is True
             assert is_backend_available("codex") is False
 
@@ -726,10 +724,10 @@ class TestBackendConfig:
         # Create .claude directory
         claude_dir = temp_dir / ".claude"
         claude_dir.mkdir()
-        
-        with patch('amplifier.core.config.Path.cwd', return_value=temp_dir):
+
+        with patch("amplifier.core.config.Path.cwd", return_value=temp_dir):
             info = get_backend_info("claude")
-            
+
             assert "cli_path" in info
             assert "config_dir" in info
             assert info["available"] is True
@@ -737,61 +735,64 @@ class TestBackendConfig:
 
 # Integration Tests
 
+
 class TestBackendIntegration:
     """Integration tests across backend components."""
 
     def test_full_session_workflow_claude(self, mock_memory_store, mock_memory_searcher, mock_memory_extractor):
         """End-to-end test with Claude Code backend."""
-        with patch('amplifier.core.backend.MemoryStore', return_value=mock_memory_store), \
-             patch('amplifier.core.backend.MemorySearcher', return_value=mock_memory_searcher), \
-             patch('amplifier.core.backend.MemoryExtractor', return_value=mock_memory_extractor), \
-             patch('subprocess.run') as mock_run:
-            
+        with (
+            patch("amplifier.core.backend.MemoryStore", return_value=mock_memory_store),
+            patch("amplifier.core.backend.MemorySearcher", return_value=mock_memory_searcher),
+            patch("amplifier.core.backend.MemoryExtractor", return_value=mock_memory_extractor),
+            patch("subprocess.run") as mock_run,
+        ):
             mock_run.return_value = Mock(returncode=0, stdout="Checks passed", stderr="")
-            
+
             backend = ClaudeCodeBackend()
-            
+
             # Initialize session
             init_result = backend.initialize_session("Test workflow")
             assert_backend_response(init_result)
-            
+
             # Run quality checks
             quality_result = backend.run_quality_checks(["test.py"])
             assert_backend_response(quality_result)
-            
+
             # Finalize session
             messages = create_mock_messages()
             finalize_result = backend.finalize_session(messages)
             assert_backend_response(finalize_result)
-            
+
             # Export transcript
             export_result = backend.export_transcript()
             assert_backend_response(export_result)
 
     def test_full_session_workflow_codex(self, mock_memory_store, mock_memory_searcher, mock_memory_extractor):
         """End-to-end test with Codex backend."""
-        with patch('amplifier.core.backend.MemoryStore', return_value=mock_memory_store), \
-             patch('amplifier.core.backend.MemorySearcher', return_value=mock_memory_searcher), \
-             patch('amplifier.core.backend.MemoryExtractor', return_value=mock_memory_extractor), \
-             patch('subprocess.run') as mock_run:
-            
+        with (
+            patch("amplifier.core.backend.MemoryStore", return_value=mock_memory_store),
+            patch("amplifier.core.backend.MemorySearcher", return_value=mock_memory_searcher),
+            patch("amplifier.core.backend.MemoryExtractor", return_value=mock_memory_extractor),
+            patch("subprocess.run") as mock_run,
+        ):
             mock_run.return_value = Mock(returncode=0, stdout="Checks passed", stderr="")
-            
+
             backend = CodexBackend()
-            
+
             # Initialize session
             init_result = backend.initialize_session("Test workflow")
             assert_backend_response(init_result)
-            
+
             # Run quality checks
             quality_result = backend.run_quality_checks(["test.py"])
             assert_backend_response(quality_result)
-            
+
             # Finalize session
             messages = create_mock_messages()
             finalize_result = backend.finalize_session(messages)
             assert_backend_response(finalize_result)
-            
+
             # Export transcript
             export_result = backend.export_transcript()
             assert_backend_response(export_result)
@@ -802,7 +803,7 @@ class TestBackendIntegration:
         set_backend("claude")
         backend1 = get_backend()
         assert backend1.get_backend_name() == "claude"
-        
+
         # Switch to Codex
         set_backend("codex")
         backend2 = get_backend()
@@ -812,19 +813,20 @@ class TestBackendIntegration:
         """Test agent spawning with real agent definitions."""
         agents_dir = temp_dir / ".claude" / "agents"
         agents_dir.mkdir(parents=True)
-        
+
         agent_file = agents_dir / "test-agent.md"
         agent_file.write_text(mock_agent_definition)
-        
-        with patch('amplifier.core.agent_backend.ClaudeSDKClient') as mock_sdk, \
-             patch('amplifier.core.agent_backend.Path.cwd', return_value=temp_dir):
-            
+
+        with (
+            patch("amplifier.core.agent_backend.ClaudeSDKClient") as mock_sdk,
+            patch("amplifier.core.agent_backend.Path.cwd", return_value=temp_dir),
+        ):
             mock_client = Mock()
             mock_client.send_task.return_value = {"result": "Agent response"}
             mock_sdk.return_value = mock_client
-            
+
             result = spawn_agent("test-agent", "Test task", backend="claude")
-            
+
             assert result["success"] is True
             assert result["result"] == "Agent response"
 

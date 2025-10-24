@@ -15,7 +15,8 @@ import sys
 import tempfile
 from collections.abc import Generator
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import pytest
 
@@ -27,16 +28,20 @@ sys.path.insert(0, str(project_root / ".codex"))
 # Import modules under test (will be mocked where necessary)
 try:
     from codex.mcp_servers.base import MCPLogger
-    from codex.mcp_servers.task_tracker.server import (
-        create_task, list_tasks, update_task, complete_task, delete_task,
-        export_tasks, health_check
-    )
+    from codex.mcp_servers.task_tracker.server import complete_task
+    from codex.mcp_servers.task_tracker.server import create_task
+    from codex.mcp_servers.task_tracker.server import delete_task
+    from codex.mcp_servers.task_tracker.server import export_tasks
+    from codex.mcp_servers.task_tracker.server import health_check
+    from codex.mcp_servers.task_tracker.server import list_tasks
+    from codex.mcp_servers.task_tracker.server import update_task
 except ImportError:
     # Modules not yet implemented - tests will use mocks
     pass
 
 
 # Test Fixtures
+
 
 @pytest.fixture
 def temp_dir() -> Generator[Path, None, None]:
@@ -76,7 +81,7 @@ def mock_task_data():
         "priority": "high",
         "status": "pending",
         "created_at": "2024-01-01T10:00:00Z",
-        "updated_at": "2024-01-01T10:00:00Z"
+        "updated_at": "2024-01-01T10:00:00Z",
     }
 
 
@@ -94,7 +99,7 @@ def mock_task_file(temp_project_dir):
                 "priority": "medium",
                 "status": "pending",
                 "created_at": "2024-01-01T10:00:00Z",
-                "updated_at": "2024-01-01T10:00:00Z"
+                "updated_at": "2024-01-01T10:00:00Z",
             },
             {
                 "id": "task_2",
@@ -103,9 +108,9 @@ def mock_task_file(temp_project_dir):
                 "priority": "high",
                 "status": "completed",
                 "created_at": "2024-01-01T11:00:00Z",
-                "updated_at": "2024-01-01T12:00:00Z"
-            }
-        ]
+                "updated_at": "2024-01-01T12:00:00Z",
+            },
+        ],
     }
     tasks_file.write_text(json.dumps(tasks_data))
     return tasks_file
@@ -126,9 +131,10 @@ class TestTaskTrackerServerInitialization:
 
     def test_server_starts_successfully(self, temp_project_dir):
         """Test that the server can be imported and initialized."""
-        with patch('codex.mcp_servers.task_tracker.server.mcp') as mock_mcp:
+        with patch("codex.mcp_servers.task_tracker.server.mcp") as mock_mcp:
             try:
                 from codex.mcp_servers.task_tracker.server import mcp
+
                 # Server module loaded successfully
                 assert mock_mcp is not None
             except ImportError:
@@ -137,7 +143,7 @@ class TestTaskTrackerServerInitialization:
     @pytest.mark.asyncio
     async def test_health_check_returns_correct_status(self, temp_project_dir):
         """Test health check returns proper server status."""
-        with patch('os.getcwd', return_value=str(temp_project_dir)):
+        with patch("os.getcwd", return_value=str(temp_project_dir)):
             try:
                 from codex.mcp_servers.task_tracker.server import health_check
 
@@ -173,17 +179,14 @@ class TestTaskCRUDOperations:
     @pytest.mark.asyncio
     async def test_create_task_with_valid_data(self, temp_project_dir, mock_task_data):
         """Test creating a task with valid data."""
-        with patch('os.getcwd', return_value=str(temp_project_dir)), \
-             patch('uuid.uuid4', return_value=Mock(hex="12345678")):
-
+        with (
+            patch("os.getcwd", return_value=str(temp_project_dir)),
+            patch("uuid.uuid4", return_value=Mock(hex="12345678")),
+        ):
             try:
                 from codex.mcp_servers.task_tracker.server import create_task
 
-                result = await create_task(
-                    title="Test Task",
-                    description="A test task",
-                    priority="high"
-                )
+                result = await create_task(title="Test Task", description="A test task", priority="high")
 
                 assert result["success"] is True
                 assert result["task"]["title"] == "Test Task"
@@ -197,7 +200,7 @@ class TestTaskCRUDOperations:
     @pytest.mark.asyncio
     async def test_create_task_with_invalid_data(self, temp_project_dir):
         """Test creating a task with invalid data."""
-        with patch('os.getcwd', return_value=str(temp_project_dir)):
+        with patch("os.getcwd", return_value=str(temp_project_dir)):
             try:
                 from codex.mcp_servers.task_tracker.server import create_task
 
@@ -216,7 +219,7 @@ class TestTaskCRUDOperations:
     @pytest.mark.asyncio
     async def test_list_tasks_with_no_tasks(self, temp_project_dir):
         """Test listing tasks when no tasks exist."""
-        with patch('os.getcwd', return_value=str(temp_project_dir)):
+        with patch("os.getcwd", return_value=str(temp_project_dir)):
             try:
                 from codex.mcp_servers.task_tracker.server import list_tasks
 
@@ -232,7 +235,7 @@ class TestTaskCRUDOperations:
     @pytest.mark.asyncio
     async def test_list_tasks_with_multiple_tasks(self, temp_project_dir, mock_task_file):
         """Test listing multiple tasks."""
-        with patch('os.getcwd', return_value=str(temp_project_dir)):
+        with patch("os.getcwd", return_value=str(temp_project_dir)):
             try:
                 from codex.mcp_servers.task_tracker.server import list_tasks
 
@@ -249,7 +252,7 @@ class TestTaskCRUDOperations:
     @pytest.mark.asyncio
     async def test_list_tasks_with_filtering(self, temp_project_dir, mock_task_file):
         """Test listing tasks with status filtering."""
-        with patch('os.getcwd', return_value=str(temp_project_dir)):
+        with patch("os.getcwd", return_value=str(temp_project_dir)):
             try:
                 from codex.mcp_servers.task_tracker.server import list_tasks
 
@@ -269,7 +272,7 @@ class TestTaskCRUDOperations:
     @pytest.mark.asyncio
     async def test_update_task(self, temp_project_dir, mock_task_file):
         """Test updating an existing task."""
-        with patch('os.getcwd', return_value=str(temp_project_dir)):
+        with patch("os.getcwd", return_value=str(temp_project_dir)):
             try:
                 from codex.mcp_servers.task_tracker.server import update_task
 
@@ -286,7 +289,7 @@ class TestTaskCRUDOperations:
     @pytest.mark.asyncio
     async def test_complete_task(self, temp_project_dir, mock_task_file):
         """Test marking a task as complete."""
-        with patch('os.getcwd', return_value=str(temp_project_dir)):
+        with patch("os.getcwd", return_value=str(temp_project_dir)):
             try:
                 from codex.mcp_servers.task_tracker.server import complete_task
 
@@ -302,7 +305,7 @@ class TestTaskCRUDOperations:
     @pytest.mark.asyncio
     async def test_delete_task(self, temp_project_dir, mock_task_file):
         """Test deleting a task."""
-        with patch('os.getcwd', return_value=str(temp_project_dir)):
+        with patch("os.getcwd", return_value=str(temp_project_dir)):
             try:
                 from codex.mcp_servers.task_tracker.server import delete_task
 
@@ -313,6 +316,7 @@ class TestTaskCRUDOperations:
 
                 # Verify task is gone
                 from codex.mcp_servers.task_tracker.server import list_tasks
+
                 result = await list_tasks()
                 assert len(result["tasks"]) == 1  # Only task_2 remains
 
@@ -326,9 +330,10 @@ class TestTaskPersistence:
     @pytest.mark.asyncio
     async def test_tasks_saved_to_file(self, temp_project_dir):
         """Test that tasks are saved to JSON file."""
-        with patch('os.getcwd', return_value=str(temp_project_dir)), \
-             patch('uuid.uuid4', return_value=Mock(hex="12345678")):
-
+        with (
+            patch("os.getcwd", return_value=str(temp_project_dir)),
+            patch("uuid.uuid4", return_value=Mock(hex="12345678")),
+        ):
             try:
                 from codex.mcp_servers.task_tracker.server import create_task
 
@@ -348,7 +353,7 @@ class TestTaskPersistence:
     @pytest.mark.asyncio
     async def test_tasks_loaded_from_file(self, temp_project_dir, mock_task_file):
         """Test that tasks are loaded from JSON file."""
-        with patch('os.getcwd', return_value=str(temp_project_dir)):
+        with patch("os.getcwd", return_value=str(temp_project_dir)):
             try:
                 from codex.mcp_servers.task_tracker.server import list_tasks
 
@@ -365,10 +370,11 @@ class TestTaskPersistence:
     @pytest.mark.asyncio
     async def test_concurrent_access_handling(self, temp_project_dir):
         """Test handling concurrent access to task file."""
-        with patch('os.getcwd', return_value=str(temp_project_dir)), \
-             patch('uuid.uuid4', return_value=Mock(hex="12345678")), \
-             patch('builtins.open') as mock_open:
-
+        with (
+            patch("os.getcwd", return_value=str(temp_project_dir)),
+            patch("uuid.uuid4", return_value=Mock(hex="12345678")),
+            patch("builtins.open") as mock_open,
+        ):
             # Mock file operations to simulate concurrent access
             mock_file = Mock()
             mock_open.return_value.__enter__.return_value = mock_file
@@ -383,8 +389,10 @@ class TestTaskPersistence:
                 assert result1["success"] is True
 
                 # Second call with concurrent modification
-                mock_file.read.side_effect = [json.dumps({"session_id": "test", "tasks": []}),
-                                            json.dumps({"session_id": "test", "tasks": [{"id": "concurrent"}]})]
+                mock_file.read.side_effect = [
+                    json.dumps({"session_id": "test", "tasks": []}),
+                    json.dumps({"session_id": "test", "tasks": [{"id": "concurrent"}]}),
+                ]
 
                 result2 = await create_task(title="Task 2", description="Test", priority="medium")
                 # Should handle gracefully or retry
@@ -399,7 +407,7 @@ class TestExportFunctionality:
     @pytest.mark.asyncio
     async def test_export_to_markdown(self, temp_project_dir, mock_task_file):
         """Test exporting tasks to markdown format."""
-        with patch('os.getcwd', return_value=str(temp_project_dir)):
+        with patch("os.getcwd", return_value=str(temp_project_dir)):
             try:
                 from codex.mcp_servers.task_tracker.server import export_tasks
 
@@ -422,7 +430,7 @@ class TestExportFunctionality:
     @pytest.mark.asyncio
     async def test_export_to_json(self, temp_project_dir, mock_task_file):
         """Test exporting tasks to JSON format."""
-        with patch('os.getcwd', return_value=str(temp_project_dir)):
+        with patch("os.getcwd", return_value=str(temp_project_dir)):
             try:
                 from codex.mcp_servers.task_tracker.server import export_tasks
 
@@ -443,7 +451,7 @@ class TestExportFunctionality:
     @pytest.mark.asyncio
     async def test_export_with_empty_task_list(self, temp_project_dir):
         """Test exporting when no tasks exist."""
-        with patch('os.getcwd', return_value=str(temp_project_dir)):
+        with patch("os.getcwd", return_value=str(temp_project_dir)):
             try:
                 from codex.mcp_servers.task_tracker.server import export_tasks
 
@@ -466,9 +474,10 @@ class TestErrorHandling:
     @pytest.mark.asyncio
     async def test_invalid_task_ids(self, temp_project_dir):
         """Test handling of invalid task IDs."""
-        with patch('os.getcwd', return_value=str(temp_project_dir)):
+        with patch("os.getcwd", return_value=str(temp_project_dir)):
             try:
-                from codex.mcp_servers.task_tracker.server import update_task, delete_task
+                from codex.mcp_servers.task_tracker.server import delete_task
+                from codex.mcp_servers.task_tracker.server import update_task
 
                 # Test update with invalid ID
                 result = await update_task(task_id="invalid_id", updates={"title": "Test"})
@@ -485,9 +494,10 @@ class TestErrorHandling:
     @pytest.mark.asyncio
     async def test_file_system_errors(self, temp_project_dir):
         """Test handling of file system errors."""
-        with patch('os.getcwd', return_value=str(temp_project_dir)), \
-             patch('pathlib.Path.write_text', side_effect=OSError("Disk full")):
-
+        with (
+            patch("os.getcwd", return_value=str(temp_project_dir)),
+            patch("pathlib.Path.write_text", side_effect=OSError("Disk full")),
+        ):
             try:
                 from codex.mcp_servers.task_tracker.server import create_task
 
@@ -501,7 +511,7 @@ class TestErrorHandling:
     @pytest.mark.asyncio
     async def test_malformed_requests(self, temp_project_dir):
         """Test handling of malformed requests."""
-        with patch('os.getcwd', return_value=str(temp_project_dir)):
+        with patch("os.getcwd", return_value=str(temp_project_dir)):
             try:
                 from codex.mcp_servers.task_tracker.server import create_task
 

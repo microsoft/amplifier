@@ -10,9 +10,10 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
-from pydantic import Field, field_validator
+from pydantic import Field
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from pydantic_settings import SettingsConfigDict
 
@@ -39,12 +40,12 @@ class BackendConfig(BaseSettings):
     )
 
     # CLI paths (optional, auto-detected if not set)
-    claude_cli_path: Optional[str] = Field(
+    claude_cli_path: str | None = Field(
         default=None,
         description="Path to Claude CLI executable. Auto-detected if not set. Example: /usr/local/bin/claude",
     )
 
-    codex_cli_path: Optional[str] = Field(
+    codex_cli_path: str | None = Field(
         default=None,
         description="Path to Codex CLI executable. Auto-detected if not set. Example: /usr/local/bin/codex",
     )
@@ -78,7 +79,7 @@ class BackendConfig(BaseSettings):
             raise ValueError(f"Invalid codex profile '{v}'. Must be one of: {', '.join(valid_profiles)}")
         return v
 
-    def get_backend_cli_path(self, backend: str) -> Optional[str]:
+    def get_backend_cli_path(self, backend: str) -> str | None:
         """Get CLI path for specified backend.
 
         Args:
@@ -89,7 +90,7 @@ class BackendConfig(BaseSettings):
         """
         if backend == "claude":
             return self.claude_cli_path
-        elif backend == "codex":
+        if backend == "codex":
             return self.codex_cli_path
         return None
 
@@ -102,7 +103,7 @@ def get_backend_config() -> BackendConfig:
     """Get or create the backend configuration singleton."""
     global _backend_config
     if _backend_config is None:
-        env_file_path = os.getenv('ENV_FILE', '.env')
+        env_file_path = os.getenv("ENV_FILE", ".env")
         _backend_config = BackendConfig(_env_file=env_file_path)
     return _backend_config
 
@@ -158,7 +159,7 @@ def is_backend_available(backend: str) -> bool:
         cli_path = config.get_backend_cli_path("claude") or "claude"
         return shutil.which(cli_path) is not None
 
-    elif backend == "codex":
+    if backend == "codex":
         # Check if .codex directory exists
         if not Path(".codex").exists():
             return False
@@ -170,7 +171,7 @@ def is_backend_available(backend: str) -> bool:
     return False
 
 
-def get_backend_info(backend: str) -> Dict[str, Any]:
+def get_backend_info(backend: str) -> dict[str, Any]:
     """Get information about specified backend for debugging and diagnostics.
 
     Args:
@@ -191,12 +192,7 @@ def get_backend_info(backend: str) -> Dict[str, Any]:
     cli_path = info["cli_path"] or backend
     if shutil.which(cli_path):
         try:
-            result = subprocess.run(
-                [cli_path, "--version"],
-                capture_output=True,
-                text=True,
-                timeout=5
-            )
+            result = subprocess.run([cli_path, "--version"], capture_output=True, text=True, timeout=5)
             if result.returncode == 0:
                 info["version"] = result.stdout.strip()
             else:

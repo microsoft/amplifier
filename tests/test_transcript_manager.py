@@ -6,18 +6,19 @@ Comprehensive tests covering transcript_manager.py backend abstraction,
 dual-backend support, and unified interface functionality.
 """
 
-import pytest
+# Import module under test
+import sys
 from pathlib import Path
 from unittest.mock import patch
 
-# Import module under test
-import sys
-sys.path.append(str(Path(__file__).parent.parent / 'tools'))
+import pytest
+
+sys.path.append(str(Path(__file__).parent.parent / "tools"))
 
 from transcript_manager import TranscriptManager
 
-
 # Test fixtures
+
 
 @pytest.fixture
 def mock_claude_transcript():
@@ -117,14 +118,14 @@ def mock_dual_backend_setup(tmp_path):
         "claude_transcripts": claude_transcripts,
         "codex_global": codex_global,
         "codex_local": codex_local,
-        "codex_session_dir": codex_session_dir
+        "codex_session_dir": codex_session_dir,
     }
 
 
 @pytest.fixture
 def transcript_manager_instance(tmp_path):
     """Create TranscriptManager instance with temporary directories."""
-    with patch.object(TranscriptManager, '__init__', lambda x, backend="auto": None):
+    with patch.object(TranscriptManager, "__init__", lambda x, backend="auto": None):
         manager = TranscriptManager.__new__(TranscriptManager)
         manager.backend = "auto"
         manager.data_dir = tmp_path / ".data"
@@ -136,6 +137,7 @@ def transcript_manager_instance(tmp_path):
 
 # Test backend detection
 
+
 class TestBackendDetection:
     """Test backend detection functionality."""
 
@@ -145,7 +147,7 @@ class TestBackendDetection:
         (tmp_path / ".claude").mkdir()
         (tmp_path / ".data" / "transcripts").mkdir(parents=True)
 
-        with patch('transcript_manager.Path.cwd', return_value=tmp_path):
+        with patch("transcript_manager.Path.cwd", return_value=tmp_path):
             manager = TranscriptManager(backend="auto")
             # When only Claude exists, should detect claude or auto
             assert manager.backend in ["claude", "auto"]
@@ -155,7 +157,7 @@ class TestBackendDetection:
         # Create Codex structure only
         (tmp_path / ".codex").mkdir()
 
-        with patch('transcript_manager.Path.cwd', return_value=tmp_path):
+        with patch("transcript_manager.Path.cwd", return_value=tmp_path):
             manager = TranscriptManager(backend="auto")
             # When only Codex exists, should detect codex
             assert manager.backend == "codex"
@@ -164,7 +166,7 @@ class TestBackendDetection:
         """Test auto-detection with both backends present."""
         tmp_path = mock_dual_backend_setup["tmp_path"]
 
-        with patch('transcript_manager.Path.cwd', return_value=tmp_path):
+        with patch("transcript_manager.Path.cwd", return_value=tmp_path):
             manager = TranscriptManager(backend="auto")
             # When both exist, should use auto to support both
             assert manager.backend == "auto"
@@ -172,13 +174,14 @@ class TestBackendDetection:
     def test_detect_backend_neither(self, tmp_path):
         """Test graceful handling when neither backend is present."""
         # Empty directory
-        with patch('transcript_manager.Path.cwd', return_value=tmp_path):
+        with patch("transcript_manager.Path.cwd", return_value=tmp_path):
             manager = TranscriptManager(backend="auto")
             # Should default to claude when neither is detected
             assert manager.backend == "claude"
 
 
 # Test Claude Code functionality (backward compatibility)
+
 
 class TestClaudeFunctionality:
     """Test Claude Code functionality to ensure backward compatibility."""
@@ -239,6 +242,7 @@ class TestClaudeFunctionality:
 
 
 # Test Codex functionality
+
 
 class TestCodexFunctionality:
     """Test Codex-specific functionality."""
@@ -318,6 +322,7 @@ class TestCodexFunctionality:
 
 # Test unified functionality
 
+
 class TestUnifiedFunctionality:
     """Test unified cross-backend functionality."""
 
@@ -326,7 +331,7 @@ class TestUnifiedFunctionality:
         setup = mock_dual_backend_setup
         tmp_path = setup["tmp_path"]
 
-        with patch('transcript_manager.Path.cwd', return_value=tmp_path):
+        with patch("transcript_manager.Path.cwd", return_value=tmp_path):
             manager = TranscriptManager(backend="auto")
             manager.transcripts_dir = setup["claude_transcripts"]
             manager.codex_global_dir = setup["codex_global"]
@@ -343,7 +348,7 @@ class TestUnifiedFunctionality:
         tmp_path = setup["tmp_path"]
 
         # Test Claude-only filtering
-        with patch('transcript_manager.Path.cwd', return_value=tmp_path):
+        with patch("transcript_manager.Path.cwd", return_value=tmp_path):
             claude_manager = TranscriptManager(backend="claude")
             claude_manager.transcripts_dir = setup["claude_transcripts"]
 
@@ -352,7 +357,7 @@ class TestUnifiedFunctionality:
             assert all(".txt" in str(t) for t in claude_transcripts)
 
         # Test Codex-only filtering
-        with patch('transcript_manager.Path.cwd', return_value=tmp_path):
+        with patch("transcript_manager.Path.cwd", return_value=tmp_path):
             codex_manager = TranscriptManager(backend="codex")
             codex_manager.codex_global_dir = setup["codex_global"]
             codex_manager.codex_local_dir = setup["codex_local"]
@@ -363,6 +368,7 @@ class TestUnifiedFunctionality:
 
 
 # Test session ID handling
+
 
 class TestSessionIdHandling:
     """Test session ID normalization and matching."""
@@ -391,6 +397,7 @@ class TestSessionIdHandling:
 
 
 # Test error handling
+
 
 class TestErrorHandling:
     """Test error handling scenarios."""
@@ -422,6 +429,7 @@ class TestErrorHandling:
 
 # Test JSON output
 
+
 class TestJsonOutput:
     """Test JSON output functionality."""
 
@@ -433,6 +441,7 @@ class TestJsonOutput:
 
 
 # Integration tests
+
 
 class TestIntegration:
     """Integration tests with other components."""

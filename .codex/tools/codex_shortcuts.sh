@@ -1,290 +1,267 @@
 #!/bin/bash
 
-# Codex Shortcuts - Command shortcuts and workflow aliases for Codex integration
+# Codex Shortcuts - Quick commands for common Codex workflows
+# Source this file in your shell or via amplify-codex.sh for convenient access
 #
-# This script provides convenient bash functions that wrap common Codex workflows,
-# similar to Claude Code's slash commands. These functions call the Amplifier backend
-# directly for quick operations.
-#
-# Usage:
-#   source .codex/tools/codex_shortcuts.sh
-#   codex-init "Hello world"
-#   codex-task-add "Fix bug"
-#   codex-agent "zen-code-architect" "Refactor this code"
+# Usage: source .codex/tools/codex_shortcuts.sh
 
-# Colors for output (matching wrapper script)
-RED='\033[0;31m'
+# Colors for output
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Function to print colored output
-print_status() {
-    echo -e "${BLUE}[Codex-Shortcut]${NC} $1"
-}
-
-print_success() {
-    echo -e "${GREEN}[Codex-Shortcut]${NC} $1"
-}
-
-print_warning() {
-    echo -e "${YELLOW}[Codex-Shortcut]${NC} $1"
-}
-
-print_error() {
-    echo -e "${RED}[Codex-Shortcut]${NC} $1"
-}
-
-# codex-init [context] - Quick session initialization
+# Quick session initialization
 codex-init() {
-    context="$*"
-    if [ -z "$context" ]; then
-        print_error "Usage: codex-init <context>"
-        return 1
-    fi
-
-    print_status "Initializing session with context: $context"
-    python3 << EOF
-import os
-os.environ['AMPLIFIER_BACKEND'] = 'codex'
-os.environ['AMPLIFIER_ROOT'] = '.'
-from amplifier.core.backend import get_backend
-backend = get_backend()
-result = backend.initialize_session(prompt="$context")
-if result['success']:
-    print("Session initialized successfully")
-else:
-    print(f"Error: {result.get('metadata', {}).get('error', 'Unknown error')}")
-EOF
+    local context="${1:-Starting development session}"
+    echo -e "${BLUE}Initializing Codex session...${NC}"
+    uv run python .codex/tools/session_init.py "$context"
 }
 
-# codex-check [files...] - Run quality checks
+# Run quality checks on files
 codex-check() {
-    files="$*"
-    if [ -z "$files" ]; then
-        print_error "Usage: codex-check <file1> [file2...]"
-        return 1
+    if [ $# -eq 0 ]; then
+        # No arguments - run on all Python files
+        echo -e "${BLUE}Running quality checks on all Python files...${NC}"
+        make check
+    else
+        # Run on specific files
+        echo -e "${BLUE}Running quality checks on specified files...${NC}"
+        for file in "$@"; do
+            if [ -f "$file" ]; then
+                echo "Checking: $file"
+                uv run ruff check "$file"
+                uv run pyright "$file"
+            else
+                echo -e "${YELLOW}Warning: File not found: $file${NC}"
+            fi
+        done
     fi
-
-    print_status "Running quality checks on: $files"
-    python3 << EOF
-import os
-import sys
-os.environ['AMPLIFIER_BACKEND'] = 'codex'
-os.environ['AMPLIFIER_ROOT'] = '.'
-from amplifier.core.backend import get_backend
-backend = get_backend()
-files_list = "$files".split()
-result = backend.run_quality_checks(file_paths=files_list)
-if result['success']:
-    print("Quality checks passed")
-else:
-    print(f"Quality checks failed: {result.get('metadata', {}).get('error', 'Unknown error')}")
-EOF
 }
 
-# codex-save - Save current transcript
+# Save current transcript
 codex-save() {
-    print_status "Saving current transcript"
-    python3 << EOF
-import os
-os.environ['AMPLIFIER_BACKEND'] = 'codex'
-os.environ['AMPLIFIER_ROOT'] = '.'
-from amplifier.core.backend import get_backend
-backend = get_backend()
+    echo -e "${BLUE}Saving current transcript...${NC}"
+    uv run python -c "
+from amplifier.core.backend import BackendFactory
+backend = BackendFactory.create(backend_type='codex')
 result = backend.export_transcript()
-if result['success']:
-    print(f"Transcript saved: {result['data'].get('path', 'Unknown path')}")
-else:
-    print(f"Error: {result.get('metadata', {}).get('error', 'Unknown error')}")
-EOF
+print(f'Transcript saved: {result}')
+"
 }
 
-# codex-task-add [title] - Create task
+# Task management shortcuts
 codex-task-add() {
-    title="$*"
-    if [ -z "$title" ]; then
-        print_error "Usage: codex-task-add <title> [description] [priority]"
-        return 1
-    fi
-
-    print_status "Creating task: $title"
-    python3 << EOF
-import os
-os.environ['AMPLIFIER_BACKEND'] = 'codex'
-os.environ['AMPLIFIER_ROOT'] = '.'
-from amplifier.core.backend import get_backend
-backend = get_backend()
-result = backend.manage_tasks('create', title="$title")
-if result['success']:
-    print("Task created successfully")
-else:
-    print(f"Error: {result.get('metadata', {}).get('error', 'Unknown error')}")
-EOF
-}
-
-# codex-task-list - List tasks
-codex-task-list() {
-    filter="${1:-}"
-    print_status "Listing tasks${filter:+ (filter: $filter)}"
-    python3 << EOF
-import os
+    local title="${1:-Untitled Task}"
+    local description="${2:-}"
+    local priority="${3:-medium}"
+    
+    echo -e "${BLUE}Creating task: $title${NC}"
+    uv run python -c "
+import asyncio
 import json
-os.environ['AMPLIFIER_BACKEND'] = 'codex'
-os.environ['AMPLIFIER_ROOT'] = '.'
-from amplifier.core.backend import get_backend
-backend = get_backend()
-result = backend.manage_tasks('list', filter_status="$filter" if "$filter" else None)
-if result['success']:
-    tasks = result['data'].get('tasks', [])
-    if tasks:
-        for task in tasks[:5]:  # Show first 5
-            status = task.get('status', 'unknown')
-            priority = task.get('priority', 'medium')
-            title = task.get('title', 'Untitled')
-            print(f"• [{status}] {priority}: {title}")
-        if len(tasks) > 5:
-            print(f"... and {len(tasks) - 5} more tasks")
+from pathlib import Path
+
+async def create_task():
+    # Simple task creation without MCP overhead
+    tasks_file = Path('.codex/tasks/session_tasks.json')
+    
+    if not tasks_file.exists():
+        data = {'tasks': [], 'metadata': {}}
     else:
-        print("No tasks found")
-else:
-    print(f"Error: {result.get('metadata', {}).get('error', 'Unknown error')}")
-EOF
+        with open(tasks_file) as f:
+            data = json.load(f)
+    
+    from datetime import datetime
+    import uuid
+    
+    task = {
+        'id': str(uuid.uuid4()),
+        'title': '$title',
+        'description': '$description',
+        'priority': '$priority',
+        'status': 'pending',
+        'created_at': datetime.now().isoformat(),
+        'updated_at': datetime.now().isoformat(),
+        'completed_at': None
+    }
+    
+    data['tasks'].append(task)
+    
+    with open(tasks_file, 'w') as f:
+        json.dump(data, f, indent=2)
+    
+    print(f\"Task created: {task['id']}\")
+    return task
+
+asyncio.run(create_task())
+"
 }
 
-# codex-search [query] - Web search
+# List tasks
+codex-task-list() {
+    local filter="${1:-}"
+    
+    echo -e "${BLUE}Tasks:${NC}"
+    uv run python -c "
+import json
+from pathlib import Path
+
+tasks_file = Path('.codex/tasks/session_tasks.json')
+
+if not tasks_file.exists():
+    print('No tasks found')
+else:
+    with open(tasks_file) as f:
+        data = json.load(f)
+    
+    tasks = data.get('tasks', [])
+    
+    if '$filter':
+        tasks = [t for t in tasks if t['status'] == '$filter']
+    
+    if not tasks:
+        print('No tasks found')
+    else:
+        for task in tasks:
+            status_emoji = {'pending': '⏳', 'in_progress': '🔄', 'completed': '✅', 'cancelled': '❌'}.get(task['status'], '❓')
+            priority_emoji = {'critical': '🔴', 'high': '🟠', 'medium': '🟡', 'low': '🟢'}.get(task['priority'], '⚪')
+            print(f\"{status_emoji} {priority_emoji} [{task['status']}] {task['title']} (ID: {task['id'][:8]})\")
+"
+}
+
+# Web search shortcut
 codex-search() {
-    query="$*"
+    local query="$*"
+    
     if [ -z "$query" ]; then
-        print_error "Usage: codex-search <query>"
+        echo -e "${YELLOW}Usage: codex-search <query>${NC}"
         return 1
     fi
-
-    print_status "Searching web for: $query"
-    python3 << EOF
-import os
-os.environ['AMPLIFIER_BACKEND'] = 'codex'
-os.environ['AMPLIFIER_ROOT'] = '.'
-from amplifier.core.backend import get_backend
-backend = get_backend()
-result = backend.search_web(query="$query", num_results=3)
-if result['success']:
-    results = result['data']
-    if results:
-        print("Search results:")
-        for i, res in enumerate(results[:3], 1):
-            title = res.get('title', 'No title')[:50]
-            url = res.get('url', 'No URL')
-            print(f"{i}. {title}")
-            print(f"   {url}")
-    else:
-        print("No results found")
-else:
-    print(f"Error: {result.get('metadata', {}).get('error', 'Unknown error')}")
-EOF
+    
+    echo -e "${BLUE}Searching for: $query${NC}"
+    # This would call the web research MCP server
+    # For now, just a placeholder
+    echo "Web search functionality requires active Codex session with MCP servers"
 }
 
-# codex-agent [agent-name] [task] - Spawn agent
+# Spawn agent shortcut
 codex-agent() {
-    agent_name="$1"
-    shift
-    task="$*"
-    if [ -z "$agent_name" ] || [ -z "$task" ]; then
-        print_error "Usage: codex-agent <agent-name> <task>"
+    local agent_name="${1:-}"
+    local task="${2:-}"
+    
+    if [ -z "$agent_name" ]; then
+        echo -e "${YELLOW}Usage: codex-agent <agent-name> <task>${NC}"
+        echo "Available agents: zen-architect, bug-hunter, test-coverage, etc."
         return 1
     fi
-
-    print_status "Spawning agent $agent_name with task: $task"
-    python3 << EOF
-import os
-os.environ['AMPLIFIER_BACKEND'] = 'codex'
-os.environ['AMPLIFIER_ROOT'] = '.'
-from amplifier.core.agent_backend import get_agent_backend
-backend = get_agent_backend()
-result = backend.spawn_agent(agent_name="$agent_name", task="$task")
-if result['success']:
-    print("Agent completed successfully")
-    print("Result:", result.get('result', 'No result')[:200])
-else:
-    print(f"Error: {result.get('metadata', {}).get('error', 'Unknown error')}")
-EOF
+    
+    if [ -z "$task" ]; then
+        echo -e "${YELLOW}Please specify a task for the agent${NC}"
+        return 1
+    fi
+    
+    echo -e "${BLUE}Spawning agent: $agent_name${NC}"
+    echo -e "${BLUE}Task: $task${NC}"
+    
+    codex exec "$agent_name" --prompt "$task"
 }
 
-# codex-status - Show session status
+# Show session status
 codex-status() {
-    print_status "Checking Codex status"
-    python3 << EOF
-import os
-os.environ['AMPLIFIER_BACKEND'] = 'codex'
-os.environ['AMPLIFIER_ROOT'] = '.'
-from amplifier.core.backend import get_backend
-from amplifier.core.agent_backend import get_agent_backend
-backend = get_backend()
-agent_backend = get_agent_backend()
-capabilities = backend.get_capabilities()
-agents = agent_backend.list_available_agents()
-print("Backend capabilities:")
-for key, value in capabilities.items():
-    print(f"  {key}: {value}")
-print(f"Available agents: {', '.join(agents) if agents else 'None'}")
-EOF
+    echo -e "${BLUE}=== Codex Session Status ===${NC}"
+    echo ""
+    
+    # Git info
+    if git rev-parse --git-dir > /dev/null 2>&1; then
+        echo -e "${GREEN}Git:${NC}"
+        echo "  Branch: $(git branch --show-current)"
+        echo "  Status: $(git status --short | wc -l) files modified"
+        echo ""
+    fi
+    
+    # Tasks
+    if [ -f ".codex/tasks/session_tasks.json" ]; then
+        local pending_count=$(uv run python -c "import json; data = json.load(open('.codex/tasks/session_tasks.json')); print(len([t for t in data.get('tasks', []) if t['status'] == 'pending']))")
+        local in_progress_count=$(uv run python -c "import json; data = json.load(open('.codex/tasks/session_tasks.json')); print(len([t for t in data.get('tasks', []) if t['status'] == 'in_progress']))")
+        local completed_count=$(uv run python -c "import json; data = json.load(open('.codex/tasks/session_tasks.json')); print(len([t for t in data.get('tasks', []) if t['status'] == 'completed']))")
+        
+        echo -e "${GREEN}Tasks:${NC}"
+        echo "  Pending: $pending_count"
+        echo "  In Progress: $in_progress_count"
+        echo "  Completed: $completed_count"
+        echo ""
+    fi
+    
+    # Memory system
+    if [ -d "amplifier_data/memory" ]; then
+        local memory_count=$(find amplifier_data/memory -name "*.jsonl" -exec wc -l {} \; 2>/dev/null | awk '{sum += $1} END {print sum}')
+        echo -e "${GREEN}Memory System:${NC}"
+        echo "  Stored memories: ${memory_count:-0}"
+        echo ""
+    fi
+    
+    # Recent logs
+    if [ -f ".codex/logs/session_init.log" ]; then
+        echo -e "${GREEN}Recent Activity:${NC}"
+        echo "  Last session init: $(ls -lh .codex/logs/session_init.log | awk '{print $6, $7, $8}')"
+    fi
+    
+    if [ -f ".codex/logs/auto_saves.log" ]; then
+        local last_save=$(tail -n 1 .codex/logs/auto_saves.log | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}' || echo "Never")
+        echo "  Last auto-save: $last_save"
+    fi
 }
 
-# Help function
+# Show help
 codex-help() {
-    echo "Codex Shortcuts - Quick commands for Codex workflows"
+    echo -e "${GREEN}=== Codex Shortcuts ===${NC}"
     echo ""
-    echo "Available commands:"
-    echo "  codex-init <context>     Initialize session with context"
-    echo "  codex-check <files...>   Run quality checks on files"
-    echo "  codex-save               Save current transcript"
-    echo "  codex-task-add <title>   Create a new task"
-    echo "  codex-task-list [filter] List tasks (optional status filter)"
-    echo "  codex-search <query>     Search the web"
-    echo "  codex-agent <name> <task> Spawn an agent"
-    echo "  codex-status             Show backend status"
-    echo "  codex-help               Show this help"
+    echo -e "${BLUE}Session Management:${NC}"
+    echo "  codex-init [context]           - Initialize session with context"
+    echo "  codex-save                     - Save current transcript"
+    echo "  codex-status                   - Show session status"
     echo ""
-    echo "Examples:"
-    echo "  codex-init 'Refactor the authentication module'"
-    echo "  codex-check src/*.py tests/*.py"
-    echo "  codex-task-add 'Fix login bug' 'The login form validation is broken'"
-    echo "  codex-task-list completed"
-    echo "  codex-search 'python async best practices'"
-    echo "  codex-agent zen-code-architect 'Review this PR'"
+    echo -e "${BLUE}Quality & Testing:${NC}"
+    echo "  codex-check [files...]         - Run quality checks (default: all files)"
+    echo ""
+    echo -e "${BLUE}Task Management:${NC}"
+    echo "  codex-task-add <title> [desc] [priority]  - Create new task"
+    echo "  codex-task-list [status]                  - List tasks (pending/in_progress/completed)"
+    echo ""
+    echo -e "${BLUE}Research:${NC}"
+    echo "  codex-search <query>           - Search the web (requires active session)"
+    echo ""
+    echo -e "${BLUE}Agents:${NC}"
+    echo "  codex-agent <name> <task>      - Spawn an agent for a specific task"
+    echo ""
+    echo -e "${BLUE}Help:${NC}"
+    echo "  codex-help                     - Show this help message"
+    echo ""
 }
 
-# Bash completion setup
+# Bash completion for common functions
 if [ -n "$BASH_VERSION" ]; then
-    # Completion for codex-agent (agent names)
     _codex_agent_completion() {
-        local agents=("zen-code-architect" "architecture-reviewer" "bug-hunter" "test-coverage" "modular-builder" "refactor-architect" "integration-specialist")
-        COMPREPLY=($(compgen -W "${agents[*]}" -- "${COMP_WORDS[1]}"))
+        local agents="zen-architect bug-hunter test-coverage modular-builder integration-specialist performance-optimizer api-contract-designer"
+        COMPREPLY=($(compgen -W "$agents" -- "${COMP_WORDS[1]}"))
     }
+    
     complete -F _codex_agent_completion codex-agent
-
-    # Completion for codex-task-list (status filters)
+    
     _codex_task_list_completion() {
-        local filters=("pending" "in_progress" "completed")
-        COMPREPLY=($(compgen -W "${filters[*]}" -- "${COMP_WORDS[1]}"))
+        local statuses="pending in_progress completed cancelled"
+        COMPREPLY=($(compgen -W "$statuses" -- "${COMP_WORDS[1]}"))
     }
+    
     complete -F _codex_task_list_completion codex-task-list
-
-    # Completion for codex-check (files)
-    _codex_check_completion() {
-        COMPREPLY=($(compgen -f -- "${COMP_WORDS[COMP_CWORD]}"))
-    }
-    complete -F _codex_check_completion codex-check
 fi
 
-# Export functions to make them available
-export -f codex-init
-export -f codex-check
-export -f codex-save
-export -f codex-task-add
-export -f codex-task-list
-export -f codex-search
-export -f codex-agent
-export -f codex-status
-export -f codex-help
+# Print help on source
+if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
+    # Script is being executed, not sourced
+    codex-help
+else
+    # Script is being sourced
+    echo -e "${GREEN}Codex shortcuts loaded!${NC} Type ${BLUE}codex-help${NC} for available commands."
+fi

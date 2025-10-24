@@ -6,14 +6,14 @@ This script replicates hook_stop.py functionality but as a standalone tool that 
 Codex sessions from the filesystem and processes them.
 """
 
+import argparse
 import asyncio
 import json
-import sys
 import os
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-import argparse
 
 # Add amplifier to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -22,7 +22,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 sys.path.append(str(Path(__file__).parent.parent.parent / "tools"))
 
 try:
-    from codex_transcripts_builder import SESSIONS_DEFAULT, HISTORY_DEFAULT
+    from codex_transcripts_builder import HISTORY_DEFAULT
+    from codex_transcripts_builder import SESSIONS_DEFAULT
     from transcript_exporter import CodexTranscriptExporter
 except ImportError as e:
     print(f"Error importing transcript exporter: {e}", file=sys.stderr)
@@ -133,13 +134,13 @@ class SessionCleanupLogger:
         try:
             # Get all log files for this script
             log_files = list(self.log_dir.glob(f"{self.script_name}_*.log"))
-            
+
             if len(log_files) <= max_files:
                 return
-            
+
             # Sort by modification time, newest first
             log_files.sort(key=lambda f: f.stat().st_mtime, reverse=True)
-            
+
             # Delete older files
             for old_file in log_files[max_files:]:
                 old_file.unlink()
@@ -156,26 +157,26 @@ def detect_session(sessions_root: Path, project_dir: Path, session_id_arg: str |
     if session_id_arg:
         logger.info(f"Using explicit session ID: {session_id_arg}")
         return session_id_arg
-    
+
     # Check environment variable
     env_session = os.getenv("CODEX_SESSION_ID")
     if env_session:
         logger.info(f"Using session ID from environment: {env_session}")
         return env_session
-    
+
     # Find most recent session for current project
     try:
         exporter = CodexTranscriptExporter(sessions_root=sessions_root, verbose=False)
         project_sessions = exporter.get_project_sessions(project_dir)
-        
+
         if not project_sessions:
             logger.warning("No sessions found for current project")
             return None
-        
+
         # Get the most recent by checking session directory mtime
         latest_session = None
         latest_mtime = 0
-        
+
         for session_id in project_sessions:
             session_dir = sessions_root / session_id
             if session_dir.exists():
@@ -183,7 +184,7 @@ def detect_session(sessions_root: Path, project_dir: Path, session_id_arg: str |
                 if mtime > latest_mtime:
                     latest_mtime = mtime
                     latest_session = session_id
-        
+
         if latest_session:
             logger.info(f"Detected latest project session: {latest_session}")
         return latest_session
@@ -196,11 +197,11 @@ def load_messages_from_history(session_dir: Path) -> list[dict]:
     """Load and parse messages from history.jsonl"""
     history_file = session_dir / "history.jsonl"
     messages = []
-    
+
     if not history_file.exists():
         logger.warning(f"History file not found: {history_file}")
         return messages
-    
+
     try:
         with open(history_file) as f:
             for line_num, line in enumerate(f, 1):
@@ -230,7 +231,7 @@ def load_messages_from_history(session_dir: Path) -> list[dict]:
                     logger.error(f"Error parsing line {line_num}: {e}")
     except Exception as e:
         logger.error(f"Error reading history file: {e}")
-    
+
     logger.info(f"Loaded {len(messages)} conversation messages")
     return messages
 
@@ -241,64 +242,68 @@ async def main():
     parser.add_argument("--session-id", help="Explicit session ID to process")
     parser.add_argument("--no-memory", action="store_true", help="Skip memory extraction")
     parser.add_argument("--no-transcript", action="store_true", help="Skip transcript export")
-    parser.add_argument("--output-dir", type=Path, default=Path(".codex/transcripts"), help="Transcript output directory")
-    parser.add_argument("--format", choices=["standard", "extended", "both", "compact"], default="both", help="Transcript format")
+    parser.add_argument(
+        "--output-dir", type=Path, default=Path(".codex/transcripts"), help="Transcript output directory"
+    )
+    parser.add_argument(
+        "--format", choices=["standard", "extended", "both", "compact"], default="both", help="Transcript format"
+    )
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
-    
+
     args = parser.parse_args()
-    
+
     try:
         # Check memory system
         memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "true").lower() in ["true", "1", "yes"]
         if not memory_enabled:
             logger.info("Memory system disabled via MEMORY_SYSTEM_ENABLED env var")
-        
+
         logger.info("Starting session cleanup")
         logger.cleanup_old_logs()
-        
+
         # Detect session
         sessions_root = Path(SESSIONS_DEFAULT)
         project_dir = Path.cwd()
         session_id = detect_session(sessions_root, project_dir, args.session_id)
-        
+
         if not session_id:
             logger.error("No session detected to process")
             print("Error: No session detected to process", file=sys.stderr)
             return
-        
+
         logger.info(f"Processing session: {session_id}")
-        
+
         # Load messages
         session_dir = sessions_root / session_id
         messages = load_messages_from_history(session_dir)
-        
+
         if not messages:
             logger.warning("No messages to process")
             print("Warning: No messages found in session", file=sys.stderr)
             return
-        
+
         memories_extracted = 0
         transcript_exported = False
         transcript_path = None
-        
+
         # Memory extraction
         if not args.no_memory and memory_enabled:
             try:
                 async with asyncio.timeout(60):
                     logger.info("Starting memory extraction")
-                    
+
                     # Get context from first user message
                     context = None
                     for msg in messages:
                         if msg.get("role") == "user":
                             context = msg.get("content", "")[:200]
                             break
-                    
+
                     extractor = MemoryExtractor()
                     store = MemoryStore()
-                    
+
                     extracted = await extractor.extract_from_messages(messages, context)
-                    
+
                     if extracted and "memories" in extracted:
                         memories_list = extracted.get("memories", [])
                         store.add_memories_batch(extracted)
@@ -308,15 +313,13 @@ async def main():
                 logger.error("Memory extraction timed out after 60 seconds")
             except Exception as e:
                 logger.exception("Error during memory extraction", e)
-        
+
         # Transcript export
         if not args.no_transcript:
             try:
                 exporter = CodexTranscriptExporter(verbose=args.verbose)
                 result = exporter.export_codex_transcript(
-                    session_id=session_id,
-                    output_dir=args.output_dir,
-                    format_type=args.format
+                    session_id=session_id, output_dir=args.output_dir, format_type=args.format
                 )
                 if result:
                     transcript_exported = True
@@ -324,7 +327,7 @@ async def main():
                     logger.info(f"Saved transcript to: {transcript_path}")
             except Exception as e:
                 logger.exception("Error during transcript export", e)
-        
+
         # Generate summary
         summary = {
             "sessionId": session_id,
@@ -333,22 +336,22 @@ async def main():
             "transcriptExported": transcript_exported,
             "transcriptPath": transcript_path,
             "timestamp": datetime.now().isoformat(),
-            "source": "amplifier_cleanup"
+            "source": "amplifier_cleanup",
         }
-        
+
         # Write metadata
         metadata_file = Path(".codex/session_cleanup_metadata.json")
         metadata_file.parent.mkdir(exist_ok=True)
         with open(metadata_file, "w") as f:
             json.dump(summary, f, indent=2)
-        
+
         # Print user-friendly summary
         print("✓ Session cleanup complete")
         if memories_extracted > 0:
             print(f"✓ Extracted {memories_extracted} memories")
         if transcript_exported and transcript_path:
             print(f"✓ Saved transcript to {transcript_path}")
-        
+
     except Exception as e:
         logger.exception("Unexpected error during cleanup", e)
         print("Error during session cleanup", file=sys.stderr)

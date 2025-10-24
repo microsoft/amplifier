@@ -6,12 +6,10 @@ This server provides tools to export, list, and convert Codex session transcript
 mirroring the functionality of Claude Code's PreCompact hook but with explicit tool invocation.
 """
 
-import asyncio
 import json
-import os
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 try:
     from mcp.server.fastmcp import FastMCP
@@ -21,7 +19,11 @@ except ImportError:
 
 # Import base utilities
 try:
-    from ..base import MCPLogger, AmplifierMCPServer, success_response, error_response, get_project_root
+    from ..base import AmplifierMCPServer
+    from ..base import MCPLogger
+    from ..base import error_response
+    from ..base import get_project_root
+    from ..base import success_response
 except ImportError:
     print("Error: Base utilities not found. Ensure base.py is available.", file=sys.stderr)
     exit(1)
@@ -34,7 +36,10 @@ except ImportError:
 
 # Import codex transcripts builder
 try:
-    from tools.codex_transcripts_builder import load_history, process_session, HISTORY_DEFAULT, SESSIONS_DEFAULT
+    from tools.codex_transcripts_builder import HISTORY_DEFAULT
+    from tools.codex_transcripts_builder import SESSIONS_DEFAULT
+    from tools.codex_transcripts_builder import load_history
+    from tools.codex_transcripts_builder import process_session
 except ImportError:
     load_history = None
     process_session = None
@@ -70,10 +75,8 @@ class TranscriptSaverServer(AmplifierMCPServer):
 
         @self.mcp.tool()
         async def save_current_transcript(
-            session_id: Optional[str] = None,
-            format: str = "both",
-            output_dir: Optional[str] = None
-        ) -> Dict[str, Any]:
+            session_id: str | None = None, format: str = "both", output_dir: str | None = None
+        ) -> dict[str, Any]:
             """Export current Codex session transcript (replaces PreCompact hook)
 
             Args:
@@ -102,25 +105,19 @@ class TranscriptSaverServer(AmplifierMCPServer):
 
                 # Export transcript
                 result = self.exporter.export_codex_transcript(
-                    session_id=session_id,
-                    output_dir=output_path,
-                    format_type=format,
-                    project_dir=self.project_root
+                    session_id=session_id, output_dir=output_path, format_type=format, project_dir=self.project_root
                 )
 
                 if result:
                     # Get metadata
                     metadata = self.extract_session_metadata(Path("~/.codex/sessions") / session_id)
-                    metadata.update({
-                        "export_path": str(result),
-                        "format": format,
-                        "exported_at": datetime.now().isoformat()
-                    })
+                    metadata.update(
+                        {"export_path": str(result), "format": format, "exported_at": datetime.now().isoformat()}
+                    )
 
                     self.logger.info(f"Exported transcript for session {session_id} to {result}")
                     return success_response({"session_id": session_id, "path": str(result)}, metadata)
-                else:
-                    return error_response(f"Failed to export transcript for session {session_id}")
+                return error_response(f"Failed to export transcript for session {session_id}")
 
             except Exception as e:
                 self.logger.exception("save_current_transcript failed", e)
@@ -128,10 +125,8 @@ class TranscriptSaverServer(AmplifierMCPServer):
 
         @self.mcp.tool()
         async def save_project_transcripts(
-            project_dir: str,
-            format: str = "standard",
-            incremental: bool = True
-        ) -> Dict[str, Any]:
+            project_dir: str, format: str = "standard", incremental: bool = True
+        ) -> dict[str, Any]:
             """Export all transcripts for current project
 
             Args:
@@ -174,14 +169,10 @@ class TranscriptSaverServer(AmplifierMCPServer):
                             sessions_root=SESSIONS_DEFAULT,
                             output_base=output_dir,
                             tz_name="America/Los_Angeles",
-                            cwd_separator="~"
+                            cwd_separator="~",
                         )
                         metadata = self.extract_session_metadata(Path("~/.codex/sessions") / session_id)
-                        exported.append({
-                            "session_id": session_id,
-                            "path": str(session_dir),
-                            "metadata": metadata
-                        })
+                        exported.append({"session_id": session_id, "path": str(session_dir), "metadata": metadata})
                     except Exception as e:
                         self.logger.warning(f"Failed to export session {session_id}: {e}")
 
@@ -193,10 +184,7 @@ class TranscriptSaverServer(AmplifierMCPServer):
                 return error_response(f"Batch export failed: {str(e)}")
 
         @self.mcp.tool()
-        async def list_available_sessions(
-            project_only: bool = False,
-            limit: int = 10
-        ) -> Dict[str, Any]:
+        async def list_available_sessions(project_only: bool = False, limit: int = 10) -> dict[str, Any]:
             """List Codex sessions available for export
 
             Args:
@@ -238,11 +226,8 @@ class TranscriptSaverServer(AmplifierMCPServer):
 
         @self.mcp.tool()
         async def convert_transcript_format(
-            session_id: str,
-            from_format: str,
-            to_format: str,
-            output_path: Optional[str] = None
-        ) -> Dict[str, Any]:
+            session_id: str, from_format: str, to_format: str, output_path: str | None = None
+        ) -> dict[str, Any]:
             """Convert between Claude Code and Codex transcript formats
 
             Args:
@@ -263,26 +248,27 @@ class TranscriptSaverServer(AmplifierMCPServer):
                     session_id=session_id,
                     from_backend=from_format,
                     to_backend=to_format,
-                    output_path=Path(output_path) if output_path else None
+                    output_path=Path(output_path) if output_path else None,
                 )
 
                 if success:
                     output_file = output_path or f"converted_{session_id}.{'txt' if to_format == 'claude' else 'md'}"
                     self.logger.info(f"Converted session {session_id} from {from_format} to {to_format}")
-                    return success_response({
-                        "session_id": session_id,
-                        "from_format": from_format,
-                        "to_format": to_format,
-                        "output_path": output_file
-                    })
-                else:
-                    return error_response(f"Conversion failed for session {session_id}")
+                    return success_response(
+                        {
+                            "session_id": session_id,
+                            "from_format": from_format,
+                            "to_format": to_format,
+                            "output_path": output_file,
+                        }
+                    )
+                return error_response(f"Conversion failed for session {session_id}")
 
             except Exception as e:
                 self.logger.exception("convert_transcript_format failed", e)
                 return error_response(f"Conversion failed: {str(e)}")
 
-    def get_current_codex_session(self) -> Optional[str]:
+    def get_current_codex_session(self) -> str | None:
         """Detect the most recent/active Codex session"""
         try:
             if self.exporter:
@@ -292,7 +278,7 @@ class TranscriptSaverServer(AmplifierMCPServer):
             self.logger.warning(f"Failed to get current session: {e}")
             return None
 
-    def get_project_sessions(self, project_dir: Path) -> List[str]:
+    def get_project_sessions(self, project_dir: Path) -> list[str]:
         """Filter Codex sessions by project directory"""
         try:
             if self.exporter:
@@ -302,12 +288,9 @@ class TranscriptSaverServer(AmplifierMCPServer):
             self.logger.warning(f"Failed to get project sessions: {e}")
             return []
 
-    def extract_session_metadata(self, session_dir: Path) -> Dict[str, Any]:
+    def extract_session_metadata(self, session_dir: Path) -> dict[str, Any]:
         """Parse session metadata from directory structure"""
-        metadata = {
-            "session_id": session_dir.name,
-            "path": str(session_dir)
-        }
+        metadata = {"session_id": session_dir.name, "path": str(session_dir)}
 
         try:
             # Try to load meta.json
@@ -315,10 +298,7 @@ class TranscriptSaverServer(AmplifierMCPServer):
             if meta_file.exists():
                 with open(meta_file) as f:
                     meta = json.load(f)
-                    metadata.update({
-                        "started_at": meta.get("started_at"),
-                        "cwd": meta.get("cwd")
-                    })
+                    metadata.update({"started_at": meta.get("started_at"), "cwd": meta.get("cwd")})
 
             # Count messages from history.jsonl if available
             history_file = session_dir / "history.jsonl"

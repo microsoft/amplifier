@@ -7,29 +7,24 @@ including frontmatter conversion, content transformation, validation, and
 end-to-end conversion workflows.
 """
 
-import json
-import pytest
 import sys
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+
+import pytest
 
 # Add tools directory to path for imports
-sys.path.append(str(Path(__file__).parent.parent / 'tools'))
+sys.path.append(str(Path(__file__).parent.parent / "tools"))
 
-from convert_agents import (
-    parse_agent_file,
-    convert_frontmatter,
-    remove_additional_instructions,
-    adapt_tool_references,
-    adapt_agent_spawning_examples,
-    remove_claude_specific_sections,
-    preserve_core_methodology,
-    convert_agent,
-    convert_all_agents,
-    validate_converted_agent,
-    validate_all_converted_agents,
-    main,
-)
+from convert_agents import adapt_agent_spawning_examples
+from convert_agents import adapt_tool_references
+from convert_agents import convert_agent
+from convert_agents import convert_all_agents
+from convert_agents import convert_frontmatter
+from convert_agents import parse_agent_file
+from convert_agents import preserve_core_methodology
+from convert_agents import remove_additional_instructions
+from convert_agents import remove_claude_specific_sections
+from convert_agents import validate_converted_agent
 
 
 @pytest.fixture
@@ -79,7 +74,7 @@ def sample_claude_frontmatter():
         "name": "test-agent",
         "description": "Use PROACTIVELY for testing. Task tool available.",
         "tools": "Read, Task, TodoWrite, Grep",
-        "model": "claude-3-5-sonnet-20241022"
+        "model": "claude-3-5-sonnet-20241022",
     }
 
 
@@ -356,7 +351,7 @@ class TestIntegration:
         convert_agent(input_path, output_path)
 
         # Import and test backend
-        sys.path.append(str(Path(__file__).parent.parent / 'amplifier' / 'core'))
+        sys.path.append(str(Path(__file__).parent.parent / "amplifier" / "core"))
         from agent_backend import CodexAgentBackend
 
         backend = CodexAgentBackend()
@@ -445,10 +440,11 @@ class TestCLI:
 
     def test_cli_convert_single_agent(self, temp_agent_dirs, monkeypatch):
         """Test CLI single agent conversion."""
-        monkeypatch.setattr(sys, 'argv', ['convert_agents.py', '--agent', 'test-agent'])
+        monkeypatch.setattr(sys, "argv", ["convert_agents.py", "--agent", "test-agent"])
 
         # Mock the directories
         import convert_agents
+
         original_claude = convert_agents.CLAUDE_AGENTS_DIR
         original_codex = convert_agents.CODEX_AGENTS_DIR
 
@@ -499,6 +495,7 @@ class TestRegression:
 
 
 # Test utilities
+
 
 def create_mock_agent_file(path: Path, content: str):
     """Helper to create mock agent file."""

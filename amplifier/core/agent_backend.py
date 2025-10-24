@@ -12,17 +12,19 @@ import json
 import logging
 import os
 import subprocess
-import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
 # Import agent context bridge utilities
 try:
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-    from codex.tools.agent_context_bridge import serialize_context, inject_context_to_agent, extract_agent_result, cleanup_context_files
+    from amplifier.codex_tools import cleanup_context_files
+    from amplifier.codex_tools import extract_agent_result
+    from amplifier.codex_tools import inject_context_to_agent
+    from amplifier.codex_tools import serialize_context
+
     CONTEXT_BRIDGE_AVAILABLE = True
 except ImportError:
     CONTEXT_BRIDGE_AVAILABLE = False
@@ -38,45 +40,45 @@ logger = logging.getLogger(__name__)
 
 class AgentBackendError(Exception):
     """Base exception for agent backend operations."""
+
     pass
 
 
 class AgentNotFoundError(AgentBackendError):
     """Raised when an agent definition doesn't exist."""
+
     pass
 
 
 class AgentSpawnError(AgentBackendError):
     """Raised when agent spawning fails."""
+
     pass
 
 
 class AgentTimeoutError(AgentBackendError):
     """Raised when agent execution times out."""
+
     pass
 
 
 @dataclass
 class AgentDefinition:
     """Represents a parsed agent definition."""
+
     name: str
     description: str
     system_prompt: str
-    allowed_tools: List[str]
+    allowed_tools: list[str]
     max_turns: int = 10
-    model: Optional[str] = None
+    model: str | None = None
 
 
 class AgentBackend(abc.ABC):
     """Abstract base class for agent spawning backends."""
 
     @abc.abstractmethod
-    def spawn_agent(
-        self,
-        agent_name: str,
-        task: str,
-        context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+    def spawn_agent(self, agent_name: str, task: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
         """
         Spawn a sub-agent with the given task.
 
@@ -91,12 +93,12 @@ class AgentBackend(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def list_available_agents(self) -> List[str]:
+    def list_available_agents(self) -> list[str]:
         """List names of available agent definitions."""
         pass
 
     @abc.abstractmethod
-    def get_agent_definition(self, agent_name: str) -> Optional[str]:
+    def get_agent_definition(self, agent_name: str) -> str | None:
         """Get the raw agent definition content."""
         pass
 
@@ -117,7 +119,9 @@ class ClaudeCodeAgentBackend(AgentBackend):
     def _ensure_sdk_available(self):
         """Ensure Claude Code SDK is available."""
         try:
-            from claude_code_sdk import ClaudeSDKClient, ClaudeCodeOptions
+            from claude_code_sdk import ClaudeCodeOptions
+            from claude_code_sdk import ClaudeSDKClient
+
             return ClaudeSDKClient, ClaudeCodeOptions
         except ImportError as e:
             raise AgentBackendError(f"Claude Code SDK not available: {e}")
@@ -129,20 +133,14 @@ class ClaudeCodeAgentBackend(AgentBackend):
 
             # Create options with Task tool enabled
             self._sdk_options = ClaudeCodeOptions(
-                allowed_tools=["Task", "Read", "Write", "Bash", "Grep", "Glob"],
-                working_directory=os.getcwd()
+                allowed_tools=["Task", "Read", "Write", "Bash", "Grep", "Glob"], working_directory=os.getcwd()
             )
 
             self._sdk_client = ClaudeSDKClient(options=self._sdk_options)
 
         return self._sdk_client
 
-    def spawn_agent(
-        self,
-        agent_name: str,
-        task: str,
-        context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+    def spawn_agent(self, agent_name: str, task: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
         """Spawn agent using Claude Code SDK Task tool."""
         try:
             logger.info(f"Spawning Claude Code agent: {agent_name}")
@@ -170,11 +168,7 @@ class ClaudeCodeAgentBackend(AgentBackend):
             return {
                 "success": True,
                 "result": result,
-                "metadata": {
-                    "backend": "claude",
-                    "agent_name": agent_name,
-                    "task_length": len(task)
-                }
+                "metadata": {"backend": "claude", "agent_name": agent_name, "task_length": len(task)},
             }
 
         except AgentNotFoundError:
@@ -191,10 +185,10 @@ class ClaudeCodeAgentBackend(AgentBackend):
                 # on the specific ClaudeSDKClient API
                 response = await client.query(task)
                 return response.get("content", "")
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise AgentTimeoutError("Agent execution timed out after 5 minutes")
 
-    def _load_agent_definition(self, agent_name: str) -> Optional[AgentDefinition]:
+    def _load_agent_definition(self, agent_name: str) -> AgentDefinition | None:
         """Load and parse agent definition."""
         agent_file = self.agents_dir / f"{agent_name}.md"
         if not agent_file.exists():
@@ -216,7 +210,7 @@ class ClaudeCodeAgentBackend(AgentBackend):
                         system_prompt=system_prompt,
                         allowed_tools=frontmatter.get("tools", "").split(",") if frontmatter.get("tools") else [],
                         max_turns=frontmatter.get("max_turns", 10),
-                        model=frontmatter.get("model")
+                        model=frontmatter.get("model"),
                     )
 
             return None
@@ -224,7 +218,7 @@ class ClaudeCodeAgentBackend(AgentBackend):
             logger.error(f"Error parsing agent definition {agent_name}: {e}")
             return None
 
-    def list_available_agents(self) -> List[str]:
+    def list_available_agents(self) -> list[str]:
         """List available Claude Code agents."""
         if not self.agents_dir.exists():
             return []
@@ -235,7 +229,7 @@ class ClaudeCodeAgentBackend(AgentBackend):
 
         return sorted(agents)
 
-    def get_agent_definition(self, agent_name: str) -> Optional[str]:
+    def get_agent_definition(self, agent_name: str) -> str | None:
         """Get raw agent definition content."""
         agent_file = self.agents_dir / f"{agent_name}.md"
         if agent_file.exists():
@@ -256,12 +250,7 @@ class CodexAgentBackend(AgentBackend):
         self.codex_cli = os.getenv("CODEX_CLI_PATH", "codex")
         self.profile = os.getenv("CODEX_PROFILE", "development")
 
-    def spawn_agent(
-        self,
-        agent_name: str,
-        task: str,
-        context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+    def spawn_agent(self, agent_name: str, task: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
         """Spawn agent using Codex CLI."""
         context_file = None
         try:
@@ -270,32 +259,33 @@ class CodexAgentBackend(AgentBackend):
             if not self.validate_agent_exists(agent_name):
                 raise AgentNotFoundError(f"Agent '{agent_name}' not found")
 
-            # Build command
+            # Build command - agent definition passed via --agent flag, context via separate --context flag
             agent_file = self.agents_dir / f"{agent_name}.md"
             cmd = [
                 self.codex_cli,
                 "exec",
-                f"--context-file={agent_file}",
+                f"--agent={agent_file}",  # Agent definition
                 f"--task={task}",
                 f"--profile={self.profile}",
-                "--output-format=json"
+                "--output-format=json",
             ]
 
             # Handle context serialization if bridge is available
+            context_file = None
             if context and CONTEXT_BRIDGE_AVAILABLE and serialize_context:
                 try:
                     # Check if context contains messages for serialization
-                    messages = context.get('messages', [])
+                    messages = context.get("messages", [])
                     if messages:
                         # Serialize full context using bridge
                         context_file = serialize_context(
                             messages=messages,
                             max_tokens=4000,
                             current_task=task,
-                            relevant_files=context.get('relevant_files'),
-                            session_metadata=context.get('session_metadata')
+                            relevant_files=context.get("relevant_files"),
+                            session_metadata=context.get("session_metadata"),
                         )
-                        cmd.append(f"--context-file={context_file}")
+                        cmd.append(f"--context={context_file}")  # Separate context file
                         logger.info(f"Serialized context to file: {context_file}")
                     else:
                         # Fallback to simple context data
@@ -319,7 +309,7 @@ class CodexAgentBackend(AgentBackend):
                 capture_output=True,
                 text=True,
                 timeout=300,  # 5 minute timeout
-                cwd=os.getcwd()
+                cwd=os.getcwd(),
             )
 
             # Extract and format result using bridge if available
@@ -328,16 +318,16 @@ class CodexAgentBackend(AgentBackend):
                     extracted = extract_agent_result(result.stdout.strip(), agent_name)
                     return {
                         "success": result.returncode == 0,
-                        "result": extracted['formatted_result'],
+                        "result": extracted["formatted_result"],
                         "metadata": {
                             "backend": "codex",
                             "agent_name": agent_name,
                             "task_length": len(task),
                             "return_code": result.returncode,
-                            "result_file": extracted.get('result_file'),
+                            "result_file": extracted.get("result_file"),
                             "context_used": context_file is not None,
-                            "context_bridge_used": True
-                        }
+                            "context_bridge_used": True,
+                        },
                     }
                 except Exception as e:
                     logger.warning(f"Failed to extract agent result with bridge: {e}, using raw output")
@@ -353,12 +343,11 @@ class CodexAgentBackend(AgentBackend):
                         "task_length": len(task),
                         "return_code": result.returncode,
                         "context_used": context_file is not None,
-                        "context_bridge_used": False
-                    }
+                        "context_bridge_used": False,
+                    },
                 }
-            else:
-                error_msg = result.stderr.strip() or "Unknown error"
-                raise AgentSpawnError(f"Codex agent failed: {error_msg}")
+            error_msg = result.stderr.strip() or "Unknown error"
+            raise AgentSpawnError(f"Codex agent failed: {error_msg}")
 
         except subprocess.TimeoutExpired:
             logger.warning(f"Agent {agent_name} timed out, preserving context file for debugging")
@@ -378,12 +367,8 @@ class CodexAgentBackend(AgentBackend):
                     logger.warning(f"Failed to cleanup context file {context_file}: {e}")
 
     def spawn_agent_with_context(
-        self,
-        agent_name: str,
-        task: str,
-        messages: List[Dict[str, Any]],
-        context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        self, agent_name: str, task: str, messages: list[dict[str, Any]], context: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """
         Spawn agent with full conversation context.
 
@@ -411,8 +396,8 @@ class CodexAgentBackend(AgentBackend):
                 messages=messages,
                 max_tokens=4000,
                 current_task=task,
-                relevant_files=context.get('relevant_files') if context else None,
-                session_metadata=context
+                relevant_files=context.get("relevant_files") if context else None,
+                session_metadata=context,
             )
 
             # Prepare context injection
@@ -427,7 +412,7 @@ class CodexAgentBackend(AgentBackend):
                 f"--task={task}",
                 f"--profile={self.profile}",
                 f"--context-file={context_file}",
-                "--output-format=json"
+                "--output-format=json",
             ]
 
             logger.debug(f"Running command with full context: {' '.join(cmd)}")
@@ -438,7 +423,7 @@ class CodexAgentBackend(AgentBackend):
                 capture_output=True,
                 text=True,
                 timeout=300,  # 5 minute timeout
-                cwd=os.getcwd()
+                cwd=os.getcwd(),
             )
 
             # Extract and format result
@@ -446,17 +431,17 @@ class CodexAgentBackend(AgentBackend):
 
             return {
                 "success": result.returncode == 0,
-                "result": extracted['formatted_result'],
+                "result": extracted["formatted_result"],
                 "metadata": {
                     "backend": "codex",
                     "agent_name": agent_name,
                     "task_length": len(task),
                     "return_code": result.returncode,
-                    "result_file": extracted.get('result_file'),
-                    "context_size": injection_data.get('context_size'),
-                    "context_hash": injection_data.get('context_hash'),
-                    "context_bridge_used": True
-                }
+                    "result_file": extracted.get("result_file"),
+                    "context_size": injection_data.get("context_size"),
+                    "context_hash": injection_data.get("context_hash"),
+                    "context_bridge_used": True,
+                },
             }
 
         except subprocess.TimeoutExpired:
@@ -476,7 +461,7 @@ class CodexAgentBackend(AgentBackend):
                 except Exception as e:
                     logger.warning(f"Failed to cleanup context file {context_file}: {e}")
 
-    def list_available_agents(self) -> List[str]:
+    def list_available_agents(self) -> list[str]:
         """List available Codex agents."""
         if not self.agents_dir.exists():
             return []
@@ -487,7 +472,7 @@ class CodexAgentBackend(AgentBackend):
 
         return sorted(agents)
 
-    def get_agent_definition(self, agent_name: str) -> Optional[str]:
+    def get_agent_definition(self, agent_name: str) -> str | None:
         """Get raw agent definition content."""
         agent_file = self.agents_dir / f"{agent_name}.md"
         if agent_file.exists():
@@ -504,7 +489,7 @@ class AgentBackendFactory:
     """Factory for creating agent backends."""
 
     @staticmethod
-    def create_agent_backend(backend_type: Optional[str] = None) -> AgentBackend:
+    def create_agent_backend(backend_type: str | None = None) -> AgentBackend:
         """
         Create an agent backend instance.
 
@@ -524,13 +509,12 @@ class AgentBackendFactory:
             if not backend.list_available_agents():
                 logger.warning("No Claude Code agents found - backend may not be properly configured")
             return backend
-        elif backend_type == "codex":
+        if backend_type == "codex":
             backend = CodexAgentBackend()
             if not backend.list_available_agents():
                 logger.warning("No Codex agents found - backend may not be properly configured")
             return backend
-        else:
-            raise ValueError(f"Invalid backend type: {backend_type}. Must be 'claude' or 'codex'")
+        raise ValueError(f"Invalid backend type: {backend_type}. Must be 'claude' or 'codex'")
 
     @staticmethod
     def get_agent_backend() -> AgentBackend:
@@ -577,7 +561,7 @@ def parse_agent_definition(content: str) -> AgentDefinition:
             system_prompt=system_prompt,
             allowed_tools=allowed_tools,
             max_turns=frontmatter.get("max_turns", 10),
-            model=frontmatter.get("model")
+            model=frontmatter.get("model"),
         )
 
     except yaml.YAMLError as e:
@@ -586,11 +570,7 @@ def parse_agent_definition(content: str) -> AgentDefinition:
         raise ValueError(f"Failed to parse agent definition: {e}")
 
 
-def spawn_agent(
-    agent_name: str,
-    task: str,
-    backend: Optional[str] = None
-) -> Dict[str, Any]:
+def spawn_agent(agent_name: str, task: str, backend: str | None = None) -> dict[str, Any]:
     """
     High-level convenience function to spawn an agent.
 
@@ -607,18 +587,12 @@ def spawn_agent(
         return backend_instance.spawn_agent(agent_name, task)
     except Exception as e:
         logger.error(f"Error in spawn_agent convenience function: {e}")
-        return {
-            "success": False,
-            "result": "",
-            "metadata": {
-                "error": str(e),
-                "error_type": type(e).__name__
-            }
-        }
+        return {"success": False, "result": "", "metadata": {"error": str(e), "error_type": type(e).__name__}}
 
 
 # Global convenience instance
 _agent_backend = None
+
 
 def get_agent_backend() -> AgentBackend:
     """Get the global agent backend instance."""

@@ -7,33 +7,35 @@ transcript_exporter.py functionality, and various edge cases.
 """
 
 import json
-import pytest
-from datetime import UTC, datetime
-from pathlib import Path
-from unittest.mock import Mock, patch
 
 # Import modules under test
 import sys
-sys.path.append(str(Path(__file__).parent.parent / 'tools'))
+from datetime import UTC
+from datetime import datetime
+from pathlib import Path
+from unittest.mock import Mock
+from unittest.mock import patch
 
-from codex_transcripts_builder import (
-    HistoryEntry,
-    SessionMeta,
-    parse_args,
-    load_history,
-    load_session_meta,
-    filter_sessions_by_project,
-    validate_session_entry,
-    _parse_timestamp_with_fallbacks,
-    write_compact_transcript,
-    write_session_metadata,
-    process_session,
-)
+import pytest
 
-sys.path.append(str(Path(__file__).parent.parent / '.codex' / 'tools'))
+sys.path.append(str(Path(__file__).parent.parent / "tools"))
+
+from codex_transcripts_builder import HistoryEntry
+from codex_transcripts_builder import SessionMeta
+from codex_transcripts_builder import _parse_timestamp_with_fallbacks
+from codex_transcripts_builder import filter_sessions_by_project
+from codex_transcripts_builder import load_history
+from codex_transcripts_builder import load_session_meta
+from codex_transcripts_builder import parse_args
+from codex_transcripts_builder import process_session
+from codex_transcripts_builder import validate_session_entry
+from codex_transcripts_builder import write_compact_transcript
+from codex_transcripts_builder import write_session_metadata
+
+sys.path.append(str(Path(__file__).parent.parent / ".codex" / "tools"))
 from transcript_exporter import CodexTranscriptExporter
 
-sys.path.append(str(Path(__file__).parent.parent / 'tools'))
+sys.path.append(str(Path(__file__).parent.parent / "tools"))
 from transcript_manager import TranscriptManager
 
 
@@ -67,20 +69,13 @@ def mock_codex_session():
         {
             "timestamp": "2024-01-01T10:00:02Z",
             "type": "tool_call",
-            "content": {
-                "tool_name": "test_tool",
-                "arguments": {"arg1": "value1"},
-                "call_id": "call_123"
-            }
+            "content": {"tool_name": "test_tool", "arguments": {"arg1": "value1"}, "call_id": "call_123"},
         },
         {
             "timestamp": "2024-01-01T10:00:03Z",
             "type": "tool_result",
-            "content": {
-                "call_id": "call_123",
-                "result": {"status": "success"}
-            }
-        }
+            "content": {"call_id": "call_123", "result": {"status": "success"}},
+        },
     ]
     return "\n".join(json.dumps(event) for event in session_events)
 
@@ -92,17 +87,11 @@ def mock_session_directory(tmp_path):
     session_dir.mkdir(parents=True)
 
     # Create meta.json
-    meta = {
-        "session_id": "abc123",
-        "started_at": "2024-01-01T10:00:00Z",
-        "cwd": str(tmp_path / "project")
-    }
+    meta = {"session_id": "abc123", "started_at": "2024-01-01T10:00:00Z", "cwd": str(tmp_path / "project")}
     (session_dir / "meta.json").write_text(json.dumps(meta))
 
     # Create history.jsonl
-    history = [
-        {"session_id": "abc123", "ts": 1640995200, "text": "Test message"}
-    ]
+    history = [{"session_id": "abc123", "ts": 1640995200, "text": "Test message"}]
     (session_dir / "history.jsonl").write_text("\n".join(json.dumps(h) for h in history))
 
     return session_dir
@@ -119,9 +108,7 @@ def temp_codex_dirs(tmp_path):
         dir_path.mkdir(parents=True)
 
     # Create sample history.jsonl
-    history_entries = [
-        {"session_id": "test123", "ts": 1640995200, "text": "Sample entry"}
-    ]
+    history_entries = [{"session_id": "test123", "ts": 1640995200, "text": "Sample entry"}]
     history_content = "\n".join(json.dumps(entry) for entry in history_entries)
     (codex_dir / "history.jsonl").write_text(history_content)
 
@@ -130,20 +117,26 @@ def temp_codex_dirs(tmp_path):
 
 # Tests for codex_transcripts_builder.py enhancements
 
+
 class TestCodexTranscriptsBuilder:
     """Test enhanced codex_transcripts_builder.py functionality."""
 
     def test_parse_args_with_new_options(self):
         """Test that new command line arguments are parsed correctly."""
-        args = parse_args([
-            "--project-dir", "/test/project",
-            "--session-id", "abc123",
-            "--skip-errors",
-            "--incremental",
-            "--force",
-            "--output-format", "compact",
-            "--verbose"
-        ])
+        args = parse_args(
+            [
+                "--project-dir",
+                "/test/project",
+                "--session-id",
+                "abc123",
+                "--skip-errors",
+                "--incremental",
+                "--force",
+                "--output-format",
+                "compact",
+                "--verbose",
+            ]
+        )
 
         assert args.project_dir == Path("/test/project")
         assert args.session_id == "abc123"
@@ -174,7 +167,7 @@ class TestCodexTranscriptsBuilder:
     def test_load_history_without_skip_errors(self, tmp_path):
         """Test that corrupted lines raise exceptions when skip_errors=False."""
         history_file = tmp_path / "history.jsonl"
-        history_file.write_text('invalid json line')
+        history_file.write_text("invalid json line")
 
         with pytest.raises(Exception):
             load_history(history_file, skip_errors=False, verbose=False)
@@ -188,7 +181,7 @@ class TestCodexTranscriptsBuilder:
         # Create mock sessions dict
         sessions = {"abc123": [HistoryEntry("abc123", 1640995200, "test")]}
 
-        with patch('codex_transcripts_builder.load_session_meta') as mock_load_meta:
+        with patch("codex_transcripts_builder.load_session_meta") as mock_load_meta:
             mock_meta = SessionMeta("abc123", datetime.now(), str(project_dir))
             mock_load_meta.return_value = mock_meta
 
@@ -211,8 +204,8 @@ class TestCodexTranscriptsBuilder:
         # Invalid entries
         invalid_entries = [
             HistoryEntry("", 1640995200, "test"),  # Empty session_id
-            HistoryEntry("abc123", 0, "test"),     # Invalid timestamp
-            HistoryEntry("abc123", -1, "test"),    # Negative timestamp
+            HistoryEntry("abc123", 0, "test"),  # Invalid timestamp
+            HistoryEntry("abc123", -1, "test"),  # Negative timestamp
         ]
 
         for entry in invalid_entries:
@@ -363,6 +356,7 @@ class TestCodexTranscriptsBuilder:
 
 # Tests for transcript_exporter.py functionality
 
+
 class TestTranscriptExporter:
     """Test transcript exporter functionality."""
 
@@ -380,7 +374,7 @@ class TestTranscriptExporter:
         exporter = CodexTranscriptExporter(verbose=True)
         exporter.history_path = history_path
 
-        with patch('transcript_exporter.load_history') as mock_load:
+        with patch("transcript_exporter.load_history") as mock_load:
             mock_sessions = {
                 "old123": [Mock(ts=1640995000)],
                 "new456": [Mock(ts=1640996000)],  # More recent
@@ -400,15 +394,12 @@ class TestTranscriptExporter:
         session_dir = sessions_root / "test123"
         session_dir.mkdir(parents=True)
 
-        meta = {
-            "session_id": "test123",
-            "cwd": str(project_dir)
-        }
+        meta = {"session_id": "test123", "cwd": str(project_dir)}
         (session_dir / "meta.json").write_text(json.dumps(meta))
 
         exporter = CodexTranscriptExporter(sessions_root=sessions_root)
 
-        with patch('transcript_exporter.load_history') as mock_load:
+        with patch("transcript_exporter.load_history") as mock_load:
             mock_load.return_value = {"test123": [Mock()]}
 
             project_sessions = exporter.get_project_sessions(project_dir)
@@ -425,9 +416,7 @@ class TestTranscriptExporter:
         session_dir = sessions_root / session_id
         session_dir.mkdir()
         history_path = tmp_path / "history.jsonl"
-        history_entries = [
-            {"session_id": session_id, "ts": 1640995200, "text": "Hello"}
-        ]
+        history_entries = [{"session_id": session_id, "ts": 1640995200, "text": "Hello"}]
         history_path.write_text("\n".join(json.dumps(entry) for entry in history_entries), encoding="utf-8")
 
         rollout_path = session_dir / f"rollout_{session_id}.jsonl"
@@ -509,15 +498,13 @@ class TestTranscriptExporter:
 
         exporter = CodexTranscriptExporter(sessions_root=sessions_root, verbose=True)
 
-        result = exporter.export_codex_transcript(
-            session_id="nonexistent",
-            output_dir=output_dir
-        )
+        result = exporter.export_codex_transcript(session_id="nonexistent", output_dir=output_dir)
 
         assert result is None
 
 
 # Tests for transcript manager enhancements
+
 
 class TestTranscriptManagerFeatures:
     """Test TranscriptManager enhanced functionality."""
@@ -637,9 +624,7 @@ class TestTranscriptManagerFeatures:
 
         transcripts = manager.list_transcripts()
         assert transcripts
-        assert any(
-            manager._session_id_from_transcript_path(t) == session_id for t in transcripts
-        )
+        assert any(manager._session_id_from_transcript_path(t) == session_id for t in transcripts)
 
         exported = manager.export_transcript(session_id=session_id, output_format="standard")
         assert exported is not None
@@ -647,7 +632,9 @@ class TestTranscriptManagerFeatures:
         assert exported.parent.name == session_id
         assert exported.name == "transcript.md"
 
+
 # Test parsing edge cases
+
 
 class TestParsingEdgeCases:
     """Test various parsing edge cases."""
@@ -682,6 +669,7 @@ class TestParsingEdgeCases:
 
 # Integration tests
 
+
 class TestIntegration:
     """Integration tests across components."""
 
@@ -704,7 +692,7 @@ class TestIntegration:
         # Create large session data
         large_session_entries = []
         for i in range(1000):
-            entry = HistoryEntry(f"large_session", 1640995200 + i, f"Message {i}")
+            entry = HistoryEntry("large_session", 1640995200 + i, f"Message {i}")
             large_session_entries.append(entry)
 
         # Test that processing doesn't fail or timeout

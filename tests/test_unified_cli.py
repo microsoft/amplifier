@@ -16,17 +16,15 @@ import pytest
 # Add the project root to the path so we can import amplifier modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from amplify import (
-    parse_args,
-    validate_backend,
-    launch_claude_code,
-    launch_codex,
-    list_backends,
-    show_backend_info,
-    show_version,
-    main,
-)
 import amplifier.core.config as cfg
+from amplify import launch_claude_code
+from amplify import launch_codex
+from amplify import list_backends
+from amplify import main
+from amplify import parse_args
+from amplify import show_backend_info
+from amplify import show_version
+from amplify import validate_backend
 
 
 class TestParseArgs:
@@ -162,10 +160,7 @@ class TestLaunchCodex:
         exit_code = launch_codex([], "development")
 
         assert exit_code == 0
-        mock_run.assert_called_once_with(
-            ["./amplify-codex.sh", "--profile", "development"],
-            check=False
-        )
+        mock_run.assert_called_once_with(["./amplify-codex.sh", "--profile", "development"], check=False)
 
     @patch("subprocess.run")
     @patch("amplify.Path.exists")
@@ -178,8 +173,7 @@ class TestLaunchCodex:
 
         assert exit_code == 0
         mock_run.assert_called_once_with(
-            ["codex", "--profile", "ci", "--config", ".codex/config.toml", "--help"],
-            check=False
+            ["codex", "--profile", "ci", "--config", ".codex/config.toml", "--help"], check=False
         )
 
     @patch("subprocess.run")
@@ -367,8 +361,7 @@ class TestMainFunction:
     @patch("amplify.detect_backend")
     @patch("amplify.validate_backend")
     @patch("amplify.launch_claude_code")
-    def test_auto_detect_backend(self, mock_launch, mock_validate, mock_detect,
-                                mock_config, mock_parse):
+    def test_auto_detect_backend(self, mock_launch, mock_validate, mock_detect, mock_config, mock_parse):
         """Test automatic backend detection."""
         # Setup mocks
         mock_parse.return_value.backend = None

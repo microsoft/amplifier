@@ -8,18 +8,15 @@ import json
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
+from ..base import AmplifierMCPServer
+
 # Import base utilities
-from ..base import (
-    MCPLogger,
-    AmplifierMCPServer,
-    get_project_root,
-    success_response,
-    error_response,
-)
+from ..base import error_response
+from ..base import success_response
 
 
 class TaskTrackerServer(AmplifierMCPServer):
@@ -48,30 +45,27 @@ class TaskTrackerServer(AmplifierMCPServer):
         if not self.tasks_file.exists():
             initial_data = {
                 "tasks": [],
-                "metadata": {
-                    "created_at": datetime.now().isoformat(),
-                    "last_modified": datetime.now().isoformat()
-                }
+                "metadata": {"created_at": datetime.now().isoformat(), "last_modified": datetime.now().isoformat()},
             }
-            with open(self.tasks_file, 'w') as f:
+            with open(self.tasks_file, "w") as f:
                 json.dump(initial_data, f, indent=2)
             self.logger.info(f"Created new tasks file: {self.tasks_file}")
 
-    def _load_tasks(self) -> Dict[str, Any]:
+    def _load_tasks(self) -> dict[str, Any]:
         """Load tasks from file"""
         try:
-            with open(self.tasks_file, 'r') as f:
+            with open(self.tasks_file) as f:
                 data = json.load(f)
             return data
         except Exception as e:
             self.logger.error(f"Failed to load tasks: {e}")
             return {"tasks": [], "metadata": {}}
 
-    def _save_tasks(self, data: Dict[str, Any]):
+    def _save_tasks(self, data: dict[str, Any]):
         """Save tasks to file"""
         try:
             data["metadata"]["last_modified"] = datetime.now().isoformat()
-            with open(self.tasks_file, 'w') as f:
+            with open(self.tasks_file, "w") as f:
                 json.dump(data, f, indent=2)
             self.logger.debug(f"Saved {len(data['tasks'])} tasks")
         except Exception as e:
@@ -83,11 +77,8 @@ class TaskTrackerServer(AmplifierMCPServer):
 
         @self.mcp.tool()
         async def create_task(
-            title: str,
-            description: Optional[str] = None,
-            priority: str = "medium",
-            category: Optional[str] = None
-        ) -> Dict[str, Any]:
+            title: str, description: str | None = None, priority: str = "medium", category: str | None = None
+        ) -> dict[str, Any]:
             """Create a new task
 
             Args:
@@ -105,10 +96,7 @@ class TaskTrackerServer(AmplifierMCPServer):
                 # Validate priority
                 valid_priorities = ["low", "medium", "high", "critical"]
                 if priority not in valid_priorities:
-                    return error_response(
-                        f"Invalid priority: {priority}",
-                        {"valid_priorities": valid_priorities}
-                    )
+                    return error_response(f"Invalid priority: {priority}", {"valid_priorities": valid_priorities})
 
                 # Load current tasks
                 data = self._load_tasks()
@@ -123,7 +111,7 @@ class TaskTrackerServer(AmplifierMCPServer):
                     "status": "pending",
                     "created_at": datetime.now().isoformat(),
                     "updated_at": datetime.now().isoformat(),
-                    "completed_at": None
+                    "completed_at": None,
                 }
 
                 # Add to tasks list
@@ -133,9 +121,7 @@ class TaskTrackerServer(AmplifierMCPServer):
                 self._save_tasks(data)
 
                 self.logger.info(f"Created task {task['id']}: {title}")
-                return success_response(task, {
-                    "total_tasks": len(data["tasks"])
-                })
+                return success_response(task, {"total_tasks": len(data["tasks"])})
 
             except Exception as e:
                 self.logger.exception("create_task failed", e)
@@ -143,11 +129,11 @@ class TaskTrackerServer(AmplifierMCPServer):
 
         @self.mcp.tool()
         async def list_tasks(
-            filter_status: Optional[str] = None,
-            filter_priority: Optional[str] = None,
-            filter_category: Optional[str] = None,
-            limit: Optional[int] = None
-        ) -> Dict[str, Any]:
+            filter_status: str | None = None,
+            filter_priority: str | None = None,
+            filter_category: str | None = None,
+            limit: int | None = None,
+        ) -> dict[str, Any]:
             """List tasks with optional filtering
 
             Args:
@@ -160,7 +146,9 @@ class TaskTrackerServer(AmplifierMCPServer):
                 List of tasks matching filters
             """
             try:
-                self.logger.info(f"Listing tasks with filters: status={filter_status}, priority={filter_priority}, category={filter_category}")
+                self.logger.info(
+                    f"Listing tasks with filters: status={filter_status}, priority={filter_priority}, category={filter_category}"
+                )
 
                 # Load tasks
                 data = self._load_tasks()
@@ -184,15 +172,18 @@ class TaskTrackerServer(AmplifierMCPServer):
                 tasks = sorted(tasks, key=lambda t: t["created_at"], reverse=True)
 
                 self.logger.info(f"Returning {len(tasks)} tasks")
-                return success_response(tasks, {
-                    "total_filtered": len(tasks),
-                    "total_all": len(data["tasks"]),
-                    "filters_applied": {
-                        "status": filter_status,
-                        "priority": filter_priority,
-                        "category": filter_category
-                    }
-                })
+                return success_response(
+                    tasks,
+                    {
+                        "total_filtered": len(tasks),
+                        "total_all": len(data["tasks"]),
+                        "filters_applied": {
+                            "status": filter_status,
+                            "priority": filter_priority,
+                            "category": filter_category,
+                        },
+                    },
+                )
 
             except Exception as e:
                 self.logger.exception("list_tasks failed", e)
@@ -201,12 +192,12 @@ class TaskTrackerServer(AmplifierMCPServer):
         @self.mcp.tool()
         async def update_task(
             task_id: str,
-            title: Optional[str] = None,
-            description: Optional[str] = None,
-            priority: Optional[str] = None,
-            status: Optional[str] = None,
-            category: Optional[str] = None
-        ) -> Dict[str, Any]:
+            title: str | None = None,
+            description: str | None = None,
+            priority: str | None = None,
+            status: str | None = None,
+            category: str | None = None,
+        ) -> dict[str, Any]:
             """Update an existing task
 
             Args:
@@ -244,18 +235,12 @@ class TaskTrackerServer(AmplifierMCPServer):
                 if priority is not None:
                     valid_priorities = ["low", "medium", "high", "critical"]
                     if priority not in valid_priorities:
-                        return error_response(
-                            f"Invalid priority: {priority}",
-                            {"valid_priorities": valid_priorities}
-                        )
+                        return error_response(f"Invalid priority: {priority}", {"valid_priorities": valid_priorities})
                     task["priority"] = priority
                 if status is not None:
                     valid_statuses = ["pending", "in_progress", "completed", "cancelled"]
                     if status not in valid_statuses:
-                        return error_response(
-                            f"Invalid status: {status}",
-                            {"valid_statuses": valid_statuses}
-                        )
+                        return error_response(f"Invalid status: {status}", {"valid_statuses": valid_statuses})
                     task["status"] = status
                     if status == "completed":
                         task["completed_at"] = datetime.now().isoformat()
@@ -275,7 +260,7 @@ class TaskTrackerServer(AmplifierMCPServer):
                 return error_response(f"Failed to update task: {str(e)}")
 
         @self.mcp.tool()
-        async def complete_task(task_id: str) -> Dict[str, Any]:
+        async def complete_task(task_id: str) -> dict[str, Any]:
             """Mark a task as completed
 
             Args:
@@ -316,7 +301,7 @@ class TaskTrackerServer(AmplifierMCPServer):
                 return error_response(f"Failed to complete task: {str(e)}")
 
         @self.mcp.tool()
-        async def delete_task(task_id: str) -> Dict[str, Any]:
+        async def delete_task(task_id: str) -> dict[str, Any]:
             """Delete a task
 
             Args:
@@ -342,18 +327,14 @@ class TaskTrackerServer(AmplifierMCPServer):
                 self._save_tasks(data)
 
                 self.logger.info(f"Deleted task {task_id}")
-                return success_response({
-                    "deleted": True,
-                    "task_id": task_id,
-                    "remaining_tasks": len(data["tasks"])
-                })
+                return success_response({"deleted": True, "task_id": task_id, "remaining_tasks": len(data["tasks"])})
 
             except Exception as e:
                 self.logger.exception("delete_task failed", e)
                 return error_response(f"Failed to delete task: {str(e)}")
 
         @self.mcp.tool()
-        async def export_tasks(format_type: str = "markdown") -> Dict[str, Any]:
+        async def export_tasks(format_type: str = "markdown") -> dict[str, Any]:
             """Export tasks to different formats
 
             Args:
@@ -384,12 +365,9 @@ class TaskTrackerServer(AmplifierMCPServer):
                         if status_tasks:
                             lines.append(f"\n## {status.replace('_', ' ').title()} ({len(status_tasks)})\n")
                             for task in sorted(status_tasks, key=lambda t: t["priority"], reverse=True):
-                                priority_emoji = {
-                                    "critical": "🔴",
-                                    "high": "🟠",
-                                    "medium": "🟡",
-                                    "low": "🟢"
-                                }.get(task["priority"], "⚪")
+                                priority_emoji = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low": "🟢"}.get(
+                                    task["priority"], "⚪"
+                                )
 
                                 lines.append(f"### {priority_emoji} {task['title']}")
                                 if task.get("description"):
@@ -406,16 +384,11 @@ class TaskTrackerServer(AmplifierMCPServer):
 
                 else:
                     return error_response(
-                        f"Unknown export format: {format_type}",
-                        {"valid_formats": ["markdown", "json"]}
+                        f"Unknown export format: {format_type}", {"valid_formats": ["markdown", "json"]}
                     )
 
                 self.logger.info(f"Exported {len(tasks)} tasks as {format_type}")
-                return success_response({
-                    "format": format_type,
-                    "content": export,
-                    "task_count": len(tasks)
-                })
+                return success_response({"format": format_type, "content": export, "task_count": len(tasks)})
 
             except Exception as e:
                 self.logger.exception("export_tasks failed", e)

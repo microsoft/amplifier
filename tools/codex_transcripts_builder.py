@@ -195,9 +195,7 @@ def _normalize_session_id(value: str) -> str:
     return value.replace("-", "").lower()
 
 
-def _filter_sessions_by_id(
-    sessions: dict[str, list[HistoryEntry]], query: str
-) -> dict[str, list[HistoryEntry]]:
+def _filter_sessions_by_id(sessions: dict[str, list[HistoryEntry]], query: str) -> dict[str, list[HistoryEntry]]:
     normalized_query = _normalize_session_id(query)
     if not normalized_query:
         return sessions
@@ -1181,9 +1179,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             print(f"No sessions matched session ID '{args.session_id}'", file=sys.stderr)
 
     if args.project_dir:
-        sessions_map = filter_sessions_by_project(
-            sessions_map, args.project_dir, args.sessions_root, args.output_dir
-        )
+        sessions_map = filter_sessions_by_project(sessions_map, args.project_dir, args.sessions_root, args.output_dir)
         if args.verbose and not sessions_map:
             print(
                 f"No sessions matched project directory '{args.project_dir}'",

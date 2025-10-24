@@ -9,7 +9,8 @@ import json
 import re
 import shutil
 import sys
-from datetime import UTC, datetime
+from datetime import UTC
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -38,10 +39,9 @@ class TranscriptManager:
 
         if has_claude and has_codex:
             return "auto"  # Use both
-        elif has_codex:
+        if has_codex:
             return "codex"
-        else:
-            return "claude"  # Default to claude
+        return "claude"  # Default to claude
 
     def _get_transcript_dirs(self) -> list[Path]:
         """Get list of transcript directories based on backend."""
@@ -126,9 +126,7 @@ class TranscriptManager:
             transcripts.extend(self._list_codex_transcripts())
 
         if backend_filter:
-            transcripts = [
-                t for t in transcripts if self._determine_backend_for_path(t) == backend_filter
-            ]
+            transcripts = [t for t in transcripts if self._determine_backend_for_path(t) == backend_filter]
 
         # Sort by modification time (most recent first)
         transcripts = sorted(transcripts, key=lambda p: p.stat().st_mtime, reverse=True)
@@ -321,7 +319,9 @@ class TranscriptManager:
         for transcript_file in self.list_transcripts():
             # Check Claude Code format
             if transcript_file.suffix == ".txt":
-                if identifier in transcript_file.name or normalized_id in self._normalize_session_id(transcript_file.name):
+                if identifier in transcript_file.name or normalized_id in self._normalize_session_id(
+                    transcript_file.name
+                ):
                     with open(transcript_file, encoding="utf-8") as f:
                         return f.read()
 
@@ -334,7 +334,7 @@ class TranscriptManager:
                     session_dir = transcript_file.parent
                     preferred_files = {
                         "standard": session_dir / "transcript.md",
-                        "extended": session_dir / "transcript_extended.md"
+                        "extended": session_dir / "transcript_extended.md",
                     }
 
                     # Try preferred format first, then fallback
@@ -345,7 +345,9 @@ class TranscriptManager:
 
         return None
 
-    def restore_conversation_lineage(self, session_id: str | None = None, backend_filter: str | None = None) -> str | None:
+    def restore_conversation_lineage(
+        self, session_id: str | None = None, backend_filter: str | None = None
+    ) -> str | None:
         """Restore entire conversation lineage by outputting all transcript content"""
         transcripts = self.list_transcripts(backend_filter=backend_filter)
         if not transcripts:
@@ -366,14 +368,20 @@ class TranscriptManager:
             if backend == "claude":
                 metadata = self._extract_claude_metadata(content)
                 claude_match = re.search(r"compact_\d+_\d+_([A-Za-z0-9-]+)\.txt", transcript_file.name)
-                session_from_content = metadata.get("session_id") or (claude_match.group(1) if claude_match else "unknown")
+                session_from_content = metadata.get("session_id") or (
+                    claude_match.group(1) if claude_match else "unknown"
+                )
                 backend_tag = "[Claude Code]"
             else:
                 metadata = self._load_codex_transcript_metadata(transcript_file)
-                session_from_content = metadata.get("session_id") or self._extract_codex_session_id(transcript_file.parent) or "unknown"
+                session_from_content = (
+                    metadata.get("session_id") or self._extract_codex_session_id(transcript_file.parent) or "unknown"
+                )
                 backend_tag = "[Codex]"
 
-            transcript_details.append((start_ts, transcript_file, backend_tag, content, session_from_content or "unknown"))
+            transcript_details.append(
+                (start_ts, transcript_file, backend_tag, content, session_from_content or "unknown")
+            )
 
         if not transcript_details:
             return None
@@ -381,7 +389,9 @@ class TranscriptManager:
         transcript_details.sort(key=lambda item: item[0])
 
         combined_content: list[str] = []
-        for index, (start_ts, transcript_file, backend_tag, content, session_from_content) in enumerate(transcript_details, start=1):
+        for index, (start_ts, transcript_file, backend_tag, content, session_from_content) in enumerate(
+            transcript_details, start=1
+        ):
             combined_content.append(f"\n{'=' * 80}\n")
             combined_content.append(f"CONVERSATION SEGMENT {index} {backend_tag}\n")
             combined_content.append(f"File: {transcript_file.name}\n")
@@ -572,7 +582,9 @@ class TranscriptManager:
         }
         return mapping.get(output_format, "standard")
 
-    def convert_format(self, session_id: str, from_backend: str, to_backend: str, output_path: Path | None = None) -> bool:
+    def convert_format(
+        self, session_id: str, from_backend: str, to_backend: str, output_path: Path | None = None
+    ) -> bool:
         """Convert a transcript from one backend format to another."""
         # Load source transcript
         original_backend = self.backend
