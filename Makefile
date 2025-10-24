@@ -54,6 +54,9 @@ default: ## Show essential commands
 	@echo "Web to Markdown:"
 	@echo "  make web-to-md       Convert web pages to markdown"
 	@echo ""
+	@echo "Competitive Analysis:"
+	@echo "  make compete         Compare two companies or products"
+	@echo ""
 	@echo "Other:"
 	@echo "  make clean          Clean build artifacts"
 	@echo "  make help           Show ALL available commands"
@@ -131,6 +134,10 @@ help: ## Show ALL available commands
 	@echo ""
 	@echo "WEB TO MARKDOWN:"
 	@echo "  make web-to-md URL=<url> [URL2=<url>] [OUTPUT=<path>]  Convert web pages to markdown (saves to content_dirs[0]/sites/)"
+	@echo ""
+	@echo "COMPETITIVE ANALYSIS:"
+	@echo "  make compete ENTITY1=\"Company A\" ENTITY2=\"Company B\" [FRAMEWORKS=porter,swot] [AUDIENCE=executive] [COMPARE=true] [OUTPUT=path]"
+	@echo "               Generate competitive analysis with expert frameworks and audience-specific reports"
 	@echo ""
 	@echo "UTILITIES:"
 	@echo "  make clean           Clean build artifacts"
@@ -638,6 +645,20 @@ web-to-md: ## Convert web pages to markdown. Usage: make web-to-md URL=https://e
 	if [ -n "$(URL3)" ]; then CMD="$$CMD --url \"$(URL3)\""; fi; \
 	if [ -n "$(URL4)" ]; then CMD="$$CMD --url \"$(URL4)\""; fi; \
 	if [ -n "$(URL5)" ]; then CMD="$$CMD --url \"$(URL5)\""; fi; \
+	if [ -n "$(OUTPUT)" ]; then CMD="$$CMD --output \"$(OUTPUT)\""; fi; \
+	eval $$CMD
+
+# Competitive Analysis
+compete: ## Generate competitive analysis. Usage: make compete ENTITY1="Company A" ENTITY2="Company B" [FRAMEWORKS=porter,swot] [AUDIENCE=executive] [COMPARE=true] [OUTPUT=path]
+	@if [ -z "$(ENTITY1)" ] || [ -z "$(ENTITY2)" ]; then \
+		echo "Error: Please provide both entities. Usage: make compete ENTITY1=\"Company A\" ENTITY2=\"Company B\""; \
+		exit 1; \
+	fi
+	@echo "🔍 Comparing $(ENTITY1) vs $(ENTITY2)..."
+	@CMD="uv run python -m ai_working.competitive_analysis \"$(ENTITY1)\" \"$(ENTITY2)\""; \
+	if [ -n "$(FRAMEWORKS)" ]; then CMD="$$CMD --frameworks \"$(FRAMEWORKS)\""; fi; \
+	if [ -n "$(AUDIENCE)" ]; then CMD="$$CMD --audience \"$(AUDIENCE)\""; fi; \
+	if [ "$(COMPARE)" = "true" ]; then CMD="$$CMD --compare"; fi; \
 	if [ -n "$(OUTPUT)" ]; then CMD="$$CMD --output \"$(OUTPUT)\""; fi; \
 	eval $$CMD
 
