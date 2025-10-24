@@ -12,7 +12,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from amplifier.core.backend import BackendFactory
+from amplifier.core.backend import BackendFactory  # noqa: E402
 
 
 def main():

@@ -14,11 +14,11 @@ if str(codex_tools_path) not in sys.path:
 
 # Import and re-export functions
 try:
+    from agent_context_bridge import AgentContextBridge
     from agent_context_bridge import cleanup_context_files
     from agent_context_bridge import extract_agent_result
     from agent_context_bridge import inject_context_to_agent
     from agent_context_bridge import serialize_context
-    from agent_context_bridge import AgentContextBridge
 
     __all__ = [
         "AgentContextBridge",
@@ -30,6 +30,5 @@ try:
 except ImportError as e:
     # Raise ImportError with helpful message
     raise ImportError(
-        f"Failed to import agent context bridge: {e}. "
-        "Ensure .codex/tools/agent_context_bridge.py exists."
+        f"Failed to import agent context bridge: {e}. Ensure .codex/tools/agent_context_bridge.py exists."
     ) from e
