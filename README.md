@@ -308,6 +308,72 @@ uv run python .codex/tools/session_cleanup.py --session-id a1b2c3d4
 ./amplify-codex.sh --help
 ```
 
+## Backend Abstraction
+
+Amplifier provides a unified API for working with both Claude Code and Codex backends through the backend abstraction layer.
+
+### Quick Start
+
+```python
+from amplifier import get_backend
+
+# Get backend (automatically selects based on AMPLIFIER_BACKEND env var)
+backend = get_backend()
+
+# Initialize session with memory loading
+result = backend.initialize_session("Working on authentication")
+
+# Run quality checks
+result = backend.run_quality_checks(["src/auth.py"])
+
+# Finalize session with memory extraction
+messages = [{"role": "user", "content": "..."}]
+result = backend.finalize_session(messages)
+```
+
+### Backend Selection
+
+Choose your backend via environment variable:
+
+```bash
+# Use Claude Code (default)
+export AMPLIFIER_BACKEND=claude
+
+# Use Codex
+export AMPLIFIER_BACKEND=codex
+
+# Auto-detect based on available CLIs
+export AMPLIFIER_BACKEND_AUTO_DETECT=true
+```
+
+### Agent Spawning
+
+Spawn sub-agents with a unified API:
+
+```python
+from amplifier import spawn_agent
+
+result = spawn_agent(
+    agent_name="bug-hunter",
+    task="Find potential bugs in src/auth.py"
+)
+print(result['result'])
+```
+
+### Available Operations
+
+- **Session Management**: `initialize_session()`, `finalize_session()`
+- **Quality Checks**: `run_quality_checks()`
+- **Transcript Export**: `export_transcript()`
+- **Agent Spawning**: `spawn_agent()`
+
+### Documentation
+
+For detailed documentation, see:
+- [Backend Abstraction Guide](amplifier/core/README.md)
+- [Claude Code Integration](.claude/README.md)
+- [Codex Integration](.codex/README.md)
+
 ## ✨ Features To Try
 
 ### 🔧 Create Amplifier-powered Tools for Scenarios
@@ -487,6 +553,11 @@ Further details on how to run the benchmark can be found in [tests/terminal_benc
   - `README.md` - Detailed Codex integration documentation
 - `.claude/` - Claude Code configuration and hooks
   - `README.md` - Claude Code integration documentation
+- `amplifier/core/` - Backend abstraction layer
+  - `backend.py` - Core backend interface and implementations
+  - `agent_backend.py` - Agent spawning abstraction
+  - `config.py` - Backend configuration management
+  - `README.md` - Detailed backend abstraction documentation
 
 Both backends share the same amplifier modules (memory, extraction, etc.) for consistent functionality. See [.codex/README.md](.codex/README.md) and [.claude/README.md](.claude/README.md) for detailed backend-specific documentation.
 
