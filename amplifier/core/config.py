@@ -198,13 +198,13 @@ def get_backend_info(backend: str) -> Dict[str, Any]:
                 timeout=5
             )
             if result.returncode == 0:
-                info["cli_version"] = result.stdout.strip()
+                info["version"] = result.stdout.strip()
             else:
-                info["cli_version"] = "unknown"
+                info["version"] = "unknown"
         except (subprocess.TimeoutExpired, subprocess.SubprocessError):
-            info["cli_version"] = "unknown"
+            info["version"] = "unknown"
     else:
-        info["cli_version"] = None
+        info["version"] = None
 
     # Backend-specific information
     if backend == "claude":

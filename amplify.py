@@ -206,9 +206,9 @@ Examples:
 
     parser.add_argument(
         '--info',
-        type=str,
-        choices=['claude', 'codex'],
-        help='Show information for specified backend and exit'
+        nargs='?',
+        const='CURRENT',
+        help='Show info for specified backend, or current if omitted'
     )
 
     parser.add_argument(
@@ -335,9 +335,34 @@ def main() -> int:
             list_backends()
             return 0
 
-        if args.info:
-            show_backend_info(args.info)
-            return 0
+        if args.info is not None:
+            if args.info in {"claude", "codex"}:
+                show_backend_info(args.info)
+                return 0
+            elif args.info == 'CURRENT':
+                # Determine effective backend using precedence
+                config = get_backend_config()
+                backend = args.backend
+                if not backend:
+                    backend = config.amplifier_backend
+                    if not backend and config.amplifier_backend_auto_detect:
+                        try:
+                            backend = detect_backend()
+                            if backend:
+                                print_status(f"Auto-detected backend: {backend}")
+                            else:
+                                backend = 'claude'  # Default fallback
+                                print_warning("Could not auto-detect backend, using default: claude")
+                        except Exception as e:
+                            print_warning(f"Auto-detection failed: {e}, using default: claude")
+                            backend = 'claude'
+                    elif not backend:
+                        backend = 'claude'  # Default fallback
+                show_backend_info(backend)
+                return 0
+            else:
+                print_error(f"Invalid backend '{args.info}'. Must be 'claude' or 'codex'.")
+                return 1
 
         if args.version:
             show_version()

@@ -26,7 +26,7 @@ from amplify import (
     show_version,
     main,
 )
-from amplifier.core.config import get_backend_config
+import amplifier.core.config as cfg
 
 
 class TestParseArgs:
@@ -75,6 +75,12 @@ class TestParseArgs:
         with patch("sys.argv", ["amplify.py", "--info", "codex"]):
             args = parse_args()
         assert args.info == "codex"
+
+    def test_info_flag_no_arg(self):
+        """Test info flag with no argument."""
+        with patch("sys.argv", ["amplify.py", "--info"]):
+            args = parse_args()
+        assert args.info == "CURRENT"
 
     def test_list_backends_flag(self):
         """Test list backends flag."""
@@ -273,6 +279,35 @@ class TestMainFunction:
         mock_show_info.assert_called_once_with("codex")
 
     @patch("amplify.parse_args")
+    @patch("amplify.get_backend_config")
+    @patch("amplify.show_backend_info")
+    def test_info_mode_no_arg(self, mock_show_info, mock_config, mock_parse):
+        """Test main function in info mode with no argument (shows current backend)."""
+        mock_parse.return_value.info = "CURRENT"
+        mock_parse.return_value.backend = None
+        mock_parse.return_value.list_backends = False
+        mock_parse.return_value.version = False
+        mock_config.return_value.amplifier_backend = "claude"
+
+        exit_code = main()
+
+        assert exit_code == 0
+        mock_show_info.assert_called_once_with("claude")
+
+    @patch("amplify.parse_args")
+    def test_info_mode_invalid_backend(self, mock_parse, capsys):
+        """Test main function in info mode with invalid backend."""
+        mock_parse.return_value.info = "invalid"
+        mock_parse.return_value.list_backends = False
+        mock_parse.return_value.version = False
+
+        exit_code = main()
+
+        assert exit_code == 1
+        captured = capsys.readouterr()
+        assert "Invalid backend 'invalid'" in captured.out
+
+    @patch("amplify.parse_args")
     @patch("amplify.show_version")
     def test_version_mode(self, mock_show_version, mock_parse):
         """Test main function in version mode."""
@@ -383,17 +418,21 @@ class TestConfigPrecedence:
 
             assert os.environ.get("ENV_FILE") == ".env.production"
 
-    @patch("amplify.get_backend_config")
-    def test_backend_config_uses_env_file(self, mock_config, monkeypatch):
+    def test_backend_config_uses_env_file(self, tmp_path, monkeypatch):
         """Test that BackendConfig uses ENV_FILE when set."""
-        # Set ENV_FILE
-        monkeypatch.setenv("ENV_FILE", ".env.test")
+        # Create a temporary .env.test file
+        env_file = tmp_path / ".env.test"
+        env_file.write_text("AMPLIFIER_BACKEND=codex\nCODEX_PROFILE=ci\n")
+
+        # Set ENV_FILE to the temporary file path
+        monkeypatch.setenv("ENV_FILE", str(env_file))
 
         # Call get_backend_config which should use the ENV_FILE
-        get_backend_config()
+        config = cfg.get_backend_config()
 
-        # Verify it was called with the env file override
-        mock_config.assert_called_with(".env.test")
+        # Verify the config loaded the correct values
+        assert config.amplifier_backend == "codex"
+        assert config.codex_profile == "ci"
 
 
 if __name__ == "__main__":
