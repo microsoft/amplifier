@@ -666,3 +666,25 @@ dot-to-mermaid: ## Convert DOT files to Mermaid format. Usage: make dot-to-merma
 	mkdir -p "$$SESSION_DIR"; \
 	echo "Converting DOT files to Mermaid format..."; \
 	uv run python -m ai_working.dot_to_mermaid.cli "$(INPUT)" --session-file "$$SESSION_DIR/session.json"
+
+# Agent Conversion Tools
+.PHONY: convert-agents
+convert-agents: ## Convert Claude Code agents to Codex format
+	@echo "Converting agents from .claude/agents/ to .codex/agents/..."
+	uv run python tools/convert_agents.py
+	@echo "Conversion complete. See .codex/agents/ for results."
+
+.PHONY: convert-agents-dry-run
+convert-agents-dry-run: ## Preview agent conversion without writing files
+	@echo "Previewing agent conversion (dry-run mode)..."
+	uv run python tools/convert_agents.py --dry-run --verbose
+
+.PHONY: validate-codex-agents
+validate-codex-agents: ## Validate converted Codex agents
+	@echo "Validating Codex agents in .codex/agents/..."
+	uv run python tools/convert_agents.py validate
+
+.PHONY: test-agent-conversion
+test-agent-conversion: ## Run agent conversion tests
+	@echo "Running agent conversion tests..."
+	uv run pytest tests/test_agent_conversion.py -v

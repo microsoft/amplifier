@@ -82,3 +82,8 @@ ai_working/tmp
 .codex/session_cleanup_metadata.json
 .codex/logs/session_init.log*
 .codex/logs/session_cleanup.log*
+
+# Agent conversion artifacts
+.codex/agents/CONVERSION_REPORT.md
+.codex/agents/*.backup
+.codex/agents/.conversion_cache/

@@ -308,6 +308,46 @@ uv run python .codex/tools/session_cleanup.py --session-id a1b2c3d4
 ./amplify-codex.sh --help
 ```
 
+### Agent Conversion
+
+Amplifier includes 25+ specialized agents that have been converted from Claude Code format to Codex format:
+
+**Converting Agents:**
+```bash
+# Convert all agents from .claude/agents/ to .codex/agents/
+make convert-agents
+
+# Preview conversion without writing files
+make convert-agents-dry-run
+
+# Validate converted agents
+make validate-codex-agents
+```
+
+**Using Converted Agents:**
+```bash
+# Automatic agent selection based on task
+codex exec "Find and fix the authentication bug"
+# Routes to bug-hunter agent
+
+# Manual agent selection
+codex exec --agent zen-architect "Design the caching layer"
+
+# Programmatic usage
+from amplifier import spawn_agent
+result = spawn_agent("bug-hunter", "Investigate memory leak")
+```
+
+**Available Agents:**
+- **Architecture**: zen-architect, database-architect, api-contract-designer
+- **Implementation**: modular-builder, integration-specialist
+- **Quality**: bug-hunter, test-coverage, security-guardian
+- **Analysis**: analysis-engine, pattern-emergence, insight-synthesizer
+- **Knowledge**: concept-extractor, knowledge-archaeologist, content-researcher
+- **Specialized**: amplifier-cli-architect, performance-optimizer
+
+See [.codex/agents/README.md](.codex/agents/README.md) for complete agent documentation.
+
 ## Backend Abstraction
 
 Amplifier provides a unified API for working with both Claude Code and Codex backends through the backend abstraction layer.
@@ -546,11 +586,15 @@ Further details on how to run the benchmark can be found in [tests/terminal_benc
 ## Project Structure
 
 - `amplify-codex.sh` - Wrapper script for Codex CLI with Amplifier integration
+- `tools/convert_agents.py` - Script to convert Claude Code agents to Codex format
 - `.codex/` - Codex configuration, MCP servers, and tools
   - `config.toml` - Codex configuration with MCP server definitions
   - `mcp_servers/` - MCP server implementations (session, quality, transcripts)
   - `tools/` - Session management scripts (init, cleanup, export)
   - `README.md` - Detailed Codex integration documentation
+- `.codex/agents/` - Converted agent definitions for Codex
+  - `README.md` - Agent usage documentation
+  - `*.md` - Individual agent definitions
 - `.claude/` - Claude Code configuration and hooks
   - `README.md` - Claude Code integration documentation
 - `amplifier/core/` - Backend abstraction layer
@@ -599,6 +643,26 @@ Both backends share the same amplifier modules (memory, extraction, etc.) for co
 
 > [!NOTE]
 > This project is not currently accepting external contributions, but we're actively working toward opening this up. We value community input and look forward to collaborating in the future. For now, feel free to fork and experiment!
+
+### Working with Agents
+
+**Converting Agents:**
+When Claude Code agents are updated, reconvert them:
+```bash
+make convert-agents
+make validate-codex-agents
+```
+
+**Testing Agent Conversion:**
+```bash
+make test-agent-conversion
+```
+
+**Creating New Agents:**
+1. Create agent in `.claude/agents/` following existing patterns
+2. Run conversion: `make convert-agents`
+3. Review converted agent in `.codex/agents/`
+4. Test with Codex: `codex exec --agent <name> "<test-task>"`
 
 Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
