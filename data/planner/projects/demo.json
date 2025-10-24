@@ -1,0 +1,67 @@
+{
+  "id": "demo",
+  "name": "Demo Project",
+  "created_at": "2025-10-07T10:21:31.319518",
+  "updated_at": "2025-10-07T10:21:31.319800",
+  "tasks": {
+    "epic1": {
+      "id": "epic1",
+      "title": "Build Authentication",
+      "description": "Complete auth system",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [],
+      "assigned_to": null,
+      "created_at": "2025-10-07T10:21:31.319543",
+      "updated_at": "2025-10-07T10:21:31.319545"
+    },
+    "epic2": {
+      "id": "epic2",
+      "title": "Build Dashboard",
+      "description": "User dashboard",
+      "state": "pending",
+      "parent_id": null,
+      "depends_on": [],
+      "assigned_to": null,
+      "created_at": "2025-10-07T10:21:31.319552",
+      "updated_at": "2025-10-07T10:21:31.319553"
+    },
+    "auth_design": {
+      "id": "auth_design",
+      "title": "Design Auth Flow",
+      "description": "",
+      "state": "completed",
+      "parent_id": "epic1",
+      "depends_on": [],
+      "assigned_to": "architect",
+      "created_at": "2025-10-07T10:21:31.319776",
+      "updated_at": "2025-10-07T10:21:31.319777"
+    },
+    "auth_impl": {
+      "id": "auth_impl",
+      "title": "Implement Auth",
+      "description": "",
+      "state": "in_progress",
+      "parent_id": "epic1",
+      "depends_on": [
+        "auth_design"
+      ],
+      "assigned_to": "backend-dev",
+      "created_at": "2025-10-07T10:21:31.319784",
+      "updated_at": "2025-10-07T10:21:31.319785"
+    },
+    "auth_test": {
+      "id": "auth_test",
+      "title": "Test Auth",
+      "description": "",
+      "state": "pending",
+      "parent_id": "epic1",
+      "depends_on": [
+        "auth_impl"
+      ],
+      "assigned_to": "qa",
+      "created_at": "2025-10-07T10:21:31.319791",
+      "updated_at": "2025-10-07T10:21:31.319791"
+    }
+  }
+}
