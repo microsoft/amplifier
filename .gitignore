@@ -8,7 +8,10 @@
 *__local__*
 appsettings.*.json
 **/.DS_Store
+
+# Dual-backend configuration overrides
 .claude/settings.local.json
+.codex/settings.local.toml
 
 # Dependencies and build cache
 node_modules
@@ -30,6 +33,8 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+.codex/logs/*.log
+.codex/logs/*.log.*
 
 #azd files
 .azure
@@ -64,6 +69,16 @@ ai_working/tmp
 # .claude-trace Logs
 .claude-trace
 
-# Smoke test runtime logs
-.smoke_test_data/data
-*.log.jsonl
+# Codex-specific artifacts and caches
+.codex-sessions/
+.codex-cache/
+.codex/transcripts/
+.codex/codex.log
+
+# Codex session management artifacts
+.codex/session_context.md
+.codex/session_context.txt
+.codex/session_init_metadata.json
+.codex/session_cleanup_metadata.json
+.codex/logs/session_init.log*
+.codex/logs/session_cleanup.log*

@@ -13,6 +13,7 @@ dependencies = [
     "langchain>=0.2.1",
     "langchain-openai>=0.3.28",
     "markdownify>=1.2.0",
+    "mcp>=1.0.0",
     "networkx>=3.5",
     "openai>=1.108.1",
     "pydantic>=2.11.7",

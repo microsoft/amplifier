@@ -1,0 +1,171 @@
+# Codex Configuration for Amplifier Project
+# WARNING: Many configuration keys in this file are placeholders and should be verified
+# with the current Codex CLI documentation before use. Uncomment and test keys
+# individually to ensure compatibility with your Codex version.
+#
+# This configuration provides dual-backend support alongside Claude Code (.claude/ directory)
+# See .codex/README.md for detailed documentation
+
+# =============================================================================
+# Top-level Settings
+# =============================================================================
+
+# Model configuration (equivalent to .claude/settings.json model settings)
+model = "claude-3-5-sonnet-20241022"
+# provider = "anthropic"  # PLACEHOLDER: Verify with Codex CLI docs
+# reasoning_effort = "medium"  # PLACEHOLDER: Verify with Codex CLI docs
+
+# Approval policy for tool usage
+# Options: "on-request" (user approval), "never" (auto-approve), "always" (ask every time)
+# Equivalent to Claude Code's approval settings
+# approval_policy = "on-request"  # PLACEHOLDER: Verify with Codex CLI docs
+
+# Sandbox mode for workspace access
+# Options: "workspace-write" (full access), "read-only" (limited access)
+# sandbox_mode = "workspace-write"  # PLACEHOLDER: Verify with Codex CLI docs
+
+# Timeout settings (in seconds)
+startup_timeout_sec = 30
+tool_timeout_sec = 300
+
+# Experimental features flag
+# Enable remote MCP client capabilities
+experimental_use_rmcp_client = false
+
+# =============================================================================
+# Shell Environment Policy
+# =============================================================================
+
+# Environment variables to expose to Codex sessions
+# Security consideration: Only include necessary variables
+[env_allow]
+PATH = true
+HOME = true
+AMPLIFIER_ROOT = true
+VIRTUAL_ENV = true
+CONDA_DEFAULT_ENV = true
+
+# =============================================================================
+# MCP Servers Section - Implemented and ready for use
+# =============================================================================
+# These MCP servers replace Claude Code's native hooks system:
+# - SessionStart/Stop hooks → amplifier_session MCP server
+# - PostToolUse hook → amplifier_quality MCP server
+# - PreCompact hook → amplifier_transcripts MCP server
+
+# Session Management MCP Server
+# Replaces: .claude/hooks/SessionStart.py and SessionStop.py
+[mcp_servers.amplifier_session]
+command = "uv"
+args = ["run", "python", ".codex/mcp_servers/session_manager/server.py"]
+env = { AMPLIFIER_ROOT = "." }
+timeout = 30
+# Purpose: Initialize session context, set up workspace, handle session cleanup
+
+# Code Quality Checker MCP Server
+# Replaces: .claude/hooks/PostToolUse.py
+[mcp_servers.amplifier_quality]
+command = "uv"
+args = ["run", "python", ".codex/mcp_servers/quality_checker/server.py"]
+env = { AMPLIFIER_ROOT = "." }
+timeout = 30
+# Purpose: Run code quality checks after tool usage, validate changes
+
+# Transcript Management MCP Server
+# Replaces: .claude/hooks/PreCompact.py
+[mcp_servers.amplifier_transcripts]
+command = "uv"
+args = ["run", "python", ".codex/mcp_servers/transcript_saver/server.py"]
+env = { AMPLIFIER_ROOT = "." }
+timeout = 30
+# Purpose: Save and manage session transcripts, integrate with existing transcript system
+
+# TODO: Knowledge Integration MCP Server will be added in a later phase
+# [mcp_servers.amplifier_knowledge]
+# command = "uv"
+# args = ["run", "python", ".codex/mcp_servers/knowledge_integration/server.py"]
+# env = { AMPLIFIER_ROOT = "." }
+# Purpose: Interface with amplifier's knowledge synthesis and memory systems
+
+# =============================================================================
+# Profiles Section - Configure which servers to use per profile
+# =============================================================================
+
+# Development profile - permissive settings for active development
+[profiles.development]
+# approval_policy = "never"  # PLACEHOLDER: Verify with Codex CLI docs
+# sandbox_mode = "workspace-write"  # PLACEHOLDER: Verify with Codex CLI docs
+tool_timeout_sec = 600
+# All MCP servers enabled for full development experience
+mcp_servers = ["amplifier_session", "amplifier_quality", "amplifier_transcripts"]
+
+# CI profile - restrictive settings for automated environments
+[profiles.ci]
+# approval_policy = "never"  # PLACEHOLDER: Verify with Codex CLI docs
+# sandbox_mode = "read-only"  # PLACEHOLDER: Verify with Codex CLI docs
+tool_timeout_sec = 120
+# Only quality checks enabled for CI - no memory or transcript operations
+mcp_servers = ["amplifier_quality"]
+
+# Review profile - settings optimized for code review workflows
+[profiles.review]
+# approval_policy = "on-request"  # PLACEHOLDER: Verify with Codex CLI docs
+# sandbox_mode = "workspace-write"  # PLACEHOLDER: Verify with Codex CLI docs
+tool_timeout_sec = 300
+# Quality checks and transcript export for code review workflows
+mcp_servers = ["amplifier_quality", "amplifier_transcripts"]
+
+# =============================================================================
+# Optional Extensions (Disabled by Default)
+# =============================================================================
+# The sections below are placeholders for extended functionality.
+# Uncomment and configure as needed once basic MCP servers are implemented.
+
+# # Transcript integration with existing tools/codex_transcripts_builder.py
+# [transcripts]
+# # Local transcript storage (supplements ~/.codex/transcripts/)
+# local_storage = ".codex/transcripts/"
+# # Integration with project transcript management
+# builder_integration = true
+# # Format compatibility with Claude Code transcripts
+# claude_compatibility = true
+
+# # Agent execution settings
+# [agents]
+# # Default timeout for agent execution via 'codex exec'
+# execution_timeout = 1800
+# # Working directory for agent execution
+# work_dir = "."
+# # Environment inheritance
+# inherit_env = true
+
+# # Debugging and Logging
+# [logging]
+# # Log level for MCP server communication
+# level = "INFO"
+# # Log file location (relative to project root)
+# file = ".codex/codex.log"
+# # Enable detailed MCP protocol logging
+# mcp_debug = false
+
+# =============================================================================
+# MCP Server-Specific Configuration
+# =============================================================================
+
+[mcp_server_config.session_manager]
+# Memory system configuration
+memory_enabled = true  # Can be overridden by MEMORY_SYSTEM_ENABLED env var
+memory_search_limit = 5
+recent_memory_limit = 3
+
+[mcp_server_config.quality_checker]
+# Quality check configuration
+check_timeout = 300  # seconds
+auto_fix = false  # Whether to attempt automatic fixes
+strict_mode = false  # Fail on warnings, not just errors
+
+[mcp_server_config.transcript_saver]
+# Transcript export configuration
+default_format = "both"  # standard, extended, both, or compact
+output_dir = ".codex/transcripts"  # Relative to project root
+incremental = true  # Skip already-exported sessions

@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC
@@ -45,11 +46,26 @@ class HistoryEntry:
 
     @classmethod
     def from_json(cls, payload: dict[str, Any]) -> HistoryEntry:
-        return cls(
-            session_id=str(payload["session_id"]),
-            ts=int(payload["ts"]),
-            text=str(payload.get("text", "")),
-        )
+        # Validate required fields
+        if "session_id" not in payload:
+            raise ValueError("Missing required field: session_id")
+        if "ts" not in payload:
+            raise ValueError("Missing required field: ts")
+
+        try:
+            session_id = str(payload["session_id"])
+            ts = int(payload["ts"])
+            text = str(payload.get("text", ""))
+
+            # Basic validation
+            if not session_id:
+                raise ValueError("session_id cannot be empty")
+            if ts <= 0:
+                raise ValueError(f"Invalid timestamp: {ts}")
+
+            return cls(session_id=session_id, ts=ts, text=text)
+        except (ValueError, TypeError) as e:
+            raise ValueError(f"Failed to parse HistoryEntry: {e}") from e
 
 
 @dataclass
@@ -100,6 +116,41 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Timezone identifier for local timestamps (default: America/Los_Angeles)",
     )
     parser.add_argument(
+        "--project-dir",
+        type=Path,
+        help="Filter sessions by project directory (matches session cwd)",
+    )
+    parser.add_argument(
+        "--session-id",
+        help="Process only a specific session ID (full or short form)",
+    )
+    parser.add_argument(
+        "--skip-errors",
+        action="store_true",
+        help="Continue processing when individual sessions fail",
+    )
+    parser.add_argument(
+        "--incremental",
+        action="store_true",
+        help="Skip sessions that already have output directories",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Force reprocessing even in incremental mode",
+    )
+    parser.add_argument(
+        "--output-format",
+        choices=["standard", "compact", "both"],
+        default="standard",
+        help="Output format: standard (conversation + extended), compact (single file), or both.",
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable verbose progress reporting",
+    )
+    parser.add_argument(
         "--cwd-separator",
         default="~",
         help="Character to join path components for cwd metadata (ASCII only).",
@@ -107,26 +158,221 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def load_history(history_path: Path) -> dict[str, list[HistoryEntry]]:
+def filter_sessions_by_project(
+    sessions: dict[str, list[HistoryEntry]],
+    project_dir: Path,
+    sessions_root: Path,
+    output_dir: Path | None = None,
+) -> dict[str, list[HistoryEntry]]:
+    """Filter sessions by project directory, matching session cwd against project_dir."""
+    filtered_sessions = {}
+    project_str = str(project_dir.resolve())
+
+    for session_id, entries in sessions.items():
+        session_dir = sessions_root / session_id
+        meta: SessionMeta | None = None
+        if session_dir.exists():
+            try:
+                meta = load_session_meta(session_dir)
+            except Exception:
+                # Skip sessions with invalid metadata
+                continue
+        if (meta is None or not meta.cwd) and output_dir and output_dir.exists():
+            meta = _load_meta_from_output(session_id, output_dir) or meta
+
+        if meta and meta.cwd:
+            try:
+                if Path(meta.cwd).resolve() == Path(project_str):
+                    filtered_sessions[session_id] = entries
+            except OSError:
+                # Ignore invalid paths in metadata
+                continue
+
+    return filtered_sessions
+
+
+def _normalize_session_id(value: str) -> str:
+    return value.replace("-", "").lower()
+
+
+def _filter_sessions_by_id(
+    sessions: dict[str, list[HistoryEntry]], query: str
+) -> dict[str, list[HistoryEntry]]:
+    normalized_query = _normalize_session_id(query)
+    if not normalized_query:
+        return sessions
+    filtered = {
+        session_id: entries
+        for session_id, entries in sessions.items()
+        if _normalize_session_id(session_id).startswith(normalized_query)
+    }
+    return filtered
+
+
+def _load_meta_from_output(session_id: str, output_dir: Path) -> SessionMeta | None:
+    if not output_dir.exists():
+        return None
+
+    normalized = _normalize_session_id(session_id)
+    for candidate in output_dir.iterdir():
+        if not candidate.is_dir():
+            continue
+        meta_file = candidate / "meta.json"
+        if not meta_file.exists():
+            continue
+        try:
+            with meta_file.open("r", encoding="utf-8") as handle:
+                meta = json.load(handle)
+        except (OSError, json.JSONDecodeError):
+            continue
+        stored_id = str(meta.get("session_id") or "")
+        if stored_id and _normalize_session_id(stored_id) != normalized:
+            continue
+        started = _parse_timestamp_with_fallbacks(meta.get("started_at")) or datetime.fromtimestamp(0, tz=UTC)
+        return SessionMeta(session_id=stored_id or session_id, started_at=started, cwd=meta.get("cwd"))
+
+    return None
+
+
+def load_session_meta(session_dir: Path) -> SessionMeta | None:
+    """Load session metadata from session directory."""
+    meta_file = session_dir / "meta.json"
+    session_id = session_dir.name
+    cwd: str | None = None
+    started_at = datetime.fromtimestamp(0, tz=UTC)
+
+    if meta_file.exists():
+        try:
+            with meta_file.open("r", encoding="utf-8") as handle:
+                meta = json.load(handle)
+        except (OSError, json.JSONDecodeError):
+            pass
+        else:
+            session_id = str(meta.get("session_id") or session_id)
+            cwd = meta.get("cwd")
+            parsed = _parse_timestamp_with_fallbacks(meta.get("started_at"))
+            if parsed is not None:
+                started_at = parsed
+            return SessionMeta(session_id=session_id, started_at=started_at, cwd=cwd)
+
+    return SessionMeta(session_id=session_id, started_at=started_at, cwd=cwd)
+
+
+def validate_session_entry(entry: HistoryEntry) -> bool:
+    """Validate that a HistoryEntry has required fields and reasonable values."""
+    if not entry.session_id or not isinstance(entry.session_id, str):
+        return False
+    if not isinstance(entry.ts, int) or entry.ts <= 0:
+        return False
+    # Allow empty text as some entries may have no text content
+    return True
+
+
+def _parse_timestamp_with_fallbacks(value: Any) -> datetime | None:
+    """Enhanced timestamp parsing with multiple format fallbacks."""
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        dt = value
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=UTC)
+        return dt.astimezone(UTC)
+    if isinstance(value, int | float):
+        try:
+            return datetime.fromtimestamp(float(value), tz=UTC)
+        except (OverflowError, OSError, ValueError):
+            return None
+    if isinstance(value, str):
+        candidate = value.strip()
+        if not candidate:
+            return None
+        iso_candidate = candidate[:-1] + "+00:00" if candidate.endswith("Z") else candidate
+        try:
+            dt = datetime.fromisoformat(iso_candidate)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=UTC)
+            return dt.astimezone(UTC)
+        except ValueError:
+            pass
+
+        fallback_formats = [
+            "%Y-%m-%dT%H:%M:%S.%fZ",
+            "%Y-%m-%dT%H:%M:%SZ",
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%d %H:%M:%S.%f",
+            "%Y/%m/%d %H:%M:%S",
+        ]
+
+        for fmt in fallback_formats:
+            try:
+                dt = datetime.strptime(candidate, fmt)
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=UTC)
+                return dt.astimezone(UTC)
+            except ValueError:
+                continue
+
+        try:
+            numeric = float(candidate)
+            return datetime.fromtimestamp(numeric, tz=UTC)
+        except (ValueError, OverflowError, OSError):
+            return None
+    return None
+
+
+def load_history(history_path: Path, skip_errors: bool = False, verbose: bool = False) -> dict[str, list[HistoryEntry]]:
     sessions: dict[str, list[HistoryEntry]] = {}
     if not history_path.exists():
         raise FileNotFoundError(f"History file not found: {history_path}")
 
+    error_count = 0
+    total_lines = 0
     with history_path.open("r", encoding="utf-8") as handle:
         for line_number, line in enumerate(handle, start=1):
+            total_lines += 1
             line = line.strip()
             if not line:
                 continue
             try:
                 payload = json.loads(line)
             except json.JSONDecodeError as exc:
+                if skip_errors:
+                    error_count += 1
+                    if verbose:
+                        print(
+                            f"Skipping malformed JSON on line {line_number} of {history_path}: {exc}",
+                            file=sys.stderr,
+                        )
+                    continue
                 raise ValueError(f"Invalid JSON on line {line_number} of {history_path}") from exc
 
-            session_id = str(payload.get("session_id"))
+            try:
+                entry = HistoryEntry.from_json(payload)
+            except ValueError as exc:
+                if skip_errors:
+                    error_count += 1
+                    if verbose:
+                        print(
+                            f"Skipping invalid history entry on line {line_number} of {history_path}: {exc}",
+                            file=sys.stderr,
+                        )
+                    continue
+                raise
+
+            session_id = entry.session_id
             if not session_id:
                 continue
             entries = sessions.setdefault(session_id, [])
-            entries.append(HistoryEntry.from_json(payload))
+            entries.append(entry)
+
+    if verbose and error_count > 0:
+        print(
+            (
+                f"Processed {total_lines} lines from {history_path}; "
+                f"skipped {error_count} errors; loaded {len(sessions)} sessions."
+            ),
+            file=sys.stderr,
+        )
     return sessions
 
 
@@ -186,20 +432,11 @@ def _meta_from_payload(session_id: str, event: dict[str, Any]) -> SessionMeta:
     return SessionMeta(session_id=session_id, started_at=started_at, cwd=cwd)
 
 
-def _parse_timestamp(value: str | None) -> datetime:
-    if not value:
+def _parse_timestamp(value: Any | None) -> datetime:
+    parsed = _parse_timestamp_with_fallbacks(value)
+    if parsed is None:
         return datetime.fromtimestamp(0, tz=UTC)
-    if isinstance(value, int | float):
-        return datetime.fromtimestamp(float(value), tz=UTC)
-    if value.endswith("Z"):
-        value = value[:-1] + "+00:00"
-    try:
-        dt = datetime.fromisoformat(value)
-    except ValueError:
-        return datetime.fromtimestamp(0, tz=UTC)
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=UTC)
-    return dt.astimezone(UTC)
+    return parsed
 
 
 def select_start(meta: SessionMeta, history_entries: list[HistoryEntry]) -> datetime:
@@ -551,8 +788,8 @@ def _extract_event_timestamp(item: dict[str, Any], fallback_start: datetime, ind
     if isinstance(timestamp, int | float):
         return datetime.fromtimestamp(float(timestamp), tz=UTC)
     if isinstance(timestamp, str):
-        parsed = _parse_timestamp(timestamp)
-        if parsed.timestamp() > 0:
+        parsed = _parse_timestamp_with_fallbacks(timestamp)
+        if parsed and parsed.timestamp() > 0:
             return parsed
     return fallback_start + timedelta(seconds=index)
 
@@ -771,6 +1008,63 @@ def write_extended_transcript(session_dir: Path, meta: SessionMeta, events: list
     target.write_text("\n".join(lines), encoding="utf-8")
 
 
+def write_compact_transcript(session_dir: Path, meta: SessionMeta, events: list[TimelineEvent], tz_name: str) -> None:
+    """Write a compact transcript that blends summary and timeline details."""
+    target = session_dir / "transcript_compact.md"
+    tz = ZoneInfo(tz_name)
+    lines: list[str] = ["# Session Transcript (Compact)", ""]
+
+    start_dt = events[0].timestamp if events else meta.started_at
+    if start_dt.timestamp() <= 0 and meta.started_at.timestamp() > 0:
+        start_dt = meta.started_at
+    start_local = _format_local(start_dt, tz) if start_dt.timestamp() > 0 else "unknown"
+
+    lines.append("## Metadata")
+    lines.append(f"- Session ID: {meta.session_id}")
+    lines.append(f"- Start: {start_local}")
+    lines.append(f"- CWD: {meta.cwd or 'unknown'}")
+    lines.append(f"- Events: {len(events)}")
+    lines.append("")
+
+    lines.append("## Timeline")
+    if not events:
+        lines.append("- (no events found)")
+    else:
+        for event in events:
+            time_str = _format_local(event.timestamp, tz)
+            role = event.role or event.kind
+            summary: str = ""
+            if event.kind in {"message", "history_user"}:
+                summary = (event.text or "").strip()
+            elif event.kind == "reasoning":
+                summary = _shorten(event.text or "")
+            elif event.kind == "tool_call":
+                summary = f"tool call `{event.tool_name or 'unknown'}` {_summarize_tool_args(event.tool_args)}".strip()
+            elif event.kind == "tool_result":
+                summary_text = event.text or _content_to_text(event.tool_result)
+                summary = f"tool result {_shorten(summary_text)}".strip()
+            else:
+                summary = _shorten(event.text or "")
+
+            if not summary:
+                summary = "(no content)"
+
+            lines.append(f"- **{role or 'event'}** · {time_str} · {summary}")
+    target.write_text("\n".join(lines), encoding="utf-8")
+
+
+def write_session_metadata(session_dir: Path, meta: SessionMeta, events: list[TimelineEvent]) -> None:
+    """Persist lightweight metadata for downstream tooling."""
+    metadata = {
+        "session_id": meta.session_id,
+        "started_at": meta.started_at.astimezone(UTC).isoformat(),
+        "cwd": meta.cwd,
+        "event_count": len(events),
+    }
+    target = session_dir / "meta.json"
+    target.write_text(json.dumps(metadata, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
 def _append_block(lines: list[str], header: str, body: str) -> None:
     lines.append(header)
     if body:
@@ -840,7 +1134,11 @@ def process_session(
     output_base: Path,
     tz_name: str,
     cwd_separator: str,
-) -> None:
+    output_format: str = "standard",
+    incremental: bool = False,
+    force: bool = False,
+    verbose: bool = False,
+) -> Path | None:
     meta, rollout_items = load_rollout_items(session_id, sessions_root)
     if (meta.started_at.timestamp() == 0) and history_entries:
         earliest_ts = min(entry.ts for entry in history_entries)
@@ -853,25 +1151,94 @@ def process_session(
             meta.started_at = earliest_event
 
     session_dir_name = build_session_dir_name(meta, history_entries, tz_name, cwd_separator)
+    session_dir = output_base / session_dir_name
+
+    if incremental and session_dir.exists() and not force:
+        if verbose:
+            print(f"Skipping session {session_id} (already exists at {session_dir})", file=sys.stderr)
+        return None
+
     session_dir = ensure_session_dir(output_base, session_dir_name)
     write_history_jsonl(session_dir, history_entries)
-    write_conversation_transcript(session_dir, meta, events, tz_name)
-    write_extended_transcript(session_dir, meta, events, tz_name)
+
+    if output_format in {"standard", "both"}:
+        write_conversation_transcript(session_dir, meta, events, tz_name)
+        write_extended_transcript(session_dir, meta, events, tz_name)
+    if output_format in {"compact", "both"}:
+        write_compact_transcript(session_dir, meta, events, tz_name)
+
+    write_session_metadata(session_dir, meta, events)
+    return session_dir
 
 
 def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv)
-    sessions_map = load_history(args.history)
+    sessions_map = load_history(args.history, skip_errors=args.skip_errors, verbose=args.verbose)
+
+    if args.session_id:
+        sessions_map = _filter_sessions_by_id(sessions_map, args.session_id)
+        if args.verbose and not sessions_map:
+            print(f"No sessions matched session ID '{args.session_id}'", file=sys.stderr)
+
+    if args.project_dir:
+        sessions_map = filter_sessions_by_project(
+            sessions_map, args.project_dir, args.sessions_root, args.output_dir
+        )
+        if args.verbose and not sessions_map:
+            print(
+                f"No sessions matched project directory '{args.project_dir}'",
+                file=sys.stderr,
+            )
+
+    if not sessions_map:
+        if args.verbose:
+            print("No sessions to process.", file=sys.stderr)
+        return
+
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
-    for session_id, entries in sessions_map.items():
-        process_session(
-            session_id,
-            entries,
-            args.sessions_root,
-            args.output_dir,
-            args.timezone,
-            args.cwd_separator,
+    total_sessions = len(sessions_map)
+    processed = 0
+    skipped = 0
+    started = datetime.now(tz=UTC)
+
+    for index, (session_id, entries) in enumerate(sorted(sessions_map.items()), start=1):
+        if args.verbose:
+            print(f"[{index}/{total_sessions}] Processing session {session_id}", file=sys.stderr)
+        try:
+            result = process_session(
+                session_id,
+                entries,
+                args.sessions_root,
+                args.output_dir,
+                args.timezone,
+                args.cwd_separator,
+                output_format=args.output_format,
+                incremental=args.incremental,
+                force=args.force,
+                verbose=args.verbose,
+            )
+        except Exception as exc:
+            skipped += 1
+            if args.skip_errors:
+                if args.verbose:
+                    print(f"Failed session {session_id}: {exc}", file=sys.stderr)
+                continue
+            raise
+
+        if result is None:
+            skipped += 1
+        else:
+            processed += 1
+
+    if args.verbose:
+        duration = datetime.now(tz=UTC) - started
+        print(
+            (
+                f"Completed processing in {duration.total_seconds():.1f}s: "
+                f"{processed} processed, {skipped} skipped, {total_sessions} total."
+            ),
+            file=sys.stderr,
         )
 
 

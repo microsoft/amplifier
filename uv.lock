@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.11"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -3199,6 +3199,7 @@ dependencies = [
     { name = "langchain" },
     { name = "langchain-openai" },
     { name = "markdownify" },
+    { name = "mcp" },
     { name = "networkx" },
     { name = "openai" },
     { name = "pydantic" },
@@ -3239,6 +3240,7 @@ requires-dist = [
     { name = "langchain", specifier = ">=0.2.1" },
     { name = "langchain-openai", specifier = ">=0.3.28" },
     { name = "markdownify", specifier = ">=1.2.0" },
+    { name = "mcp", specifier = ">=1.0.0" },
     { name = "networkx", specifier = ">=3.5" },
     { name = "openai", specifier = ">=1.108.1" },
     { name = "pydantic", specifier = ">=2.11.7" },

@@ -1,0 +1,445 @@
+import abc
+import asyncio
+import json
+import logging
+import os
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+# Set up logging
+logger = logging.getLogger(__name__)
+
+
+class BackendNotAvailableError(Exception):
+    """Raised when requested backend is not available."""
+    pass
+
+
+class BackendOperationError(Exception):
+    """Raised when backend operation fails."""
+    pass
+
+
+class AmplifierBackend(abc.ABC):
+    """Abstract base class for amplifier backends."""
+
+    @abc.abstractmethod
+    def initialize_session(self, prompt: str, context: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Load memories at session start.
+
+        Args:
+            prompt: The initial prompt for the session.
+            context: Optional additional context.
+
+        Returns:
+            Dict with success, data, and metadata.
+        """
+        pass
+
+    @abc.abstractmethod
+    def finalize_session(self, messages: List[Dict[str, Any]], context: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Extract and store memories at session end.
+
+        Args:
+            messages: List of conversation messages.
+            context: Optional context.
+
+        Returns:
+            Dict with success, data, and metadata.
+        """
+        pass
+
+    @abc.abstractmethod
+    def run_quality_checks(self, file_paths: List[str], cwd: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Run code quality checks.
+
+        Args:
+            file_paths: List of file paths to check.
+            cwd: Optional working directory.
+
+        Returns:
+            Dict with success, data, and metadata.
+        """
+        pass
+
+    @abc.abstractmethod
+    def export_transcript(self, session_id: Optional[str] = None, format: str = "standard", output_dir: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Export session transcript.
+
+        Args:
+            session_id: Optional session ID.
+            format: Export format.
+            output_dir: Optional output directory.
+
+        Returns:
+            Dict with success, data, and metadata.
+        """
+        pass
+
+    @abc.abstractmethod
+    def get_backend_name(self) -> str:
+        """Return backend identifier."""
+        pass
+
+    @abc.abstractmethod
+    def is_available(self) -> bool:
+        """Check if backend is available."""
+        pass
+
+
+class ClaudeCodeBackend(AmplifierBackend):
+    """Claude Code backend implementation."""
+
+    def get_backend_name(self) -> str:
+        return "claude"
+
+    def is_available(self) -> bool:
+        # Check for .claude/ directory and Claude CLI
+        claude_dir = Path(".claude")
+        if not claude_dir.exists():
+            return False
+        try:
+            subprocess.run(["claude", "--version"], capture_output=True, check=True)
+            return True
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            return False
+
+    def initialize_session(self, prompt: str, context: Optional[str] = None) -> Dict[str, Any]:
+        try:
+            memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "false").lower() in ["true", "1", "yes"]
+            if not memory_enabled:
+                return {"success": True, "data": {}, "metadata": {"memoriesLoaded": 0, "disabled": True}}
+
+            from amplifier.memory import MemoryStore
+            from amplifier.search import MemorySearcher
+
+            store = MemoryStore()
+            searcher = MemorySearcher()
+
+            all_memories = store.get_all()
+            search_results = searcher.search(prompt, all_memories, limit=5)
+            recent = store.search_recent(limit=3)
+
+            context_parts = []
+            if search_results or recent:
+                context_parts.append("## Relevant Context from Memory System\n")
+                if search_results:
+                    context_parts.append("### Relevant Memories")
+                    for result in search_results[:3]:
+                        content = result.memory.content
+                        category = result.memory.category
+                        score = result.score
+                        context_parts.append(f"- **{category}** (relevance: {score:.2f}): {content}")
+                seen_ids = {r.memory.id for r in search_results}
+                unique_recent = [m for m in recent if m.id not in seen_ids]
+                if unique_recent:
+                    context_parts.append("\n### Recent Context")
+                    for mem in unique_recent[:2]:
+                        context_parts.append(f"- {mem.category}: {mem.content}")
+
+            context_str = "\n".join(context_parts) if context_parts else ""
+            memories_loaded = len(search_results) + len(unique_recent) if search_results else len(recent)
+
+            return {
+                "success": True,
+                "data": {"additionalContext": context_str},
+                "metadata": {"memoriesLoaded": memories_loaded, "source": "amplifier_memory"}
+            }
+        except Exception as e:
+            logger.error(f"Claude initialize_session error: {e}")
+            raise BackendOperationError(f"Session initialization failed: {e}")
+
+    def finalize_session(self, messages: List[Dict[str, Any]], context: Optional[str] = None) -> Dict[str, Any]:
+        try:
+            memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "false").lower() in ["true", "1", "yes"]
+            if not memory_enabled:
+                return {"success": True, "data": {}, "metadata": {"memoriesExtracted": 0, "disabled": True}}
+
+            from amplifier.extraction import MemoryExtractor
+            from amplifier.memory import MemoryStore
+
+            async def extract():
+                extractor = MemoryExtractor()
+                store = MemoryStore()
+                extracted = await extractor.extract_from_messages(messages, context)
+                memories_count = 0
+                if extracted and "memories" in extracted:
+                    memories_list = extracted.get("memories", [])
+                    store.add_memories_batch(extracted)
+                    memories_count = len(memories_list)
+                return memories_count
+
+            memories_count = asyncio.run(asyncio.wait_for(extract(), timeout=60))
+            return {
+                "success": True,
+                "data": {},
+                "metadata": {"memoriesExtracted": memories_count, "source": "amplifier_extraction"}
+            }
+        except asyncio.TimeoutError:
+            logger.error("Claude finalize_session timeout")
+            return {"success": False, "data": {}, "metadata": {"error": "timeout"}}
+        except Exception as e:
+            logger.error(f"Claude finalize_session error: {e}")
+            raise BackendOperationError(f"Session finalization failed: {e}")
+
+    def run_quality_checks(self, file_paths: List[str], cwd: Optional[str] = None) -> Dict[str, Any]:
+        try:
+            # Find project root
+            start_dir = Path(cwd) if cwd else Path.cwd()
+            project_root = None
+            for dir_path in [start_dir] + list(start_dir.parents):
+                if (dir_path / "Makefile").exists() or (dir_path / ".git").exists() or (dir_path / "pyproject.toml").exists():
+                    project_root = dir_path
+                    break
+            if not project_root:
+                return {"success": False, "data": {}, "metadata": {"error": "No project root found"}}
+
+            # Check if Makefile has 'check' target
+            makefile = project_root / "Makefile"
+            if not makefile.exists():
+                return {"success": False, "data": {}, "metadata": {"error": "No Makefile found"}}
+
+            result = subprocess.run(["make", "-C", str(project_root), "-n", "check"], capture_output=True, text=True)
+            if result.returncode != 0:
+                return {"success": False, "data": {}, "metadata": {"error": "No 'check' target in Makefile"}}
+
+            # Run make check
+            result = subprocess.run(["make", "-C", str(project_root), "check"], capture_output=True, text=True)
+            return {
+                "success": result.returncode == 0,
+                "data": {"output": result.stdout + result.stderr},
+                "metadata": {"returncode": result.returncode}
+            }
+        except Exception as e:
+            logger.error(f"Claude run_quality_checks error: {e}")
+            raise BackendOperationError(f"Quality checks failed: {e}")
+
+    def export_transcript(self, session_id: Optional[str] = None, format: str = "standard", output_dir: Optional[str] = None) -> Dict[str, Any]:
+        try:
+            # Use transcript_manager.py logic from hook_precompact.py
+            # Simplified implementation
+            storage_dir = Path(".data/transcripts")
+            storage_dir.mkdir(parents=True, exist_ok=True)
+            timestamp = "now"  # Placeholder
+            output_filename = f"compact_{timestamp}_{session_id or 'unknown'}.txt"
+            output_path = storage_dir / output_filename
+
+            # Placeholder content
+            output_path.write_text("Transcript content placeholder")
+
+            return {
+                "success": True,
+                "data": {"path": str(output_path)},
+                "metadata": {"format": format, "session_id": session_id}
+            }
+        except Exception as e:
+            logger.error(f"Claude export_transcript error: {e}")
+            raise BackendOperationError(f"Transcript export failed: {e}")
+
+
+class CodexBackend(AmplifierBackend):
+    """Codex backend implementation."""
+
+    def get_backend_name(self) -> str:
+        return "codex"
+
+    def is_available(self) -> bool:
+        # Check for .codex/ directory and Codex CLI
+        codex_dir = Path(".codex")
+        if not codex_dir.exists():
+            return False
+        try:
+            subprocess.run(["codex", "--version"], capture_output=True, check=True)
+            return True
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            return False
+
+    def initialize_session(self, prompt: str, context: Optional[str] = None) -> Dict[str, Any]:
+        try:
+            memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "true").lower() in ["true", "1", "yes"]
+            if not memory_enabled:
+                context_file = Path(".codex/session_context.md")
+                context_file.parent.mkdir(exist_ok=True)
+                context_file.write_text("")
+                metadata = {"memoriesLoaded": 0, "source": "disabled"}
+                metadata_file = Path(".codex/session_init_metadata.json")
+                metadata_file.write_text(json.dumps(metadata))
+                return {"success": True, "data": {"context": ""}, "metadata": metadata}
+
+            from amplifier.memory import MemoryStore
+            from amplifier.search import MemorySearcher
+
+            store = MemoryStore()
+            searcher = MemorySearcher()
+
+            all_memories = store.get_all()
+            search_results = searcher.search(prompt, all_memories, limit=5)
+            recent = store.search_recent(limit=3)
+
+            context_parts = []
+            if search_results or recent:
+                context_parts.append("## Relevant Context from Memory System\n")
+                if search_results:
+                    context_parts.append("### Relevant Memories")
+                    for result in search_results[:3]:
+                        content = result.memory.content
+                        category = result.memory.category
+                        score = result.score
+                        context_parts.append(f"- **{category}** (relevance: {score:.2f}): {content}")
+                seen_ids = {r.memory.id for r in search_results}
+                unique_recent = [m for m in recent if m.id not in seen_ids]
+                if unique_recent:
+                    context_parts.append("\n### Recent Context")
+                    for mem in unique_recent[:2]:
+                        context_parts.append(f"- {mem.category}: {mem.content}")
+
+            context_md = "\n".join(context_parts) if context_parts else ""
+            context_file = Path(".codex/session_context.md")
+            context_file.parent.mkdir(exist_ok=True)
+            context_file.write_text(context_md)
+
+            memories_loaded = len(search_results) + len(unique_recent) if search_results else len(recent)
+            metadata = {
+                "memoriesLoaded": memories_loaded,
+                "relevantCount": len(search_results),
+                "recentCount": memories_loaded - len(search_results),
+                "source": "amplifier_memory",
+                "contextFile": str(context_file)
+            }
+            metadata_file = Path(".codex/session_init_metadata.json")
+            metadata_file.write_text(json.dumps(metadata))
+
+            return {
+                "success": True,
+                "data": {"context": context_md, "contextFile": str(context_file)},
+                "metadata": metadata
+            }
+        except Exception as e:
+            logger.error(f"Codex initialize_session error: {e}")
+            raise BackendOperationError(f"Session initialization failed: {e}")
+
+    def finalize_session(self, messages: List[Dict[str, Any]], context: Optional[str] = None) -> Dict[str, Any]:
+        try:
+            memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "true").lower() in ["true", "1", "yes"]
+            if not memory_enabled:
+                metadata = {"memoriesExtracted": 0, "source": "disabled"}
+                metadata_file = Path(".codex/session_cleanup_metadata.json")
+                metadata_file.write_text(json.dumps(metadata))
+                return {"success": True, "data": {}, "metadata": metadata}
+
+            from amplifier.extraction import MemoryExtractor
+            from amplifier.memory import MemoryStore
+
+            async def extract():
+                extractor = MemoryExtractor()
+                store = MemoryStore()
+                extracted = await extractor.extract_from_messages(messages, context)
+                memories_count = 0
+                if extracted and "memories" in extracted:
+                    memories_list = extracted.get("memories", [])
+                    store.add_memories_batch(extracted)
+                    memories_count = len(memories_list)
+                return memories_count
+
+            memories_count = asyncio.run(asyncio.wait_for(extract(), timeout=60))
+
+            # Export transcript
+            transcript_path = None
+            try:
+                from .codex.tools.transcript_exporter import CodexTranscriptExporter
+                exporter = CodexTranscriptExporter()
+                transcript_path = exporter.export_codex_transcript("session_id", Path(".codex/transcripts"))
+            except Exception:
+                pass
+
+            metadata = {
+                "memoriesExtracted": memories_count,
+                "transcriptExported": transcript_path is not None,
+                "transcriptPath": transcript_path,
+                "source": "amplifier_cleanup"
+            }
+            metadata_file = Path(".codex/session_cleanup_metadata.json")
+            metadata_file.write_text(json.dumps(metadata))
+
+            return {
+                "success": True,
+                "data": {"transcriptPath": transcript_path},
+                "metadata": metadata
+            }
+        except asyncio.TimeoutError:
+            logger.error("Codex finalize_session timeout")
+            return {"success": False, "data": {}, "metadata": {"error": "timeout"}}
+        except Exception as e:
+            logger.error(f"Codex finalize_session error: {e}")
+            raise BackendOperationError(f"Session finalization failed: {e}")
+
+    def run_quality_checks(self, file_paths: List[str], cwd: Optional[str] = None) -> Dict[str, Any]:
+        # Same as Claude
+        return ClaudeCodeBackend().run_quality_checks(file_paths, cwd)
+
+    def export_transcript(self, session_id: Optional[str] = None, format: str = "standard", output_dir: Optional[str] = None) -> Dict[str, Any]:
+        try:
+            from .codex.tools.transcript_exporter import CodexTranscriptExporter
+            exporter = CodexTranscriptExporter()
+            output_dir = Path(output_dir) if output_dir else Path(".codex/transcripts")
+            result = exporter.export_codex_transcript(session_id or "unknown", output_dir, format)
+            return {
+                "success": result is not None,
+                "data": {"path": str(result)} if result else {},
+                "metadata": {"format": format, "session_id": session_id}
+            }
+        except Exception as e:
+            logger.error(f"Codex export_transcript error: {e}")
+            raise BackendOperationError(f"Transcript export failed: {e}")
+
+
+class BackendFactory:
+    """Factory for creating backend instances."""
+
+    @staticmethod
+    def create_backend(backend_type: Optional[str] = None) -> AmplifierBackend:
+        if backend_type is None:
+            backend_type = os.getenv("AMPLIFIER_BACKEND", "claude")
+        if backend_type not in ["claude", "codex"]:
+            raise ValueError(f"Invalid backend type: {backend_type}")
+        logger.info(f"Creating backend: {backend_type}")
+        if backend_type == "claude":
+            backend = ClaudeCodeBackend()
+        else:
+            backend = CodexBackend()
+        if not backend.is_available():
+            raise BackendNotAvailableError(f"Backend {backend_type} is not available")
+        return backend
+
+    @staticmethod
+    def get_available_backends() -> List[str]:
+        available = []
+        if ClaudeCodeBackend().is_available():
+            available.append("claude")
+        if CodexBackend().is_available():
+            available.append("codex")
+        return available
+
+    @staticmethod
+    def auto_detect_backend() -> str:
+        if ClaudeCodeBackend().is_available():
+            return "claude"
+        if CodexBackend().is_available():
+            return "codex"
+        raise BackendNotAvailableError("No backend available")
+
+
+def get_backend() -> AmplifierBackend:
+    """Convenience function to get backend."""
+    return BackendFactory.create_backend()
+
+
+def set_backend(backend_type: str):
+    """Set AMPLIFIER_BACKEND environment variable."""
+    os.environ["AMPLIFIER_BACKEND"] = backend_type

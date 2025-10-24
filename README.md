@@ -154,6 +154,50 @@ claude
 
 ## 📖 How to Use Amplifier
 
+### Choosing Your Backend
+
+Amplifier supports two AI backends:
+
+**Claude Code** (VS Code Extension):
+- Native VS Code integration
+- Automatic hooks for session management
+- Slash commands for common tasks
+- Best for: VS Code users, GUI-based workflows
+
+**Codex** (CLI):
+- Standalone command-line interface
+- MCP servers for extensibility
+- Scriptable and automatable
+- Best for: Terminal users, CI/CD, automation
+
+#### Using Claude Code
+```bash
+# Set backend (optional, this is the default)
+export AMPLIFIER_BACKEND=claude
+
+# Start Claude Code normally
+claude
+```
+
+#### Using Codex
+```bash
+# Set backend
+export AMPLIFIER_BACKEND=codex
+
+# Start Codex with Amplifier integration
+./amplify-codex.sh
+
+# Or with specific profile
+./amplify-codex.sh --profile review
+```
+
+#### Environment Variables
+- `AMPLIFIER_BACKEND` - Choose backend: "claude" or "codex" (default: claude)
+- `CODEX_PROFILE` - Codex profile to use: "development", "ci", "review" (default: development)
+- `MEMORY_SYSTEM_ENABLED` - Enable/disable memory system: "true" or "false" (default: true)
+
+See `.env.example` for complete configuration options.
+
 ### Setup Your Project
 
 1. For existing GitHub projects
@@ -203,6 +247,66 @@ Let's use /ddd:1-plan to design the architecture.
 > **Why use this?** Clean git history per component, independent Amplifier updates, persistent context across sessions, scalable to multiple projects. See [Workspace Pattern for Serious Projects](#workspace-pattern-for-serious-projects) below for full details.
 
 ---
+
+## Codex Integration
+
+The `amplify-codex.sh` wrapper provides seamless integration with Codex CLI:
+
+### Features
+- **Automatic Session Management**: Loads context at start, saves memories at end
+- **MCP Server Integration**: Quality checks, transcript export, memory system
+- **Profile Support**: Different configurations for development, CI, and review
+- **User Guidance**: Clear instructions for available tools and workflows
+
+### Quick Start
+```bash
+# Make wrapper executable (first time only)
+chmod +x amplify-codex.sh
+
+# Start Codex with Amplifier
+./amplify-codex.sh
+
+# Follow the on-screen guidance to use MCP tools
+```
+
+### Available MCP Tools
+
+When using Codex, these tools are available:
+
+- **initialize_session** - Load relevant memories from previous work
+- **check_code_quality** - Run quality checks after editing files
+- **save_current_transcript** - Export session transcript
+- **finalize_session** - Extract and save memories before ending
+
+See [.codex/README.md](.codex/README.md) for detailed documentation.
+
+### Manual Session Management
+
+You can also run session management scripts manually:
+
+```bash
+# Initialize session with specific context
+uv run python .codex/tools/session_init.py --prompt "Working on authentication"
+
+# Clean up after session
+uv run python .codex/tools/session_cleanup.py --session-id a1b2c3d4
+```
+
+### Wrapper Options
+
+```bash
+# Use specific profile
+./amplify-codex.sh --profile ci
+
+# Skip initialization
+./amplify-codex.sh --no-init
+
+# Skip cleanup
+./amplify-codex.sh --no-cleanup
+
+# Show help
+./amplify-codex.sh --help
+```
 
 ## ✨ Features To Try
 
@@ -370,6 +474,43 @@ make ai-context-files # Rebuild AI context
 Testing and benchmarking are critical to ensuring that any product leveraging AI, including Amplifier, is quantitatively measured for performance and reliability.
 Currently, we leverage [terminal-bench](https://github.com/laude-institute/terminal-bench) to reproducibly benchmark Amplifier against other agents.
 Further details on how to run the benchmark can be found in [tests/terminal_bench/README.md](tests/terminal_bench/README.md).
+
+---
+
+## Project Structure
+
+- `amplify-codex.sh` - Wrapper script for Codex CLI with Amplifier integration
+- `.codex/` - Codex configuration, MCP servers, and tools
+  - `config.toml` - Codex configuration with MCP server definitions
+  - `mcp_servers/` - MCP server implementations (session, quality, transcripts)
+  - `tools/` - Session management scripts (init, cleanup, export)
+  - `README.md` - Detailed Codex integration documentation
+- `.claude/` - Claude Code configuration and hooks
+  - `README.md` - Claude Code integration documentation
+
+Both backends share the same amplifier modules (memory, extraction, etc.) for consistent functionality. See [.codex/README.md](.codex/README.md) and [.claude/README.md](.claude/README.md) for detailed backend-specific documentation.
+
+---
+
+## Troubleshooting
+
+### Codex Issues
+
+**Wrapper script won't start:**
+- Ensure Codex CLI is installed: `codex --version`
+- Check that `.codex/config.toml` exists
+- Verify virtual environment: `ls .venv/`
+- Check logs: `cat .codex/logs/session_init.log`
+
+**MCP servers not working:**
+- Verify server configuration in `.codex/config.toml`
+- Check server logs: `tail -f .codex/logs/*.log`
+- Ensure amplifier modules are importable: `uv run python -c "import amplifier.memory"`
+
+**Session management fails:**
+- Check `MEMORY_SYSTEM_ENABLED` environment variable
+- Verify memory data directory exists: `ls .data/memories/`
+- Run scripts manually with `--verbose` flag for debugging
 
 ---
 
