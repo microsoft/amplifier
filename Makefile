@@ -15,7 +15,7 @@ endef
 .DEFAULT_GOAL := default
 
 # Main targets
-.PHONY: default help install dev test check
+.PHONY: default help install dev test check amplify amplify-claude amplify-codex amplify-info
 
 default: ## Show essential commands
 	@echo ""
@@ -240,6 +240,30 @@ smoke-test-backend: ## Run backend smoke tests
 .PHONY: test-all-backends
 test-all-backends: test-backend-integration smoke-test-backend ## Run all backend tests (integration + smoke)
 	@echo "All backend tests completed"
+
+# Unified CLI convenience targets
+amplify: ## Run the unified CLI launcher
+	@echo "Starting Amplifier unified CLI..."
+	@chmod +x amplify.py
+	@./amplify.py
+
+amplify-claude: ## Run unified CLI with Claude Code backend
+	@echo "Starting Amplifier with Claude Code backend..."
+	@chmod +x amplify.py
+	@./amplify.py --backend claude
+
+amplify-codex: ## Run unified CLI with Codex backend
+	@echo "Starting Amplifier with Codex backend..."
+	@chmod +x amplify.py
+	@./amplify.py --backend codex
+
+amplify-info: ## Show backend information and list available backends
+	@echo "Listing available backends..."
+	@chmod +x amplify.py
+	@./amplify.py --list-backends
+	@echo ""
+	@echo "Showing current backend info..."
+	@./amplify.py --info
 
 # Git worktree management
 worktree: ## Create a git worktree with .data copy. Usage: make worktree feature-name

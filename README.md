@@ -89,7 +89,10 @@ source .venv/bin/activate  # Linux/Mac/WSL
 ### Get Started
 
 ```bash
-# Start Claude Code
+# Start with the unified CLI (recommended)
+./amplify.py
+
+# Or start Claude Code directly
 claude
 ```
 
@@ -170,6 +173,27 @@ Amplifier supports two AI backends:
 - Scriptable and automatable
 - Best for: Terminal users, CI/CD, automation
 
+#### Using the Unified CLI (Recommended)
+
+The unified CLI provides a consistent interface for both backends:
+
+```bash
+# Start with default backend (Claude Code)
+./amplify.py
+
+# Start with specific backend
+./amplify.py --backend codex
+
+# Start Codex with specific profile
+./amplify.py --backend codex --profile review
+
+# List available backends
+./amplify.py --list-backends
+
+# Show backend information
+./amplify.py --info codex
+```
+
 #### Using Claude Code
 ```bash
 # Set backend (optional, this is the default)
@@ -197,6 +221,36 @@ export AMPLIFIER_BACKEND=codex
 - `MEMORY_SYSTEM_ENABLED` - Enable/disable memory system: "true" or "false" (default: true)
 
 See `.env.example` for complete configuration options.
+
+#### Unified CLI Reference
+
+The `./amplify.py` script provides a unified interface for both backends with the following options:
+
+**Backend Selection:**
+- `--backend`, `-b` - Choose backend: "claude" or "codex" (default: from config)
+- `--profile`, `-p` - Codex profile: "development", "ci", "review" (default: development)
+
+**Configuration:**
+- `--config` - Path to configuration file (default: .env, overrides ENV_FILE)
+
+**Information:**
+- `--list-backends` - List available backends and exit
+- `--info [BACKEND]` - Show information for specified backend (or current if not specified)
+- `--version`, `-v` - Show version information and exit
+
+**Configuration Precedence:**
+1. Command-line flags (highest priority)
+2. Environment variables
+3. Configuration file (`.env` by default, or specified by `--config` or `ENV_FILE`)
+4. Auto-detection (if enabled)
+5. Defaults (lowest priority)
+
+#### Backward Compatibility
+
+Legacy commands continue to work:
+- `claude` - Direct Claude Code launch
+- `./amplify-codex.sh` - Codex wrapper script
+- `./amplify.sh` - Legacy wrapper script
 
 ### Setup Your Project
 

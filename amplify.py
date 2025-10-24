@@ -22,7 +22,6 @@ from typing import List
 
 try:
     from amplifier.core.config import (
-        BackendConfig,
         get_backend_config,
         is_backend_available,
         get_backend_info,

@@ -6,6 +6,7 @@ Centralizes configuration for Amplifier backend abstraction layer.
 Supports environment variables with sensible defaults for both Claude Code and Codex backends.
 """
 
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -101,7 +102,8 @@ def get_backend_config() -> BackendConfig:
     """Get or create the backend configuration singleton."""
     global _backend_config
     if _backend_config is None:
-        _backend_config = BackendConfig()
+        env_file_path = os.getenv('ENV_FILE', '.env')
+        _backend_config = BackendConfig(_env_file=env_file_path)
     return _backend_config
 
 
