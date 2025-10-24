@@ -1,409 +1,369 @@
-# Amplifier: Metacognitive AI Development
+# Amplified Design
 
-> _"Automate complex workflows by describing how you think through them."_
+> **A complete design intelligence system that amplifies human creativity through purpose-driven methodology, AI guidance, and quality guardrails.**
 
-> [!CAUTION]
-> This project is a research demonstrator. It is in early development and may change significantly. Using permissive AI tools in your repository requires careful attention to security considerations and careful human supervision, and even then things can still go wrong. Use it with caution, and at your own risk. See [Disclaimer](#disclaimer).
+---
 
-Amplifier is a coordinated and accelerated development system that turns your expertise into reusable AI tools without requiring code. Describe the step-by-step thinking process for handling a task—a "metacognitive recipe"—and Amplifier builds a tool that executes it reliably. As you create more tools, they combine and build on each other, transforming individual solutions into a compounding automation system.
+## What Is Amplified Design?
 
-## 🚀 QuickStart
+Amplified Design is not just a design system or component library—it's a complete **design intelligence framework** that changes how we think about and create digital experiences.
 
-### Prerequisites Guide
+We're solving a fundamental problem: **AI-generated designs are generic (5/10 quality). Customization breaks the few good parts. Every output looks the same.**
 
-<details>
-<summary>Click to expand prerequisite instructions</summary>
+**Amplified Design's approach:**
+- Start with exceptional quality (9.5/10 baseline)
+- Guide through purpose-first design methodology
+- Provide AI agents for validation and guidance
+- Enforce quality through intelligent guardrails
+- Generate working prototypes, not just mockups
+- Learn and adapt to your design sensibility over time
 
-1. Check if prerequisites are already met.
+---
 
-   - ```bash
-     python3 --version  # Need 3.11+
-     ```
-   - ```bash
-     uv --version       # Need any version
-     ```
-   - ```bash
-     node --version     # Need any version
-     ```
-   - ```bash
-     pnpm --version     # Need any version
-     ```
-   - ```bash
-     git --version      # Need any version
-     ```
+## The System
 
-2. Install what is missing.
+Amplified Design consists of six interconnected parts:
 
-   **Mac**
+### 1. The Framework
+A proven 4-layer methodology with 9 dimensions of expression:
+- **Layer 1**: Purpose & Intent (What and Why)
+- **Layer 2**: Expression & Manifestation (How)
+- **Layer 3**: Context & Appropriateness (For Whom)
+- **Layer 4**: Contextual Adaptation (Across Modalities)
 
-   ```bash
-   brew install python3 node git pnpm uv
-   ```
+**[Learn the complete framework →](./FRAMEWORK.md)**
 
-   **Ubuntu/Debian/WSL**
+### 2. The Philosophy
+Five foundational pillars that guide every decision:
+- Purpose Drives Execution
+- Craft Embeds Care
+- Constraints Enable Creativity
+- Intentional Incompleteness
+- Design for Humans
 
-   ```bash
-   # System packages
-   sudo apt update && sudo apt install -y python3 python3-pip nodejs npm git
+**[Deep dive into philosophy →](./PHILOSOPHY.md)**
 
-   # pnpm
-   npm install -g pnpm
-   pnpm setup && source ~/.bashrc
+### 3. Studio Interface
+The interactive design partner that implements the methodology:
+- Progressive discovery system
+- Interactive prototype generation
+- AI-guided customization
+- Content-aware recommendations
+- Currently in active development
 
-   # uv (Python package manager)
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   ```
+**[View Studio development →](./studio-interface/)**
 
-   **Windows**
+### 4. Knowledge Base
+Comprehensive design theory and research:
+- Color systems and psychology
+- Typography principles
+- Animation and motion design
+- Accessibility standards
+- Interaction patterns
 
-   1. Install [WSL2](https://learn.microsoft.com/windows/wsl/install)
-   2. Run Ubuntu commands above inside WSL
+**[Browse knowledge base →](./knowledge-base/)**
 
-   **Manual Downloads**
+### 5. AI Agents
+Intelligent validation and guidance:
+- Quality Guardian (validates 9.5/10 standard)
+- Customization Guide (recommends safe modifications)
+- Requirements Architect (clarifies purpose)
+- UX Wireframe Designer (visualizes concepts)
 
-   - [Python](https://python.org/downloads) (3.11 or newer)
-   - [Node.js](https://nodejs.org) (any recent version)
-   - [pnpm](https://pnpm.io/installation) (package manager)
-   - [Git](https://git-scm.com) (any version)
-   - [uv](https://docs.astral.sh/uv/getting-started/installation/) (Python package manager)
+**[See agent system →](./agents/)**
 
-> **Platform Note**: Development and testing has primarily been done in Windows WSL2. macOS and Linux should work but have received less testing. Your mileage may vary.
+### 6. Quality Guardrails
+Automated validation and standards enforcement:
+- CSS token validation
+- TypeScript type checking
+- Accessibility compliance
+- Performance benchmarks
+- Design system consistency
 
-</details>
+**[Review guardrails →](./quality-guardrails/)**
+
+---
+
+## Current State
+
+Amplified Design is in **active development** using its own methodology. We're practicing what we're building.
+
+**What exists now:**
+- Complete framework documentation (4 layers, 9 dimensions)
+- Five Pillars philosophy and principles
+- Studio interface foundation (Next.js, TypeScript)
+- AI agent system (4 specialized agents)
+- Quality validation tools
+- Comprehensive knowledge base
+- Discovery workspace implementation
+
+**What we're building:**
+- Full Studio interface with progressive discovery
+- Component library with 9.5/10 baseline quality
+- Interactive prototype generation
+- AI-guided design customization
+- Real-time quality validation
+
+**[View the design discovery process →](./DISCOVERY.md)**
+
+---
+
+## The Philosophy: Beyond the Artifact
+
+**Remember:** The code is just the container, not the product.
+
+When you ship a button component, you're shipping:
+- How someone **feels** when they click it
+- What **values** your team embodies
+- What **culture** you're creating
+- What **impact** you have on the world
+
+### Three Levels of Experience
+
+1. **Individual Experience**: Do they feel heard, confirmed, respected, trust?
+2. **Social Experience**: Do teams feel empowered, confident, collaborative, proud?
+3. **Cultural Experience**: Does it shift expectations, demand accessibility, question mediocrity?
+
+**[Read the complete vision →](./VISION.md)**
+
+---
+
+## Quick Start (For Developers)
 
 ### Setup
 
 ```bash
-# Clone Amplifier repository
-git clone https://github.com/microsoft/amplifier.git amplifier
-cd amplifier
+# Clone the repository
+git clone https://github.com/yourusername/amplified-design.git
+cd amplified-design
 
 # Install dependencies
-make install
+npm install
 
-# Activate virtual environment
-source .venv/bin/activate  # Linux/Mac/WSL
-# .venv\Scripts\Activate.ps1  # Windows PowerShell
+# Start Studio interface in development
+cd studio-interface
+npm run dev
 ```
 
-### Get Started
+### Development Commands
 
 ```bash
-# Start Claude Code
-claude
+# Validate design tokens
+npm run validate:tokens
+
+# TypeScript type checking
+npx tsc --noEmit
+
+# Build Studio interface
+npm run build
+
+# Development server (Studio)
+npm run dev
 ```
 
-**Create your first tool in 5 steps:**
+### Working with the System
 
-1. **Identify a task** you want to automate (e.g., "weekly learning digest")
+Before creating or modifying any component:
 
-   Need ideas? Try This:
+```
+□ Can articulate WHY in one sentence?
+□ All tokens defined in globals.css?
+□ Follows 8px spacing system?
+□ Meets contrast requirements?
+□ Touch targets 44x44px+?
+□ Motion timing follows protocol?
+□ Keyboard accessible?
+```
 
-   ```
-   /ultrathink-task I'm new to "metacognitive recipes". What are some useful
-   tools I could create with Amplifier that show how recipes can self-evaluate
-   and improve via feedback loops? Just brainstorm ideas, don't build them yet.
-   ```
-
-2. **Describe the thinking process** - How would an expert handle it step-by-step?
-
-   Need help? Try This:
-
-   ```
-   /ultrathink-task This is my idea: <your idea here>. Can you help me describe the
-   thinking process to handle it step-by-step?
-   ```
-
-   Example of a metacognitive recipe:
-
-   ```markdown
-   I want to create a tool called "Research Synthesizer". Goal: help me research a topic by finding sources, extracting key themes, then asking me to choose which themes to explore in depth, and finally producing a summarized report.
-
-   Steps:
-
-   1. Do a preliminary web research on the topic and collect notes.
-   2. Extract the broad themes from the notes.
-   3. Present me the list of themes and highlight the top 2-3 you recommend focusing on (with reasons).
-   4. Allow me to refine or add to that theme list.
-   5. Do in-depth research on the refined list of themes.
-   6. Draft a report based on the deep research, ensuring the report stays within my requested length and style.
-   7. Offer the draft for my review and incorporate any feedback.
-   ```
-
-3. **Generate with `/ultrathink-task`** - Let Amplifier build the tool
-
-   ```
-   /ultrathink-task <your metacognitive recipe here>
-   ```
-
-4. **Refine through feedback** - "Make connections more insightful"
-
-   ```
-   Let's see how it works. Run <your generated tool>.
-   ```
-
-   Then:
-
-   - Observe and note issues.
-   - Provide feedback in context.
-   - Iterate until satisfied.
-
-**Learn more** with [Create Your Own Tools](docs/CREATE_YOUR_OWN_TOOLS.md) - Deep dive into the process.
+**[Read complete development guide →](./CLAUDE.md)**
 
 ---
 
-## 📖 How to Use Amplifier
+## The Four-Layer Methodology
 
-### Setup Your Project
+### Layer 1: Purpose & Intent
+**What should exist and why?**
+- Should this exist? (Necessity)
+- What problem does this solve? (Function)
+- For whom? (Audience)
+- Why now? (Timing and context)
+- What values does this embody? (Ethics)
 
-1. For existing GitHub projects
+### Layer 2: Expression & Manifestation
+**How should it look, feel, and behave?**
 
-   ```bash
-   # Add your project as a submodule
-   cd amplifier
-   git submodule add git@github.com:yourname/my-project.git my-project
-   ```
+**Nine Dimensions:**
+1. Style - Visual language
+2. Motion - Timing and choreography
+3. Voice - Language and tone
+4. Space - Layout and hierarchy
+5. Color - Meaning and accessibility
+6. Typography - Hierarchy and readability
+7. Proportion - Scale and balance
+8. Texture - Depth and materiality
+9. Body - Physical ergonomics
 
-2. For new projects
+### Layer 3: Context & Appropriateness
+**Where and when does this work?**
+- Cultural context
+- Audience expectations
+- Industry conventions
+- Pattern recognition
 
-   ```bash
-   # Create new project and add as a submodule
-   cd amplifier
-   mkdir my-project
-   cd my-project
-   git init
-   git remote add origin git@github.com:yourname/my-project.git
-   cd ..
-   git submodule add ./my-project my-project
-   ```
-
-```bash
-# Install dependencies
-make install
-
-# Activate virtual environment
-source .venv/bin/activate  # Linux/Mac/WSL
-# .venv\Scripts\Activate.ps1  # Windows PowerShell
-
-# Set up project context & start Claude
-echo "# Project-specific AI guidance" > my-project/AGENTS.md
-claude
-```
-
-_Tell Claude Code:_
-
-```
-I'm working on @yourproject/ with Amplifier.
-Read @yourproject/AGENTS.md for project context.
-Let's use /ddd:1-plan to design the architecture.
-```
-
-> [!NOTE]
->
-> **Why use this?** Clean git history per component, independent Amplifier updates, persistent context across sessions, scalable to multiple projects. See [Workspace Pattern for Serious Projects](#workspace-pattern-for-serious-projects) below for full details.
+### Layer 4: Contextual Adaptation
+**How does it adapt across modalities?**
+- Desktop (precision, rich information)
+- Mobile (thumb zones, simplified)
+- Voice (conversational, sequential)
+- Emerging platforms (AR/VR, spatial)
 
 ---
 
-## ✨ Features To Try
+## Quality Standards
 
-### 🔧 Create Amplifier-powered Tools for Scenarios
-
-Amplifier is designed so **you can create new AI-powered tools** just by describing how they should think. See the [Create Your Own Tools](docs/CREATE_YOUR_OWN_TOOLS.md) guide for more information.
-
-- _Tell Claude Code:_ `Walk me through creating my own scenario tool`
-
-- _View the documentation:_ [Scenario Creation Guide](docs/CREATE_YOUR_OWN_TOOLS.md)
-
-### 🤖 Explore Amplifier's agents on your code
-
-Try out one of the specialized experts:
-
-- _Tell Claude Code:_
-
-  `Use the zen-architect agent to design my application's caching layer`
-
-  `Deploy bug-hunter to find why my login system is failing`
-
-  `Have security-guardian review my API implementation for vulnerabilities`
-
-- _View the files:_ [Agents](.claude/agents/)
-
-### 📝 Document-Driven Development
-
-**Why use this?** Eliminate doc drift and context poisoning. When docs lead and code follows, your specifications stay perfectly in sync with reality.
-
-Execute a complete feature workflow with numbered slash commands:
-
-```bash
-/ddd:1-plan         # Design the feature
-/ddd:2-docs         # Update all docs (iterate until approved)
-/ddd:3-code-plan    # Plan code changes
-/ddd:4-code         # Implement and test (iterate until working)
-/ddd:5-finish       # Clean up and finalize
-```
-
-Each phase creates artifacts the next phase reads. You control all git operations with explicit authorization at every step. The workflow prevents expensive mistakes by catching design flaws before implementation.
-
-- _Tell Claude Code:_ `/ddd:0-help`
-
-- _View the documentation:_ [Document-Driven Development Guide](docs/document_driven_development/)
-
-### 🌳 Parallel Development
-
-**Why use this?** Stop wondering "what if" — build multiple solutions simultaneously and pick the winner.
-
-```bash
-# Try different approaches in parallel
-make worktree feature-jwt     # JWT authentication approach
-make worktree feature-oauth   # OAuth approach in parallel
-
-# Compare and choose
-make worktree-list            # See all experiments
-make worktree-rm feature-jwt  # Remove the one you don't want
-```
-
-Each worktree is completely isolated with its own branch, environment, and context.
-
-See the [Worktree Guide](docs/WORKTREE_GUIDE.md) for advanced features, such as hiding worktrees from VSCode when not in use, adopting branches from other machines, and more.
-
-- _Tell Claude Code:_ `What make worktree commands are available to me?`
-
-- _View the documentation:_ [Worktree Guide](docs/WORKTREE_GUIDE.md)
-
-### 📊 Enhanced Status Line
-
-See costs, model, and session info at a glance:
-
-**Example**: `~/repos/amplifier (main → origin) Opus 4.1 💰$4.67 ⏱18m`
-
-Shows:
-
-- Current directory and git branch/status
-- Model name with cost-tier coloring (red=high, yellow=medium, blue=low)
-- Running session cost and duration
-
-Enable with:
-
-```
-/statusline use the script at .claude/tools/statusline-example.sh
-```
-
-### 💬 Conversation Transcripts
-
-**Never lose context again.** Amplifier automatically exports your entire conversation before compaction, preserving all the details that would otherwise be lost. When Claude Code compacts your conversation to stay within token limits, you can instantly restore the full history.
-
-**Automatic Export**: A PreCompact hook captures your conversation before any compaction event:
-
-- Saves complete transcript with all content types (messages, tool usage, thinking blocks)
-- Timestamps and organizes transcripts in `.data/transcripts/`
-- Works for both manual (`/compact`) and auto-compact events
-
-**Easy Restoration**: Use the `/transcripts` command in Claude Code to restore your full conversation:
-
-```
-/transcripts  # Restores entire conversation history
-```
-
-The transcript system helps you:
-
-- **Continue complex work** after compaction without losing details
-- **Review past decisions** with full context
-- **Search through conversations** to find specific discussions
-- **Export conversations** for sharing or documentation
-
-**Transcript Commands** (via Makefile):
-
-```bash
-make transcript-list                # List available transcripts
-make transcript-search TERM="auth"  # Search past conversations
-make transcript-restore             # Restore full lineage (for CLI use)
-```
-
-### 🏗️ Workspace Pattern for Serious Projects
-
-**For long-term development**, consider using the workspace pattern where Amplifier hosts your project as a git submodule. This architectural approach provides:
-
-- **Clean boundaries** - Project files stay in project directory, Amplifier stays pristine and updatable
-- **Version control isolation** - Each component maintains independent git history
-- **Context persistence** - AGENTS.md preserves project guidance across sessions
-- **Scalability** - Work on multiple projects simultaneously without interference
-- **Philosophy alignment** - Project-specific decision filters and architectural principles
-
-Perfect for:
-
-- Projects that will live for months or years
-- Codebases with their own git repository
-- Teams collaborating on shared projects
-- When you want to update Amplifier without affecting your projects
-- Working on multiple projects that need isolation
-
-The pattern inverts the typical relationship: instead of your project containing Amplifier, Amplifier becomes a dedicated workspace that hosts your projects. Each project gets persistent context through AGENTS.md (AI guidance), philosophy documents (decision filters), and clear namespace boundaries using `@project-name/` syntax.
-
-- _Tell Claude Code:_ `What are the recommended workspace patterns for serious projects?`
-
-- _View the documentation:_ [Workspace Pattern Guide](docs/WORKSPACE_PATTERN.md) - complete setup, usage patterns, and migration from `ai_working/`.
-
-### 💡 Best Practices & Tips
-
-**Want to get the most out of Amplifier?** Check out [The Amplifier Way](docs/THIS_IS_THE_WAY.md) for battle-tested strategies including:
-
-- Understanding capability vs. context
-- Decomposition strategies for complex tasks
-- Using transcript tools to capture and improve workflows
-- Demo-driven development patterns
-- Practical tips for effective AI-assisted development
-
-- _Tell Claude Code:_ `What are the best practices to get the MOST out of Amplifier?`
-
-- _View the documentation:_ [The Amplifier Way](docs/THIS_IS_THE_WAY.md)
-
-### ⚙️ Development Commands
-
-```bash
-make check            # Format, lint, type-check
-make test             # Run tests
-make ai-context-files # Rebuild AI context
-```
-
-### 🧪 Testing & Benchmarks
-
-Testing and benchmarking are critical to ensuring that any product leveraging AI, including Amplifier, is quantitatively measured for performance and reliability.
-Currently, we leverage [terminal-bench](https://github.com/laude-institute/terminal-bench) to reproducibly benchmark Amplifier against other agents.
-Further details on how to run the benchmark can be found in [tests/terminal_bench/README.md](tests/terminal_bench/README.md).
+Every component and system maintains:
+- **9.5/10 quality baseline** - Refined, not generic
+- **WCAG AA accessibility** - Works for everyone
+- **60fps performance** - GPU-accelerated animations
+- **Full keyboard support** - Navigate without a mouse
+- **Reduced motion support** - Respects user preferences
 
 ---
 
-## Disclaimer
+## Project Structure
 
-> [!IMPORTANT] > **This is an experimental system. _We break things frequently_.**
+```
+amplified-design/
+├── studio-interface/          # Studio interface (Next.js app)
+│   ├── app/                  # Pages and routes
+│   ├── components/           # React components
+│   ├── state/                # Zustand state management
+│   └── public/               # Static assets
+├── packages/                  # Modular packages
+│   └── interactions/         # Interaction patterns
+├── components/               # Design components library
+├── agents/                   # AI agents for guidance
+├── quality-guardrails/       # Validation rules
+├── knowledge-base/           # Design theory documentation
+├── .design/                  # Design documentation
+│   ├── AESTHETIC-GUIDE.md
+│   └── COMPONENT-CREATION-PROTOCOL.md
+├── FRAMEWORK.md             # Complete methodology
+├── PHILOSOPHY.md            # Five Pillars deep dive
+├── PRINCIPLES.md            # Quick reference guide
+├── VISION.md                # Beyond the artifact
+├── DISCOVERY.md             # Current development process
+├── PROGRESS.md              # Development timeline
+└── CONTRIBUTING.md          # Contribution guidelines
+```
 
-- Not accepting contributions yet (but we plan to!)
-- No stability guarantees
-- Pin commits if you need consistency
-- This is a learning resource, not production software
-- **No support provided** - See [SUPPORT.md](SUPPORT.md)
+---
+
+## Technology Stack
+
+- **Framework**: Next.js 14+ (React 18+)
+- **Language**: TypeScript
+- **Styling**: CSS3 with CSS Variables
+- **State Management**: Zustand
+- **Icons**: Custom Icon component (24x24 grid, 2px stroke)
+- **Fonts**: Sora (headings), Geist Sans (body), Geist Mono (code)
+- **Validation**: Custom token validator, TypeScript compiler
+
+---
+
+## Amplifier Integration
+
+This repository includes **Amplifier** - a complementary system for AI-amplified development workflows. Amplifier provides:
+- Knowledge synthesis
+- Parallel exploration tools
+- Automation utilities
+- Development workflow optimization
+
+**[Learn about Amplifier →](./amplifier/AMPLIFIER_VISION.md)**
+
+---
 
 ## Contributing
 
-> [!NOTE]
-> This project is not currently accepting external contributions, but we're actively working toward opening this up. We value community input and look forward to collaborating in the future. For now, feel free to fork and experiment!
+We welcome contributions that maintain:
+- The 9.5/10 quality baseline
+- Accessibility standards (WCAG AA minimum)
+- Design system consistency
+- Purpose-first methodology
+- The Five Pillars principles
 
-Most contributions require you to agree to a
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
-the rights to use your contribution. For details, visit [Contributor License Agreements](https://cla.opensource.microsoft.com).
+**Before contributing:**
+1. Read [CLAUDE.md](./CLAUDE.md) for development guidelines
+2. Review [CONTRIBUTING.md](./CONTRIBUTING.md) for process
+3. Check [.design/COMPONENT-CREATION-PROTOCOL.md](./.design/COMPONENT-CREATION-PROTOCOL.md)
+4. Understand the [FRAMEWORK.md](./FRAMEWORK.md) methodology
 
-When you submit a pull request, a CLA bot will automatically determine whether you need to provide
-a CLA and decorate the PR appropriately (e.g., status check, comment). Simply follow the instructions
-provided by the bot. You will only need to do this once across all repos using our CLA.
+---
 
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
-contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+## Documentation
 
-## Trademarks
+### Core Philosophy
+- [VISION.md](./VISION.md) - Beyond the artifact: designing for experience
+- [PHILOSOPHY.md](./PHILOSOPHY.md) - The Five Pillars explained
+- [PRINCIPLES.md](./PRINCIPLES.md) - Quick reference for daily practice
 
-This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft
-trademarks or logos is subject to and must follow
-[Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/legal/intellectualproperty/trademarks/usage/general).
-Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship.
-Any use of third-party trademarks or logos are subject to those third-party's policies.
+### Methodology
+- [FRAMEWORK.md](./FRAMEWORK.md) - Complete 4-layer, 9-dimension framework
+
+### Development
+- [CLAUDE.md](./CLAUDE.md) - AI assistant guide and development protocols
+- [CONTRIBUTING.md](./CONTRIBUTING.md) - Contribution guidelines
+- [DISCOVERY.md](./DISCOVERY.md) - Current design discovery process
+- [PROGRESS.md](./PROGRESS.md) - Development timeline and milestones
+
+### Design Standards
+- [.design/AESTHETIC-GUIDE.md](./.design/AESTHETIC-GUIDE.md) - Visual language guide
+- [.design/COMPONENT-CREATION-PROTOCOL.md](./.design/COMPONENT-CREATION-PROTOCOL.md) - Component standards
+
+---
+
+## Built With Care
+
+Amplified Design is built on established research and best practices:
+- Human-centered design thinking (IDEO, Norman, Cooper)
+- Accessibility standards (WCAG 2.1 AA, ARIA)
+- Motion design research (Disney, Issara Willenskomer)
+- Design systems patterns (Atomic Design, Design Tokens)
+- Interaction design principles (Fitts's Law, Hick's Law)
+
+---
+
+## License
+
+MIT License - See [LICENSE](./LICENSE) for details
+
+---
+
+## Questions & Support
+
+- **Documentation**: Start with [FRAMEWORK.md](./FRAMEWORK.md) and [CLAUDE.md](./CLAUDE.md)
+- **Philosophy**: Read [VISION.md](./VISION.md) for the deeper "why"
+- **Development**: Check [DISCOVERY.md](./DISCOVERY.md) for current state
+- **Issues**: Open a GitHub issue for bugs or questions
+- **Contributing**: See [CONTRIBUTING.md](./CONTRIBUTING.md)
+
+---
+
+## The Goal
+
+**Quality at creation beats debugging later.**
+
+Every decision compounds:
+- Thousands of micro-decisions across nine dimensions
+- Each guided by the Five Pillars
+- All serving a clear purpose
+- Validated against technical standards
+- Tested with real humans
+
+**This is what creates 9.5/10 quality.**
+
+---
+
+**The artifact is the container. The experience is the product. The values are the legacy. The impact is what matters.**
+
+Design accordingly.

@@ -1,0 +1,187 @@
+/* Space Brand Design System */
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@200;300;400;500;600;700&family=Literata:ital,opsz,wght@0,7..72,300;0,7..72,400;0,7..72,500;0,7..72,600;0,7..72,700;1,7..72,400&display=swap');
+
+:root {
+  /* Brand Colors - Space Palette */
+  --color-space-blue: #6D95C4;
+  --color-space-black: #0F172A;
+  --color-space-white: #F8FAFC;
+  --color-light-space-blue: #A8C4E0;
+  --color-deep-space-blue: #4A6B8A;
+  --color-space-gray-dark: #1E293B;
+  --color-space-gray: #64748B;
+  --color-space-gray-light: #CBD5E1;
+
+  /* Semantic Color Tokens */
+  --color-primary: var(--color-space-blue);
+  --color-primary-light: var(--color-light-space-blue);
+  --color-primary-dark: var(--color-deep-space-blue);
+  --color-background: var(--color-space-white);
+  --color-surface: #FFFFFF;
+  --color-text: var(--color-space-black);
+  --color-text-secondary: var(--color-space-gray-dark);
+  --color-text-muted: var(--color-space-gray);
+  --color-border: var(--color-space-gray-light);
+
+  /* Gradients - Atomic Element Philosophy */
+  --gradient-primary: linear-gradient(135deg, var(--color-space-blue) 0%, var(--color-deep-space-blue) 100%);
+  --gradient-atomic: linear-gradient(45deg, transparent 0%, var(--color-space-blue) 100%);
+  --gradient-fade: linear-gradient(to right, transparent 0%, var(--color-space-blue) 100%);
+
+  /* Spacing - 8px system */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+  --space-32: 128px;
+
+  /* Typography - Space Brand Fonts */
+  --font-heading: 'Literata', Georgia, serif;
+  --font-body: 'Lexend', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: 'Cascadia Code', 'SF Mono', Monaco, monospace;
+
+  /* Motion */
+  --duration-instant: 100ms;
+  --duration-responsive: 300ms;
+  --duration-deliberate: 500ms;
+  --easing-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Borders */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Shadows - Depth system */
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 12px 0 rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 10px 24px 0 rgba(15, 23, 42, 0.1);
+  --shadow-xl: 0 20px 40px 0 rgba(15, 23, 42, 0.12);
+
+  /* Z-index layers */
+  --z-base: 1;
+  --z-nav: 100;
+  --z-modal: 1000;
+}
+
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-text);
+  background: var(--color-background);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography Scale */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-text);
+}
+
+h1 {
+  font-size: 3.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+h2 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+h3 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+h4 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+p {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+/* Layout Utilities */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+
+.section {
+  padding: var(--space-32) 0;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Responsive Typography */
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+  }
+
+  h2 {
+    font-size: 2rem;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+  }
+
+  .container {
+    padding: 0 var(--space-4);
+  }
+
+  .section {
+    padding: var(--space-16) 0;
+  }
+}

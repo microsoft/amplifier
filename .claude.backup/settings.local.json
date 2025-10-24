@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tree:*)",
+      "Bash(cat:*)",
+      "Bash(test:*)",
+      "Bash(for file in /Users/alexlopez/Sites/OCTO/amplified-design/{README,VISION,PHILOSOPHY,FRAMEWORK,PRINCIPLES,DISCOVERY,CONTRIBUTING}.md)",
+      "Bash(done)",
+      "Bash(find:*)",
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(ls:*)",
+      "Bash(npm install zustand)",
+      "Bash(npm run dev)",
+      "Bash(npm install)",
+      "Read(//private/tmp/**)",
+      "Bash(npx next dev:*)",
+      "Bash(pkill:*)",
+      "Bash(awk:*)",
+      "Bash(curl:*)",
+      "Bash(lsof:*)",
+      "Bash(npm install:*)",
+      "Bash(PORT=3001 npm run dev:*)",
+      "Bash(npm run build)",
+      "Bash(xargs kill:*)",
+      "Bash(PORT=3002 npm run dev:*)",
+      "Bash(npm run validate:tokens)",
+      "Bash(npx tsc:*)",
+      "Bash(git checkout:*)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(git restore:*)",
+      "Bash(git reset:*)",
+      "Bash(git cherry-pick:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(node -e:*)",
+      "Bash(kill:*)",
+      "Read(//Users/alexlopez/Sites/OCTO/amplified-spaces/**)",
+      "Bash(git log:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,0 +1,8 @@
+# Component Tests
+
+This directory will contain automated tests for the Hero Button component.
+
+Coming soon:
+- HeroButton.test.tsx - Unit tests
+- HeroButton.a11y.test.tsx - Accessibility tests
+- HeroButton.visual.test.tsx - Visual regression tests

@@ -1,0 +1,1255 @@
+@import "tailwindcss";
+
+/**
+ * Studio Design System - 9-Dimensional Implementation
+ * Aesthetic: German car facility - clean, precise, beautiful
+ * Quality: 9.5/10 through subtle refinement
+ */
+
+:root {
+  /* ============================================
+     DIMENSION 5: COLOR (Meaning + Function)
+     ============================================ */
+
+  /* Foundation Colors */
+  --color-ghost-white: #FAFAFF;
+  --color-anti-flash-white: #EEF0F2;
+  --color-alabaster: #ECEBE4;
+  --color-platinum: #DADDD8;
+  --color-eerie-black: #1C1C1C;
+
+  /* Semantic Mapping */
+  --background: var(--color-ghost-white);
+  --bg-primary: var(--color-ghost-white);
+  --bg-secondary: var(--color-anti-flash-white);
+  --bg-hover: var(--color-hover);
+  --surface: var(--color-anti-flash-white);
+  --surface-warm: var(--color-alabaster);
+  --surface-muted: var(--color-platinum);
+  --border: var(--color-platinum);
+  --border-default: var(--color-platinum);
+  --text: var(--color-eerie-black);
+  --text-primary: var(--color-eerie-black);
+  --text-muted: #6B6B6B; /* WCAG AA: 4.5:1 contrast */
+  --success-color: hsl(142, 70%, 45%);
+
+  /* Brand Colors */
+  --primary: hsl(217, 90%, 60%);
+  --accent: hsl(270, 60%, 65%);
+  --color-accent-subtle: rgba(138, 141, 208, 0.08); /* Accent at 8% opacity for user message bubbles */
+
+  /* Selection & Interactive States */
+  --color-selection: #4A90E2; /* Selection border and handles */
+  --color-selection-subtle: rgba(74, 144, 226, 0.2); /* Selection shadow */
+  --color-primary-subtle: rgba(138, 141, 208, 0.1); /* Drop zone and marquee backgrounds */
+  --color-primary-border: rgba(138, 141, 208, 0.3); /* Strategy card borders */
+  --color-primary-border-subtle: rgba(138, 141, 208, 0.2); /* Strategy card dividers */
+
+  /* AI & User Communication States */
+  --color-ai-thinking: hsl(217, 90%, 60%);
+  --color-ai-message: hsl(270, 60%, 65%);
+  --color-user-message: hsl(217, 90%, 60%);
+
+  /* Feedback States */
+  --color-success: hsl(142, 70%, 45%);
+  --color-success-bg: hsla(142, 70%, 45%, 0.1);
+  --color-attention: hsl(38, 90%, 50%);
+  --color-error: hsl(0, 70%, 50%);
+  --color-info: hsl(200, 55%, 45%);
+
+  /* Error states for deletion */
+  --error: var(--color-error);
+  --error-bg: hsla(0, 70%, 50%, 0.1);
+
+  /* Interactive States */
+  --color-hover: rgba(28, 28, 28, 0.04);
+  --color-active: rgba(28, 28, 28, 0.08);
+  --color-focus: rgba(28, 28, 28, 0.12);
+
+  /* Canvas */
+  --canvas-bg: var(--background);
+
+  /* Shadows - Subtle depth in light mode */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-elevated: 0 8px 16px rgba(0, 0, 0, 0.08), 0 0 1px rgba(138, 141, 208, 0.05);
+  --shadow-modal: 0 20px 40px rgba(0, 0, 0, 0.15), 0 0 2px rgba(138, 141, 208, 0.08);
+
+  /* ============================================
+     DIMENSION 4: SPACE (Layout + Hierarchy)
+     ============================================ */
+
+  /* 8px Base Unit Spacing System */
+  --space-1: 4px;
+  --space-1-5: 6px;
+  --space-2: 8px;
+  --space-2-5: 10px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+  --space-32: 128px;
+
+  /* Layout Dimensions */
+  --toolbar-height: 56px;
+  --sidebar-width: 384px;
+  --timeline-height: 120px;
+
+  /* ============================================
+     DIMENSION 6: TYPOGRAPHY (Hierarchy + Legibility)
+     ============================================ */
+
+  /* Type Scale (1.5× ratio) */
+  --font-size-xs: 0.75rem;    /* 12px - Captions, metadata */
+  --font-size-sm: 0.875rem;   /* 14px - Secondary text, labels */
+  --font-size-base: 1rem;     /* 16px - Body text */
+  --font-size-lg: 1.5rem;     /* 24px - H3, section headers */
+  --font-size-xl: 2.25rem;    /* 36px - H2, page titles */
+  --font-size-2xl: 3.375rem;  /* 54px - H1, hero headlines */
+
+  /* Line Heights */
+  --line-height-tight: 1.125;
+  --line-height-base: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* Font Weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Font Families (injected by Next.js - reference these) */
+  /* Note: These are set via className in layout.tsx and available as CSS variables */
+  /* --font-sora: defined by Next.js font loader */
+  /* --font-geist-sans: defined by Next.js font loader */
+  /* --font-geist-mono: defined by Next.js font loader */
+
+  /* Font Family Semantic Aliases */
+  --font-heading: var(--font-sora);
+  --font-body: var(--font-geist-sans);
+  --font-family-heading: var(--font-sora), system-ui, sans-serif;
+  --font-family-body: var(--font-geist-sans), system-ui, sans-serif;
+
+  /* ============================================
+     DIMENSION 2: MOTION (Timing + Communication)
+     ============================================ */
+
+  /* Animation Timing (Locked Values - Motion Protocol) */
+  --animation-instant: 100ms;          /* <100ms: Hover states, instant feedback */
+  --animation-responsive: 200ms;       /* 100-300ms: Button presses, state changes */
+  --animation-deliberate: 500ms;       /* 300-1000ms: Modals, loading transitions */
+
+  /* Animation Easing (Locked Curves - Feel) */
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);    /* Standard smooth transitions */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* Energetic, slightly bouncy */
+  --ease-gentle: ease-out;                         /* Gentle deceleration */
+
+  /* Animation State Colors (Customizable - Semantic) */
+  --animation-color-loading: var(--primary);
+  --animation-color-success: var(--color-success);
+  --animation-color-error: var(--color-error);
+  --animation-color-warning: var(--color-attention);
+}
+
+/* ============================================
+   DARK MODE - Swedish Design Studio Aesthetic
+   "Less German car facility, more Swedish design studio"
+   Warm, sophisticated, playful in darkness
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Foundation Colors - Dark Mode with Warmth */
+    --color-ghost-white: #14141A;        /* Deep warm black with subtle purple */
+    --color-anti-flash-white: #1C1C24;   /* Rich elevated surface */
+    --color-alabaster: #24242E;          /* Warm mid-tone surface */
+    --color-platinum: #32323E;           /* Soft borders, subtle separation */
+    --color-eerie-black: #F5F5FA;        /* Warm white text, not stark */
+
+    /* Brand Colors - Refined for Dark */
+    --primary: hsl(217, 85%, 68%);       /* Softer blue, easier on eyes */
+    --accent: hsl(270, 55%, 70%);        /* Muted purple, sophisticated */
+    --color-accent-subtle: rgba(138, 141, 208, 0.12); /* Accent at 12% opacity for dark mode user messages */
+
+    /* Interactive States - Dark Mode with Glow */
+    --color-hover: rgba(138, 141, 208, 0.08);    /* Subtle purple glow */
+    --color-active: rgba(138, 141, 208, 0.14);   /* Stronger purple glow */
+    --color-focus: rgba(138, 141, 208, 0.20);    /* Visible focus ring */
+
+    /* AI & Communication - Warmer in Dark */
+    --color-ai-thinking: hsl(217, 85%, 68%);
+    --color-ai-message: hsl(270, 55%, 70%);
+    --color-user-message: hsl(217, 85%, 68%);
+
+    /* Feedback States - Adjusted for Dark */
+    --color-success: hsl(142, 60%, 55%);    /* Softer green */
+    --color-attention: hsl(38, 85%, 60%);   /* Warmer orange */
+    --color-error: hsl(0, 65%, 60%);        /* Softer red */
+
+    /* Text Muted - Warm gray (WCAG AA: 4.5:1 on #14141A) */
+    --text-muted: #A8A8B5;
+
+    /* Shadows - Subtle depth in dark mode */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    --shadow-elevated: 0 8px 16px rgba(0, 0, 0, 0.4), 0 0 1px rgba(138, 141, 208, 0.1);
+    --shadow-modal: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 2px rgba(138, 141, 208, 0.15);
+
+    /* Modal Backdrop Overlay - Dark Mode */
+    --modal-backdrop-bg: rgba(0, 0, 0, 0.6);
+    --modal-backdrop-blur: blur(8px);
+  }
+}
+
+/* Manual Dark Mode Override (when user selects "dark" in settings) */
+[data-theme="dark"] {
+  /* Foundation Colors - Dark Mode with Warmth */
+  --color-ghost-white: #14141A;        /* Deep warm black with subtle purple */
+  --color-anti-flash-white: #1C1C24;   /* Rich elevated surface */
+  --color-alabaster: #24242E;          /* Warm mid-tone surface */
+  --color-platinum: #32323E;           /* Soft borders, subtle separation */
+  --color-eerie-black: #F5F5FA;        /* Warm white text, not stark */
+
+  /* Brand Colors - Refined for Dark */
+  --primary: hsl(217, 85%, 68%);       /* Softer blue, easier on eyes */
+  --accent: hsl(270, 55%, 70%);        /* Muted purple, sophisticated */
+  --color-accent-subtle: rgba(138, 141, 208, 0.12); /* Accent at 12% opacity for dark mode user messages */
+
+  /* Interactive States - Dark Mode with Glow */
+  --color-hover: rgba(138, 141, 208, 0.08);    /* Subtle purple glow */
+  --color-active: rgba(138, 141, 208, 0.14);   /* Stronger purple glow */
+  --color-focus: rgba(138, 141, 208, 0.20);    /* Visible focus ring */
+
+  /* AI & Communication - Warmer in Dark */
+  --color-ai-thinking: hsl(217, 85%, 68%);
+  --color-ai-message: hsl(270, 55%, 70%);
+  --color-user-message: hsl(217, 85%, 68%);
+
+  /* Feedback States - Adjusted for Dark */
+  --color-success: hsl(142, 60%, 55%);    /* Softer green */
+  --color-success-bg: hsla(142, 60%, 55%, 0.15);
+  --color-attention: hsl(38, 85%, 60%);   /* Warmer orange */
+  --color-error: hsl(0, 65%, 60%);        /* Softer red */
+
+  /* Text Muted - Warm gray (WCAG AA: 4.5:1 on #14141A) */
+  --text-muted: #A8A8B5;
+
+  /* Shadows - Subtle depth in dark mode */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  --shadow-elevated: 0 8px 16px rgba(0, 0, 0, 0.4), 0 0 1px rgba(138, 141, 208, 0.1);
+  --shadow-modal: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 2px rgba(138, 141, 208, 0.15);
+
+  /* Modal Backdrop Overlay - Dark Mode */
+  --modal-backdrop-bg: rgba(0, 0, 0, 0.6);
+  --modal-backdrop-blur: blur(8px);
+}
+
+/* Manual Light Mode Override (when user selects "light" in settings) */
+[data-theme="light"] {
+  /* Foundation Colors - Light Mode (explicit) */
+  --color-ghost-white: #FAFAFF;
+  --color-anti-flash-white: #EEF0F2;
+  --color-alabaster: #ECEBE4;
+  --color-platinum: #DADDD8;
+  --color-eerie-black: #1C1C1C;
+
+  /* Interactive States - Light Mode */
+  --color-hover: rgba(28, 28, 28, 0.04);
+  --color-active: rgba(28, 28, 28, 0.08);
+  --color-focus: rgba(28, 28, 28, 0.12);
+
+  /* Text Muted - Light Mode */
+  --text-muted: #6B6B6B;
+
+  /* ============================================
+     DIMENSION 7: PROPORTION (Scale + Balance)
+     ============================================ */
+
+  /* Interactive Element Sizes (44px minimum for touch) */
+  --size-button-sm: 36px;
+  --size-button-md: 44px;
+  --size-button-lg: 52px;
+  --size-input-sm: 36px;
+  --size-input-md: 44px;
+  --size-input-lg: 52px;
+  --size-icon-sm: 16px;
+  --size-icon-md: 20px;
+  --size-icon-lg: 24px;
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* ============================================
+     DIMENSION 8: TEXTURE (Materiality + Depth)
+     ============================================ */
+
+  /* Elevation System (4 levels) */
+
+  /* Level 0: Canvas (base) */
+  --shadow-none: none;
+
+  /* Level 1: Panels (float above canvas) */
+  --shadow-panel:
+    0 2px 8px rgba(28, 28, 28, 0.04),
+    0 1px 2px rgba(28, 28, 28, 0.06);
+
+  /* Level 2: Elevated (dropdowns, popovers) */
+  --shadow-elevated:
+    0 4px 16px rgba(28, 28, 28, 0.06),
+    0 2px 4px rgba(28, 28, 28, 0.08);
+
+  /* Level 3: Modal (highest) */
+  --shadow-modal:
+    0 20px 60px rgba(28, 28, 28, 0.12),
+    0 4px 12px rgba(28, 28, 28, 0.08);
+
+  /* Focus Ring */
+  --shadow-focus: 0 0 0 3px rgba(28, 28, 28, 0.12);
+
+  /* Glassmorphism Backdrop Filters */
+  --backdrop-panel: blur(12px) saturate(180%);
+  --backdrop-elevated: blur(20px) saturate(180%);
+  --backdrop-modal: blur(24px) saturate(180%);
+
+  /* Modal Backdrop Overlay */
+  --modal-backdrop-bg: rgba(0, 0, 0, 0.4);
+  --modal-backdrop-blur: blur(8px);
+
+  /* ============================================
+     DIMENSION 2: BEHAVIORS (Motion + Interaction)
+     ============================================ */
+
+  /* Timing: Speed Communicates Intent */
+  --duration-instant: 50ms;      /* Immediate feedback */
+  --duration-responsive: 250ms;  /* Premium feel */
+  --duration-deliberate: 500ms;  /* AI is thinking */
+  --duration-entrance: 400ms;    /* Panels appearing */
+
+  /* Easing Functions */
+  --ease-linear: linear;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);  /* Smooth, polished */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* Energetic, responsive */
+  --ease-decelerate: cubic-bezier(0.0, 0, 0.2, 1);  /* Fast start, slow end */
+}
+
+/* ============================================
+   TAILWIND V4 THEME CONFIGURATION
+   ============================================ */
+
+@theme inline {
+  /* Colors */
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-text: var(--text);
+
+  /* Fonts */
+  --font-family-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-family-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* Typography Scale */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.5rem;
+  --font-size-xl: 2.25rem;
+  --font-size-2xl: 3.375rem;
+
+  /* Spacing (8px system) */
+  --spacing-1: var(--space-1);
+  --spacing-2: var(--space-2);
+  --spacing-3: var(--space-3);
+  --spacing-4: var(--space-4);
+  --spacing-6: var(--space-6);
+  --spacing-8: var(--space-8);
+  --spacing-12: var(--space-12);
+  --spacing-16: var(--space-16);
+  --spacing-24: var(--space-24);
+  --spacing-32: var(--space-32);
+
+  /* Shadows */
+  --shadow-sm: var(--shadow-panel);
+  --shadow-md: var(--shadow-elevated);
+  --shadow-lg: var(--shadow-modal);
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Smooth theme transitions - Applied when data-theme changes */
+html[data-theme] {
+  transition: background-color 500ms cubic-bezier(0.4, 0, 0.2, 1),
+              color 500ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Apply transitions to all elements when theme changes */
+html[data-theme] * {
+  transition: background-color 500ms cubic-bezier(0.4, 0, 0.2, 1),
+              color 500ms cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 500ms cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 500ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--background);
+  color: var(--text);
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+/* ============================================
+   DIMENSION 6: TYPOGRAPHY STYLES
+   ============================================ */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sora), -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+h1 {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+h3 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+p {
+  margin: 0;
+  font-family: var(--font-geist-sans), sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+code, pre {
+  font-family: var(--font-family-mono);
+}
+
+/* Code display utility classes */
+.code-block {
+  font-family: var(--font-family-mono);
+}
+
+.code-text {
+  font-family: var(--font-family-mono);
+}
+
+/* Utility Classes */
+.font-heading {
+  font-family: var(--font-sora), sans-serif;
+}
+
+.font-body {
+  font-family: var(--font-geist-sans), sans-serif;
+}
+
+.font-code {
+  font-family: var(--font-geist-mono), monospace;
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+/* Typography Size Utilities */
+.text-xs { font-size: 12px; line-height: 1.4; }
+.text-sm { font-size: 14px; line-height: 1.5; }
+.text-base { font-size: 16px; line-height: 1.6; }
+.text-lg { font-size: 18px; line-height: 1.6; }
+.text-xl { font-size: 20px; line-height: 1.4; }
+.text-2xl { font-size: 24px; line-height: 1.3; }
+.text-3xl { font-size: 30px; line-height: 1.2; }
+
+/* ============================================
+   DIMENSION 1 & 8: STYLE + TEXTURE
+   Glassmorphism & Elevation System
+   ============================================ */
+
+/* Level 0: Canvas (pure background) */
+.studio-canvas {
+  background: var(--background);
+}
+
+/* Level 1: Panels (float above canvas) */
+.studio-panel {
+  background: var(--bg-secondary);
+  backdrop-filter: var(--backdrop-panel);
+  -webkit-backdrop-filter: var(--backdrop-panel);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-elevated);
+}
+
+/* Level 2: Elevated (dropdowns, popovers) */
+.studio-elevated {
+  background: var(--surface);
+  backdrop-filter: var(--backdrop-elevated);
+  -webkit-backdrop-filter: var(--backdrop-elevated);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-elevated);
+}
+
+/* Level 3: Modal (highest layer) */
+.studio-modal {
+  background: var(--bg-primary);
+  backdrop-filter: var(--backdrop-modal);
+  -webkit-backdrop-filter: var(--backdrop-modal);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-modal);
+}
+
+/* Toolbar - Frosted top bar */
+.studio-toolbar {
+  position: relative;
+  z-index: 100;
+  background: var(--bg-secondary);
+  backdrop-filter: var(--backdrop-panel);
+  -webkit-backdrop-filter: var(--backdrop-panel);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Sidebar - Translucent side panels */
+.studio-sidebar {
+  background: var(--bg-secondary);
+  backdrop-filter: var(--backdrop-panel);
+  -webkit-backdrop-filter: var(--backdrop-panel);
+  border-left: 1px solid var(--border);
+  transition: transform 350ms cubic-bezier(0.0, 0, 0.2, 1);
+}
+
+/* Panel Slide States */
+.panel-slide-enter {
+  transform: translateX(100%);
+}
+
+.panel-slide-enter-active {
+  transform: translateX(0);
+}
+
+.panel-slide-exit {
+  transform: translateX(0);
+}
+
+.panel-slide-exit-active {
+  transform: translateX(100%);
+}
+
+/* Bottom panel slide */
+.panel-slide-up-enter {
+  transform: translateY(100%);
+}
+
+.panel-slide-up-enter-active {
+  transform: translateY(0);
+}
+
+.panel-slide-up-exit {
+  transform: translateY(0);
+}
+
+.panel-slide-up-exit-active {
+  transform: translateY(100%);
+}
+
+/* ============================================
+   DIMENSION 2: BEHAVIORS
+   Interactive Components with Motion
+   ============================================ */
+
+/* Base Interactive Element */
+.interactive {
+  transition-property: all;
+  transition-duration: var(--duration-responsive);
+  transition-timing-function: var(--ease-standard);
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Button Base Styles */
+.studio-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  height: 36px;
+  padding: 0 16px;
+
+  font-family: var(--font-geist-sans), sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+
+  border: none;
+  border-radius: 6px;
+  outline: none;
+
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Button Variants */
+.studio-button-primary {
+  background: var(--text);
+  color: var(--background);
+  box-shadow: var(--shadow-panel);
+}
+
+.studio-button-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-elevated);
+}
+
+.studio-button-primary:active {
+  transform: translateY(0);
+  transition-duration: var(--duration-instant);
+}
+
+.studio-button-secondary {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.studio-button-secondary:hover {
+  background: var(--surface-warm);
+  border-color: var(--border);
+  opacity: 0.9;
+}
+
+.studio-button-secondary:active {
+  background: var(--border);
+  transition-duration: var(--duration-instant);
+}
+
+.studio-button-ghost {
+  background: transparent;
+  color: var(--text);
+}
+
+.studio-button-ghost:hover {
+  background: var(--color-hover);
+}
+
+.studio-button-ghost:active {
+  background: var(--color-active);
+  transition-duration: var(--duration-instant);
+}
+
+/* Button Sizes */
+.studio-button-sm {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.studio-button-lg {
+  height: 48px;
+  padding: 0 24px;
+  font-size: 16px;
+}
+
+/* Icon-only button */
+.studio-button-icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 150ms ease;
+  color: var(--text);
+}
+
+.studio-button-icon:hover {
+  background: var(--bg-hover);
+}
+
+.studio-button-icon:active {
+  background: var(--color-active);
+}
+
+/* Device Switcher - iOS Style Segmented Control */
+.device-switcher-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(218, 221, 216, 0.4);
+  border-radius: 8px;
+  box-shadow: var(--shadow-panel);
+}
+
+.device-switcher-indicator {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  height: calc(100% - 8px);
+  background: var(--text);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(28, 28, 28, 0.12);
+  transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1),
+              width 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.device-switcher-button {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+  user-select: none;
+  transition: color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+.device-switcher-button.active {
+  color: var(--background);
+}
+
+.device-switcher-button:not(.active) {
+  color: var(--text);
+}
+
+.device-switcher-button:not(.active):hover {
+  color: var(--text);
+  opacity: 0.7;
+}
+
+/* Input Styles */
+.studio-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+
+  font-family: var(--font-geist-sans), sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1;
+
+  background: var(--background);
+  color: var(--text);
+
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  outline: none;
+
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.studio-input:hover {
+  border-color: rgba(218, 221, 216, 0.8);
+}
+
+.studio-input:focus {
+  border-color: var(--text);
+  box-shadow: var(--shadow-focus);
+}
+
+.studio-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+/* Chat Input Textarea - Hide scrollbar while maintaining scrollability */
+.chat-input-textarea {
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.chat-input-textarea::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
+}
+
+/* ============================================
+   DIMENSION 2: REFINED ANIMATIONS
+   Choreographed, purposeful motion
+   ============================================ */
+
+/* Panel Entrance - Refined with scale */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(24px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-24px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Fade Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Scale In Animation (for modals) */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Menu/Dropdown Entrance - Refined choreography */
+@keyframes menuEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes menuExit {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+}
+
+/* Menu Item Stagger - Items appear sequentially */
+@keyframes menuItemEnter {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* AI Thinking Pulse */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Shimmer Loading Effect - GPU accelerated */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ============================================
+   ANIMATION UTILITY CLASSES
+   ============================================ */
+
+/* Panel Animations */
+.panel-enter-right {
+  animation: slideInRight 350ms cubic-bezier(0.0, 0, 0.2, 1);
+}
+
+.panel-enter-left {
+  animation: slideInLeft 350ms cubic-bezier(0.0, 0, 0.2, 1);
+}
+
+.panel-enter-up {
+  animation: slideInUp 300ms cubic-bezier(0.0, 0, 0.2, 1);
+}
+
+.panel-enter-down {
+  animation: slideInDown 300ms cubic-bezier(0.0, 0, 0.2, 1);
+}
+
+/* Fade Animations */
+.fade-in {
+  animation: fadeIn 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-out {
+  animation: fadeOut 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Menu Animations */
+.menu-enter {
+  animation: menuEnter 200ms cubic-bezier(0.0, 0, 0.2, 1);
+}
+
+.menu-exit {
+  animation: menuExit 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Menu Item Staggered Entrance */
+.menu-item-stagger {
+  animation: menuItemEnter 150ms cubic-bezier(0.0, 0, 0.2, 1);
+  animation-fill-mode: backwards;
+}
+
+.menu-item-stagger:nth-child(1) { animation-delay: 0ms; }
+.menu-item-stagger:nth-child(2) { animation-delay: 25ms; }
+.menu-item-stagger:nth-child(3) { animation-delay: 50ms; }
+.menu-item-stagger:nth-child(4) { animation-delay: 75ms; }
+.menu-item-stagger:nth-child(5) { animation-delay: 100ms; }
+.menu-item-stagger:nth-child(6) { animation-delay: 125ms; }
+.menu-item-stagger:nth-child(7) { animation-delay: 150ms; }
+.menu-item-stagger:nth-child(8) { animation-delay: 175ms; }
+
+/* Loading States */
+.ai-thinking {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.shimmer-loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(238, 240, 242, 0) 0%,
+    rgba(238, 240, 242, 0.6) 50%,
+    rgba(238, 240, 242, 0) 100%
+  );
+  animation: shimmer 1.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ============================================
+   MOTION UTILITY CLASSES
+   ============================================ */
+
+.transition-instant {
+  transition-duration: var(--duration-instant);
+  transition-timing-function: var(--ease-linear);
+}
+
+.transition-responsive {
+  transition-duration: var(--duration-responsive);
+  transition-timing-function: var(--ease-standard);
+}
+
+.transition-deliberate {
+  transition-duration: var(--duration-deliberate);
+  transition-timing-function: var(--ease-spring);
+}
+
+/* ============================================
+   DIMENSION 9: BODY (Accessibility)
+   ============================================ */
+
+/* Focus Visible (keyboard navigation) */
+*:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+/* Remove default focus for mouse users */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================
+   CANVAS ARTIFACT ANIMATIONS
+   ============================================ */
+
+/* Artifact Spawn - Scale + Fade */
+@keyframes artifactSpawn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(20px);
+  }
+  60% {
+    transform: scale(1.02) translateY(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.artifact-spawn {
+  animation: artifactSpawn 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Skeleton Loading */
+@keyframes skeletonPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Marquee selection animation */
+@keyframes marquee-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Delete functionality animations */
+@keyframes toolbar-appear {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes modal-overlay-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-appear {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes artifact-delete {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes artifactEntrance {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.artifact-entering {
+  animation: artifactEntrance 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation-fill-mode: both;
+}
+
+/* Legacy support - redirect fade-in to artifact-entering */
+.fade-in {
+  animation: artifactEntrance 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation-fill-mode: both;
+}
+
+.skeleton-text {
+  background: rgba(218, 221, 216, 0.3);
+  border-radius: 4px;
+  display: inline-block;
+  animation: skeletonPulse 2s ease-in-out infinite;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Spacing Utilities */
+.p-4 { padding: var(--space-4); }
+.p-6 { padding: var(--space-6); }
+.p-8 { padding: var(--space-8); }
+
+.px-4 { padding-left: var(--space-4); padding-right: var(--space-4); }
+.px-6 { padding-left: var(--space-6); padding-right: var(--space-6); }
+.px-8 { padding-left: var(--space-8); padding-right: var(--space-8); }
+
+.py-3 { padding-top: var(--space-3); padding-bottom: var(--space-3); }
+.py-4 { padding-top: var(--space-4); padding-bottom: var(--space-4); }
+.py-6 { padding-top: var(--space-6); padding-bottom: var(--space-6); }
+
+.gap-2 { gap: var(--space-2); }
+.gap-3 { gap: var(--space-3); }
+.gap-4 { gap: var(--space-4); }
+.gap-6 { gap: var(--space-6); }
+
+/* Border Utilities */
+.rounded-sm { border-radius: var(--radius-sm); }
+.rounded-md { border-radius: var(--radius-md); }
+.rounded-lg { border-radius: var(--radius-lg); }
+.rounded-xl { border-radius: var(--radius-xl); }
+
+/* Shadow Utilities */
+.shadow-panel { box-shadow: var(--shadow-panel); }
+.shadow-elevated { box-shadow: var(--shadow-elevated); }
+.shadow-modal { box-shadow: var(--shadow-modal); }
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .artifact-entering,
+  .fade-in {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}

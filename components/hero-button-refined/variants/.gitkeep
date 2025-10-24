@@ -1,0 +1,11 @@
+# Variant Demonstrations
+
+This directory will contain individual variant demo files showing each button variant in isolation.
+
+Coming soon:
+- magnetic-demo.tsx
+- ripple-demo.tsx
+- ghost-slide-demo.tsx
+- neon-pulse-demo.tsx
+- liquid-morph-demo.tsx
+- particle-burst-demo.tsx

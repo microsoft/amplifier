@@ -1,0 +1,466 @@
+{
+  "$schema": "./guardrails-schema.json",
+  "component": "hero-button",
+  "version": "1.0.0",
+  "quality_baseline": 9.5,
+  "last_updated": "2025-10-13",
+
+  "locked_properties": {
+    "description": "These properties cannot be modified by users or AI agents. They are locked to preserve the 9.5/10 quality level.",
+
+    "timing_functions": {
+      "locked": true,
+      "reason": "Carefully tuned for natural, premium feel",
+      "values": {
+        "bounce_spring": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "material_ease_out": "cubic-bezier(0.4, 0.0, 0.2, 1)",
+        "elastic_bounce": "cubic-bezier(0.68, -0.55, 0.265, 1.55)"
+      }
+    },
+
+    "animation_durations": {
+      "locked": true,
+      "reason": "Optimized for perceived responsiveness and quality",
+      "values": {
+        "hover_transition": "300ms",
+        "click_feedback": "200ms",
+        "ripple_effect": "600ms",
+        "ghost_slide": "400ms",
+        "particle_burst": "800ms",
+        "neon_pulse_cycle": "2000ms"
+      },
+      "tolerance": 0,
+      "unit": "milliseconds"
+    },
+
+    "transform_physics": {
+      "locked": true,
+      "reason": "Physics-based values create natural, refined motion",
+      "values": {
+        "magnetic_pull_max": "8px",
+        "hover_scale_max": 1.05,
+        "active_scale_min": 0.95,
+        "active_scale_max": 0.98,
+        "icon_shift_distance": "4px"
+      }
+    },
+
+    "shadow_blur_radii": {
+      "locked": true,
+      "reason": "Balanced depth without excessive blur",
+      "values": {
+        "default_blur_min": "4px",
+        "default_blur_max": "6px",
+        "hover_blur_min": "10px",
+        "hover_blur_max": "15px",
+        "neon_glow_blur_min": "20px",
+        "neon_glow_blur_max": "40px"
+      }
+    },
+
+    "micro_interactions": {
+      "locked": true,
+      "reason": "Subtle details that elevate perceived quality",
+      "values": {
+        "ripple_max_scale": 2,
+        "ripple_opacity_start": 0.6,
+        "ripple_opacity_end": 0,
+        "particle_count": 12,
+        "particle_size": "6px",
+        "particle_spread_distance": "40px",
+        "ghost_slide_direction": "left-to-right",
+        "neon_pulse_opacity_min": 0.6,
+        "neon_pulse_opacity_max": 1,
+        "neon_pulse_scale_min": 1,
+        "neon_pulse_scale_max": 1.05,
+        "liquid_morph_max_scale": 1.2
+      }
+    }
+  },
+
+  "customizable_properties": {
+    "description": "These properties can be customized within defined guardrails",
+
+    "colors": {
+      "customizable": true,
+      "guardrails": {
+        "contrast_ratio": {
+          "normal_text": {
+            "min": 4.5,
+            "recommended": 7.0,
+            "standard": "WCAG AA",
+            "ideal_standard": "WCAG AAA"
+          },
+          "large_text": {
+            "min": 3.0,
+            "recommended": 4.5
+          }
+        },
+        "color_spaces": ["hex", "rgb", "hsl", "linear-gradient", "radial-gradient"],
+        "validation_required": true,
+        "quality_guardian_approval": true
+      },
+      "examples": {
+        "valid": [
+          {
+            "name": "Corporate Blue",
+            "value": "linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)",
+            "contrast_ratio": 6.2,
+            "text_color": "#FFFFFF"
+          },
+          {
+            "name": "Vibrant Red",
+            "value": "linear-gradient(135deg, #DC2626 0%, #991B1B 100%)",
+            "contrast_ratio": 5.8,
+            "text_color": "#FFFFFF"
+          }
+        ],
+        "invalid": [
+          {
+            "name": "Light Yellow + White",
+            "value": "#FBBF24",
+            "contrast_ratio": 1.8,
+            "text_color": "#FFFFFF",
+            "reason": "Contrast ratio below 4.5:1 minimum"
+          }
+        ]
+      }
+    },
+
+    "sizes": {
+      "customizable": true,
+      "guardrails": {
+        "predefined_only": true,
+        "allowed_values": ["sm", "md", "lg", "xl"],
+        "custom_sizes_allowed": false,
+        "reason": "Maintains consistent scale ratios and touch targets"
+      },
+      "specifications": {
+        "sm": {
+          "font_size": "0.875rem",
+          "padding": "0.5rem 1rem",
+          "border_radius": "8px",
+          "min_height": "36px",
+          "use_case": "Inline actions, tertiary buttons"
+        },
+        "md": {
+          "font_size": "1rem",
+          "padding": "0.75rem 1.5rem",
+          "border_radius": "12px",
+          "min_height": "44px",
+          "use_case": "Standard buttons, forms",
+          "note": "Meets iOS 44px touch target minimum"
+        },
+        "lg": {
+          "font_size": "1.125rem",
+          "padding": "1rem 2rem",
+          "border_radius": "16px",
+          "min_height": "52px",
+          "use_case": "Primary CTAs, hero sections"
+        },
+        "xl": {
+          "font_size": "1.25rem",
+          "padding": "1.25rem 2.5rem",
+          "border_radius": "20px",
+          "min_height": "60px",
+          "use_case": "Above-fold hero CTAs"
+        }
+      }
+    },
+
+    "border_radius": {
+      "customizable": true,
+      "guardrails": {
+        "min": "0px",
+        "max": "24px",
+        "recommended_range": "8px - 20px",
+        "must_scale_with_size": true,
+        "maintain_consistency": true
+      }
+    }
+  },
+
+  "fully_flexible_properties": {
+    "description": "No restrictions on these properties",
+    "properties": [
+      "content",
+      "width",
+      "context",
+      "icon",
+      "icon_position",
+      "full_width",
+      "disabled_state",
+      "on_click_handler",
+      "aria_label",
+      "data_attributes"
+    ]
+  },
+
+  "accessibility_requirements": {
+    "keyboard_navigation": {
+      "required": true,
+      "specifications": {
+        "focusable": true,
+        "tab_navigable": true,
+        "enter_activatable": true,
+        "space_activatable": true,
+        "focus_indicator": {
+          "visible": true,
+          "min_width": "2px",
+          "contrast_ratio": 3.0,
+          "offset": "4px"
+        },
+        "no_keyboard_traps": true
+      }
+    },
+
+    "screen_reader_support": {
+      "required": true,
+      "specifications": {
+        "semantic_html": "<button>",
+        "accessible_name_required": true,
+        "role_communicated": true,
+        "state_communicated": true,
+        "decorative_elements_hidden": true
+      }
+    },
+
+    "touch_targets": {
+      "required": true,
+      "specifications": {
+        "ios_minimum": "44px",
+        "android_minimum": "48px",
+        "recommended": "48px",
+        "ideal": "56px",
+        "spacing_between_targets": "8px"
+      }
+    },
+
+    "motion_preferences": {
+      "required": true,
+      "specifications": {
+        "prefers_reduced_motion_supported": true,
+        "fallback_duration": "0.01ms",
+        "functionality_maintained": true,
+        "no_flashing_content": true
+      }
+    }
+  },
+
+  "performance_requirements": {
+    "frame_rate": {
+      "target": 60,
+      "minimum": 60,
+      "unit": "fps",
+      "measurement_duration": "animation_complete"
+    },
+
+    "gpu_acceleration": {
+      "required": true,
+      "allowed_properties": ["transform", "opacity"],
+      "forbidden_properties": ["width", "height", "top", "left", "margin", "padding"]
+    },
+
+    "bundle_size": {
+      "max_component_size": "2KB",
+      "max_styles_size": "3KB",
+      "unit": "gzipped"
+    },
+
+    "paint_metrics": {
+      "first_paint": {
+        "target": "50ms",
+        "max": "100ms"
+      },
+      "interaction_ready": {
+        "target": "100ms",
+        "max": "200ms"
+      }
+    }
+  },
+
+  "validation_rules": {
+    "pre_deployment": [
+      {
+        "rule": "contrast_validation",
+        "severity": "critical",
+        "auto_reject": true,
+        "description": "All text must meet WCAG AA contrast requirements"
+      },
+      {
+        "rule": "locked_properties_unchanged",
+        "severity": "critical",
+        "auto_reject": true,
+        "description": "No locked properties may be modified"
+      },
+      {
+        "rule": "touch_target_minimum",
+        "severity": "high",
+        "auto_reject": true,
+        "description": "All interactive elements must meet 44px minimum"
+      },
+      {
+        "rule": "semantic_html",
+        "severity": "critical",
+        "auto_reject": true,
+        "description": "Must use semantic <button> element"
+      },
+      {
+        "rule": "focus_indicator_visible",
+        "severity": "critical",
+        "auto_reject": true,
+        "description": "Focus indicator must be visible and meet contrast requirements"
+      },
+      {
+        "rule": "performance_60fps",
+        "severity": "critical",
+        "auto_reject": true,
+        "description": "Must maintain 60fps during animations"
+      },
+      {
+        "rule": "reduced_motion_support",
+        "severity": "medium",
+        "auto_reject": false,
+        "description": "Must respect prefers-reduced-motion preference"
+      },
+      {
+        "rule": "visual_consistency",
+        "severity": "low",
+        "auto_reject": false,
+        "description": "Border radius, shadows should be consistent across states"
+      }
+    ]
+  },
+
+  "agent_permissions": {
+    "customization_guide": {
+      "can_recommend": ["colors", "sizes", "variants", "icons"],
+      "can_modify": ["colors", "content", "width"],
+      "cannot_modify": ["timing_functions", "animation_durations", "transform_physics", "shadow_blur_radii"],
+      "must_validate_with": "quality_guardian"
+    },
+
+    "quality_guardian": {
+      "can_validate": "all",
+      "can_approve": true,
+      "can_reject": true,
+      "can_suggest_alternatives": true,
+      "final_authority": true
+    },
+
+    "orchestrator": {
+      "can_route_requests": true,
+      "can_synthesize_responses": true,
+      "can_override": false,
+      "must_respect": "quality_guardian_decisions"
+    }
+  },
+
+  "browser_support": {
+    "minimum_versions": {
+      "chrome": 90,
+      "firefox": 88,
+      "safari": 14,
+      "edge": 90,
+      "ios_safari": 14,
+      "chrome_android": 90
+    },
+    "graceful_degradation": {
+      "older_browsers": "Buttons work, effects simplified",
+      "no_javascript": "Static buttons remain functional",
+      "css_disabled": "Semantic HTML button visible"
+    }
+  },
+
+  "testing_requirements": {
+    "automated_tests": [
+      "renders_with_text",
+      "calls_onclick_when_clicked",
+      "does_not_call_onclick_when_disabled",
+      "keyboard_navigation_works",
+      "focus_indicator_visible",
+      "correct_aria_attributes",
+      "contrast_ratio_meets_wcag",
+      "touch_target_size_adequate"
+    ],
+
+    "manual_tests": [
+      "hover_states_trigger_smoothly",
+      "click_feedback_responsive",
+      "animations_feel_natural",
+      "works_on_mobile_devices",
+      "screen_reader_announces_correctly",
+      "reduced_motion_respected",
+      "zoom_to_200_percent_works"
+    ],
+
+    "user_testing": [
+      "keyboard_only_users",
+      "screen_reader_users",
+      "low_vision_users",
+      "mobile_touch_users",
+      "colorblind_users"
+    ]
+  },
+
+  "quality_metrics": {
+    "target_score": 9.5,
+    "minimum_acceptable": 8.0,
+    "metrics": {
+      "contrast_ratio": {
+        "weight": 0.2,
+        "target": "≥7:1",
+        "minimum": "≥4.5:1"
+      },
+      "frame_rate": {
+        "weight": 0.2,
+        "target": "60fps",
+        "minimum": "60fps"
+      },
+      "accessibility": {
+        "weight": 0.25,
+        "target": "100%",
+        "minimum": "100%"
+      },
+      "locked_properties_preserved": {
+        "weight": 0.2,
+        "target": "100%",
+        "minimum": "100%"
+      },
+      "visual_polish": {
+        "weight": 0.15,
+        "target": "Subjective: Excellent",
+        "minimum": "Subjective: Good"
+      }
+    }
+  },
+
+  "migration_guide": {
+    "from_generic_button": {
+      "before": "<button className=\"btn btn-primary\">Click Me</button>",
+      "after": "<HeroButton variant=\"magnetic\">Click Me</HeroButton>",
+      "benefits": [
+        "Quality: 9.5/10 vs generic 5/10",
+        "Micro-interactions vs static",
+        "Locked timing ensures consistency",
+        "Built-in accessibility",
+        "Optimized performance"
+      ]
+    }
+  },
+
+  "documentation_links": {
+    "component_readme": "./components/hero-button-refined/README.md",
+    "knowledge_base": {
+      "color_theory": "./knowledge-base/color-theory.md",
+      "animation_principles": "./knowledge-base/animation-principles.md",
+      "accessibility": "./knowledge-base/accessibility.md",
+      "typography": "./knowledge-base/typography.md"
+    },
+    "agents": {
+      "customization_guide": "./agents/customization-guide.md",
+      "quality_guardian": "./agents/quality-guardian.md",
+      "orchestrator": "./agents/orchestrator.md"
+    }
+  }
+}

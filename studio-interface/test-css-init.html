@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test CSS Initialization</title>
+  <style>
+    :root {
+      --background: #FAFAFF;
+      --surface: #EEF0F2;
+      --text: #1C1C1C;
+      --text-muted: #6B6B6B;
+      --border: #DADDD8;
+      --primary: hsl(217, 90%, 60%);
+      --accent: hsl(270, 60%, 65%);
+      --color-success: hsl(142, 70%, 45%);
+      --color-attention: hsl(38, 90%, 50%);
+      --color-error: hsl(0, 70%, 50%);
+      --color-info: hsl(200, 55%, 45%);
+    }
+  </style>
+</head>
+<body>
+  <h1>CSS Variable Test</h1>
+  <div id="results"></div>
+
+  <script type="module">
+    // Import the color parser utilities
+    import { parseCSSColor, resolveCSSVariable } from './utils/colorParser.js';
+
+    // Test parsing different color formats
+    const tests = [
+      { name: 'Hex (white)', input: '#FAFAFF', expected: 'HSL with high lightness' },
+      { name: 'Hex (black)', input: '#1C1C1C', expected: 'HSL with low lightness' },
+      { name: 'HSL', input: 'hsl(217, 90%, 60%)', expected: 'h:217, s:0.9, l:0.6' },
+      { name: 'RGB', input: 'rgb(250, 250, 255)', expected: 'HSL conversion' },
+    ];
+
+    const results = document.getElementById('results');
+
+    // Test CSS variable resolution
+    const bgColor = resolveCSSVariable('--background');
+    const primaryColor = resolveCSSVariable('--primary');
+
+    results.innerHTML = `
+      <h2>CSS Variable Values:</h2>
+      <p>--background: ${bgColor}</p>
+      <p>--primary: ${primaryColor}</p>
+
+      <h2>Color Parsing Tests:</h2>
+      <ul>
+        ${tests.map(test => {
+          const result = parseCSSColor(test.input);
+          return `<li>${test.name}: ${JSON.stringify(result)}</li>`;
+        }).join('')}
+      </ul>
+    `;
+
+    // Log results for debugging
+    console.log('Background CSS value:', bgColor);
+    console.log('Primary CSS value:', primaryColor);
+
+    // Test parsing
+    console.log('Parse white hex:', parseCSSColor('#FAFAFF'));
+    console.log('Parse black hex:', parseCSSColor('#1C1C1C'));
+    console.log('Parse HSL:', parseCSSColor('hsl(217, 90%, 60%)'));
+  </script>
+</body>
+</html>

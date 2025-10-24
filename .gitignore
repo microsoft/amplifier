@@ -1,3 +1,17 @@
+# System-generated analysis and working documents
+.system/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
 # Private settings
 **/certs/*.pem
 **/certs/config.json

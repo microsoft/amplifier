@@ -1,0 +1,104 @@
+# Claude Code Instructions for Amplified Design
+
+## Critical: Design Protocol Enforcement
+
+**BEFORE creating or modifying ANY component, you MUST internally validate against:**
+`.design/COMPONENT-CREATION-PROTOCOL.md`
+
+### Non-Negotiable Requirements:
+
+1. **CSS Variables**: All variables MUST be defined in `studio-interface/app/globals.css` BEFORE use
+   - Run `npm run validate:tokens` after any changes
+   - Zero undefined variables allowed in production
+
+2. **Design System Compliance**:
+   - Spacing: 8px system only (4, 8, 12, 16, 24, 32, 48, 64, 96, 128)
+   - Fonts: Sora (headings), Geist Sans (body), Geist Mono (code), Source Code Pro (code)
+   - No emojis as UI elements
+   - No Unicode characters as icons (use Icon component)
+
+3. **Accessibility**:
+   - Touch targets: 44x44px minimum (Apple) or 48x48dp (Android)
+   - Contrast: 4.5:1 for text, 3:1 for UI components
+   - Keyboard navigation required
+   - Screen reader compatible
+
+4. **Motion Timing**:
+   - <100ms: Instant feedback (hover states)
+   - 100-300ms: Responsive (button presses)
+   - 300-1000ms: Deliberate (modals, transitions)
+   - >1000ms: Progress indication required
+
+5. **State Coverage**:
+   - Loading state
+   - Error state
+   - Empty state
+   - Success state
+
+### Validation Workflow:
+
+```
+1. Purpose Check → Can articulate WHY in one sentence?
+2. Token Audit → All CSS variables defined?
+3. Nine Dimensions → Style, Motion, Voice, Space, Color, Typography, Proportion, Texture, Body
+4. Five Pillars → Purpose, Craft, Constraints, Incompleteness, Humans
+5. Write Code
+6. Validate → npm run validate:tokens && npx tsc --noEmit
+7. Ship
+```
+
+### When to Surface Issues to User:
+
+- **Conflict**: Requirements conflict with design principles
+- **Ambiguity**: User input needed to resolve
+- **Options**: Multiple valid approaches, need preference
+
+### When NOT to Surface:
+
+- Internal validation checks (just follow protocol)
+- Routine token definitions (just add to globals.css)
+- Standard accessibility requirements (just implement)
+
+## Project Structure
+
+- `studio-interface/` - Next.js app for Studio interface
+- `.design/` - Design documentation and checklists
+- `FRAMEWORK.md` - Design sensibility framework (9 dimensions)
+- `PRINCIPLES.md` - Five pillars and daily practice guide
+- `PHILOSOPHY.md` - Deeper theory and rationale
+
+## Key Files
+
+- `studio-interface/app/globals.css` - All CSS variables MUST be defined here
+- `studio-interface/state/store.ts` - Zustand global state
+- `studio-interface/components/icons/Icon.tsx` - Icon system (24x24 grid, 2px stroke)
+
+## Command Shortcuts
+
+```bash
+# Validate design tokens
+npm run validate:tokens
+
+# TypeScript check
+npx tsc --noEmit
+
+# Build
+npm run build
+
+# Dev server
+npm run dev
+```
+
+## Aesthetic: German Car Facility
+
+- Clean, precise, geometric
+- Restrained, purposeful
+- Quality through subtle refinement
+- 9.5/10 polish level
+- No decoration for decoration's sake
+
+## Remember
+
+**Quality at creation beats debugging later.**
+
+Follow the protocol, run the validators, ship with confidence.

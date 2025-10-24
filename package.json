@@ -1,0 +1,53 @@
+{
+  "name": "@amped/design-system-capability",
+  "version": "1.0.0",
+  "description": "Portable design intelligence: curated 9.5/10 components with AI-guided customization guardrails",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "workspaces": [
+    "packages/*",
+    "studio-interface"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/design-system-capability"
+  },
+  "keywords": [
+    "design-system",
+    "components",
+    "react",
+    "typescript",
+    "ai-guided",
+    "accessibility",
+    "quality-first"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "install-to-project": "node scripts/install.js",
+    "validate-component": "node scripts/validate.js",
+    "test": "echo \"Tests not yet implemented\"",
+    "build": "echo \"Build not yet implemented\""
+  },
+  "files": [
+    "components/",
+    "knowledge-base/",
+    "agents/",
+    "quality-guardrails/",
+    "index.js",
+    "index.d.ts",
+    "README.md"
+  ],
+  "dependencies": {
+    "zustand": "^5.0.8"
+  }
+}

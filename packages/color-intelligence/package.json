@@ -1,0 +1,55 @@
+{
+  "name": "@amplified/color-intelligence",
+  "version": "1.0.0",
+  "description": "Color theory intelligence for analyzing and validating color changes",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint . --ext .ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "color",
+    "color-theory",
+    "accessibility",
+    "wcag",
+    "design-system",
+    "color-analysis"
+  ],
+  "author": "Amplified Design",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts"
+    },
+    "./constants": {
+      "import": "./dist/constants.js",
+      "types": "./dist/constants.d.ts"
+    },
+    "./utils": {
+      "import": "./dist/utils.js",
+      "types": "./dist/utils.d.ts"
+    },
+    "./analyzer": {
+      "import": "./dist/analyzer.js",
+      "types": "./dist/analyzer.d.ts"
+    }
+  }
+}

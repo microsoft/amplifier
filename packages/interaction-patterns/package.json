@@ -1,0 +1,40 @@
+{
+  "name": "@amplified/interactions",
+  "version": "1.0.0",
+  "description": "Common interaction patterns for Amplified Design - drag & drop, gestures, focus management",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./drag-drop": {
+      "import": "./dist/drag-drop/index.js",
+      "types": "./dist/drag-drop/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "typescript": "^5"
+  },
+  "keywords": [
+    "amplified-design",
+    "interaction-patterns",
+    "drag-and-drop",
+    "react-hooks",
+    "accessibility"
+  ],
+  "license": "MIT"
+}
