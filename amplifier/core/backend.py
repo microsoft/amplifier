@@ -429,7 +429,7 @@ class CodexBackend(AmplifierBackend):
             # Export transcript
             transcript_path = None
             try:
-                from .codex.tools.transcript_exporter import CodexTranscriptExporter
+                from ...codex.tools.transcript_exporter import CodexTranscriptExporter
                 exporter = CodexTranscriptExporter()
                 transcript_path = exporter.export_codex_transcript("session_id", Path(".codex/transcripts"))
             except Exception:
@@ -462,7 +462,7 @@ class CodexBackend(AmplifierBackend):
 
     def export_transcript(self, session_id: Optional[str] = None, format: str = "standard", output_dir: Optional[str] = None) -> Dict[str, Any]:
         try:
-            from .codex.tools.transcript_exporter import CodexTranscriptExporter
+            from ...codex.tools.transcript_exporter import CodexTranscriptExporter
             exporter = CodexTranscriptExporter()
             output_dir = Path(output_dir) if output_dir else Path(".codex/transcripts")
             result = exporter.export_codex_transcript(session_id or "unknown", output_dir, format)
@@ -478,22 +478,22 @@ class CodexBackend(AmplifierBackend):
     def manage_tasks(self, action: str, **kwargs) -> Dict[str, Any]:
         try:
             if action == "create":
-                from .codex.mcp_servers.task_tracker.server import create_task
+                from ...codex.mcp_servers.task_tracker.server import create_task
                 result = create_task(**kwargs)
             elif action == "list":
-                from .codex.mcp_servers.task_tracker.server import list_tasks
+                from ...codex.mcp_servers.task_tracker.server import list_tasks
                 result = list_tasks(**kwargs)
             elif action == "update":
-                from .codex.mcp_servers.task_tracker.server import update_task
+                from ...codex.mcp_servers.task_tracker.server import update_task
                 result = update_task(**kwargs)
             elif action == "complete":
-                from .codex.mcp_servers.task_tracker.server import complete_task
+                from ...codex.mcp_servers.task_tracker.server import complete_task
                 result = complete_task(**kwargs)
             elif action == "delete":
-                from .codex.mcp_servers.task_tracker.server import delete_task
+                from ...codex.mcp_servers.task_tracker.server import delete_task
                 result = delete_task(**kwargs)
             elif action == "export":
-                from .codex.mcp_servers.task_tracker.server import export_tasks
+                from ...codex.mcp_servers.task_tracker.server import export_tasks
                 result = export_tasks(**kwargs)
             else:
                 return {"success": False, "data": {}, "metadata": {"error": f"Unknown action: {action}"}}
@@ -506,7 +506,7 @@ class CodexBackend(AmplifierBackend):
 
     def search_web(self, query: str, num_results: int = 5) -> Dict[str, Any]:
         try:
-            from .codex.mcp_servers.web_research.server import search_web
+            from ...codex.mcp_servers.web_research.server import search_web
             result = search_web(query, num_results)
             return {"success": True, "data": result, "metadata": {"query": query, "num_results": num_results}}
         except ImportError:
@@ -517,7 +517,7 @@ class CodexBackend(AmplifierBackend):
 
     def fetch_url(self, url: str) -> Dict[str, Any]:
         try:
-            from .codex.mcp_servers.web_research.server import fetch_url
+            from ...codex.mcp_servers.web_research.server import fetch_url
             result = fetch_url(url)
             return {"success": True, "data": result, "metadata": {"url": url}}
         except ImportError:

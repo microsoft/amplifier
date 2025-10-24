@@ -1,46 +1,35 @@
 #!/usr/bin/env python3
 """
-Agent Context Bridge - Utility for serializing conversation context and integrating agent results.
+Agent Context Bridge - Utilities for serializing conversation context and integrating agent results.
 
-This module provides functions to:
-1. Serialize conversation context for agent handoff
-2. Inject context into agent invocations
-3. Extract and format agent results for display
-4. Utilities for context management (token counting, compression)
+This module provides functionality to:
+- Serialize conversation context for agent handoff
+- Inject context into agent invocations
+- Extract and format agent results
+- Manage context files and cleanup
 """
 
 import json
-import os
-import sys
-import gzip
 import hashlib
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
-import argparse
-
-# Add amplifier to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
-try:
-    import tiktoken
-    TIKTOKEN_AVAILABLE = True
-except ImportError:
-    TIKTOKEN_AVAILABLE = False
 
 
-class AgentContextLogger:
-    """Simple logger for agent context bridge operations"""
+class ContextBridgeLogger:
+    """Logger for agent context bridge operations"""
 
     def __init__(self):
+        self.script_name = "agent_context_bridge"
         self.log_dir = Path(__file__).parent / "logs"
         self.log_dir.mkdir(exist_ok=True)
         today = datetime.now().strftime("%Y%m%d")
-        self.log_file = self.log_dir / f"agent_context_bridge_{today}.log"
+        self.log_file = self.log_dir / f"{self.script_name}_{today}.log"
 
     def _write(self, level: str, message: str):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-        formatted = f"[{timestamp}] [agent_context_bridge] [{level}] {message}"
+        formatted = f"[{timestamp}] [{self.script_name}] [{level}] {message}"
         print(formatted, file=sys.stderr)
         try:
             with open(self.log_file, "a") as f:
@@ -70,358 +59,280 @@ class AgentContextLogger:
             self.error(f"Traceback:\n{traceback.format_exc()}")
 
 
-logger = AgentContextLogger()
+logger = ContextBridgeLogger()
 
 
-def count_tokens(text: str, model: str = "gpt-4") -> int:
+def estimate_tokens(text: str) -> int:
     """
-    Count tokens in text using tiktoken if available, otherwise approximate.
-    
-    Args:
-        text: Text to count tokens for
-        model: Model name for tiktoken encoding
-        
-    Returns:
-        Approximate token count
+    Estimate token count for text. Uses simple approximation since tiktoken may not be available.
+    Rough estimate: ~4 characters per token for English text.
     """
-    if TIKTOKEN_AVAILABLE:
-        try:
-            encoding = tiktoken.encoding_for_model(model)
-            return len(encoding.encode(text))
-        except Exception as e:
-            logger.warning(f"Failed to use tiktoken: {e}, falling back to approximation")
-    
-    # Simple approximation: ~4 characters per token
-    return len(text) // 4
+    if not text:
+        return 0
+    # More accurate estimate: count words and adjust for punctuation
+    words = len(text.split())
+    # Add tokens for punctuation and subword units
+    punctuation_tokens = len([c for c in text if c in '.,!?;:()[]{}"\'-'])
+    return max(1, int(words * 1.3 + punctuation_tokens * 0.5))
 
 
-def compress_context(context_data: Dict[str, Any]) -> bytes:
+def compress_context(messages: List[Dict[str, Any]], max_tokens: int) -> Tuple[List[Dict[str, Any]], int]:
     """
-    Compress context data using gzip.
-    
-    Args:
-        context_data: Dictionary to compress
-        
-    Returns:
-        Compressed bytes
-    """
-    json_str = json.dumps(context_data, indent=2)
-    return gzip.compress(json_str.encode('utf-8'))
+    Compress conversation messages to fit within token limit.
 
+    Prioritizes recent messages and truncates older ones if needed.
+    """
+    if not messages:
+        return [], 0
 
-def decompress_context(compressed_data: bytes) -> Dict[str, Any]:
-    """
-    Decompress context data from gzip.
-    
-    Args:
-        compressed_data: Compressed bytes
-        
-    Returns:
-        Decompressed dictionary
-    """
-    json_str = gzip.decompress(compressed_data).decode('utf-8')
-    return json.loads(json_str)
+    compressed = []
+    total_tokens = 0
+
+    # Process messages in reverse order (most recent first)
+    for msg in reversed(messages):
+        content = msg.get("content", "")
+        if not content:
+            continue
+
+        msg_tokens = estimate_tokens(content)
+
+        # If this message alone exceeds limit, truncate it
+        if msg_tokens > max_tokens and compressed:
+            # Keep at least the first 100 chars
+            truncated_content = content[:400] + "..." if len(content) > 400 else content
+            truncated_tokens = estimate_tokens(truncated_content)
+            compressed.insert(0, {**msg, "content": truncated_content})
+            total_tokens += truncated_tokens
+            break
+
+        # Check if adding this message would exceed limit
+        if total_tokens + msg_tokens > max_tokens:
+            if not compressed:
+                # If no messages yet, truncate this one
+                truncated_content = content[:max_tokens * 4] + "..." if len(content) > max_tokens * 4 else content
+                truncated_tokens = estimate_tokens(truncated_content)
+                compressed.insert(0, {**msg, "content": truncated_content})
+                total_tokens = truncated_tokens
+            break
+
+        # Add message
+        compressed.insert(0, msg)
+        total_tokens += msg_tokens
+
+    logger.debug(f"Compressed {len(messages)} messages to {len(compressed)} with {total_tokens} tokens")
+    return compressed, total_tokens
 
 
 def serialize_context(
-    messages: List[Dict[str, Any]], 
+    messages: List[Dict[str, Any]],
     max_tokens: int = 4000,
     current_task: Optional[str] = None,
     relevant_files: Optional[List[str]] = None,
     session_metadata: Optional[Dict[str, Any]] = None
 ) -> str:
     """
-    Serialize conversation context to a compact format for agent handoff.
-    
+    Serialize conversation context to a file for agent handoff.
+
     Args:
         messages: List of conversation messages
-        max_tokens: Maximum tokens to include
+        max_tokens: Maximum token count for context
         current_task: Current task description
         relevant_files: List of relevant file paths
         session_metadata: Additional session metadata
-        
+
     Returns:
-        Path to the saved context file
+        Path to the serialized context file
     """
     try:
-        logger.info(f"Serializing context with max_tokens={max_tokens}")
-        
-        # Filter and truncate messages to fit within token limit
-        serialized_messages = []
-        total_tokens = 0
-        
-        # Reserve tokens for metadata
-        metadata_tokens = 500
-        available_tokens = max_tokens - metadata_tokens
-        
-        # Process messages in reverse order (most recent first)
-        for msg in reversed(messages):
-            msg_text = msg.get('content', '')
-            msg_tokens = count_tokens(msg_text)
-            
-            if total_tokens + msg_tokens > available_tokens:
-                # Truncate message if it would exceed limit
-                remaining_tokens = available_tokens - total_tokens
-                if remaining_tokens > 100:  # Minimum useful message length
-                    chars_per_token = len(msg_text) // msg_tokens if msg_tokens > 0 else 4
-                    max_chars = remaining_tokens * chars_per_token
-                    msg_text = msg_text[:max_chars] + "..."
-                    serialized_messages.insert(0, {
-                        'role': msg.get('role', 'unknown'),
-                        'content': msg_text,
-                        'truncated': True
-                    })
-                    total_tokens += count_tokens(msg_text)
-                break
-            else:
-                serialized_messages.insert(0, {
-                    'role': msg.get('role', 'unknown'),
-                    'content': msg_text,
-                    'truncated': False
-                })
-                total_tokens += msg_tokens
-        
+        logger.info(f"Serializing context with {len(messages)} messages, max_tokens={max_tokens}")
+
+        # Compress messages to fit token limit
+        compressed_messages, actual_tokens = compress_context(messages, max_tokens)
+
         # Build context data
         context_data = {
-            'messages': serialized_messages,
-            'total_messages': len(messages),
-            'included_messages': len(serialized_messages),
-            'total_tokens': total_tokens,
-            'max_tokens': max_tokens,
-            'timestamp': datetime.now().isoformat(),
-            'current_task': current_task,
-            'relevant_files': relevant_files or [],
-            'session_metadata': session_metadata or {},
-            'compression': 'none'  # Will be updated if compressed
+            "version": "1.0",
+            "timestamp": datetime.now().isoformat(),
+            "current_task": current_task or "",
+            "messages": compressed_messages,
+            "relevant_files": relevant_files or [],
+            "session_metadata": session_metadata or {},
+            "token_count": actual_tokens,
+            "compression_applied": len(compressed_messages) < len(messages)
         }
-        
-        # Check if compression is needed
-        json_size = len(json.dumps(context_data, indent=2))
-        if json_size > 100000:  # Compress if over 100KB
-            logger.info("Compressing large context data")
-            compressed = compress_context(context_data)
-            context_data = {
-                'compressed': True,
-                'data': compressed.hex(),
-                'original_size': json_size,
-                'compressed_size': len(compressed)
-            }
-        
-        # Save to file
-        context_file = Path('.codex/agent_context.json')
-        context_file.parent.mkdir(exist_ok=True)
-        
-        with open(context_file, 'w') as f:
-            json.dump(context_data, f, indent=2)
-        
-        logger.info(f"Saved context to {context_file} ({len(serialized_messages)} messages, {total_tokens} tokens)")
+
+        # Create context directory
+        context_dir = Path(".codex/agent_context")
+        context_dir.mkdir(parents=True, exist_ok=True)
+
+        # Generate unique filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        context_file = context_dir / f"context_{timestamp}.json"
+
+        # Write context file
+        with open(context_file, 'w', encoding='utf-8') as f:
+            json.dump(context_data, f, indent=2, ensure_ascii=False)
+
+        logger.info(f"Serialized context to {context_file} ({actual_tokens} tokens)")
         return str(context_file)
-        
+
     except Exception as e:
-        logger.exception("Error serializing context", e)
+        logger.exception("Failed to serialize context", e)
         raise
 
 
-def inject_context_to_agent(
-    agent_name: str, 
-    task: str, 
-    context_file: str
-) -> Dict[str, Any]:
+def inject_context_to_agent(agent_name: str, task: str, context_file: str) -> Dict[str, Any]:
     """
-    Prepare context injection for agent invocation.
-    
+    Prepare context injection data for agent invocation.
+
     Args:
         agent_name: Name of the agent
         task: Task description
         context_file: Path to context file
-        
+
     Returns:
         Dictionary with injection metadata
     """
     try:
         logger.info(f"Injecting context for agent {agent_name}")
-        
-        if not Path(context_file).exists():
-            raise FileNotFoundError(f"Context file not found: {context_file}")
-        
-        # Load and validate context
-        with open(context_file, 'r') as f:
+
+        # Read context file to get metadata
+        with open(context_file, 'r', encoding='utf-8') as f:
             context_data = json.load(f)
-        
-        # Generate injection metadata
+
+        # Calculate hash for integrity checking
+        with open(context_file, 'rb') as f:
+            file_hash = hashlib.sha256(f.read()).hexdigest()[:16]
+
         injection_data = {
-            'agent_name': agent_name,
-            'task': task,
-            'context_file': context_file,
-            'context_size': Path(context_file).stat().st_size,
-            'timestamp': datetime.now().isoformat(),
-            'context_hash': hashlib.md5(json.dumps(context_data, sort_keys=True).encode()).hexdigest()
+            "agent_name": agent_name,
+            "task": task,
+            "context_file": context_file,
+            "context_size": context_data.get("token_count", 0),
+            "context_hash": file_hash,
+            "message_count": len(context_data.get("messages", [])),
+            "timestamp": datetime.now().isoformat()
         }
-        
-        # For Codex, this would be used to modify the command
-        # The actual command modification happens in agent_backend.py
-        
-        logger.info(f"Prepared context injection for {agent_name}")
+
+        logger.debug(f"Context injection prepared: {injection_data}")
         return injection_data
-        
+
     except Exception as e:
-        logger.exception(f"Error injecting context for agent {agent_name}", e)
+        logger.exception(f"Failed to inject context for agent {agent_name}", e)
         raise
 
 
 def extract_agent_result(agent_output: str, agent_name: str) -> Dict[str, Any]:
     """
-    Extract and format agent result from output.
-    
+    Extract and format agent execution result.
+
     Args:
-        agent_output: Raw agent output string
+        agent_output: Raw output from agent execution
         agent_name: Name of the agent
-        
+
     Returns:
         Dictionary with formatted result and metadata
     """
     try:
-        logger.info(f"Extracting result from agent {agent_name}")
-        
-        # Parse agent output (assuming JSON format from codex exec --output-format=json)
+        logger.info(f"Extracting result for agent {agent_name}")
+
+        # Try to parse as JSON first
         try:
-            result_data = json.loads(agent_output)
+            parsed_output = json.loads(agent_output.strip())
+            formatted_result = parsed_output.get("result", agent_output)
+            metadata = parsed_output.get("metadata", {})
         except json.JSONDecodeError:
-            # Fallback: treat as plain text
-            result_data = {'output': agent_output}
-        
-        # Format for display
-        formatted_result = f"**Agent {agent_name} Result:**\n\n"
-        
-        if 'success' in result_data and result_data['success']:
-            formatted_result += "✅ **Success**\n\n"
-            if 'result' in result_data:
-                formatted_result += f"**Output:**\n{result_data['result']}\n\n"
-        else:
-            formatted_result += "❌ **Failed**\n\n"
-            if 'error' in result_data:
-                formatted_result += f"**Error:** {result_data['error']}\n\n"
-        
-        # Add metadata
-        if 'metadata' in result_data:
-            metadata = result_data['metadata']
-            formatted_result += "**Metadata:**\n"
-            for key, value in metadata.items():
-                formatted_result += f"- {key}: {value}\n"
-            formatted_result += "\n"
-        
-        # Save to file
+            # Treat as plain text
+            formatted_result = agent_output.strip()
+            metadata = {}
+
+        # Create result directory
+        result_dir = Path(".codex/agent_results")
+        result_dir.mkdir(parents=True, exist_ok=True)
+
+        # Generate result filename
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        result_dir = Path('.codex/agent_results')
-        result_dir.mkdir(exist_ok=True)
         result_file = result_dir / f"{agent_name}_{timestamp}.md"
-        
-        with open(result_file, 'w') as f:
-            f.write(formatted_result)
-        
-        logger.info(f"Saved agent result to {result_file}")
-        
+
+        # Format result content
+        result_content = f"""# Agent Result: {agent_name}
+**Timestamp:** {datetime.now().isoformat()}
+**Task:** {metadata.get('task', 'Unknown')}
+
+## Result
+{formatted_result}
+
+## Metadata
+- **Agent:** {agent_name}
+- **Execution Time:** {metadata.get('execution_time', 'Unknown')}
+- **Success:** {metadata.get('success', 'Unknown')}
+- **Context Used:** {metadata.get('context_used', False)}
+"""
+
+        # Write result file
+        with open(result_file, 'w', encoding='utf-8') as f:
+            f.write(result_content)
+
+        logger.info(f"Extracted agent result to {result_file}")
+
         return {
-            'formatted_result': formatted_result,
-            'result_file': str(result_file),
-            'raw_data': result_data,
-            'timestamp': timestamp
+            "formatted_result": formatted_result,
+            "result_file": str(result_file),
+            "metadata": metadata,
+            "agent_name": agent_name,
+            "timestamp": timestamp
         }
-        
+
     except Exception as e:
-        logger.exception(f"Error extracting result from agent {agent_name}", e)
-        # Return basic error result
-        error_result = f"**Agent {agent_name} Error:**\n\n❌ Failed to process agent output: {str(e)}\n\n**Raw Output:**\n{agent_output}"
-        
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        result_dir = Path('.codex/agent_results')
-        result_dir.mkdir(exist_ok=True)
-        result_file = result_dir / f"{agent_name}_{timestamp}_error.md"
-        
-        with open(result_file, 'w') as f:
-            f.write(error_result)
-        
+        logger.exception(f"Failed to extract agent result for {agent_name}", e)
+        # Return basic result on failure
         return {
-            'formatted_result': error_result,
-            'result_file': str(result_file),
-            'error': str(e),
-            'timestamp': timestamp
+            "formatted_result": agent_output.strip(),
+            "result_file": None,
+            "metadata": {},
+            "agent_name": agent_name,
+            "error": str(e)
         }
 
 
-def cleanup_context_files():
-    """Clean up old context files."""
+def cleanup_context_files(max_age_hours: int = 24, max_files: int = 50):
+    """
+    Clean up old context files to prevent disk space issues.
+
+    Args:
+        max_age_hours: Delete files older than this many hours
+        max_files: Keep at most this many files
+    """
     try:
-        context_dir = Path('.codex')
-        context_file = context_dir / 'agent_context.json'
-        
-        if context_file.exists():
-            # Remove context file
-            context_file.unlink()
-            logger.info("Cleaned up agent context file")
-        
-        # Clean up old result files (keep last 10)
-        result_dir = context_dir / 'agent_results'
-        if result_dir.exists():
-            result_files = sorted(result_dir.glob('*.md'), key=lambda f: f.stat().st_mtime, reverse=True)
-            if len(result_files) > 10:
-                for old_file in result_files[10:]:
-                    old_file.unlink()
-                    logger.info(f"Cleaned up old result file: {old_file.name}")
-                    
+        context_dir = Path(".codex/agent_context")
+        if not context_dir.exists():
+            return
+
+        # Get all context files
+        context_files = list(context_dir.glob("context_*.json"))
+        if not context_files:
+            return
+
+        # Sort by modification time (newest first)
+        context_files.sort(key=lambda f: f.stat().st_mtime, reverse=True)
+
+        # Delete old files
+        deleted_count = 0
+        cutoff_time = datetime.now().timestamp() - (max_age_hours * 3600)
+
+        for file_path in context_files[max_files:]:
+            # Also delete if too old
+            if file_path.stat().st_mtime < cutoff_time:
+                file_path.unlink()
+                deleted_count += 1
+                logger.debug(f"Deleted old context file: {file_path.name}")
+
+        if deleted_count > 0:
+            logger.info(f"Cleaned up {deleted_count} old context files")
+
     except Exception as e:
-        logger.exception("Error during context cleanup", e)
+        logger.exception("Failed to cleanup context files", e)
 
 
-def main():
-    """CLI interface for testing the bridge functions."""
-    parser = argparse.ArgumentParser(description="Agent Context Bridge Utility")
-    subparsers = parser.add_subparsers(dest='command', help='Available commands')
-    
-    # Serialize command
-    serialize_parser = subparsers.add_parser('serialize', help='Serialize context')
-    serialize_parser.add_argument('--messages', required=True, help='JSON file with messages')
-    serialize_parser.add_argument('--max-tokens', type=int, default=4000, help='Max tokens')
-    serialize_parser.add_argument('--task', help='Current task')
-    serialize_parser.add_argument('--files', nargs='*', help='Relevant files')
-    
-    # Inject command
-    inject_parser = subparsers.add_parser('inject', help='Prepare context injection')
-    inject_parser.add_argument('--agent', required=True, help='Agent name')
-    inject_parser.add_argument('--task', required=True, help='Task description')
-    inject_parser.add_argument('--context-file', required=True, help='Context file path')
-    
-    # Extract command
-    extract_parser = subparsers.add_parser('extract', help='Extract agent result')
-    extract_parser.add_argument('--agent', required=True, help='Agent name')
-    extract_parser.add_argument('--output', required=True, help='Agent output')
-    
-    # Cleanup command
-    subparsers.add_parser('cleanup', help='Clean up context files')
-    
-    args = parser.parse_args()
-    
-    if args.command == 'serialize':
-        with open(args.messages, 'r') as f:
-            messages = json.load(f)
-        result = serialize_context(messages, args.max_tokens, args.task, args.files)
-        print(f"Context serialized to: {result}")
-        
-    elif args.command == 'inject':
-        result = inject_context_to_agent(args.agent, args.task, args.context_file)
-        print(json.dumps(result, indent=2))
-        
-    elif args.command == 'extract':
-        result = extract_agent_result(args.output, args.agent)
-        print(f"Result saved to: {result['result_file']}")
-        
-    elif args.command == 'cleanup':
-        cleanup_context_files()
-        print("Context files cleaned up")
-        
-    else:
-        parser.print_help()
-
-
-if __name__ == "__main__":
-    main()
+# Initialize cleanup on import
+cleanup_context_files()

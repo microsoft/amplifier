@@ -32,6 +32,8 @@ Contains fully implemented Python-based MCP servers using FastMCP:
 - **session_manager/** - Replaces `SessionStart.py` and `SessionStop.py` hooks
 - **quality_checker/** - Replaces `PostToolUse.py` hook
 - **transcript_saver/** - Replaces `PreCompact.py` hook
+- **task_tracker/** - Provides task management capabilities (TodoWrite equivalent)
+- **web_research/** - Enables web search and content fetching (WebFetch equivalent)
 
 Each MCP server is a self-contained module with its own directory and server script. Server logs are written to `.codex/logs/`.
 
@@ -49,6 +51,27 @@ Contains Codex-specific automation tools and helper scripts including:
 - Session initialization scripts
 - Cleanup utilities
 - Integration helpers for the existing `tools/codex_transcripts_builder.py`
+
+## Command Shortcuts
+
+Amplifier provides bash shortcuts for common Codex workflows:
+
+```bash
+# Enable shortcuts (add to ~/.bashrc)
+source .codex/tools/codex_shortcuts.sh
+
+# Common commands
+codex-init "Working on authentication"  # Quick session initialization
+codex-check src/auth.py                 # Run quality checks
+codex-save                              # Save current transcript
+codex-task-add "Implement login flow"   # Create new task
+codex-task-list                         # List current tasks
+codex-search "authentication patterns"  # Web search
+codex-agent architect "Design API"      # Spawn agent
+codex-status                            # Show session status
+```
+
+These shortcuts wrap MCP tool invocations for faster development workflows.
 
 ## Architecture Overview
 
@@ -166,7 +189,7 @@ args = ["run", "python", ".codex/mcp_servers/session_manager/server.py"]
 
 1. **Install Codex CLI** (follow Anthropic's installation guide)
 
-2. **MCP Server Status**: All three MCP servers are implemented and ready to use. Profiles are configured with appropriate server combinations.
+2. **MCP Server Status**: All five MCP servers are implemented and ready to use. Profiles are configured with appropriate server combinations.
 
 3. **Profile Usage**:
    ```bash
@@ -179,6 +202,13 @@ args = ["run", "python", ".codex/mcp_servers/session_manager/server.py"]
    # Start with review profile (quality + transcripts)
    codex --profile review
    ```
+
+#### Configuration Best Practices
+
+- Use the `development` profile for full-featured development sessions
+- Enable `task_tracker` for project management workflows
+- Configure `web_research` cache settings for performance
+- Set appropriate timeouts for long-running operations
 
 ### Using MCP Servers
 
@@ -250,6 +280,24 @@ Future MCP server implementations will provide access to:
 - Content loading and extraction (`amplifier/content_loader/`, `amplifier/extraction/`)
 
 **Note**: Knowledge system integration will be added in a later development phase.
+
+## Enhanced Features
+
+### Auto-Quality Checks
+
+The wrapper script automatically runs code quality checks after Codex exits, detecting modified files and validating changes before cleanup.
+
+### Periodic Transcript Saves
+
+Background process saves transcripts every 10 minutes during long sessions, preventing data loss and enabling incremental backups.
+
+### Agent Context Bridge
+
+Seamlessly pass conversation context to agents, enabling in-context agent spawning with full session awareness.
+
+### Smart Context Detection
+
+Automatically detects git branch, recent commits, and TODO comments to provide relevant context for new sessions.
 
 ## Transcript Format Comparison
 
@@ -841,6 +889,15 @@ These examples highlight the key visual and structural differences between the f
 
 ## Key Differences from Claude Code
 
+**Current Parity**: 95% feature parity with Claude Code ([detailed comparison](../docs/tutorials/FEATURE_PARITY_MATRIX.md))
+
+**What's New in Codex Integration**:
+- ✅ Task tracking (TodoWrite equivalent)
+- ✅ Web research capabilities (WebFetch equivalent)
+- ✅ Enhanced automation (auto-checks, periodic saves)
+- ✅ Agent context bridge for seamless agent spawning
+- ✅ Command shortcuts for faster workflows
+
 | Aspect | Claude Code | Codex |
 |--------|-------------|-------|
 | **Hooks** | Native Python hooks | MCP servers |
@@ -860,21 +917,26 @@ These examples highlight the key visual and structural differences between the f
 
 ### Quick Start with Wrapper Script
 
-The easiest way to use Codex with Amplifier is via the wrapper script:
+> **New to Codex?** Check out our [5-minute quick start tutorial](../docs/tutorials/QUICK_START_CODEX.md) for a guided introduction.
 
-```bash
-# Make wrapper executable (first time only)
-chmod +x ../amplify-codex.sh
+The easiest way to get started with Codex and Amplifier is:
 
-# Start Codex with Amplifier integration
-../amplify-codex.sh
+1. **Make the wrapper executable**:
+   ```bash
+   chmod +x ../amplify-codex.sh
+   ```
 
-# The wrapper will:
-# 1. Initialize session and load memories
-# 2. Start Codex with MCP servers
-# 3. Display available tools and workflow guidance
-# 4. Clean up and save memories when you exit
-```
+2. **Start your first session**:
+   ```bash
+   ../amplify-codex.sh
+   ```
+
+3. **Use MCP tools during development**:
+   - `initialize_session` - Load relevant memories
+   - `check_code_quality` - Run code quality checks
+   - `save_current_transcript` - Export session transcripts
+
+For detailed tutorials, see the [tutorial index](../docs/tutorials/README.md).
 
 ### Manual Workflow (Without Wrapper)
 
@@ -1122,6 +1184,25 @@ Following the project's core philosophy from `AGENTS.md`:
 - **Fail Gracefully**: Degrades gracefully when MCP servers are unavailable
 - **User Control**: Extensive configuration options and profile support
 - **Interoperability**: Maintains compatibility with existing Claude Code workflows
+
+## Tutorial Navigation
+
+### Learning Paths
+
+**New User**: [Quick Start (5 min)](../docs/tutorials/QUICK_START_CODEX.md) → [Beginner Guide (30 min)](../docs/tutorials/BEGINNER_GUIDE_CODEX.md) → [Troubleshooting](../docs/tutorials/TROUBLESHOOTING_TREE.md)
+
+**Migrating from Claude Code**: [Feature Parity Matrix](../docs/tutorials/FEATURE_PARITY_MATRIX.md) → [Workflow Diagrams](../docs/tutorials/WORKFLOW_DIAGRAMS.md)
+
+**Advanced User**: [Workflow Diagrams](../docs/tutorials/WORKFLOW_DIAGRAMS.md) → [Backend Comparison](../docs/BACKEND_COMPARISON.md)
+
+### Quick Reference
+
+- [Quick Start Tutorial](../docs/tutorials/QUICK_START_CODEX.md)
+- [Complete Beginner Guide](../docs/tutorials/BEGINNER_GUIDE_CODEX.md)
+- [Visual Workflow Diagrams](../docs/tutorials/WORKFLOW_DIAGRAMS.md)
+- [Feature Parity Matrix](../docs/tutorials/FEATURE_PARITY_MATRIX.md)
+- [Troubleshooting Decision Tree](../docs/tutorials/TROUBLESHOOTING_TREE.md)
+- [Tutorial Index](../docs/tutorials/README.md)
 
 ## Related Documentation
 

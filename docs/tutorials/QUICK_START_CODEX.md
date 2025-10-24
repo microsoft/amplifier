@@ -1,4 +1,5 @@
    # Follow Anthropic's installation guide
+   # https://docs.anthropic.com/codex/installation
    codex --version
    ```
 
@@ -15,78 +16,87 @@
 
 ## First Session (2 minutes)
 
-Start your first Codex session with Amplifier integration:
+1. **Start the wrapper script**:
+   ```bash
+   ./amplify-codex.sh
+   ```
 
-```bash
-./amplify-codex.sh
-```
+   **What you'll see**:
+   ```
+   🔧 Amplifier Codex Integration
+   ✅ Prerequisites verified
+   📚 Loading session context...
+   🚀 Starting Codex with development profile
 
-**What you'll see:**
-- ✅ Prerequisites check (Codex CLI, uv, virtual env)
-- 📚 Session initialization (loads relevant memories)
-- 🚀 Codex starts with MCP servers enabled
-- 💡 Guidance box showing available tools and commands
+   Available MCP Tools:
+   • initialize_session - Load memories
+   • check_code_quality - Run quality checks
+   • save_current_transcript - Export session
+   • create_task - Manage tasks
+   • search_web - Web research
 
-**Try these commands:**
+   Type your prompt or use MCP tools...
+   ```
 
-```bash
-codex> initialize_session with prompt "Hello world project"
-```
+2. **Try initializing a session**:
+   ```bash
+   codex> initialize_session with prompt "Hello world"
+   ```
 
-**Expected output:**
-```
-Loaded 3 memories from previous sessions:
-- Memory 1: Basic project setup patterns
-- Memory 2: Hello world implementations
-- Memory 3: Testing approaches
-```
+   **Expected output**:
+   ```
+   Loaded 3 relevant memories from previous sessions.
+   Session context ready for "Hello world" development.
+   ```
 
-```bash
-codex> check_code_quality with file_paths ["README.md"]
-```
+3. **Try a quality check**:
+   ```bash
+   codex> check_code_quality with file_paths ["README.md"]
+   ```
 
-**Expected output:**
-```
-Quality check results:
-✅ Linting: Passed (ruff)
-✅ Type checking: Passed (pyright)
-✅ Tests: 15 passed, 0 failed
-```
+   **Expected output**:
+   ```
+   Quality check passed ✅
+   • Lint: OK (ruff)
+   • Type check: OK (pyright)
+   • Tests: 15 passed (pytest)
+   Execution time: 2.3s
+   ```
 
 ## Key Concepts (1 minute)
 
 - **MCP Tools vs Hooks**: Codex uses MCP (Model Context Protocol) servers instead of Claude Code's native hooks. Tools are invoked via natural language or direct calls.
 
-- **Profiles**: Choose your workflow:
-  - `development`: All tools (memory, quality, transcripts)
+- **Profiles**: Choose the right tool set:
+  - `development`: All tools (session, quality, transcripts, tasks, web)
   - `ci`: Quality checks only
-  - `review`: Quality + transcript management
+  - `review`: Quality + transcripts
 
-- **Memory System**: Automatically loads relevant context from previous sessions to maintain continuity.
+- **Memory System**: Automatically loads relevant context from past sessions to maintain continuity.
 
 ## Common Commands (1 minute)
 
-**Session Management:**
+**Session Management**:
 ```bash
-codex> initialize_session with prompt "Working on feature X"
+codex> initialize_session with prompt "Working on feature"
 codex> finalize_session with recent messages
 codex> save_current_transcript with format "both"
 ```
 
-**Quality Checks:**
+**Quality Checks**:
 ```bash
 codex> check_code_quality with file_paths ["src/file.py"]
 codex> run_specific_checks with check_type "lint"
 ```
 
-**Task Tracking (coming soon):**
+**Task Tracking**:
 ```bash
-codex> create_task with title "Implement auth" and description "Add user authentication"
-codex> list_tasks
+codex> create_task with title "Fix bug" and description "Login issue"
+codex> list_tasks with filter_status "pending"
 codex> complete_task with task_id "task_123"
 ```
 
-**Web Research (coming soon):**
+**Web Research**:
 ```bash
-codex> search_web with query "Python async patterns" and num_results 5
-codex> fetch_url with url "https://example.com/api-docs"
+codex> search_web with query "python async patterns" and num_results 5
+codex> fetch_url with url "https://example.com/guide" and extract_text true

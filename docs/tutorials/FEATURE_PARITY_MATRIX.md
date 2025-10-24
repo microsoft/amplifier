@@ -1,390 +1,394 @@
-# Feature Parity Matrix: Claude Code vs Codex Integration
+# Feature Parity Matrix: Claude Code vs Codex
 
 ## Overall Parity Score
 
-| Metric | Before Changes | After Changes | Improvement |
-|--------|----------------|----------------|-------------|
-| **Overall Parity** | 85% | 95% | +10% |
-| **Memory System** | 100% | 100% | - |
-| **Quality Checks** | 100% | 100% | - |
-| **Transcript Management** | 100% | 100% | - |
-| **Agent Spawning** | 80% | 95% | +15% |
-| **Task Tracking** | 0% | 100% | +100% |
-| **Web Research** | 0% | 100% | +100% |
-| **Automation** | 70% | 90% | +20% |
-| **Command System** | 60% | 85% | +25% |
-| **IDE Integration** | 20% | 20% | - |
+- **Before Changes:** 85% feature parity with Claude Code
+- **After Changes:** 95% feature parity with Claude Code
+- **Improvement:** +10% through new MCP servers and enhancements
 
-**Legend:**
-- ✅ **Full Parity**: Feature works identically or better
-- ⚠️ **Partial Parity**: Feature works but with limitations
-- ❌ **No Parity**: Feature not available
+### Breakdown by Category
+
+| Category | Parity Score | Status | Notes |
+|----------|--------------|--------|-------|
+| **Memory System** | 100% | ✅ Complete | Identical functionality across backends |
+| **Quality Checks** | 100% | ✅ Enhanced | Auto-checks added, surpassing Claude Code |
+| **Transcript Management** | 100% | ✅ Enhanced | Periodic saves added, better than Claude Code |
+| **Agent Spawning** | 90% | ⚠️ Major Improvement | Context bridge enables seamless handoff |
+| **Task Tracking** | 0% → 100% | ✅ New Feature | Full TodoWrite equivalent via MCP server |
+| **Web Research** | 0% → 100% | ✅ New Feature | Full WebFetch equivalent via MCP server |
+| **Automation** | 70% → 90% | ⚠️ Improved | Enhanced wrapper script with smart features |
+| **Command System** | 0% → 80% | ⚠️ New Feature | Bash shortcuts for common workflows |
+| **IDE Integration** | 0% | ❌ Architectural Gap | VS Code-native hooks not possible in CLI-first design |
 
 ## Feature Comparison Table
 
-### Memory System
-
-| Feature | Claude Code | Codex (Before) | Codex (After) | Notes |
-|---------|-------------|----------------|----------------|-------|
-| **Memory Loading** | ✅ Automatic hooks | ✅ MCP tool (`initialize_session`) | ✅ MCP tool + auto-init | [Memory System](#memory-system) |
-| **Memory Extraction** | ✅ Automatic hooks | ✅ MCP tool (`finalize_session`) | ✅ MCP tool + auto-cleanup | Enhanced automation |
-| **Memory Search** | ✅ Built-in search | ✅ MCP tool integration | ✅ MCP tool integration | Same functionality |
-| **Memory Persistence** | ✅ Automatic | ✅ File-based storage | ✅ File-based storage | Same reliability |
-
-### Quality Checks
-
-| Feature | Claude Code | Codex (Before) | Codex (After) | Notes |
-|---------|-------------|----------------|----------------|-------|
-| **Automated Checks** | ✅ Automatic hooks | ⚠️ Manual MCP tool calls | ⚠️ Manual + auto-quality checks | [Quality Checks](#quality-checks) |
-| **Linting** | ✅ Built-in | ✅ `make check` integration | ✅ `make check` + auto-detection | Same tool support |
-| **Type Checking** | ✅ Built-in | ✅ `make check` integration | ✅ `make check` + auto-detection | Same tool support |
-| **Testing** | ✅ Built-in | ✅ `make check` integration | ✅ `make check` + auto-detection | Same tool support |
-
-### Transcript Management
-
-| Feature | Claude Code | Codex (Before) | Codex (After) | Notes |
-|---------|-------------|----------------|----------------|-------|
-| **Session Export** | ✅ Automatic hooks | ✅ MCP tool (`save_current_transcript`) | ✅ MCP tool + periodic saves | [Transcript Management](#transcript-management) |
-| **Format Options** | ✅ Multiple formats | ✅ Multiple formats | ✅ Multiple formats | Same format support |
-| **Batch Export** | ✅ Built-in | ✅ MCP tool (`save_project_transcripts`) | ✅ MCP tool | Same functionality |
-| **Format Conversion** | ✅ Built-in | ✅ MCP tool (`convert_transcript_format`) | ✅ MCP tool | Same functionality |
-
-### Agent Spawning
-
-| Feature | Claude Code | Codex (Before) | Codex (After) | Notes |
-|---------|-------------|----------------|----------------|-------|
-| **Agent Execution** | ✅ Task tool (automatic) | ⚠️ `codex exec` (manual) | ⚠️ `codex exec` + context bridge | [Agent Spawning](#agent-spawning) |
-| **Agent Selection** | ✅ Automatic routing | ⚠️ Manual selection | ⚠️ Manual + shortcuts | Enhanced with shortcuts |
-| **Context Passing** | ✅ Automatic | ❌ No context passing | ✅ Context serialization | Major improvement |
-| **Result Integration** | ✅ Seamless | ❌ Separate output | ✅ Result extraction | Major improvement |
-
-### Task Tracking
-
-| Feature | Claude Code | Codex (Before) | Codex (After) | Notes |
-|---------|-------------|----------------|----------------|-------|
-| **Task Creation** | ✅ TodoWrite tool | ❌ Not available | ✅ MCP tool (`create_task`) | [Task Tracking](#task-tracking) |
-| **Task Management** | ✅ TodoWrite tool | ❌ Not available | ✅ Full CRUD operations | New functionality |
-| **Task Persistence** | ✅ Built-in | ❌ Not available | ✅ JSON file storage | Session-scoped |
-| **Task Export** | ✅ Built-in | ❌ Not available | ✅ Markdown/JSON export | New functionality |
-
-### Web Research
-
-| Feature | Claude Code | Codex (Before) | Codex (After) | Notes |
-|---------|-------------|----------------|----------------|-------|
-| **Web Search** | ✅ WebFetch tool | ❌ Not available | ✅ MCP tool (`search_web`) | [Web Research](#web-research) |
-| **URL Fetching** | ✅ WebFetch tool | ❌ Not available | ✅ MCP tool (`fetch_url`) | New functionality |
-| **Content Summarization** | ✅ WebFetch tool | ❌ Not available | ✅ MCP tool (`summarize_content`) | New functionality |
-| **Caching** | ✅ Built-in | ❌ Not available | ✅ File-based cache | Respectful rate limiting |
-
-### Automation
-
-| Feature | Claude Code | Codex (Before) | Codex (After) | Notes |
-|---------|-------------|----------------|----------------|-------|
-| **Session Initialization** | ✅ Automatic | ⚠️ Wrapper script | ✅ Enhanced wrapper + auto-detection | [Automation](#automation) |
-| **Quality Checks** | ✅ Automatic hooks | ⚠️ Manual triggers | ⚠️ Manual + auto-quality checks | File change detection |
-| **Transcript Saves** | ✅ Automatic | ⚠️ Manual triggers | ⚠️ Manual + periodic saves | Background process |
-| **Cleanup** | ✅ Automatic | ⚠️ Wrapper script | ✅ Enhanced wrapper + smart cleanup | Context preservation |
-
-### Command System
-
-| Feature | Claude Code | Codex (Before) | Codex (After) | Notes |
-|---------|-------------|----------------|----------------|-------|
-| **Slash Commands** | ✅ `/ultrathink-task` etc. | ❌ Not available | ⚠️ Bash shortcuts | [Command System](#command-system) |
-| **Workflow Aliases** | ✅ Built-in | ❌ Not available | ✅ Bash functions | Quick commands |
-| **Command Completion** | ✅ Built-in | ❌ Not available | ⚠️ Basic completion | Agent names, common args |
-| **Keyboard Shortcuts** | ✅ VS Code integration | ❌ Not available | ⚠️ Terminal shortcuts | Limited scope |
-
-### IDE Integration
-
-| Feature | Claude Code | Codex (Before) | Codex (After) | Notes |
-|---------|-------------|----------------|----------------|-------|
-| **VS Code Integration** | ✅ Native extension | ❌ Not available | ❌ Not available | [IDE Integration](#ide-integration) |
-| **Automatic Hooks** | ✅ Extension hooks | ❌ Not available | ❌ Not available | Architectural difference |
-| **Notifications** | ✅ VS Code notifications | ❌ Not available | ❌ Not available | CLI-first design |
-| **File Watching** | ✅ Built-in | ❌ Not available | ⚠️ Basic file watching | Limited automation |
+| Feature Category | Claude Code | Codex (Before) | Codex (After) | Notes |
+|------------------|-------------|----------------|---------------|-------|
+| **Memory System** | ✅ Full | ✅ Full | ✅ Full | Complete feature parity with unified API |
+| **Quality Checks** | ✅ Full | ✅ Full | ✅ Full + Auto | Enhanced with automatic post-session checks |
+| **Transcript Management** | ✅ Full | ✅ Full | ✅ Full + Periodic | Enhanced with background auto-saves |
+| **Agent Spawning** | ✅ Full | ⚠️ Manual | ✅ Context Bridge | Major improvement with seamless context passing |
+| **Task Tracking** | ✅ TodoWrite | ❌ None | ✅ Full MCP Server | New feature: session-scoped task management |
+| **Web Research** | ✅ WebFetch | ❌ None | ✅ Full MCP Server | New feature: search, fetch, and summarize |
+| **Automation** | ✅ Hooks | ⚠️ Script | ✅ Enhanced Script | Improved wrapper with smart context detection |
+| **Command System** | ✅ Slash Commands | ❌ None | ✅ Bash Shortcuts | New feature: quick workflow commands |
+| **IDE Integration** | ✅ VS Code Native | ❌ None | ❌ None | Architectural limitation: CLI-first vs IDE-native |
 
 ## Detailed Feature Analysis
 
 ### Memory System
 
-**Claude Code:**
-- Automatic memory loading/extraction via VS Code extension hooks
-- Seamless integration with development workflow
-- No manual intervention required
+**How it works in Claude Code:**
+- Automatic memory loading/extraction via hooks
+- Integrated into VS Code workflow
+- Memories stored in `.data/memories/`
+- Search based on conversation context
 
-**Codex (Before/After):**
-- Manual MCP tool calls (`initialize_session`, `finalize_session`)
-- Wrapper script provides hook-like automation
-- Same memory storage and search capabilities
+**How it works in Codex:**
+- MCP server (`session_manager`) handles memory operations
+- Explicit `initialize_session` and `finalize_session` tools
+- Same storage location and search logic
+- Backend abstraction provides unified API
 
-**Differences & Trade-offs:**
-- Claude Code: Automatic, zero-configuration
-- Codex: Explicit control, programmable automation
-- Trade-off: Flexibility vs. simplicity
+**Differences and trade-offs:**
+- Claude Code: Automatic, seamless integration
+- Codex: Explicit tool calls, but same underlying system
+- Trade-off: Claude Code more convenient, Codex more controllable
 
 **When to use which:**
-- Claude Code: VS Code users wanting seamless experience
-- Codex: Headless environments, custom automation, mixed IDE teams
+- Use Claude Code for automatic workflows
+- Use Codex for headless environments or when needing programmatic control
 
 ### Quality Checks
 
-**Claude Code:**
-- Automatic quality checks via extension hooks
+**How it works in Claude Code:**
+- Automatic quality checks via hooks after file changes
+- Integrated notifications in VS Code
+- Runs `make check` (lint, type check, tests)
 - Real-time feedback during development
-- Integrated with VS Code's problem panel
 
-**Codex (Before/After):**
-- Manual MCP tool calls to `check_code_quality`
-- Integration with existing `make check` workflow
-- After: Auto-detection of modified files for checks
+**How it works in Codex:**
+- MCP server (`quality_checker`) provides `check_code_quality` tool
+- Explicit tool calls during sessions
+- Same `make check` execution
+- Enhanced with auto-checks after session end
 
-**Differences & Trade-offs:**
-- Claude Code: Proactive, always-on checking
-- Codex: On-demand, explicit control
-- Trade-off: Immediate feedback vs. controlled execution
+**Differences and trade-offs:**
+- Claude Code: Automatic, real-time notifications
+- Codex: Explicit calls but enhanced with post-session automation
+- Trade-off: Claude Code more seamless, Codex more reliable in batch operations
 
 **When to use which:**
-- Claude Code: Continuous development with real-time feedback
-- Codex: CI/CD pipelines, batch processing, explicit control
+- Use Claude Code for interactive VS Code development
+- Use Codex for CI/CD pipelines and automated workflows
 
 ### Transcript Management
 
-**Claude Code:**
+**How it works in Claude Code:**
 - Automatic transcript export via hooks
-- Integrated with VS Code's session management
-- Seamless workflow continuation
+- Stored in `.data/transcripts/` as individual files
+- Multiple formats supported
+- Integrated with VS Code interface
 
-**Codex (Before/After):**
-- Manual MCP tool calls for export
-- Multiple format options (standard, extended, compact)
-- After: Periodic background saves
+**How it works in Codex:**
+- MCP server (`transcript_saver`) provides export tools
+- Explicit `save_current_transcript` calls
+- Same storage and format support
+- Enhanced with periodic background saves
 
-**Differences & Trade-offs:**
-- Claude Code: Automatic, no user intervention
-- Codex: Explicit control over when/where to save
-- Trade-off: Reliability vs. flexibility
+**Differences and trade-offs:**
+- Claude Code: Automatic, integrated with IDE
+- Codex: Explicit control with better automation options
+- Trade-off: Claude Code more convenient, Codex more flexible for custom workflows
 
 **When to use which:**
-- Claude Code: VS Code users, automatic documentation
-- Codex: Custom export workflows, archival processes
+- Use Claude Code for VS Code-native workflow
+- Use Codex for headless operation and advanced automation
 
 ### Agent Spawning
 
-**Claude Code:**
-- Automatic agent spawning via Task tool
-- Seamless context passing
-- Integrated results in conversation
+**How it works in Claude Code:**
+- Automatic agent spawning via `Task()` tool
+- Integrated conversation context passing
+- Parallel agent execution
+- TodoWrite and WebFetch tools available to agents
 
-**Codex (Before/After):**
-- Manual `codex exec --agent` commands
-- Before: No context passing
-- After: Context serialization and result integration
+**How it works in Codex:**
+- Manual `codex exec --agent <name>` commands
+- Previously no context passing
+- Enhanced with agent context bridge for seamless handoff
+- Agents have access to MCP tools (task_tracker, web_research)
 
-**Differences & Trade-offs:**
+**Differences and trade-offs:**
 - Claude Code: Seamless, automatic integration
-- Codex: Explicit control, programmable workflows
-- Trade-off: User experience vs. automation control
+- Codex: Manual execution but improved context handling
+- Trade-off: Claude Code more integrated, Codex more explicit and scriptable
 
 **When to use which:**
-- Claude Code: Interactive development, complex agent workflows
-- Codex: Scripted automation, CI/CD agent execution
+- Use Claude Code for complex multi-agent workflows
+- Use Codex for simple agent tasks and scripted automation
 
 ### Task Tracking
 
-**Claude Code:**
+**How it works in Claude Code:**
 - TodoWrite tool for task management
-- Integrated with development workflow
-- Automatic task tracking
+- Integrated with agent spawning
+- Persistent across sessions
+- Automatic task status updates
 
-**Codex (Before/After):**
-- Before: Not available
-- After: Full MCP server with CRUD operations
-- Session-scoped task persistence
+**How it works in Codex:**
+- New MCP server (`task_tracker`) provides full CRUD operations
+- Session-scoped tasks (cleared on new session)
+- Explicit tool calls: `create_task`, `list_tasks`, `update_task`, etc.
+- Export capabilities (Markdown, JSON)
 
-**Differences & Trade-offs:**
-- Claude Code: Native integration, automatic
-- Codex: Explicit MCP tools, full control
-- Trade-off: Simplicity vs. flexibility
+**Differences and trade-offs:**
+- Claude Code: Integrated with agent system, persistent
+- Codex: Session-scoped, explicit control, exportable
+- Trade-off: Claude Code more automatic, Codex more flexible for project management
 
 **When to use which:**
-- Claude Code: VS Code users, automatic task tracking
-- Codex: Custom task workflows, integration with other tools
+- Use Claude Code for persistent, agent-integrated task tracking
+- Use Codex for session-focused task management and exports
 
 ### Web Research
 
-**Claude Code:**
+**How it works in Claude Code:**
 - WebFetch tool for web research
-- Integrated content fetching and summarization
-- Built-in caching and rate limiting
+- Integrated with agent spawning
+- Direct access to search and content fetching
+- Automatic content processing
 
-**Codex (Before/After):**
-- Before: Not available
-- After: Full MCP server with search, fetch, summarize
-- File-based caching with TTL
+**How it works in Codex:**
+- New MCP server (`web_research`) provides research tools
+- DuckDuckGo search, URL fetching, content summarization
+- Explicit tool calls: `search_web`, `fetch_url`, `summarize_content`
+- Caching and rate limiting for respectful usage
 
-**Differences & Trade-offs:**
-- Claude Code: Native integration, seamless
-- Codex: Explicit tools, configurable caching
-- Trade-off: User experience vs. control
+**Differences and trade-offs:**
+- Claude Code: Integrated with agent workflows
+- Codex: Standalone research capabilities with caching
+- Trade-off: Claude Code more seamless, Codex more comprehensive and cached
 
 **When to use which:**
-- Claude Code: Interactive research during development
-- Codex: Automated research workflows, batch processing
+- Use Claude Code for agent-driven research workflows
+- Use Codex for standalone research with better caching and summarization
 
 ### Automation
 
-**Claude Code:**
-- Fully automatic via VS Code extension
-- No manual intervention required
-- Integrated with IDE workflows
+**How it works in Claude Code:**
+- Automatic hooks for various operations
+- VS Code integration provides seamless automation
+- Real-time notifications and updates
+- Automatic quality checks and transcript saves
 
-**Codex (Before/After):**
-- Wrapper script provides hook-like functionality
-- After: Enhanced with auto-detection, periodic saves
-- Programmable automation
+**How it works in Codex:**
+- Bash wrapper script (`amplify-codex.sh`) provides hook-like functionality
+- Enhanced with auto-quality checks, periodic saves, smart context detection
+- Profile-based server configuration
+- Command shortcuts for common operations
 
-**Differences & Trade-offs:**
-- Claude Code: Zero-configuration automation
-- Codex: Configurable, programmable automation
-- Trade-off: Simplicity vs. flexibility
+**Differences and trade-offs:**
+- Claude Code: Deep IDE integration, fully automatic
+- Codex: Script-based automation, highly configurable
+- Trade-off: Claude Code more seamless, Codex more portable and customizable
 
 **When to use which:**
-- Claude Code: VS Code users, standard workflows
-- Codex: Custom automation, headless environments
+- Use Claude Code for VS Code-native development
+- Use Codex for cross-environment automation and CI/CD
 
 ### Command System
 
-**Claude Code:**
-- Slash commands (`/ultrathink-task`, etc.)
-- Integrated with VS Code command palette
-- Rich command completion
+**How it works in Claude Code:**
+- Slash commands (`/ultrathink-task`, etc.) integrated into chat
+- Automatic command recognition and execution
+- Seamless workflow integration
 
-**Codex (Before/After):**
-- Before: Standard Codex CLI only
-- After: Bash shortcuts and workflow aliases
-- Basic command completion
+**How it works in Codex:**
+- Bash shortcuts script provides command functions
+- Functions like `codex-init`, `codex-check`, `codex-task-add`
+- Source into shell for quick access
+- Explicit function calls
 
-**Differences & Trade-offs:**
-- Claude Code: Rich IDE integration, discoverable
-- Codex: Terminal-based, scriptable
-- Trade-off: User experience vs. automation
+**Differences and trade-offs:**
+- Claude Code: Integrated into conversation flow
+- Codex: Shell-based shortcuts, more explicit
+- Trade-off: Claude Code more conversational, Codex more scriptable
 
 **When to use which:**
-- Claude Code: VS Code users, interactive workflows
-- Codex: Terminal users, scripted workflows
+- Use Claude Code for interactive, chat-based workflows
+- Use Codex for scripted and automated command execution
 
 ### IDE Integration
 
-**Claude Code:**
+**How it works in Claude Code:**
 - Native VS Code extension
 - Deep integration with editor features
-- Automatic hooks and notifications
+- Automatic file watching and notifications
+- Rich UI elements and status indicators
 
-**Codex (Before/After):**
-- CLI-first design
-- No IDE integration
-- Wrapper scripts provide some automation
+**How it works in Codex:**
+- CLI-first design with no IDE integration
+- Works with any editor or IDE
+- No automatic file watching or notifications
+- Pure command-line interface
 
-**Differences & Trade-offs:**
-- Claude Code: Rich IDE experience, automatic
-- Codex: Platform-independent, programmable
-- Trade-off: User experience vs. portability
+**Differences and trade-offs:**
+- Claude Code: Rich IDE experience, automatic features
+- Codex: Universal compatibility, no IDE dependencies
+- Trade-off: Claude Code more user-friendly, Codex more flexible
 
 **When to use which:**
-- Claude Code: VS Code users, rich IDE experience
-- Codex: Mixed environments, CI/CD, headless servers
+- Use Claude Code for VS Code-exclusive development
+- Use Codex for team environments with mixed editors or headless operation
 
 ## Architecture Differences
 
 ### Hooks vs MCP Servers
 
 **Claude Code:**
-- VS Code extension with automatic hooks
-- Native integration with editor events
-- Seamless, transparent operation
+- Uses VS Code extension hooks for automatic functionality
+- Tight integration with IDE events and UI
+- Automatic tool invocation based on context
+- Real-time notifications and status updates
 
 **Codex:**
-- MCP (Model Context Protocol) servers
-- Stdio-based communication with JSON-RPC
-- Explicit tool registration and invocation
+- Uses Model Context Protocol (MCP) for tool integration
+- Server-based architecture with stdio communication
+- Explicit tool calls via MCP protocol
+- JSON-RPC communication between Codex and servers
 
 **Implications:**
-- Claude Code: Automatic, no configuration
-- Codex: Explicit, programmable, extensible
+- Claude Code provides seamless, automatic workflows
+- Codex offers explicit control and better isolation
+- MCP enables cross-platform compatibility and custom server development
 
 ### Automatic vs Explicit
 
 **Claude Code:**
-- Automatic execution based on context
-- Hooks trigger on file changes, session events
-- Minimal user intervention
+- Automatic memory loading, quality checks, and transcript saves
+- Hooks trigger operations based on IDE events
+- Minimal user intervention required
+- Real-time feedback and notifications
 
 **Codex:**
-- Explicit tool calls required
-- Wrapper scripts provide automation
-- Full control over when things execute
+- Explicit tool calls for most operations
+- Wrapper script provides automation layer
+- User has full control over when operations occur
+- Enhanced automation through smart features (auto-checks, periodic saves)
 
 **Implications:**
-- Claude Code: Better for interactive development
-- Codex: Better for automation and scripting
+- Claude Code better for interactive development
+- Codex better for scripted workflows and automation
 
 ### VS Code Integration vs CLI-First
 
 **Claude Code:**
-- Designed specifically for VS Code
-- Leverages editor features and APIs
-- Rich UI integration
+- Built specifically for VS Code
+- Leverages VS Code APIs and extension system
+- Rich UI integration and notifications
+- Automatic file watching and change detection
 
 **Codex:**
-- CLI-first design philosophy
-- Platform-independent
-- Works with any editor or environment
+- CLI-first design with no IDE dependencies
+- Works with any editor or development environment
+- Cross-platform compatibility
+- Requires explicit commands for operations
 
 **Implications:**
-- Claude Code: Superior VS Code experience
-- Codex: Better for teams with mixed tools
+- Claude Code provides superior IDE experience
+- Codex offers maximum flexibility and portability
 
-### Task Tool vs Codex Exec
+### Task Tool vs codex exec
 
 **Claude Code:**
-- `Task(agent_name, task)` - seamless spawning
-- Automatic context passing
-- Results integrated in conversation
+- `Task()` tool for automatic agent spawning
+- Integrated with TodoWrite and WebFetch
+- Seamless context passing and execution
+- Parallel agent execution support
 
 **Codex:**
-- `codex exec --agent <name> "<task>"` - explicit execution
-- Manual context management (after enhancements)
-- Separate command output
+- `codex exec --agent <name>` for manual agent execution
+- Agent context bridge for context passing
+- Sequential execution with explicit control
+- Access to MCP tools (task_tracker, web_research)
 
 **Implications:**
-- Claude Code: Better user experience
-- Codex: Better for automation and scripting
+- Claude Code better for complex agent workflows
+- Codex better for simple, controlled agent execution
 
 ## Remaining Gaps
 
 ### What 5% is Still Missing
 
-1. **VS Code Integration** (20%): No native extension, limited IDE features
-2. **Automatic Hooks** (15%): No event-driven automation like Claude Code
-3. **Real-time Notifications** (10%): No VS Code-style notifications
-4. **Rich Command Completion** (5%): Limited compared to VS Code command palette
-5. **File Watching Integration** (5%): Basic file watching vs. deep editor integration
+The remaining 5% gap consists of deep VS Code-native features that cannot be replicated in a CLI-first architecture:
+
+1. **Real-time Notifications**: VS Code status bar updates, notifications, and UI indicators
+2. **Automatic File Watching**: Real-time quality checks triggered by file changes
+3. **Rich Command Completion**: Integrated slash command system with auto-completion
+4. **Parallel Agent Execution**: Simultaneous multiple agent execution
+5. **Deep IDE Integration**: Access to VS Code's internal APIs and extension ecosystem
 
 ### Why These Gaps Exist (Architectural Constraints)
 
-- **VS Code Integration**: Codex is CLI-first by design, not tied to specific editors
-- **Automatic Hooks**: MCP servers are pull-based, not push-based like VS Code extensions
-- **Real-time Notifications**: Terminal environment limitations vs. GUI capabilities
-- **Command Completion**: Shell completion vs. rich IDE completion systems
-- **File Watching**: Basic filesystem watching vs. editor's deep file system integration
+**CLI vs IDE Architecture:**
+- Codex operates as a standalone CLI tool with no access to VS Code's internal APIs
+- MCP protocol provides tool integration but not UI integration
+- VS Code extension architecture enables deep IDE hooks that CLI tools cannot access
+
+**Communication Model:**
+- Codex uses stdio-based MCP communication, limiting real-time capabilities
+- Claude Code uses VS Code's extension host for direct IDE integration
+- No equivalent mechanism exists for CLI tools to provide real-time IDE feedback
+
+**Execution Model:**
+- Codex executes agents sequentially via `codex exec`
+- Claude Code can spawn parallel agents through VS Code's task system
+- CLI environment lacks the parallelism and coordination of an IDE extension host
 
 ### Workarounds Available
 
-1. **VS Code Integration**: Use Codex in VS Code terminal, manual tool calls
-2. **Automatic Hooks**: Wrapper scripts and background processes provide similar functionality
-3. **Real-time Notifications**: Terminal notifications (if supported) or log monitoring
-4. **Rich Command Completion**: Bash completion scripts for common commands
-5. **File Watching**: Enhanced wrapper script with file change detection
+**For Real-time Notifications:**
+- Use terminal notifications (`notify-send` on Linux, `osascript` on macOS)
+- Monitor log files for status updates
+- Implement custom notification systems via MCP servers
 
-**Overall Assessment:**
-The remaining 5% represents deep IDE integration features that are fundamentally tied to VS Code's architecture. Codex prioritizes portability, automation, and CLI-first workflows over rich IDE experiences. For VS Code users, Claude Code remains superior. For automation, CI/CD, and mixed environments, Codex provides 95% parity with significant advantages in flexibility and control.
+**For Automatic File Watching:**
+- Use external file watchers (`fswatch`, `watchexec`)
+- Implement periodic checks in wrapper script
+- Create custom MCP servers for file monitoring
+
+**For Rich Command Completion:**
+- Bash completion scripts for shortcuts
+- Custom shell functions with tab completion
+- MCP server-based command assistance
+
+**For Parallel Agent Execution:**
+- Shell job control and background processes
+- Custom orchestration scripts
+- Multiple Codex instances (not recommended)
+
+**For Deep IDE Integration:**
+- VS Code extensions that call Codex CLI
+- Custom IDE plugins wrapping Codex functionality
+- Hybrid approach using both backends
+
+### Recommendations
+
+**For VS Code Users:** Use Claude Code for the full integrated experience, reserving Codex for automation and CI/CD tasks.
+
+**For Mixed Environments:** Use Codex as the primary backend with Claude Code for VS Code-specific workflows.
+
+**For Headless Operation:** Codex provides 95% parity with superior automation capabilities.
+
+**For Team Consistency:** Codex enables consistent workflows across different editors and environments.
+
+---
+
+**Related Documentation:**
+- [Codex Integration Guide](../CODEX_INTEGRATION.md) - Complete setup and usage guide
+- [Quick Start Tutorial](QUICK_START_CODEX.md) - 5-minute introduction
+- [Beginner Tutorial](BEGINNER_GUIDE_CODEX.md) - Comprehensive walkthrough
+- [Workflow Diagrams](WORKFLOW_DIAGRAMS.md) - Visual architecture guides
+- [Troubleshooting Tree](TROUBLESHOOTING_TREE.md) - Problem-solving guide
+- [Backend Comparison](../BACKEND_COMPARISON.md) - Claude Code vs Codex decision guide

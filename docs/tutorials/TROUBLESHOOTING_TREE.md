@@ -6,1113 +6,1073 @@
 The diagnostic check will output:
 - ✅ **PASS**: Component is working correctly
 - ❌ **FAIL**: Component has issues (see details below)
-- ⚠️ **WARN**: Component has potential issues or is misconfigured
+- ⚠️ **WARN**: Component has potential issues or missing optional features
 
 ### Common Quick Fixes
 
-**If multiple components fail:**
-```bash
-# Reinstall dependencies
-make install
-
-# Reset Codex configuration
-rm -rf .codex/
-codex --config .codex/config.toml --init
-```
-
-**If wrapper script fails:**
-```bash
-# Make script executable
-chmod +x amplify-codex.sh
-
-# Check prerequisites
-codex --version && uv --version && python --version
-```
+| Issue | Quick Fix |
+|-------|-----------|
+| **Codex CLI not found** | Install Codex CLI from Anthropic |
+| **uv not available** | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+| **Virtual environment missing** | `make install` |
+| **Config file missing** | `codex --config .codex/config.toml --init` |
+| **MCP servers failing** | Check `.codex/logs/` for server-specific errors |
 
 ## Problem Categories
 
 Select the category that best matches your issue:
 
-- [Installation Issues](#installation-issues)
-- [Configuration Issues](#configuration-issues)
-- [MCP Server Issues](#mcp-server-issues)
-- [Memory System Issues](#memory-system-issues)
-- [Quality Check Issues](#quality-check-issues)
-- [Transcript Issues](#transcript-issues)
-- [Agent Issues](#agent-issues)
-- [Wrapper Script Issues](#wrapper-script-issues)
+- [**Installation Issues**](#installation-issues) - Problems with setup and prerequisites
+- [**Configuration Issues**](#configuration-issues) - Config file and profile problems
+- [**MCP Server Issues**](#mcp-server-issues) - Server startup and tool execution problems
+- [**Memory System Issues**](#memory-system-issues) - Context loading and extraction problems
+- [**Quality Check Issues**](#quality-check-issues) - Code validation and linting problems
+- [**Transcript Issues**](#transcript-issues) - Session export and format problems
+- [**Agent Issues**](#agent-issues) - Agent spawning and execution problems
+- [**Wrapper Script Issues**](#wrapper-script-issues) - Automation and orchestration problems
 
 ## Installation Issues
 
 ```mermaid
 flowchart TD
-    A[Codex won't start] --> B{Check Codex CLI}
-    B --> C[codex --version]
-    C --> D{Version shown?}
-    D -->|Yes| E[Check uv]
-    D -->|No| F[Install Codex CLI<br/>Follow: https://docs.anthropic.com/codex/installation]
-    E --> G[uv --version]
-    G --> H{Version shown?}
-    H -->|Yes| I[Check Python]
-    H -->|No| J[Install uv<br/>curl -LsSf https://astral.sh/uv/install.sh | sh]
-    I --> K[python --version]
-    K --> L{3.11+ shown?}
-    L -->|Yes| M[Check project setup]
-    L -->|No| N[Upgrade Python to 3.11+]
-    M --> O[make install]
-    O --> P{No errors?}
-    P -->|Yes| Q[Try starting Codex]
-    P -->|No| R[Fix dependency issues]
-    Q --> S{Starts successfully?}
-    S -->|Yes| T[Installation OK]
-    S -->|No| U[Check PATH<br/>export PATH="$HOME/.codex/bin:$PATH"]
+    A[Installation Issue] --> B{Codex CLI installed?}
+    B -->|No| C[Install Codex CLI<br/>from Anthropic docs]
+    B -->|Yes| D{uv package manager available?}
+    D -->|No| E[Install uv:<br/>curl -LsSf https://astral.sh/uv/install.sh | sh]
+    D -->|Yes| F{Python 3.11+ available?}
+    F -->|No| G[Install Python 3.11+<br/>or use pyenv]
+    F -->|Yes| H{Virtual environment exists?}
+    H -->|No| I[Run: make install]
+    H -->|Yes| J{Project dependencies installed?}
+    J -->|No| K[Activate venv and run:<br/>uv pip install -e .]
+    J -->|Yes| L[Test basic functionality:<br/>./amplify-codex.sh --help]
+    L -->|Works| M[Installation Complete ✅]
+    L -->|Fails| N[Check error messages<br/>and retry diagnostics]
 ```
 
-### Detailed Steps
+### Diagnostic Questions
 
-**Codex CLI not found:**
+1. **What error do you see when running `./amplify-codex.sh`?**
+   - "codex: command not found" → Install Codex CLI
+   - "uv: command not found" → Install uv package manager
+   - "Python version 3.11 required" → Upgrade Python or use pyenv
+
+2. **Are you on the correct platform?**
+   - **macOS/Linux**: Use standard installation
+   - **Windows**: Use WSL or ensure PATH includes Codex CLI
+
+3. **Do you have network access?**
+   - Some installations require downloading dependencies
+
+### Specific Solutions
+
+#### Codex CLI Installation
 ```bash
-# Check if installed
-which codex
+# macOS with Homebrew
+brew install anthropic/tap/codex
 
-# Add to PATH (if installed but not in PATH)
-export PATH="$HOME/.codex/bin:$PATH"
+# Linux/Windows (direct download)
+# Follow: https://docs.anthropic.com/codex/installation
 
 # Verify installation
 codex --version
-# Expected: codex 0.x.x
 ```
 
-**uv not available:**
+#### uv Installation
 ```bash
 # Install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Restart shell or source profile
-source ~/.bashrc  # or ~/.zshrc
+# Add to PATH (add to ~/.bashrc or ~/.zshrc)
+export PATH="$HOME/.cargo/bin:$PATH"
+
+# Verify installation
+uv --version
+```
+
+#### Python Version Check
+```bash
+# Check current version
+python --version
+
+# If using pyenv
+pyenv install 3.11.6
+pyenv global 3.11.6
 
 # Verify
-uv --version
-# Expected: uv 0.x.x
-```
-
-**Python version issues:**
-```bash
-# Check version
 python --version
-# Should show: Python 3.11.x or higher
-
-# If wrong version, use uv python
-uv run --python 3.11 python --version
 ```
 
-**Project setup fails:**
+#### Virtual Environment Setup
 ```bash
-# Clean and reinstall
-rm -rf .venv/
+# Create and activate venv
 make install
 
-# Check for errors in output
-# Common issues: network problems, disk space, permissions
+# Or manually
+uv venv .venv
+source .venv/bin/activate  # Linux/Mac
+# .venv\Scripts\activate   # Windows
+
+# Install dependencies
+uv pip install -e .
 ```
 
 ## Configuration Issues
 
 ```mermaid
 flowchart TD
-    A[Codex behaves unexpectedly] --> B{Check config file}
-    B --> C[cat .codex/config.toml]
-    C --> D{File exists?}
-    D -->|No| E[Initialize config<br/>codex --config .codex/config.toml --init]
-    D -->|Yes| F{Check syntax}
-    F --> G[codex --profile development --validate-config]
-    G --> H{Valid?}
-    H -->|No| I[Fix syntax errors<br/>Check TOML format]
-    H -->|Yes| J{Check profiles}
-    J --> K[codex --list-profiles]
-    K --> L{Profiles shown?}
-    L -->|No| M[Add profiles to config.toml]
-    L -->|Yes| N{Check environment vars}
-    N --> O[echo $AMPLIFIER_BACKEND<br/>echo $CODEX_PROFILE]
-    O --> P{Vars set?}
-    P -->|No| Q[Set variables<br/>export AMPLIFIER_BACKEND=codex<br/>export CODEX_PROFILE=development]
-    P -->|Yes| R{Test profile}
-    R --> S[codex --profile development --help]
-    S --> T{Works?}
-    T -->|Yes| U[Configuration OK]
-    T -->|No| V[Check MCP server configs]
+    A[Configuration Issue] --> B{Config file exists?}
+    B -->|No| C[Create config:<br/>codex --config .codex/config.toml --init]
+    B -->|Yes| D{Config file valid TOML?}
+    D -->|No| E[Fix TOML syntax errors<br/>Use online TOML validator]
+    D -->|Yes| F{Profiles defined?}
+    F -->|No| G[Add profile sections:<br/>[profiles.development]]
+    F -->|Yes| H{MCP servers configured?}
+    H -->|No| I[Add server configs:<br/>[mcp_servers.amplifier_session]]
+    H -->|Yes| J{Environment variables set?}
+    J -->|No| K[Set required vars:<br/>export AMPLIFIER_ROOT=.]
+    J -->|Yes| L{Profile loads correctly?}
+    L -->|No| M[Check profile syntax<br/>Validate server references]
+    L -->|Yes| N[Configuration Valid ✅]
 ```
 
-### Detailed Steps
+### Diagnostic Questions
 
-**Config file missing:**
+1. **What error message do you see?**
+   - "config file not found" → Create config file
+   - "invalid TOML" → Fix syntax errors
+   - "profile not found" → Add profile definition
+
+2. **Are you using the correct config path?**
+   - Default: `.codex/config.toml`
+   - Custom: Check `--config` parameter
+
+3. **Have you modified the config recently?**
+   - Recent changes may have introduced syntax errors
+
+### Specific Solutions
+
+#### Creating Config File
 ```bash
-# Create directory
-mkdir -p .codex
-
-# Initialize config
+# Initialize default config
 codex --config .codex/config.toml --init
 
-# Verify creation
-ls -la .codex/config.toml
+# Or create manually
+cat > .codex/config.toml << 'EOF'
+model = "claude-3-5-sonnet-20241022"
+approval_policy = "on-request"
+
+[mcp_servers.amplifier_session]
+command = "uv"
+args = ["run", "python", ".codex/mcp_servers/session_manager/server.py"]
+env = { AMPLIFIER_ROOT = "." }
+
+[profiles.development]
+mcp_servers = ["amplifier_session"]
+EOF
 ```
 
-**Config syntax errors:**
+#### Validating Config Syntax
 ```bash
-# Validate syntax
+# Use Python to validate TOML
 python -c "import tomllib; tomllib.load(open('.codex/config.toml', 'rb'))"
-# Should not show errors
 
-# Check for common issues:
-# - Missing quotes around strings
-# - Incorrect indentation
-# - Invalid section names
+# Or use online validator: https://www.toml-lint.com/
 ```
 
-**Profile issues:**
+#### Environment Variables
 ```bash
-# List available profiles
-codex --list-profiles
+# Required variables
+export AMPLIFIER_ROOT="."
+export AMPLIFIER_BACKEND="codex"
 
-# Check profile syntax
-codex --profile development --validate-config
-
-# View profile details
-codex --profile development --show-config
+# Optional variables
+export CODEX_PROFILE="development"
+export MEMORY_SYSTEM_ENABLED="true"
 ```
 
-**Environment variables:**
-```bash
-# Check current values
-echo "AMPLIFIER_BACKEND: $AMPLIFIER_BACKEND"
-echo "CODEX_PROFILE: $CODEX_PROFILE"
-echo "MEMORY_SYSTEM_ENABLED: $MEMORY_SYSTEM_ENABLED"
+#### Profile Configuration
+```toml
+# Example development profile
+[profiles.development]
+mcp_servers = ["amplifier_session", "amplifier_quality", "amplifier_transcripts"]
 
-# Set for current session
-export AMPLIFIER_BACKEND=codex
-export CODEX_PROFILE=development
-export MEMORY_SYSTEM_ENABLED=true
+# Example CI profile
+[profiles.ci]
+mcp_servers = ["amplifier_quality"]
 ```
 
 ## MCP Server Issues
 
 ```mermaid
 flowchart TD
-    A[MCP tools not available] --> B{Check server startup}
-    B --> C[View server logs<br/>tail -f .codex/logs/*.log]
-    C --> D{See errors?}
-    D -->|Yes| E[Fix server errors<br/>Check imports, paths, permissions]
-    D -->|No| F{Check server registration}
-    F --> G[codex --profile development --list-tools]
-    G --> H{Tools listed?}
-    H -->|No| I[Check config server sections<br/>Verify command paths]
-    H -->|Yes| J{Test tool invocation}
-    J --> K[codex exec "health_check"]
-    K --> L{Response received?}
-    L -->|No| M[Check MCP protocol<br/>Test stdio communication]
-    L -->|Yes| N[Test specific tools]
-    N --> O[codex exec "initialize_session with prompt 'test'"]
-    O --> P{Works?}
-    P -->|Yes| Q[MCP servers OK]
-    P -->|No| R[Check tool-specific issues<br/>Memory system, quality checks, etc.]
+    A[MCP Server Issue] --> B{Which server failing?}
+    B -->|session_manager| C[Check memory system:<br/>echo $MEMORY_SYSTEM_ENABLED]
+    B -->|quality_checker| D[Check Makefile:<br/>ls Makefile && make check]
+    B -->|transcript_saver| E[Check export tools:<br/>which python && python --version]
+    B -->|task_tracker| F[Check task storage:<br/>mkdir -p .codex/tasks]
+    B -->|web_research| G[Check network:<br/>curl -I https://duckduckgo.com]
+    C -->|false| H[Enable memory:<br/>export MEMORY_SYSTEM_ENABLED=true]
+    C -->|true| I[Check server logs:<br/>tail .codex/logs/session_manager.log]
+    D -->|fails| J[Fix Makefile or install tools:<br/>uv add ruff pyright pytest]
+    D -->|passes| K[Check server startup:<br/>uv run python .codex/mcp_servers/quality_checker/server.py]
+    E -->|fails| L[Install missing tools or fix paths]
+    F -->|missing| M[Create storage dir:<br/>mkdir -p .codex/tasks]
+    G -->|fails| N[Check network connectivity<br/>and proxy settings]
+    H -->|fixed| O[Restart Codex session]
+    I -->|errors| P[Fix specific memory errors]
+    J -->|fixed| Q[Test quality checks work]
+    K -->|works| R[Server configuration correct ✅]
+    L -->|fixed| S[Transcript export working]
+    M -->|created| T[Task tracking ready]
+    N -->|fixed| U[Web research functional]
+    O -->|success| V[Session manager working]
+    P -->|fixed| W[Memory system operational]
+    Q -->|success| X[Quality checker working]
 ```
 
-### Detailed Steps
+### Diagnostic Questions
 
-**Server startup failures:**
+1. **Which MCP server is failing?**
+   - Check error messages for server name
+   - Look at logs in `.codex/logs/`
+
+2. **When does the failure occur?**
+   - **Server startup**: Configuration or import issues
+   - **Tool execution**: Runtime errors during use
+   - **Server communication**: MCP protocol issues
+
+3. **Are other servers working?**
+   - Test individual servers to isolate issues
+
+### Specific Solutions
+
+#### Testing Individual Servers
 ```bash
-# Check server logs
-tail -f .codex/logs/session_manager.log
-tail -f .codex/logs/quality_checker.log
-tail -f .codex/logs/transcript_saver.log
-
-# Test server directly
-uv run python .codex/mcp_servers/session_manager/server.py --help
-
-# Check for import errors
-python -c "from amplifier.memory import MemoryStore"
-```
-
-**Server registration issues:**
-```bash
-# List registered tools
-codex --profile development --list-tools
-
-# Check config sections
-grep -A 10 "\[mcp_servers" .codex/config.toml
-
-# Verify command paths exist
-ls .codex/mcp_servers/session_manager/server.py
-```
-
-**Tool invocation problems:**
-```bash
-# Test basic tool
-codex exec "health_check"
-
-# Test with parameters
-codex exec "initialize_session with prompt 'test'"
-
-# Check for timeout errors
-codex exec --timeout 30 "check_code_quality with file_paths ['README.md']"
-```
-
-**Protocol communication issues:**
-```bash
-# Test stdio directly
-echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}' | \
+# Test session manager
 uv run python .codex/mcp_servers/session_manager/server.py
 
-# Check JSON parsing
-python -c "import json; print('JSON OK')"
+# Test quality checker
+uv run python .codex/mcp_servers/quality_checker/server.py
+
+# Test transcript saver
+uv run python .codex/mcp_servers/transcript_saver/server.py
+
+# Test task tracker
+uv run python .codex/mcp_servers/task_tracker/server.py
+
+# Test web research
+uv run python .codex/mcp_servers/web_research/server.py
+```
+
+#### Server Logs Location
+```bash
+# View all server logs
+ls .codex/logs/
+tail -f .codex/logs/*.log
+
+# View specific server log
+tail -f .codex/logs/session_manager.log
+tail -f .codex/logs/quality_checker.log
+```
+
+#### Common Server Fixes
+
+**Memory System Issues:**
+```bash
+# Enable memory system
+export MEMORY_SYSTEM_ENABLED=true
+
+# Check memory data exists
+ls .data/memories/
+
+# Test memory loading
+python -c "from amplifier.memory import MemoryStore; print('OK')"
+```
+
+**Quality Check Issues:**
+```bash
+# Install required tools
+uv add ruff pyright pytest
+
+# Test tools individually
+uv run ruff check .
+uv run pyright
+uv run pytest
+
+# Check Makefile
+make check
+```
+
+**Task Storage Issues:**
+```bash
+# Create storage directory
+mkdir -p .codex/tasks
+
+# Check permissions
+ls -la .codex/tasks/
+```
+
+**Web Research Issues:**
+```bash
+# Test network connectivity
+curl -I https://duckduckgo.com
+
+# Check proxy settings if behind corporate proxy
+echo $http_proxy $https_proxy
 ```
 
 ## Memory System Issues
 
 ```mermaid
 flowchart TD
-    A[Memory loading fails] --> B{Check memory system enabled}
-    B --> C[echo $MEMORY_SYSTEM_ENABLED]
-    C --> D{True?}
-    D -->|No| E[Enable memory system<br/>export MEMORY_SYSTEM_ENABLED=true]
-    D -->|Yes| F{Check memory data exists}
-    F --> G[ls .data/memories/]
-    G --> H{Files exist?}
-    H -->|No| I[Initialize memory system<br/>Run previous sessions to create memories]
-    H -->|Yes| J{Check memory loading}
-    J --> K[uv run python .codex/tools/session_init.py --verbose]
-    K --> L{Loads successfully?}
-    L -->|No| M[Check memory format<br/>Validate JSON files]
-    L -->|Yes| N{Check memory extraction}
-    N --> O[uv run python .codex/tools/session_cleanup.py --verbose]
-    O --> P{Extracts successfully?}
-    P -->|No| Q[Check session data<br/>Verify conversation content]
-    P -->|Yes| R[Memory system OK]
+    A[Memory Issue] --> B{Memory system enabled?}
+    B -->|No| C[Enable memory:<br/>export MEMORY_SYSTEM_ENABLED=true]
+    B -->|Yes| D{Memory data exists?}
+    D -->|No| E[Initialize memory store:<br/>python -c "from amplifier.memory import MemoryStore; MemoryStore()"]
+    D -->|Yes| F{Memory loading works?}
+    F -->|No| G[Check memory format:<br/>ls .data/memories/ | head -5]
+    F -->|Yes| H{Memory extraction works?}
+    H -->|No| I[Check extraction timeout:<br/>60 second limit]
+    H -->|Yes| J{Memory search works?}
+    J -->|No| K[Check search indexing:<br/>rebuild memory index]
+    J -->|Yes| L[Memory System Working ✅]
+    C -->|enabled| M[Test memory loading]
+    E -->|initialized| N[Test memory operations]
+    G -->|invalid| O[Fix memory data format]
+    I -->|timeout| P[Reduce session size or increase timeout]
+    K -->|rebuilt| Q[Test memory search]
+    M -->|works| R[Loading functional]
+    N -->|works| S[Memory operations OK]
+    O -->|fixed| T[Data format corrected]
+    P -->|adjusted| U[Extraction working]
+    Q -->|works| V[Search functional]
 ```
 
-### Detailed Steps
+### Diagnostic Questions
 
-**Memory system disabled:**
+1. **What specific memory operation is failing?**
+   - **Loading memories**: At session start
+   - **Extracting memories**: At session end
+   - **Searching memories**: During context retrieval
+
+2. **Are there any error messages in logs?**
+   - Check `.codex/logs/session_manager.log`
+   - Look for memory-related errors
+
+3. **How large is your memory store?**
+   - Large memory stores may cause performance issues
+
+### Specific Solutions
+
+#### Memory System Status Check
 ```bash
-# Check setting
+# Check if memory system is enabled
 echo $MEMORY_SYSTEM_ENABLED
 
-# Enable for session
+# Enable if disabled
 export MEMORY_SYSTEM_ENABLED=true
-
-# Enable permanently in shell profile
-echo 'export MEMORY_SYSTEM_ENABLED=true' >> ~/.bashrc
 ```
 
-**Memory data missing:**
+#### Memory Data Inspection
 ```bash
-# Check memory directory
+# Check memory directory exists
 ls -la .data/memories/
 
-# Count memories
+# Count memory files
 find .data/memories/ -name "*.json" | wc -l
 
-# Initialize with sample data if needed
-# Run a test session to generate memories
+# Check recent memory files
+ls -lt .data/memories/ | head -10
 ```
 
-**Memory loading failures:**
+#### Memory Loading Test
 ```bash
-# Test loading manually
-uv run python .codex/tools/session_init.py --verbose
-
-# Check logs
-cat .codex/logs/session_init.log
-
-# Validate memory files
-python -c "import json; [json.load(open(f)) for f in ['.data/memories/file1.json', '.data/memories/file2.json']]"
+# Test memory loading manually
+python -c "
+from amplifier.memory import MemoryStore
+store = MemoryStore()
+memories = store.search('test query', limit=5)
+print(f'Found {len(memories)} memories')
+"
 ```
 
-**Memory extraction issues:**
+#### Memory Extraction Test
 ```bash
-# Test extraction
-uv run python .codex/tools/session_cleanup.py --verbose
+# Test memory extraction
+python -c "
+from amplifier.extraction import MemoryExtractor
+extractor = MemoryExtractor()
+# Test with sample conversation
+result = extractor.extract([{'role': 'user', 'content': 'Test message'}])
+print(f'Extracted {len(result)} memories')
+"
+```
 
-# Check for timeout (60s limit)
-uv run python .codex/tools/session_cleanup.py --no-timeout
+#### Memory Store Reset
+```bash
+# Backup existing memories
+cp -r .data/memories .data/memories.backup
 
-# Validate session data
-ls ~/.codex/sessions/
-cat ~/.codex/sessions/*/history.jsonl | head -10
+# Reset memory store (CAUTION: destroys data)
+rm -rf .data/memories/
+python -c "from amplifier.memory import MemoryStore; MemoryStore()"
 ```
 
 ## Quality Check Issues
 
 ```mermaid
 flowchart TD
-    A[Quality checks fail] --> B{Check Makefile exists}
-    B --> C[ls Makefile]
-    C --> D{Exists?}
-    D -->|No| E[Create Makefile<br/>Copy from template or create basic]
-    D -->|Yes| F{Check make check target}
-    F --> G[make check]
-    G --> H{No errors?}
-    H -->|No| I[Fix Makefile<br/>Check tool installations]
-    H -->|Yes| J{Check virtual environment}
-    J --> K[echo $VIRTUAL_ENV]
-    K --> L{Set?}
-    L -->|No| M[Activate venv<br/>source .venv/bin/activate]
-    L -->|Yes| N{Check tool installations}
-    N --> O[uv pip list | grep -E "(ruff|pyright|pytest)"]
-    O --> P{All installed?}
-    P -->|No| Q[Install missing tools<br/>uv add --dev ruff pyright pytest]
-    P -->|Yes| R{Test tools individually}
-    R --> S[uv run ruff check .]
-    S --> T{Ruff works?}
-    T -->|No| U[Fix ruff config<br/>Check .ruff.toml]
-    T -->|Yes| V[uv run pyright]
-    V --> W{Pyright works?}
-    W -->|No| X[Fix pyright config<br/>Check pyproject.toml]
-    W -->|Yes| Y[uv run pytest]
-    Y --> Z{Pytest works?}
-    Z -->|No| AA[Fix pytest config<br/>Check pytest.ini or pyproject.toml]
-    Z -->|Yes| BB[Quality checks OK]
+    A[Quality Check Issue] --> B{Makefile exists?}
+    B -->|No| C[Create Makefile with check target]
+    B -->|Yes| D{make check works?}
+    D -->|No| E[Fix Makefile syntax<br/>Check tool installations]
+    D -->|Yes| F{Quality tools installed?}
+    F -->|No| G[Install tools:<br/>uv add ruff pyright pytest]
+    F -->|Yes| H{Tools work individually?}
+    H -->|No| I[Test each tool:<br/>uv run ruff check .]
+    H -->|Yes| J{MCP tool works?}
+    J -->|No| K[Check server logs:<br/>tail .codex/logs/quality_checker.log]
+    J -->|Yes| L{Quality Checks Working ✅}
+    C -->|created| M[Test make check]
+    E -->|fixed| N[Test tools]
+    G -->|installed| O[Test individual tools]
+    I -->|works| P[Tools functional]
+    K -->|fixed| Q[MCP tool working]
+    M -->|works| R[Makefile correct]
+    N -->|works| S[Tools installed]
+    O -->|works| T[Individual tools OK]
+    P -->|works| U[All tools functional]
+    Q -->|works| V[MCP integration OK]
 ```
 
-### Detailed Steps
+### Diagnostic Questions
 
-**Makefile missing:**
+1. **What quality check is failing?**
+   - **make check**: Makefile or tool issues
+   - **Individual tools**: ruff, pyright, pytest
+   - **MCP tool**: Server communication issues
+
+2. **Are you in the correct directory?**
+   - Quality checks must run from project root
+
+3. **Do you have the right Python environment?**
+   - Virtual environment must be activated
+
+### Specific Solutions
+
+#### Makefile Creation/Validation
 ```bash
-# Check for Makefile
+# Check if Makefile exists
 ls Makefile
 
-# Create basic Makefile
+# Create basic Makefile if missing
 cat > Makefile << 'EOF'
-.PHONY: check install test
+.PHONY: check install test lint type
 
-check:
+check: lint type test
+
+lint:
 	uv run ruff check .
-	uv run pyright
-	uv run pytest
 
-install:
-	uv sync
+type:
+	uv run pyright
 
 test:
 	uv run pytest
+
+install:
+	uv venv .venv
+	uv pip install -e .
 EOF
-```
 
-**make check fails:**
-```bash
-# Run make check
+# Test Makefile
 make check
-
-# Check exit code
-echo $?
-
-# Run individual tools
-make check 2>&1 | head -20
 ```
 
-**Virtual environment issues:**
+#### Tool Installation
 ```bash
-# Check if activated
-echo $VIRTUAL_ENV
+# Install quality tools
+uv add ruff pyright pytest
 
-# Activate if needed
-source .venv/bin/activate
-
-# Verify uv uses venv
-uv run which python
-# Should show .venv/bin/python
-```
-
-**Tool installation issues:**
-```bash
-# Check installed tools
-uv pip list | grep -E "(ruff|pyright|pytest)"
-
-# Install missing tools
-uv add --dev ruff pyright pytest
-
-# Verify versions
+# Verify installations
 uv run ruff --version
 uv run pyright --version
 uv run pytest --version
 ```
 
-**Individual tool failures:**
+#### Individual Tool Testing
 ```bash
-# Test ruff
+# Test ruff (linting)
 uv run ruff check .
-# Fix: Check .ruff.toml configuration
 
-# Test pyright
+# Test pyright (type checking)
 uv run pyright
-# Fix: Check pyproject.toml [tool.pyright] section
 
-# Test pytest
+# Test pytest (testing)
 uv run pytest
-# Fix: Check pytest configuration files
+
+# Test with specific files
+uv run ruff check src/main.py
+uv run pyright src/main.py
+uv run pytest tests/test_main.py
+```
+
+#### MCP Tool Testing
+```bash
+# Test MCP tool directly
+codex exec "check_code_quality with file_paths ['src/main.py']"
+
+# Check server logs for errors
+tail -f .codex/logs/quality_checker.log
 ```
 
 ## Transcript Issues
 
 ```mermaid
 flowchart TD
-    A[Transcript problems] --> B{What type of issue?}
-    B -->|Can't export| C{Check session exists}
-    B -->|Wrong format| D{Check format options}
-    B -->|Missing data| E{Check session content}
-    B -->|Large file| F{Check size limits}
-    C --> G[ls ~/.codex/sessions/]
-    G --> H{Session directory exists?}
-    H -->|No| I[Start new session first<br/>./amplify-codex.sh]
-    H -->|Yes| J{codex exec "list_available_sessions"}
-    J --> K{Session listed?}
-    K -->|No| L[Check session permissions<br/>ls -la ~/.codex/sessions/]
-    K -->|Yes| M{codex exec "save_current_transcript"}
-    M --> N{Exports successfully?}
-    N -->|No| O[Check write permissions<br/>touch .codex/transcripts/test.txt]
-    N -->|Yes| P[Export OK]
-    D --> Q{codex exec "save_current_transcript with format 'extended'"}
-    Q --> R{Format correct?}
-    R -->|No| S[Check format parameter<br/>Try 'standard', 'extended', 'both', 'compact']
-    R -->|Yes| T[Format OK]
-    E --> U[cat ~/.codex/sessions/*/history.jsonl | wc -l]
-    U --> V{Has content?}
-    V -->|No| W[Session too short<br/>Add more conversation]
-    V -->|Yes| X[Check export tool<br/>python tools/transcript_manager.py export --current]
-    F --> Y[ls -lh .codex/transcripts/]
-    Y --> Z{File too large?}
-    Z -->|Yes| AA[Use compact format<br/>codex exec "save_current_transcript with format 'compact'"]
-    Z -->|No| BB[Size OK]
+    A[Transcript Issue] --> B{Transcript export failing?}
+    B -->|Yes| C[Check export tools:<br/>python tools/transcript_manager.py --help]
+    B -->|No| D{Format conversion failing?}
+    D -->|Yes| E[Check source format:<br/>ls ~/.codex/sessions/]
+    D -->|No| F{Transcript not found?}
+    F -->|Yes| G[Check session exists:<br/>ls ~/.codex/sessions/ | grep session_id]
+    F -->|No| H{Transcript corrupted?}
+    H -->|Yes| I[Check file integrity:<br/>file ~/.codex/transcripts/*/transcript.md]
+    H -->|No| J{Transcript too large?}
+    J -->|Yes| K[Use compact format:<br/>--format compact]
+    J -->|No| L{Transcripts Working ✅}
+    C -->|missing| M[Install transcript tools]
+    E -->|wrong| N[Convert format properly]
+    G -->|missing| O[Find correct session ID]
+    I -->|corrupted| P[Recover from backup]
+    K -->|large| Q[Use compact format]
+    M -->|installed| R[Export tools ready]
+    N -->|converted| S[Format conversion OK]
+    O -->|found| T[Session located]
+    P -->|recovered| U[Transcript restored]
+    Q -->|working| V[Large transcripts handled]
 ```
 
-### Detailed Steps
+### Diagnostic Questions
 
-**Session not found:**
+1. **What transcript operation is failing?**
+   - **Export**: Creating transcript files
+   - **Format conversion**: Changing between formats
+   - **Loading**: Reading existing transcripts
+
+2. **Which backend are you using?**
+   - **Codex**: `~/.codex/transcripts/`
+   - **Claude Code**: `.data/transcripts/`
+
+3. **Do you have the correct session ID?**
+   - Session IDs are UUIDs or short IDs
+
+### Specific Solutions
+
+#### Transcript Export Testing
 ```bash
-# List available sessions
-codex exec "list_available_sessions"
-
-# Check session directories
-ls ~/.codex/sessions/
-
-# Find recent sessions
-ls -lt ~/.codex/sessions/ | head -5
-```
-
-**Export failures:**
-```bash
-# Try manual export
-codex exec "save_current_transcript with format 'both'"
-
-# Check permissions
-mkdir -p .codex/transcripts
-touch .codex/transcripts/test.txt
-
-# Use transcript manager
+# Test transcript export
 python tools/transcript_manager.py export --current
+
+# Export specific session
+python tools/transcript_manager.py export --session-id a1b2c3d4
+
+# Export with specific format
+python tools/transcript_manager.py export --format extended
 ```
 
-**Format issues:**
+#### Format Conversion
 ```bash
-# Test different formats
-codex exec "save_current_transcript with format 'standard'"
-codex exec "save_current_transcript with format 'extended'"
-codex exec "save_current_transcript with format 'compact'"
+# Convert Codex to Claude format
+python tools/transcript_manager.py convert session-id --from codex --to claude
 
-# Check output files
-ls -la .codex/transcripts/
+# Convert Claude to Codex format
+python tools/transcript_manager.py convert session-id --from claude --to codex
 ```
 
-**Missing content:**
+#### Finding Session IDs
 ```bash
-# Check session data
-ls ~/.codex/sessions/*/history.jsonl
-wc -l ~/.codex/sessions/*/history.jsonl
+# List all available sessions
+python tools/transcript_manager.py list
 
-# Validate JSON
-python -c "import json; [json.loads(line) for line in open('~/.codex/sessions/session_id/history.jsonl')]"
+# Search for sessions by content
+python tools/transcript_manager.py search "specific text"
+
+# Check Codex session directories
+ls ~/.codex/sessions/
+ls ~/.codex/transcripts/
+```
+
+#### Transcript Integrity Check
+```bash
+# Check file types
+file ~/.codex/transcripts/*/transcript.md
+
+# Validate JSON files
+python -c "import json; json.load(open('meta.json'))"
+
+# Check for corruption
+grep -c "error\|exception" ~/.codex/transcripts/*/transcript.md
 ```
 
 ## Agent Issues
 
 ```mermaid
 flowchart TD
-    A[Agent execution fails] --> B{Check agent files exist}
-    B --> C[ls .codex/agents/]
-    C --> D{Files exist?}
-    D -->|No| E[Convert agents<br/>python tools/convert_agents.py]
-    D -->|Yes| F{Check agent format}
-    F --> G[head .codex/agents/bug-hunter.md]
-    G --> H{Has frontmatter?}
-    H -->|No| I[Fix agent format<br/>Add YAML frontmatter]
-    H -->|Yes| J{Test agent execution}
-    J --> K[codex exec --agent bug-hunter "test task"]
-    K --> L{Executes?}
-    L -->|No| M[Check codex exec syntax<br/>codex exec --help]
-    L -->|Yes| N{Check agent output}
-    N --> O[Check output format<br/>Should be structured response]
-    O --> P{Output correct?}
-    P -->|No| Q[Check agent definition<br/>Validate tool access]
-    P -->|Yes| R[Agent OK]
+    A[Agent Issue] --> B{Agent file exists?}
+    B -->|No| C[Convert agent:<br/>python tools/convert_agents.py --agent agent_name]
+    B -->|Yes| D{Agent file valid?}
+    D -->|No| E[Fix YAML frontmatter<br/>Check required fields]
+    D -->|Yes| F{codex exec works?}
+    F -->|No| G[Check Codex installation:<br/>codex --version]
+    F -->|Yes| H{Agent execution fails?}
+    H -->|Yes| I[Check execution timeout:<br/>default 30s]
+    H -->|No| J{Context passing works?}
+    J -->|No| K[Check context bridge:<br/>python .codex/tools/agent_context_bridge.py --help]
+    J -->|Yes| L{Agents Working ✅}
+    C -->|converted| M[Test agent file]
+    E -->|fixed| N[Test agent validity]
+    G -->|installed| O[Test codex exec]
+    I -->|timeout| P[Increase timeout or simplify task]
+    K -->|broken| Q[Fix context bridge]
+    M -->|valid| R[Agent file ready]
+    N -->|valid| S[Agent format correct]
+    O -->|works| T[codex exec functional]
+    P -->|adjusted| U[Execution working]
+    Q -->|fixed| V[Context passing OK]
 ```
 
-### Detailed Steps
+### Diagnostic Questions
 
-**Agent files missing:**
+1. **What agent operation is failing?**
+   - **Agent spawning**: Starting the agent
+   - **Agent execution**: Running the agent task
+   - **Context passing**: Providing conversation context
+
+2. **Which agent are you trying to use?**
+   - Different agents have different requirements
+
+3. **Are you using the correct command?**
+   - `codex exec --agent agent_name "task"`
+   - Manual execution vs wrapper script
+
+### Specific Solutions
+
+#### Agent Conversion
 ```bash
-# Check agent directory
-ls .codex/agents/
-
-# Convert from Claude Code
+# Convert all agents
 python tools/convert_agents.py
 
-# Verify conversion
+# Convert specific agent
+python tools/convert_agents.py --agent bug-hunter
+
+# Check converted agents
 ls .codex/agents/
 ```
 
-**Agent format issues:**
+#### Agent File Validation
 ```bash
-# Check agent file structure
+# Check agent file format
 head -20 .codex/agents/bug-hunter.md
 
-# Should have YAML frontmatter:
-# ---
-# name: bug-hunter
-# description: Bug investigation and fixing
-# tools: [read, grep, run_terminal_cmd]
-# ---
-
-# Validate YAML
-python -c "import yaml; yaml.safe_load(open('.codex/agents/bug-hunter.md'))"
+# Validate YAML frontmatter
+python -c "
+import yaml
+with open('.codex/agents/bug-hunter.md') as f:
+    content = f.read()
+    frontmatter = content.split('---')[1]
+    data = yaml.safe_load(frontmatter)
+    print('Valid agent:', data.get('name'))
+"
 ```
 
-**Execution failures:**
+#### Agent Execution Testing
 ```bash
-# Test basic execution
-codex exec --agent bug-hunter "Find and fix a bug"
-
-# Check help
-codex exec --help
+# Test basic agent execution
+codex exec --agent bug-hunter "test task"
 
 # Test with timeout
-codex exec --timeout 60 --agent bug-hunter "test"
+codex exec --agent bug-hunter --timeout 60 "complex task"
+
+# Check execution logs
+codex --log-level debug exec --agent bug-hunter "test"
 ```
 
-**Output issues:**
+#### Context Bridge Testing
 ```bash
-# Check output format
-codex exec --agent bug-hunter "test" --output-format json
+# Test context serialization
+python .codex/tools/agent_context_bridge.py serialize --messages '[{"role": "user", "content": "test"}]'
 
-# Validate response structure
-# Should have: success, output, metadata fields
+# Test context injection
+python .codex/tools/agent_context_bridge.py inject --agent bug-hunter --task "test task"
+
+# Check context files
+ls .codex/agent_context/
 ```
 
 ## Wrapper Script Issues
 
 ```mermaid
 flowchart TD
-    A[Wrapper script fails] --> B{Check script permissions}
-    B --> C[ls -la amplify-codex.sh]
-    C --> D{Executable?}
-    D -->|No| E[Make executable<br/>chmod +x amplify-codex.sh]
-    D -->|Yes| F{Check prerequisites}
-    F --> G[./amplify-codex.sh --check-only]
-    G --> H{All prerequisites OK?}
-    H -->|No| I[Fix prerequisites<br/>Install missing tools]
-    H -->|Yes| J{Run wrapper}
-    J --> K[./amplify-codex.sh]
-    K --> L{Starts successfully?}
-    L -->|No| M[Check error messages<br/>Run with --verbose]
-    L -->|Yes| N{Check session init}
-    N --> O[Check .codex/session_context.md created]
-    O --> P{Created?}
-    P -->|No| Q[Check session_init.py<br/>uv run python .codex/tools/session_init.py]
-    P -->|Yes| R{Check Codex startup}
-    R --> S[Check if Codex window opens]
-    S --> T{Starts?}
-    T -->|No| U[Check profile<br/>./amplify-codex.sh --profile development]
-    T -->|Yes| V{Check cleanup}
-    V --> W[Exit Codex, check cleanup runs]
-    W --> X{Cleanup successful?}
-    X -->|No| Y[Check session_cleanup.py<br/>uv run python .codex/tools/session_cleanup.py]
-    X -->|Yes| Z[Wrapper OK]
+    A[Wrapper Script Issue] --> B{Script executable?}
+    B -->|No| C[Make executable:<br/>chmod +x amplify-codex.sh]
+    B -->|Yes| D{Prerequisites met?}
+    D -->|No| E[Install missing prerequisites:<br/>codex, uv, venv]
+    D -->|Yes| F{Script arguments valid?}
+    F -->|No| G[Check argument syntax:<br/>./amplify-codex.sh --help]
+    F -->|Yes| H{Session initialization works?}
+    H -->|No| I[Debug session_init.py:<br/>uv run python .codex/tools/session_init.py --verbose]
+    H -->|Yes| J{Codex startup works?}
+    J -->|No| K[Check Codex command:<br/>codex --profile development --help]
+    J -->|Yes| L{Session cleanup works?}
+    L -->|No| M[Debug session_cleanup.py:<br/>uv run python .codex/tools/session_cleanup.py --verbose]
+    L -->|Yes| N{Wrapper Script Working ✅}
+    C -->|executable| O[Test script execution]
+    E -->|installed| P[Test prerequisites]
+    G -->|fixed| Q[Test arguments]
+    I -->|debugged| R[Initialization working]
+    K -->|fixed| S[Codex startup OK]
+    M -->|debugged| T[Cleanup working]
+    O -->|works| U[Script executable]
+    P -->|met| V[Prerequisites OK]
+    Q -->|valid| W[Arguments correct]
+    R -->|works| X[Init functional]
+    S -->|works| Y[Startup functional]
+    T -->|works| Z[Cleanup functional]
 ```
 
-### Detailed Steps
+### Diagnostic Questions
 
-**Script permissions:**
+1. **At what point does the wrapper fail?**
+   - **Script startup**: Permission or syntax issues
+   - **Prerequisite checks**: Missing tools
+   - **Session initialization**: Memory loading issues
+   - **Codex startup**: Profile or config issues
+   - **Session cleanup**: Memory extraction issues
+
+2. **What error message do you see?**
+   - Check the exact error output
+
+3. **Are you running from the correct directory?**
+   - Wrapper script expects to be run from project root
+
+### Specific Solutions
+
+#### Script Permissions
 ```bash
-# Check permissions
-ls -la amplify-codex.sh
-
-# Make executable
+# Make script executable
 chmod +x amplify-codex.sh
 
-# Verify
-./amplify-codex.sh --help
+# Check permissions
+ls -la amplify-codex.sh
 ```
 
-**Prerequisites check:**
+#### Prerequisite Validation
 ```bash
-# Run diagnostic
+# Check all prerequisites
 ./amplify-codex.sh --check-only
 
-# Check individual components
+# Individual checks
 codex --version
 uv --version
 python --version
 ls .venv/
+make check
 ```
 
-**Session initialization issues:**
+#### Script Arguments
 ```bash
-# Test init manually
-uv run python .codex/tools/session_init.py --verbose
+# Show help
+./amplify-codex.sh --help
 
-# Check output files
-ls .codex/session_context.md
-ls .codex/session_init_metadata.json
-
-# Check logs
-cat .codex/logs/session_init.log
-```
-
-**Codex startup problems:**
-```bash
-# Test with different profile
+# Test different profiles
+./amplify-codex.sh --profile development
 ./amplify-codex.sh --profile ci
 
-# Check profile exists
-codex --list-profiles
-
-# Test Codex directly
-codex --profile development
+# Test with flags
+./amplify-codex.sh --no-init
+./amplify-codex.sh --no-cleanup
 ```
 
-**Cleanup issues:**
+#### Debugging Components
 ```bash
-# Test cleanup manually
+# Debug session initialization
+uv run python .codex/tools/session_init.py --verbose --prompt "test"
+
+# Debug session cleanup
 uv run python .codex/tools/session_cleanup.py --verbose
 
-# Check output
-ls .codex/transcripts/
-ls .codex/session_cleanup_metadata.json
-
-# Check logs
-cat .codex/logs/session_cleanup.log
+# Debug Codex startup
+codex --profile development --log-level debug
 ```
 
 ## Common Error Messages
 
 ### Installation Errors
 
-**"codex: command not found"**
-- **Cause**: Codex CLI not installed or not in PATH
-- **Solution**: Install Codex CLI and add to PATH
-```bash
-# Install Codex
-# Follow: https://docs.anthropic.com/codex/installation
-
-# Add to PATH
-export PATH="$HOME/.codex/bin:$PATH"
-```
-
-**"uv: command not found"**
-- **Cause**: uv package manager not installed
-- **Solution**: Install uv
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-source ~/.bashrc
-```
+| Error Message | Cause | Solution |
+|---------------|-------|----------|
+| `codex: command not found` | Codex CLI not installed | Install from https://docs.anthropic.com/codex/installation |
+| `uv: command not found` | uv package manager missing | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+| `Python 3.11+ required` | Wrong Python version | Upgrade Python or use `pyenv install 3.11.6` |
+| `make: command not found` | make utility missing | Install build tools: `apt install build-essential` (Ubuntu) |
 
 ### Configuration Errors
 
-**"Error parsing config file"**
-- **Cause**: Invalid TOML syntax in `.codex/config.toml`
-- **Solution**: Fix syntax errors
-```bash
-# Validate syntax
-python -c "import tomllib; tomllib.load(open('.codex/config.toml', 'rb'))"
-
-# Check for common issues:
-# - Unclosed quotes
-# - Invalid indentation
-# - Missing brackets
-```
-
-**"Profile 'development' not found"**
-- **Cause**: Profile not defined in config
-- **Solution**: Add profile to config.toml
-```toml
-[profiles.development]
-mcp_servers = ["amplifier_session", "amplifier_quality", "amplifier_transcripts"]
-```
+| Error Message | Cause | Solution |
+|---------------|-------|----------|
+| `config file not found` | Missing config file | `codex --config .codex/config.toml --init` |
+| `invalid TOML syntax` | Config file syntax error | Validate with online TOML validator |
+| `profile not found` | Profile not defined | Add `[profiles.development]` section to config |
+| `server not configured` | MCP server missing | Add `[mcp_servers.amplifier_session]` section |
 
 ### MCP Server Errors
 
-**"Module 'amplifier.memory' not found"**
-- **Cause**: Amplifier modules not installed or not in Python path
-- **Solution**: Install dependencies and check imports
-```bash
-make install
-python -c "from amplifier.memory import MemoryStore"
-```
-
-**"MCP server connection timeout"**
-- **Cause**: Server taking too long to start or respond
-- **Solution**: Check server logs and increase timeout
-```bash
-# Check logs
-tail -f .codex/logs/*.log
-
-# Increase timeout in config
-[mcp_servers.amplifier_session]
-timeout = 60
-```
+| Error Message | Cause | Solution |
+|---------------|-------|----------|
+| `ModuleNotFoundError: amplifier.memory` | Missing dependencies | `uv pip install -e .` |
+| `Permission denied: .codex/tasks` | Directory permissions | `mkdir -p .codex/tasks && chmod 755 .codex/tasks` |
+| `Connection refused: MCP server` | Server startup failure | Check `.codex/logs/server_name.log` |
+| `Tool execution timeout` | Long-running tool | Increase timeout in config or optimize tool |
 
 ### Memory System Errors
 
-**"Memory system disabled"**
-- **Cause**: MEMORY_SYSTEM_ENABLED not set
-- **Solution**: Enable memory system
-```bash
-export MEMORY_SYSTEM_ENABLED=true
-```
-
-**"No memories found for context"**
-- **Cause**: No previous sessions or memory extraction failed
-- **Solution**: Run sessions to build memory base
-```bash
-# Check existing memories
-ls .data/memories/
-
-# Run test session
-./amplify-codex.sh
-# Work and exit to create memories
-```
+| Error Message | Cause | Solution |
+|---------------|-------|----------|
+| `Memory system disabled` | Environment variable | `export MEMORY_SYSTEM_ENABLED=true` |
+| `No memories found` | Empty memory store | Initialize with sample data or continue without |
+| `Memory extraction timeout` | Large session | Reduce session size or increase timeout |
+| `Memory search failed` | Index corruption | Rebuild memory index or reset store |
 
 ### Quality Check Errors
 
-**"make: *** No rule to make target 'check'"**
-- **Cause**: Makefile missing check target
-- **Solution**: Add check target to Makefile
-```makefile
-check:
-	uv run ruff check .
-	uv run pyright
-	uv run pytest
-```
-
-**"ruff: command not found"**
-- **Cause**: Linting tools not installed
-- **Solution**: Install development dependencies
-```bash
-uv add --dev ruff pyright pytest
-```
+| Error Message | Cause | Solution |
+|---------------|-------|----------|
+| `make: *** No rule to make target 'check'` | Missing Makefile target | Add `check: lint type test` to Makefile |
+| `ruff: command not found` | Tool not installed | `uv add ruff` |
+| `pyright: command not found` | Tool not installed | `uv add pyright` |
+| `pytest: command not found` | Tool not installed | `uv add pytest` |
 
 ### Transcript Errors
 
-**"Session not found"**
-- **Cause**: Session ID incorrect or session doesn't exist
-- **Solution**: List available sessions and use correct ID
-```bash
-codex exec "list_available_sessions"
-ls ~/.codex/sessions/
-```
-
-**"Permission denied"**
-- **Cause**: Cannot write to transcript directory
-- **Solution**: Fix permissions
-```bash
-mkdir -p .codex/transcripts
-chmod 755 .codex/transcripts
-```
+| Error Message | Cause | Solution |
+|---------------|-------|----------|
+| `Session not found` | Invalid session ID | Use `python tools/transcript_manager.py list` to find valid IDs |
+| `Format conversion failed` | Unsupported format | Check source transcript format and conversion options |
+| `Transcript export timeout` | Large session | Use compact format or split export |
+| `Permission denied` | File permissions | Check write permissions on transcript directories |
 
 ### Agent Errors
 
-**"Agent 'bug-hunter' not found"**
-- **Cause**: Agent file missing or incorrect name
-- **Solution**: Check agent files and names
-```bash
-ls .codex/agents/
-codex exec --list-agents
-```
-
-**"Agent execution timeout"**
-- **Cause**: Agent taking too long to complete
-- **Solution**: Increase timeout or simplify task
-```bash
-codex exec --timeout 120 --agent bug-hunter "task"
-```
+| Error Message | Cause | Solution |
+|---------------|-------|----------|
+| `Agent not found` | Agent file missing | `python tools/convert_agents.py --agent agent_name` |
+| `Invalid agent format` | YAML syntax error | Fix frontmatter in `.codex/agents/agent_name.md` |
+| `Agent execution timeout` | Complex task | Simplify task or increase timeout |
+| `Context serialization failed` | Large context | Reduce context size or use compression |
 
 ### Wrapper Script Errors
 
-**"Permission denied"**
-- **Cause**: Script not executable
-- **Solution**: Make script executable
-```bash
-chmod +x amplify-codex.sh
-```
-
-**"Prerequisites check failed"**
-- **Cause**: Missing required tools or environment
-- **Solution**: Install missing prerequisites
-```bash
-# Check what failed
-./amplify-codex.sh --check-only
-
-# Install missing tools based on output
-```
+| Error Message | Cause | Solution |
+|---------------|-------|----------|
+| `Permission denied` | Script not executable | `chmod +x amplify-codex.sh` |
+| `Prerequisites not met` | Missing tools | Run `./amplify-codex.sh --check-only` and fix issues |
+| `Session initialization failed` | Memory system issues | Debug with `uv run python .codex/tools/session_init.py --verbose` |
+| `Session cleanup failed` | Memory extraction issues | Debug with `uv run python .codex/tools/session_cleanup.py --verbose` |
 
 ## Advanced Debugging
 
 ### Reading MCP Server Logs
 
-**Server logs location:**
-```bash
-# All server logs
-ls .codex/logs/
+MCP servers write detailed logs to `.codex/logs/`:
 
-# View recent activity
+```bash
+# View all server logs
+ls .codex/logs/
 tail -f .codex/logs/*.log
 
-# Search for errors
-grep -r "ERROR" .codex/logs/
+# View specific server logs
+tail -f .codex/logs/session_manager.log
+tail -f .codex/logs/quality_checker.log
+tail -f .codex/logs/transcript_saver.log
+tail -f .codex/logs/task_tracker.log
+tail -f .codex/logs/web_research.log
 ```
 
-**Log levels:**
-- **INFO**: Normal operation
+**Log Levels:**
+- **INFO**: Normal operations
 - **WARNING**: Potential issues
-- **ERROR**: Failures that need attention
-- **DEBUG**: Detailed diagnostic information
-
-**Enabling debug logging:**
-```bash
-# Set log level
-export MCP_LOG_LEVEL=DEBUG
-
-# Restart servers
-./amplify-codex.sh
-```
+- **ERROR**: Failures requiring attention
+- **DEBUG**: Detailed debugging information
 
 ### Testing Servers Individually
 
-**Session Manager:**
+Test each MCP server in isolation:
+
 ```bash
-# Test server startup
-uv run python .codex/mcp_servers/session_manager/server.py
+# Test session manager
+timeout 10 uv run python .codex/mcp_servers/session_manager/server.py 2>&1 | head -20
 
-# Test health check
-echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "health_check", "arguments": {}}}' | \
-uv run python .codex/mcp_servers/session_manager/server.py
-```
+# Test quality checker
+timeout 10 uv run python .codex/mcp_servers/quality_checker/server.py 2>&1 | head -20
 
-**Quality Checker:**
-```bash
-# Test server
-uv run python .codex/mcp_servers/quality_checker/server.py
+# Test transcript saver
+timeout 10 uv run python .codex/mcp_servers/transcript_saver/server.py 2>&1 | head -20
 
-# Test tool call
-echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "validate_environment", "arguments": {}}}' | \
-uv run python .codex/mcp_servers/quality_checker/server.py
-```
+# Test task tracker
+timeout 10 uv run python .codex/mcp_servers/task_tracker/server.py 2>&1 | head -20
 
-**Transcript Saver:**
-```bash
-# Test server
-uv run python .codex/mcp_servers/transcript_saver/server.py
-
-# Test tool call
-echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "list_available_sessions", "arguments": {}}}' | \
-uv run python .codex/mcp_servers/transcript_saver/server.py
+# Test web research
+timeout 10 uv run python .codex/mcp_servers/web_research/server.py 2>&1 | head -20
 ```
 
 ### Enabling Debug Mode
 
-**Codex debug mode:**
-```bash
-# Enable debug logging
-codex --log-level debug
+Enable detailed logging for debugging:
 
-# Start with debug
-CODEX_LOG_LEVEL=debug ./amplify-codex.sh
-```
-
-**MCP server debug:**
 ```bash
-# Set environment variable
+# Codex debug logging
+codex --log-level debug --profile development
+
+# Environment variable debug
+export CODEX_DEBUG=true
 export MCP_DEBUG=true
 
-# Check server logs
-tail -f .codex/logs/*.log
+# Memory system debug
+export MEMORY_SYSTEM_DEBUG=true
+
+# Wrapper script debug
+./amplify-codex.sh --verbose
 ```
 
-**Memory system debug:**
+### Log Locations Summary
+
+| Component | Log Location | Purpose |
+|-----------|--------------|---------|
+| **Codex CLI** | `~/.codex/logs/codex.log` | Main Codex operations |
+| **MCP Servers** | `.codex/logs/*.log` | Individual server logs |
+| **Session Manager** | `.codex/logs/session_manager.log` | Memory operations |
+| **Quality Checker** | `.codex/logs/quality_checker.log` | Code quality operations |
+| **Transcript Saver** | `.codex/logs/transcript_saver.log` | Export operations |
+| **Task Tracker** | `.codex/logs/task_tracker.log` | Task operations |
+| **Web Research** | `.codex/logs/web_research.log` | Web operations |
+| **Wrapper Script** | `.codex/logs/wrapper.log` | Automation operations |
+| **Agent Bridge** | `.codex/logs/agent_bridge.log` | Context operations |
+
+### Log Rotation
+
+Logs are automatically rotated when they reach 10MB. Old logs are compressed:
+
 ```bash
-# Enable verbose memory logging
-export MEMORY_DEBUG=true
+# View log rotation
+ls -la .codex/logs/*.gz
 
-# Run session init with debug
-uv run python .codex/tools/session_init.py --verbose
-```
-
-### Finding All Logs
-
-**Log locations:**
-```bash
-# MCP server logs
-.codex/logs/
-├── session_manager.log
-├── quality_checker.log
-└── transcript_saver.log
-
-# Session management logs
-.codex/logs/
-├── session_init.log
-└── session_cleanup.log
-
-# Wrapper script logs
-.codex/logs/
-└── wrapper.log
-
-# Codex system logs
-~/.codex/logs/
-└── codex.log
-```
-
-**Log rotation:**
-- Logs are rotated daily
-- Old logs have date suffixes: `session_manager.log.2024-01-01`
-- Maximum 7 days of logs kept
-
-**Collecting logs for support:**
-```bash
-# Create log archive
-tar -czf codex-debug-logs.tar.gz .codex/logs/ ~/.codex/logs/
-
-# Include system info
-echo "=== System Info ===" > debug-info.txt
-codex --version >> debug-info.txt
-uv --version >> debug-info.txt
-python --version >> debug-info.txt
-echo "MEMORY_SYSTEM_ENABLED: $MEMORY_SYSTEM_ENABLED" >> debug-info.txt
+# Search across all logs
+zgrep "error" .codex/logs/*.log.gz
 ```
 
 ## Getting Help
 
-### What Information to Collect
+### Information to Collect
 
-**For bug reports:**
-```bash
-# System information
-echo "=== System Info ===" > debug-info.txt
-uname -a >> debug-info.txt
-codex --version >> debug-info.txt
-uv --version >> debug-info.txt
-python --version >> debug-info.txt
+When reporting issues, include:
 
-# Configuration
-echo "=== Configuration ===" >> debug-info.txt
-cat .codex/config.toml >> debug-info.txt
-echo "AMPLIFIER_BACKEND: $AMPLIFIER_BACKEND" >> debug-info.txt
-echo "CODEX_PROFILE: $CODEX_PROFILE" >> debug-info.txt
+1. **System Information:**
+   ```bash
+   uname -a
+   codex --version
+   uv --version
+   python --version
+   ```
 
-# Environment
-echo "=== Environment ===" >> debug-info.txt
-echo "PATH: $PATH" >> debug-info.txt
-echo "VIRTUAL_ENV: $VIRTUAL_ENV" >> debug-info.txt
-which codex >> debug-info.txt
-which uv >> debug-info.txt
-```
+2. **Configuration:**
+   ```bash
+   cat .codex/config.toml
+   echo "AMPLIFIER_BACKEND=$AMPLIFIER_BACKEND"
+   echo "MEMORY_SYSTEM_ENABLED=$MEMORY_SYSTEM_ENABLED"
+   ```
 
-**For performance issues:**
-```bash
-# Timing information
-time ./amplify-codex.sh --check-only
+3. **Error Logs:**
+   ```bash
+   # Recent errors from all logs
+   find .codex/logs/ -name "*.log" -exec tail -20 {} \;
+   ```
 
-# Resource usage
-ps aux | grep -E "(codex|mcp)" | head -10
-
-# Disk space
-df -h .codex/
-du -sh .codex/
-```
+4. **Reproduction Steps:**
+   - Exact commands run
+   - Expected vs actual behavior
+   - Environment conditions
 
 ### Creating Minimal Reproduction
 
-**Steps to create minimal reproduction:**
-1. **Isolate the issue:**
-   ```bash
-   # Create clean test directory
-   mkdir test-codex
-   cd test-codex
-   
-   # Copy minimal setup
-   cp -r ../.codex ./
-   cp ../amplify-codex.sh ./
-   cp ../Makefile ./
-   cp ../pyproject.toml ./
-   ```
+1. **Isolate the Issue:**
+   - Create a minimal test case
+   - Remove unrelated components
+   - Test with default configuration
 
-2. **Simplify configuration:**
+2. **Test Commands:**
    ```bash
    # Create minimal config
    cat > .codex/config.toml << 'EOF'
    model = "claude-3-5-sonnet-20241022"
-   
    [mcp_servers.amplifier_session]
    command = "uv"
    args = ["run", "python", ".codex/mcp_servers/session_manager/server.py"]
-   env = { "AMPLIFIER_ROOT" = "." }
+   [profiles.minimal]
+   mcp_servers = ["amplifier_session"]
    EOF
+
+   # Test minimal setup
+   codex --profile minimal exec "health_check"
    ```
 
-3. **Test with minimal setup:**
-   ```bash
-   # Test basic functionality
-   ./amplify-codex.sh --check-only
-   
-   # Test specific failing component
-   codex --profile development --list-tools
-   ```
-
-4. **Document reproduction steps:**
-   - What command you ran
-   - What you expected to happen
-   - What actually happened
-   - Any error messages
+3. **Document Results:**
+   - What works vs what fails
+   - Exact error messages
+   - Log excerpts
 
 ### Where to Report Issues
 
-**GitHub Issues:**
-- **Repository**: [amplifier-project/issues](https://github.com/your-org/amplifier-project/issues)
-- **Template**: Use "Codex Integration Bug" template
-- **Labels**: `codex`, `mcp-server`, `bug`
+1. **GitHub Issues:** Create issue in project repository
+2. **Documentation:** Check existing issues for similar problems
+3. **Community:** Join Discord/Slack if available
+4. **Anthropic Support:** For Codex CLI specific issues
 
-**Issue content:**
-```markdown
-## Description
-Brief description of the issue
+### Issue Template
 
-## Steps to Reproduce
-1. Run `./amplify-codex.sh`
-2. Try to use MCP tool X
-3. See error Y
+Use this template when reporting issues:
 
-## Expected Behavior
-What should happen
+```
+**Title:** [Category] Brief description of issue
 
-## Actual Behavior
-What actually happens
-
-## Environment
-- Codex version: x.x.x
-- uv version: x.x.x
-- Python version: 3.x.x
+**Environment:**
 - OS: [Linux/macOS/Windows]
+- Codex CLI version: [version]
+- Python version: [version]
+- uv version: [version]
 
-## Logs
-[Attach debug-info.txt and log files]
+**Steps to Reproduce:**
+1. [Step 1]
+2. [Step 2]
+3. [Step 3]
 
-## Additional Context
-Any other relevant information
+**Expected Behavior:**
+[What should happen]
+
+**Actual Behavior:**
+[What actually happens]
+
+**Error Messages:**
+```
+[Error output]
+```
+
+**Configuration:**
+[Relevant config sections]
+
+**Logs:**
+[Log excerpts]
+
+**Additional Context:**
+[Any other relevant information]
