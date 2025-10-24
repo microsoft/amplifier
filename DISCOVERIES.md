@@ -271,3 +271,141 @@ clean_prompt = isolate_prompt(user_prompt)
 - Use `parse_llm_json()` for all LLM JSON responses - never use raw `json.loads()`
 - Wrap LLM operations with `retry_with_feedback()` for automatic error recovery
 - Apply `isolate_prompt()` when user content might be confused with instructions
+
+## Dual Backend Integration: Claude Code vs Codex (2025-10-24)
+
+### Issue
+
+Implementing dual backend support (Claude Code and Codex) revealed several architectural differences and limitations that affect feature parity and testing strategies.
+
+### Root Cause
+
+Claude Code and Codex have fundamentally different architectures:
+
+1. **Automation Model**: Claude Code uses automatic hooks (SessionStart, PostToolUse, PreCompact, Stop) while Codex requires explicit MCP tool invocation or wrapper scripts
+2. **Agent Spawning**: Claude Code has native Task tool for seamless agent spawning; Codex uses `codex exec` subprocess with different invocation model
+3. **Configuration**: Claude Code uses JSON (settings.json) with limited profiles; Codex uses TOML (config.toml) with rich profile support
+4. **Transcript Format**: Claude Code uses single text files (compact_*.txt); Codex uses session directories with multiple files (transcript.md, transcript_extended.md, history.jsonl)
+5. **Tool Availability**: Claude Code has Task, TodoWrite, WebFetch, WebSearch; Codex has Read, Write, Edit, Grep, Glob, Bash
+
+### Solutions Implemented
+
+**1. Backend Abstraction Layer** (`amplifier/core/backend.py`):
+- Created `AmplifierBackend` abstract base class with methods: `initialize_session()`, `finalize_session()`, `run_quality_checks()`, `export_transcript()`
+- Implemented `ClaudeCodeBackend` and `CodexBackend` concrete classes
+- Both backends delegate to same amplifier modules (memory, extraction, search) ensuring consistency
+- Factory pattern (`BackendFactory`) for backend instantiation based on environment/config
+
+**2. Agent Abstraction Layer** (`amplifier/core/agent_backend.py`):
+- Created `AgentBackend` abstract base class with `spawn_agent()` method
+- `ClaudeCodeAgentBackend` uses Claude Code SDK Task tool
+- `CodexAgentBackend` uses `codex exec` subprocess
+- Agent definitions converted from Claude format to Codex format (removed Task tool references, adapted tools array)
+
+**3. MCP Servers for Codex** (`.codex/mcp_servers/`):
+- Implemented three MCP servers to replace Claude Code hooks:
+  - `session_manager` - Replaces SessionStart/Stop hooks
+  - `quality_checker` - Replaces PostToolUse hook
+  - `transcript_saver` - Replaces PreCompact hook
+- Used FastMCP framework for rapid development
+- Servers expose tools that must be explicitly invoked (vs automatic hooks)
+
+**4. Wrapper Scripts**:
+- `amplify-codex.sh` - Bash wrapper providing hook-like experience for Codex
+- `amplify.py` - Unified Python CLI for both backends
+- `.codex/tools/session_init.py` and `session_cleanup.py` - Standalone session management
+
+**5. Configuration System** (`amplifier/core/config.py`):
+- Pydantic `BackendConfig` with environment variable support
+- Configuration precedence: CLI args > env vars > .env file > defaults
+- Auto-detection when `AMPLIFIER_BACKEND` not set
+- Validation for backend types and profiles
+
+### Feature Parity Status
+
+**Full Parity:**
+- ✅ Memory system (both use same MemoryStore, MemorySearcher, MemoryExtractor)
+- ✅ Quality checks (both use same `make check` command)
+- ✅ Agent spawning (different invocation, same agent definitions)
+- ✅ Transcript export (different formats, both functional)
+- ✅ Configuration management (different formats, both comprehensive)
+
+**Partial Parity:**
+- ⚠️ Automation: Claude Code hooks are automatic; Codex requires explicit tool calls or wrapper script
+- ⚠️ Task tracking: Claude Code has TodoWrite; Codex has no equivalent (use external tools)
+- ⚠️ Slash commands: Claude Code has native support; Codex has no equivalent (use MCP tools or natural language)
+- ⚠️ Notifications: Claude Code has desktop notifications; Codex returns tool responses only
+
+**No Parity (Intentional):**
+- ❌ VS Code integration: Claude Code only (Codex is CLI-first)
+- ❌ Profiles: Codex only (Claude Code has single configuration)
+- ❌ MCP servers: Codex only (Claude Code uses hooks)
+
+### Testing Challenges Discovered
+
+**1. CLI Availability in Tests:**
+- **Challenge**: Integration tests require Claude CLI or Codex CLI to be installed
+- **Solution**: Mock subprocess calls at the boundary; test backend abstraction logic without requiring real CLIs
+- **Impact**: Tests validate command construction and orchestration but not actual CLI behavior
+
+**2. MCP Protocol Testing:**
+- **Challenge**: Testing MCP servers requires JSON-RPC communication over stdio
+- **Solution**: Start servers as subprocesses and communicate via stdin/stdout; alternatively mock FastMCP for unit tests
+- **Impact**: Integration tests are more complex but validate real protocol compliance
+
+**3. Async Testing:**
+- **Challenge**: Many backend operations are async (memory extraction, agent spawning)
+- **Solution**: Use `@pytest.mark.asyncio` decorator and pytest-asyncio plugin
+- **Impact**: Tests must handle async/await correctly; some fixtures need async variants
+
+**4. Environment Isolation:**
+- **Challenge**: Tests must not interfere with each other or real project data
+- **Solution**: Use temp_dir fixtures, mock environment variables, create isolated project structures
+- **Impact**: Tests are slower due to setup/teardown but are reliable and deterministic
+
+**5. Cross-Backend Validation:**
+- **Challenge**: Verifying both backends produce identical results for same operations
+- **Solution**: Run same test scenarios with both backends, compare outputs
+- **Impact**: Test suite is larger but provides confidence in feature parity
+
+### Key Learnings
+
+1. **Abstraction enables testing**: Backend abstraction layer allows testing workflows without requiring real CLIs
+2. **Mock at boundaries**: Mock subprocess calls and file I/O, but test real backend logic
+3. **Shared modules ensure consistency**: Both backends using same amplifier modules (memory, extraction, search) guarantees identical behavior
+4. **Configuration is critical**: Proper configuration management (precedence, validation, defaults) is essential for dual-backend support
+5. **Documentation prevents confusion**: Comprehensive docs (CODEX_INTEGRATION.md, BACKEND_COMPARISON.md, MIGRATION_GUIDE.md) are essential for users
+6. **Smoke tests validate critical paths**: Fast smoke tests catch regressions without full integration test suite
+7. **Wrapper scripts bridge gaps**: amplify-codex.sh provides hook-like experience for Codex despite lack of native hooks
+
+### Limitations Documented
+
+**Claude Code Limitations:**
+- No profile support (single configuration for all workflows)
+- Limited CI/CD integration (requires VS Code)
+- No headless operation (VS Code extension only)
+- Hooks can't be easily disabled (always run)
+
+**Codex Limitations:**
+- No automatic hooks (must invoke tools explicitly or use wrapper)
+- No slash commands (use MCP tools or natural language)
+- No TodoWrite equivalent (use external task tracking)
+- No desktop notifications (tool responses only)
+- Requires wrapper script for convenient session management
+
+**Testing Limitations:**
+- Integration tests mock CLI calls (don't test actual Claude/Codex behavior)
+- MCP server tests require subprocess communication (more complex)
+- Agent spawning tests mock SDK/subprocess (don't test actual agent execution)
+- Cross-backend tests assume both backends are available (may not be true in all environments)
+
+### Prevention
+
+- Use backend abstraction layer for all backend operations (don't call CLIs directly)
+- Test both backends for any new feature to ensure parity
+- Document limitations clearly when features can't be replicated
+- Use wrapper scripts to provide consistent user experience across backends
+- Keep backend-specific code isolated in `.claude/` and `.codex/` directories
+- Maintain comprehensive documentation for both backends
+- Run smoke tests in CI to catch regressions early
+- Update DISCOVERIES.md when new limitations are found

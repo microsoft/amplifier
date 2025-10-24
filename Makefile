@@ -196,6 +196,51 @@ smoke-test: ## Run quick smoke tests to verify basic functionality
 	@PYTHONPATH=. python -m amplifier.smoke_tests
 	@echo "Smoke tests complete!"
 
+.PHONY: test-backend-integration
+test-backend-integration: ## Run backend integration tests
+	@echo "Running backend integration tests..."
+	uv run pytest tests/backend_integration/ -v
+
+.PHONY: test-backend-integration-coverage
+test-backend-integration-coverage: ## Run backend integration tests with coverage
+	@echo "Running backend integration tests with coverage..."
+	uv run pytest tests/backend_integration/ -v \
+		--cov=amplifier.core \
+		--cov=.codex/mcp_servers \
+		--cov=.codex/tools \
+		--cov-report=html \
+		--cov-report=term
+	@echo "Coverage report generated in htmlcov/index.html"
+
+.PHONY: test-backend-claude
+test-backend-claude: ## Run tests for Claude Code backend only
+	@echo "Running Claude Code backend tests..."
+	uv run pytest tests/backend_integration/ -k "claude" -v
+
+.PHONY: test-backend-codex
+test-backend-codex: ## Run tests for Codex backend only
+	@echo "Running Codex backend tests..."
+	uv run pytest tests/backend_integration/ -k "codex" -v
+
+.PHONY: test-mcp-servers
+test-mcp-servers: ## Run MCP server integration tests
+	@echo "Running MCP server integration tests..."
+	uv run pytest tests/backend_integration/test_mcp_server_integration.py -v
+
+.PHONY: test-unified-cli
+test-unified-cli: ## Run unified CLI tests
+	@echo "Running unified CLI tests..."
+	uv run pytest tests/backend_integration/test_unified_cli.py -v
+
+.PHONY: smoke-test-backend
+smoke-test-backend: ## Run backend smoke tests
+	@echo "Running backend smoke tests..."
+	uv run python -m amplifier.smoke_tests --test-file amplifier/smoke_tests/backend_tests.yaml
+
+.PHONY: test-all-backends
+test-all-backends: test-backend-integration smoke-test-backend ## Run all backend tests (integration + smoke)
+	@echo "All backend tests completed"
+
 # Git worktree management
 worktree: ## Create a git worktree with .data copy. Usage: make worktree feature-name
 	@if [ -z "$(filter-out $@,$(MAKECMDGOALS))" ]; then \

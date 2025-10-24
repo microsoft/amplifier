@@ -129,3 +129,68 @@ tests:
       "
     success_criteria: Shows the configured model names for fast and default categories
     timeout: 5
+
+  # Backend Integration Smoke Tests
+  - name: Backend Abstraction - Get Backend
+    command: |
+      python -c "
+      from amplifier import get_backend
+      backend = get_backend()
+      print(f'Backend: {backend.get_backend_name()}')
+      print(f'Available: {backend.is_available()}')
+      "
+    success_criteria: Gets backend instance and shows backend name and availability
+    timeout: 5
+
+  - name: Backend Abstraction - List Available
+    command: |
+      python -c "
+      from amplifier.core.backend import BackendFactory
+      backends = BackendFactory.get_available_backends()
+      print(f'Available backends: {backends}')
+      "
+    success_criteria: Lists available backends (may be empty if CLIs not installed)
+    timeout: 5
+
+  - name: Unified CLI - Help
+    command: ./amplify.py --help
+    success_criteria: Shows help message with backend selection options
+    timeout: 5
+
+  - name: Unified CLI - List Backends
+    command: ./amplify.py --list-backends
+    success_criteria: Lists Claude Code and Codex backends with availability status
+    timeout: 5
+
+  - name: Unified CLI - Version
+    command: ./amplify.py --version
+    success_criteria: Shows Amplifier version and Python version
+    timeout: 5
+
+  - name: Agent Backend - List Agents
+    command: |
+      python -c "
+      from amplifier.core.agent_backend import AgentBackendFactory
+      backend = AgentBackendFactory.create_agent_backend('claude')
+      agents = backend.list_available_agents()
+      print(f'Claude agents: {len(agents)}')
+      backend = AgentBackendFactory.create_agent_backend('codex')
+      agents = backend.list_available_agents()
+      print(f'Codex agents: {len(agents)}')
+      "
+    success_criteria: Lists agents for both backends (counts may be zero if agents not converted)
+    timeout: 5
+
+  - name: MCP Base Utilities
+    command: |
+      python -c "
+      import sys
+      sys.path.insert(0, '.codex')
+      from mcp_servers.base import get_project_root, check_memory_system_enabled
+      root = get_project_root()
+      print(f'Project root found: {root is not None}')
+      memory = check_memory_system_enabled()
+      print(f'Memory system: {memory}')
+      "
+    success_criteria: MCP base utilities work correctly and detect project root
+    timeout: 5

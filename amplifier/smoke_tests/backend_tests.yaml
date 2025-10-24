@@ -1,0 +1,204 @@
+tests:
+  # Backend Availability Tests
+  - name: Backend Configuration
+    command: |
+      python -c "
+      from amplifier.core.config import get_backend_config, is_backend_available
+      config = get_backend_config()
+      print(f'Configured backend: {config.amplifier_backend}')
+      print(f'Claude available: {is_backend_available(\"claude\")}')
+      print(f'Codex available: {is_backend_available(\"codex\")}')
+      "
+    success_criteria: Shows configured backend and availability status for both Claude Code and Codex
+    timeout: 5
+
+  - name: Backend Factory
+    command: |
+      python -c "
+      from amplifier.core.backend import BackendFactory
+      available = BackendFactory.get_available_backends()
+      print(f'Available backends: {available}')
+      if available:
+          backend = BackendFactory.create_backend(available[0])
+          print(f'Created backend: {backend.get_backend_name()}')
+      "
+    success_criteria: Lists available backends and successfully creates a backend instance
+    timeout: 5
+
+  # Session Management Smoke Tests
+  - name: Session Initialization (Memory Disabled)
+    command: |
+      MEMORY_SYSTEM_ENABLED=false python -c "
+      from amplifier.core.backend import BackendFactory
+      backend = BackendFactory.create_backend('claude')
+      result = backend.initialize_session('test prompt')
+      print(f'Success: {result[\"success\"]}')
+      print(f'Disabled: {result[\"metadata\"].get(\"disabled\", False)}')
+      "
+    success_criteria: Session initializes successfully with memory system disabled, returns disabled=True in metadata
+    timeout: 10
+
+  - name: Session Finalization (Memory Disabled)
+    command: |
+      MEMORY_SYSTEM_ENABLED=false python -c "
+      from amplifier.core.backend import BackendFactory
+      backend = BackendFactory.create_backend('claude')
+      messages = [{'role': 'user', 'content': 'test'}]
+      result = backend.finalize_session(messages)
+      print(f'Success: {result[\"success\"]}')
+      print(f'Disabled: {result[\"metadata\"].get(\"disabled\", False)}')
+      "
+    success_criteria: Session finalizes successfully with memory system disabled, returns disabled=True in metadata
+    timeout: 10
+
+  # Quality Check Smoke Tests
+  - name: Quality Check Project Root Detection
+    command: |
+      python -c "
+      from pathlib import Path
+      from amplifier.core.backend import ClaudeCodeBackend
+      backend = ClaudeCodeBackend()
+      # This will fail if no Makefile, but we're testing the detection logic
+      try:
+          result = backend.run_quality_checks(['test.py'])
+          print(f'Result: {result[\"success\"]}')
+      except Exception as e:
+          print(f'Expected error (no Makefile): {type(e).__name__}')
+      "
+    success_criteria: Attempts to find project root and run quality checks, or reports expected error if Makefile not found
+    timeout: 10
+
+  # Agent Backend Smoke Tests
+  - name: Agent Backend Factory
+    command: |
+      python -c "
+      from amplifier.core.agent_backend import AgentBackendFactory
+      backend = AgentBackendFactory.create_agent_backend('claude')
+      print(f'Backend type: {type(backend).__name__}')
+      agents = backend.list_available_agents()
+      print(f'Available agents: {len(agents)}')
+      if agents:
+          print(f'Sample agents: {agents[:3]}')
+      "
+    success_criteria: Creates agent backend and lists available agents (may be empty if agents not set up)
+    timeout: 5
+
+  - name: Agent Definition Parsing
+    command: |
+      python -c "
+      from amplifier.core.agent_backend import parse_agent_definition
+      definition = '''---
+      name: test-agent
+      description: Test agent
+      tools: [Read, Grep]
+      ---
+      Test content'''
+      parsed = parse_agent_definition(definition)
+      print(f'Name: {parsed.name}')
+      print(f'Tools: {parsed.allowed_tools}')
+      "
+    success_criteria: Parses agent definition successfully and extracts name and tools
+    timeout: 5
+
+  # Unified CLI Smoke Tests
+  - name: Unified CLI Help
+    command: ./amplify.py --help
+    success_criteria: Shows help message with available options including --backend, --profile, --list-backends
+    timeout: 5
+
+  - name: Unified CLI List Backends
+    command: ./amplify.py --list-backends
+    success_criteria: Lists available backends (Claude Code and/or Codex) with their availability status
+    timeout: 5
+
+  - name: Unified CLI Version
+    command: ./amplify.py --version
+    success_criteria: Shows Amplifier version, Python version, and configured backend
+    timeout: 5
+
+  - name: Unified CLI Backend Info
+    command: ./amplify.py --info claude
+    success_criteria: Shows detailed information about Claude Code backend including availability and configuration
+    timeout: 5
+
+  # MCP Server Smoke Tests
+  - name: MCP Base Utilities
+    command: |
+      python -c "
+      from pathlib import Path
+      import sys
+      sys.path.insert(0, '.codex')
+      from mcp_servers.base import get_project_root, check_memory_system_enabled
+      root = get_project_root()
+      print(f'Project root: {root}')
+      memory_enabled = check_memory_system_enabled()
+      print(f'Memory enabled: {memory_enabled}')
+      "
+    success_criteria: Detects project root and memory system status successfully
+    timeout: 5
+
+  - name: MCP Logger
+    command: |
+      python -c "
+      import sys
+      sys.path.insert(0, '.codex')
+      from mcp_servers.base import MCPLogger
+      logger = MCPLogger('smoke_test')
+      logger.info('Test message')
+      print('Logger created successfully')
+      "
+    success_criteria: Creates MCP logger and writes test message successfully
+    timeout: 5
+
+  # Configuration Smoke Tests
+  - name: Backend Config Loading
+    command: |
+      python -c "
+      from amplifier.core.config import get_backend_config
+      config = get_backend_config()
+      print(f'Backend: {config.amplifier_backend}')
+      print(f'Profile: {config.codex_profile}')
+      print(f'Memory enabled: {config.memory_system_enabled}')
+      "
+    success_criteria: Loads backend configuration successfully and shows current settings
+    timeout: 5
+
+  - name: Backend Detection
+    command: |
+      python -c "
+      from amplifier.core.config import detect_backend
+      try:
+          backend = detect_backend()
+          print(f'Detected backend: {backend}')
+      except RuntimeError as e:
+          print(f'No backend available: {e}')
+      "
+    success_criteria: Detects available backend or reports that no backend is available
+    timeout: 5
+
+  # Wrapper Script Smoke Tests
+  - name: Codex Wrapper Help
+    command: ./amplify-codex.sh --help
+    success_criteria: Shows help message with available options and usage examples
+    timeout: 5
+
+  - name: Session Init Script
+    command: |
+      MEMORY_SYSTEM_ENABLED=false uv run python .codex/tools/session_init.py --prompt "test"
+    success_criteria: Runs session initialization script successfully (with memory disabled to avoid dependencies)
+    timeout: 10
+
+  # Cross-Backend Smoke Tests
+  - name: Backend Switching
+    command: |
+      python -c "
+      from amplifier.core.backend import set_backend, get_backend
+      set_backend('claude')
+      b1 = get_backend()
+      print(f'Backend 1: {b1.get_backend_name()}')
+      set_backend('codex')
+      b2 = get_backend()
+      print(f'Backend 2: {b2.get_backend_name()}')
+      "
+    success_criteria: Successfully switches between Claude Code and Codex backends
+    timeout: 5
