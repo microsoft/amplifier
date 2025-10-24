@@ -1,11 +1,31 @@
 # Amplifier: Metacognitive AI Development System
 
-> _"A system that exponentially grows its own capabilities through modular composition."_
+> _"Express intent. Get working solutions. Programming, transformed."_
 
 > [!CAUTION]
-> This project is a research demonstrator. It is in early development and may change significantly. Using permissive AI tools in your repository requires careful attention to security considerations and careful human supervision, and even then things can still go wrong. Use it with caution, and at your own risk. See [Disclaimer](#disclaimer).
+> This project is in early development and evolving rapidly. Using permissive AI tools in your repository requires careful attention to security considerations and careful human supervision, and even then things can still go wrong. Use it with caution, and at your own risk. See [Disclaimer](#disclaimer).
 
-Amplifier is a development system whose architecture is driven by modular philosophy. **Our thesis:** this architecture enables exponential capability growth—not just for code, but for natural language + code scenarios. The system builds on itself, providing more capability as it builds itself out.
+## The Transformation: Programming Is Fundamentally Changing
+
+**Programming has always progressed through increasing abstraction:** binary → assembly → C → advanced languages → ... and after a long plateau, **the next phase shift is here.**
+
+Imagine a world where you express **"I want to store and share my ideas with the world"** and you get **working software** to solve your problem—not engineering instructions, not a list of steps, but a solution you can run. If software engineering is required, it happens invisibly. You wait, you get the software to run.
+
+**This is fundamentally different from existing AI development tools.**
+
+Claude Code and similar products are the old waterfall/micromanager idea turned into CLI. You tell AI what to do, how to do it, when. It might feel empowering because you're not writing the code, but at the end of the day, when you express a problem like "I want to store and share my ideas with the world," it juggles between searching the web for suggestions or sending you down a long, complex, detailed software engineering path.
+
+**Amplifier builds on the (r)evolution that code doesn't matter if you get a solution to your problem.** It might still search the web for suggestions, but it leans toward creating a working solution—a new app you can run to solve your problem. The system is **recursively self-improving**: the tools and workflows you create are themselves ideas the system can see, understand, and build upon.
+
+**Our thesis:** This enables exponential capability growth—not just for code, but for natural language + code scenarios across the full spectrum. We're moving toward a world where **intent → working solution** is the default, and traditional software development as we know it is transformed.
+
+---
+
+## Where We Are Now
+
+**We're not fully there yet.** Today, Amplifier is a developer-focused system with modular philosophy, specialized agents, workflow commands, and tools for building solutions. But here's the crucial difference: **developers using Amplifier today aren't just building tools—they're building the foundation that will enable the "express intent → get solution" experience for everyone.**
+
+The modular, recursive, self-improving system that developers build and use TODAY is the path to that vision TOMORROW. Every tool created, every workflow established, every module built makes the system smarter and more capable. The system learns from what you build because your work becomes ideas the system can understand and build upon.
 
 **What we're seeing now (early evidence):**
 
@@ -29,15 +49,17 @@ As the modular foundation accumulates, capabilities will grow exponentially thro
 - Dynamic composition based on context
 - The `blog_writer` pipeline shows early 2-D characteristics with its iteration and feedback
 
-**The scalability thesis:** As we build more foundational modules ([`ccsdk_toolkit`](amplifier/ccsdk_toolkit/), [`content_loader`](amplifier/content_loader/), specialized agents), each new capability becomes easier to create. Five modules enable fifteen new combinations. Fifteen enable hundreds. The architecture scales without limit because composition is the core mechanism.
+**The scalability thesis:** As we build more foundational modules ([`ccsdk_toolkit`](amplifier/ccsdk_toolkit/), [`content_loader`](amplifier/content_loader/), specialized agents), each new capability becomes easier to create. Five modules enable fifteen new combinations. Fifteen enable hundreds. This approach scales without limit because composition is the core mechanism.
 
-**This is why it's a research demonstrator:** We're exploring whether modular composition can truly enable exponential capability growth in AI development systems. Early evidence suggests yes—each scenario we build makes the next one easier. But we're still discovering the patterns, tools, and workflows that make this real.
+**This is the next phase shift in programming leverage:** Just as moving from assembly to C dramatically increased what developers could accomplish, this modular approach to working with AI enables capabilities that weren't possible before. We're seeing it happen—each scenario we build makes the next one easier. The patterns, tools, and workflows are emerging as the foundation grows.
 
 ---
 
-### What You Can Use Today
+## What You Can Use Today: Building the Foundation
 
-These are the "leaves" - end-user capabilities built through modular composition:
+**For developers:** These are the tools and capabilities you can use right now to build powerful solutions and explore this new paradigm. You're not just using these—you're defining what programming becomes.
+
+These are the "leaves" - capabilities built through modular composition:
 
 **Scenario Tools** (composing multiple modules into workflows):
 - **[`blog_writer`](scenarios/blog_writer/)** - Transform rough ideas → polished posts in your voice
@@ -215,7 +237,7 @@ See `@ai_context/MODULAR_DESIGN_PHILOSOPHY.md` for the complete philosophy.
 
 ### The Amplifier Vision: Dimensional Growth
 
-Amplifier's architecture enables dimensional growth—from simple modules to increasingly complex systems:
+This way of working enables dimensional growth—from simple modules to increasingly complex systems:
 
 **0-D: Single Modules (Points)**
 
@@ -234,41 +256,45 @@ Amplifier's architecture enables dimensional growth—from simple modules to inc
 - Modules connected in more complex patterns (future direction)
 - Multiple workflows interacting and branching
 
-**The Exponential Effect:** As you build more modular components and workflows, they become building blocks that enable multiple new capabilities. Each tool you create makes future tools easier to build—not just one, but many. This architecture, driven by modular philosophy, is what enables exponential growth: the system builds on itself and builds itself out.
+**The Exponential Effect:** As you build more modular components and workflows, they become building blocks that enable multiple new capabilities. Each tool you create makes future tools easier to build—not just one, but many. This approach, driven by modular composition, is what enables exponential growth: the system builds on itself and builds itself out.
 
 ---
 
-### Why Amplifier is a System, Not Just a Tool
+### Why This Approach Matters: The Path to Transformation
 
-**What makes Amplifier different is its architecture, driven by its modular philosophy.** Traditional LLM applications and development environments provide fixed capabilities—you use what's built into them. Amplifier is a **system** whose architecture enables exponential growth through use.
+**This system architecture is how we get from "developers using AI tools" to "anyone expressing intent and getting solutions."**
 
-**The contrast:**
+Traditional LLM applications and development environments provide fixed capabilities—you use what's built into them. They help you write code faster, but they don't change what programming is.
 
-**Single-shot LLM requests:**
+Amplifier is fundamentally different. It's a **system** where this way of working enables the transformation we described above. Here's how:
 
-- Start from zero each time
-- Capabilities don't accumulate
-- Each task is independent
-- Results don't compound
+**Two core concepts enable the transformation:**
 
-**Existing LLM software applications:**
+1. **Step up in abstraction and intent** - We're moving toward "just expressing intent and getting action." The AI becomes a first-class object in the programming system itself, not just an assistant. This is a continuation of the Semantic Kernel vision.
 
-- Fixed architecture built once
-- Static wrapper around the model
-- Predetermined capabilities
+2. **Recursive self-improvement** - The system doesn't just execute—it learns. The tools, workflows, and modules you create are themselves ideas the system can see, understand, and build upon. Every solution added becomes capability the system has. Everything else is guardrails to make sure it doesn't get lost.
+
+**How this enables the transformation:**
+
+**Existing AI tools (single-shot or fixed apps):**
+
+- Start from zero each time, or provide fixed predetermined capabilities
+- Don't learn from what you build
+- Help you code faster, but don't change what programming is
 - Can't grow beyond initial design
 
-**Amplifier as a system:**
+**Amplifier's approach:**
 
-- **Architecture-driven foundation** - Modular philosophy enables infinite composition
-- **Exponential growth** - Each tool built enables multiple new tools
-- **Builds on itself** - The system builds on itself AND builds itself out
-- **Natural language + code** - Works across the full spectrum of automation scenarios
-- **Infinite potential** - Modular foundation supports arbitrary complexity without hitting a ceiling
+- **Modular foundation** - Enables infinite composition of capabilities
+- **Exponential growth** - Each tool built enables multiple new tools (not just one)
+- **Recursive self-improvement** - The system learns from what you build; your solutions become its capabilities
+- **Natural language + code** - Works across the full spectrum (from end-user intent to developer implementation)
+- **AI as first-class object** - The AI participates in the programming system itself, not just assists
+- **Path to "intent → solution"** - The technical architecture we're building today enables the end-user experience tomorrow
 
 **Why this enables exponential (not just linear) growth:** You're not limited to what a single LLM conversation can do, or what a static application provides. You're building on an accumulating foundation where each contribution doesn't just add one capability—it enables many. A few conversations in, you have tools. A few weeks in, you have workflows. A few months in, you have a compounding automation system that does things no single-shot approach could accomplish.
 
-**This is why Amplifier keeps getting better while other systems stay static.** The modular architecture doesn't just allow growth—it _enables_ exponential growth through use. Every problem solved becomes capability added. Every tool built becomes leverage that enables multiple new tools. The system builds upon itself infinitely.
+**This is why Amplifier keeps getting better while other systems stay static.** This way of working doesn't just allow growth—it _enables_ exponential growth through use. Every problem solved becomes capability added. Every tool built becomes leverage that enables multiple new tools. The system builds upon itself infinitely.
 
 ---
 
@@ -350,7 +376,7 @@ See [Worktree Guide](docs/WORKTREE_GUIDE.md) for advanced features.
 
 ### Growing Amplifier: How the System Builds Itself Out
 
-**This is where the magic happens:** When you solve a problem or build a tool, that solution can become a new module in Amplifier's growing architecture. Your work doesn't just solve your immediate need—it adds capability to the system that everyone benefits from. This is how the system builds on itself and builds itself out.
+**This is where the magic happens:** When you solve a problem or build a tool, that solution can become a new module in Amplifier's growing system. Your work doesn't just solve your immediate need—it adds capability to the system that everyone benefits from. This is how the system builds on itself and builds itself out.
 
 **The growth pattern when things don't work initially:**
 
@@ -372,7 +398,7 @@ See [Worktree Guide](docs/WORKTREE_GUIDE.md) for advanced features.
 
 4. **Build tools that become modules** - Every tool you create becomes part of Amplifier's growing module library
 
-**This is how dimensional growth happens:** Start with individual modules (0-D), connect them into workflows (1-D), then eventually compose them into more complex architectures (2-D). Each contribution adds to the foundation that everyone builds upon, enabling exponential growth.
+**This is how dimensional growth happens:** Start with individual modules (0-D), connect them into workflows (1-D), then eventually compose them into more complex systems (2-D). Each contribution adds to the foundation that everyone builds upon, enabling exponential growth.
 
 ---
 
@@ -446,9 +472,49 @@ git submodule add <url> <name>  # Add project module to workspace
 
 **Getting started:** Begin by thinking modularly. Describe a workflow you want to automate in modular terms—what are the self-contained pieces and how do they connect? As you create more modules, they naturally build on each other (0-D → 1-D → 2-D), creating the compounding effect that enables Amplifier's exponential growth.
 
-**The vision:** You're not just using Amplifier—you're participating in building it. Each module you create adds to the foundation that everyone builds upon. This is the system in action—architecture driven by modular philosophy, enabling the system to build on itself and build itself out.
+**The vision:** You're not just using Amplifier—you're participating in building it. Each module you create adds to the foundation that everyone builds upon. This is recursive self-improvement in action: the tools you build are ideas the system can see and build upon, enabling it to grow exponentially. This approach to working with AI, driven by modular philosophy, enables the system to build on itself and build itself out.
 
 For deeper strategies and advanced techniques, see [The Amplifier Way](docs/THIS_IS_THE_WAY.md).
+
+---
+
+## Your Role in This Shift
+
+**Programming is being transformed. You can be part of defining what it becomes.**
+
+### For Current Developers
+
+Your profession is fundamentally changing. When end-users can express intent and AI develops the solution, **the traditional role of "software developer" is being redefined.**
+
+**This is happening whether you're part of it or not.** You can resist, or you can be at the forefront.
+
+**Using Amplifier, you're not just building better tools—you're defining what programming becomes in this new era:**
+
+- Building the modular foundation that enables the "intent → solution" transformation
+- Creating the workflows and patterns that others will use
+- Establishing the guardrails that keep the system from getting lost
+- Participating in the system that transforms programming itself
+
+**Not threatening, but empowering:** This isn't about replacing developers—it's about enabling a fundamentally more powerful way of solving problems with software. You're building the future of your own profession.
+
+### For Future End-Users
+
+**This vision is coming, and you can help shape it.**
+
+Today, Amplifier requires developer knowledge to use. But we're building toward a world where:
+
+- You express what you want to accomplish
+- You get working software to accomplish it
+- Development happens invisibly if needed
+- The distinction between "developer" and "end-user" blurs
+
+**Eventually this will be accessible beyond GitHub.** The system is being built by developers today, but it's being built FOR everyone. Your needs and feedback help define what this becomes.
+
+### Both Audiences: Join the Journey
+
+**Be part of building the system that transforms programming itself.** The paradigm shift is happening. The modular, recursive, self-improving foundation we're building today enables the "intent → solution" experience tomorrow.
+
+Whether you're a current developer exploring this new paradigm or someone interested in what programming is becoming, you're invited to participate in defining the future.
 
 ---
 
@@ -614,7 +680,7 @@ make transcript-restore             # Restore full lineage (for CLI use)
 
 ### 🏗️ Workspace Pattern for Serious Projects
 
-**For long-term development**, consider using the workspace pattern where Amplifier hosts your project as a git submodule. This architectural approach provides:
+**For long-term development**, consider using the workspace pattern where Amplifier hosts your project as a git submodule. This approach provides:
 
 - **Clean boundaries** - Project files stay in project directory, Amplifier stays pristine and updatable
 - **Version control isolation** - Each component maintains independent git history
