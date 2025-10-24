@@ -4,7 +4,6 @@ import json
 import logging
 import os
 import subprocess
-import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -80,6 +79,52 @@ class AmplifierBackend(abc.ABC):
         Returns:
             Dict with success, data, and metadata.
         """
+        pass
+
+    @abc.abstractmethod
+    def manage_tasks(self, action: str, **kwargs) -> Dict[str, Any]:
+        """
+        Manage tasks.
+
+        Args:
+            action: The action to perform (create, list, update, complete, delete, export).
+            **kwargs: Additional arguments for the action.
+
+        Returns:
+            Dict with success, data, and metadata.
+        """
+        pass
+
+    @abc.abstractmethod
+    def search_web(self, query: str, num_results: int = 5) -> Dict[str, Any]:
+        """
+        Search the web.
+
+        Args:
+            query: Search query.
+            num_results: Number of results to return.
+
+        Returns:
+            Dict with success, data, and metadata.
+        """
+        pass
+
+    @abc.abstractmethod
+    def fetch_url(self, url: str) -> Dict[str, Any]:
+        """
+        Fetch content from URL.
+
+        Args:
+            url: URL to fetch.
+
+        Returns:
+            Dict with success, data, and metadata.
+        """
+        pass
+
+    @abc.abstractmethod
+    def get_capabilities(self) -> Dict[str, Any]:
+        """Return backend capabilities."""
         pass
 
     @abc.abstractmethod
@@ -242,6 +287,38 @@ class ClaudeCodeBackend(AmplifierBackend):
             logger.error(f"Claude export_transcript error: {e}")
             raise BackendOperationError(f"Transcript export failed: {e}")
 
+    def manage_tasks(self, action: str, **kwargs) -> Dict[str, Any]:
+        # Claude Code has built-in TodoWrite tool
+        return {
+            "success": True,
+            "data": {"message": f"Task {action} handled by Claude Code's TodoWrite tool"},
+            "metadata": {"native": True, "action": action}
+        }
+
+    def search_web(self, query: str, num_results: int = 5) -> Dict[str, Any]:
+        # Claude Code has built-in WebFetch tool
+        return {
+            "success": True,
+            "data": {"message": f"Web search for '{query}' handled by Claude Code's WebFetch tool"},
+            "metadata": {"native": True, "query": query, "num_results": num_results}
+        }
+
+    def fetch_url(self, url: str) -> Dict[str, Any]:
+        # Claude Code has built-in WebFetch tool
+        return {
+            "success": True,
+            "data": {"message": f"URL fetch for '{url}' handled by Claude Code's WebFetch tool"},
+            "metadata": {"native": True, "url": url}
+        }
+
+    def get_capabilities(self) -> Dict[str, Any]:
+        return {
+            "task_management": True,
+            "web_search": True,
+            "url_fetch": True,
+            "native_tools": True
+        }
+
 
 class CodexBackend(AmplifierBackend):
     """Codex backend implementation."""
@@ -398,6 +475,65 @@ class CodexBackend(AmplifierBackend):
             logger.error(f"Codex export_transcript error: {e}")
             raise BackendOperationError(f"Transcript export failed: {e}")
 
+    def manage_tasks(self, action: str, **kwargs) -> Dict[str, Any]:
+        try:
+            if action == "create":
+                from .codex.mcp_servers.task_tracker.server import create_task
+                result = create_task(**kwargs)
+            elif action == "list":
+                from .codex.mcp_servers.task_tracker.server import list_tasks
+                result = list_tasks(**kwargs)
+            elif action == "update":
+                from .codex.mcp_servers.task_tracker.server import update_task
+                result = update_task(**kwargs)
+            elif action == "complete":
+                from .codex.mcp_servers.task_tracker.server import complete_task
+                result = complete_task(**kwargs)
+            elif action == "delete":
+                from .codex.mcp_servers.task_tracker.server import delete_task
+                result = delete_task(**kwargs)
+            elif action == "export":
+                from .codex.mcp_servers.task_tracker.server import export_tasks
+                result = export_tasks(**kwargs)
+            else:
+                return {"success": False, "data": {}, "metadata": {"error": f"Unknown action: {action}"}}
+            return {"success": True, "data": result, "metadata": {"action": action}}
+        except ImportError:
+            return {"success": False, "data": {}, "metadata": {"error": "MCP task tracker server not available"}}
+        except Exception as e:
+            logger.error(f"Codex manage_tasks error: {e}")
+            return {"success": False, "data": {}, "metadata": {"error": str(e)}}
+
+    def search_web(self, query: str, num_results: int = 5) -> Dict[str, Any]:
+        try:
+            from .codex.mcp_servers.web_research.server import search_web
+            result = search_web(query, num_results)
+            return {"success": True, "data": result, "metadata": {"query": query, "num_results": num_results}}
+        except ImportError:
+            return {"success": False, "data": {}, "metadata": {"error": "MCP web research server not available"}}
+        except Exception as e:
+            logger.error(f"Codex search_web error: {e}")
+            return {"success": False, "data": {}, "metadata": {"error": str(e)}}
+
+    def fetch_url(self, url: str) -> Dict[str, Any]:
+        try:
+            from .codex.mcp_servers.web_research.server import fetch_url
+            result = fetch_url(url)
+            return {"success": True, "data": result, "metadata": {"url": url}}
+        except ImportError:
+            return {"success": False, "data": {}, "metadata": {"error": "MCP web research server not available"}}
+        except Exception as e:
+            logger.error(f"Codex fetch_url error: {e}")
+            return {"success": False, "data": {}, "metadata": {"error": str(e)}}
+
+    def get_capabilities(self) -> Dict[str, Any]:
+        return {
+            "task_management": True,
+            "web_search": True,
+            "url_fetch": True,
+            "mcp_tools": True
+        }
+
 
 class BackendFactory:
     """Factory for creating backend instances."""
@@ -433,6 +569,15 @@ class BackendFactory:
         if CodexBackend().is_available():
             return "codex"
         raise BackendNotAvailableError("No backend available")
+
+    @staticmethod
+    def get_backend_capabilities(backend_type: str) -> Dict[str, Any]:
+        if backend_type == "claude":
+            return ClaudeCodeBackend().get_capabilities()
+        elif backend_type == "codex":
+            return CodexBackend().get_capabilities()
+        else:
+            return {}
 
 
 def get_backend() -> AmplifierBackend:

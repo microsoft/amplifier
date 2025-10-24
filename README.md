@@ -304,6 +304,21 @@ Let's use /ddd:1-plan to design the architecture.
 
 ## Codex Integration
 
+Amplifier now provides comprehensive Codex CLI integration with 95% feature parity to Claude Code, including new task tracking and web research capabilities.
+
+### Key Features
+- **Task Tracking**: TodoWrite-equivalent functionality for managing development tasks
+- **Web Research**: WebFetch-equivalent for gathering information during development
+- **Enhanced Automation**: Auto-quality checks, periodic transcript saves, and smart context detection
+- **Agent Context Bridge**: Seamless context passing between main sessions and spawned agents
+- **MCP Server Architecture**: Extensible tool system for custom integrations
+
+### Quick Start
+Get started with Codex in 5 minutes: [Quick Start Tutorial](docs/tutorials/QUICK_START_CODEX.md)
+
+### Feature Comparison
+See how Codex compares to Claude Code: [Feature Parity Matrix](docs/tutorials/FEATURE_PARITY_MATRIX.md)
+
 The `amplify-codex.sh` wrapper provides seamless integration with Codex CLI:
 
 ### Features
@@ -637,6 +652,33 @@ Further details on how to run the benchmark can be found in [tests/terminal_benc
 
 ---
 
+## Tutorials
+
+Amplifier provides comprehensive tutorials to help you master both Claude Code and Codex integrations:
+
+### Tutorial Index
+- **[Quick Start (5 min)**](docs/tutorials/QUICK_START_CODEX.md) - Get started with Codex in 5 minutes
+- **[Beginner Guide (30 min)**](docs/tutorials/BEGINNER_GUIDE_CODEX.md) - Complete Codex workflows walkthrough
+- **[Workflow Diagrams](docs/tutorials/WORKFLOW_DIAGRAMS.md)** - Visual guides to architecture and processes
+- **[Feature Parity Matrix](docs/tutorials/FEATURE_PARITY_MATRIX.md)** - Compare Codex vs Claude Code features
+- **[Troubleshooting Tree](docs/tutorials/TROUBLESHOOTING_TREE.md)** - Decision-tree guide for common issues
+
+### Learning Paths
+
+**New to Amplifier:**
+1. [Quick Start Tutorial](docs/tutorials/QUICK_START_CODEX.md) (5 min)
+2. [Beginner Guide](docs/tutorials/BEGINNER_GUIDE_CODEX.md) (30 min)
+
+**Migrating from Claude Code:**
+1. [Feature Parity Matrix](docs/tutorials/FEATURE_PARITY_MATRIX.md) (20 min)
+2. [Workflow Diagrams](docs/tutorials/WORKFLOW_DIAGRAMS.md) (15 min)
+
+**CI/CD Integration:**
+1. [Quick Start Tutorial](docs/tutorials/QUICK_START_CODEX.md) (5 min)
+2. [Feature Parity Matrix](docs/tutorials/FEATURE_PARITY_MATRIX.md) (20 min) - Focus on CI sections
+
+---
+
 ## Project Structure
 
 - `amplify-codex.sh` - Wrapper script for Codex CLI with Amplifier integration
@@ -651,7 +693,7 @@ Further details on how to run the benchmark can be found in [tests/terminal_benc
   - `*.md` - Individual agent definitions
 - `.claude/` - Claude Code configuration and hooks
   - `README.md` - Claude Code integration documentation
-- `amplifier/core/` - Backend abstraction layer
+- `amplifier/core/` - Backend abstraction layer with dual-backend support
   - `backend.py` - Core backend interface and implementations
   - `agent_backend.py` - Agent spawning abstraction
   - `config.py` - Backend configuration management

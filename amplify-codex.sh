@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Amplifier Codex Wrapper - Starts Codex CLI with MCP servers and session management
-# 
+#
 # This script provides a seamless integration between Codex CLI and the Amplifier
 # memory system. It handles session initialization, MCP server orchestration, and
 # cleanup automatically.
@@ -43,6 +43,8 @@ PROFILE="development"
 SKIP_INIT=false
 SKIP_CLEANUP=false
 SHOW_HELP=false
+AUTO_CHECKS=true
+AUTO_SAVE=true
 
 # Parse command-line arguments
 while [[ $# -gt 0 ]]; do
@@ -57,6 +59,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         --no-cleanup)
             SKIP_CLEANUP=true
+            shift
+            ;;
+        --no-auto-checks)
+            AUTO_CHECKS=false
+            shift
+            ;;
+        --no-auto-save)
+            AUTO_SAVE=false
             shift
             ;;
         --help)
@@ -80,6 +90,8 @@ if [ "$SHOW_HELP" = true ]; then
     echo "  --profile <name>    Select Codex profile (development, ci, review) [default: development]"
     echo "  --no-init           Skip pre-session initialization"
     echo "  --no-cleanup        Skip post-session cleanup"
+    echo "  --no-auto-checks    Disable automatic quality checks after session"
+    echo "  --no-auto-save      Disable periodic transcript auto-saves"
     echo "  --help              Show this help message"
     echo ""
     echo "All other arguments are passed through to Codex CLI."
@@ -148,10 +160,18 @@ fi
 # Pre-Session Initialization
 if [ "$SKIP_INIT" = false ]; then
     print_status "Running pre-session initialization..."
-    
+
     # Create logs directory if it doesn't exist
     mkdir -p .codex/logs
-    
+
+    # Smart context detection
+    export GIT_BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
+    export RECENT_COMMITS=$(git log --oneline -5 2>/dev/null | tr '\n' '|' | sed 's/|$//' || echo "none")
+    export TODO_FILES=$(find . -name "*.py" -type f -exec grep -l "TODO\|FIXME\|XXX" {} \; 2>/dev/null | head -5 | tr '\n' ' ' || echo "none")
+
+    # Create session start marker for file tracking
+    touch .codex/session_start_marker
+
     # Run initialization script
     if uv run python .codex/tools/session_init.py 2>&1 | tee .codex/logs/session_init.log; then
         # Extract summary from output (assuming it prints something like "Loaded X memories")
@@ -165,6 +185,20 @@ else
     print_status "Skipping pre-session initialization (--no-init)"
 fi
 
+# Start periodic auto-save background process
+AUTO_SAVE_PID=""
+if [ "$AUTO_SAVE" = true ]; then
+    print_status "Starting periodic transcript auto-save (every 10 minutes)..."
+    (
+        while true; do
+            sleep 600  # 10 minutes
+            echo "$(date '+%Y-%m-%d %H:%M:%S'): Auto save triggered" >> .codex/logs/auto_saves.log
+            uv run python .codex/tools/auto_save.py >> .codex/logs/auto_saves.log 2>&1 || echo "$(date '+%Y-%m-%d %H:%M:%S'): Auto save failed" >> .codex/logs/auto_saves.log
+        done
+    ) &
+    AUTO_SAVE_PID=$!
+fi
+
 # User Guidance Display
 echo ""
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════════╗${NC}"
@@ -175,6 +209,18 @@ echo -e "${BLUE}║${NC}  ${GREEN}• initialize_session${NC} - Load context fro
 echo -e "${BLUE}║${NC}  ${GREEN}• check_code_quality${NC} - Run quality checks after changes       ${BLUE}║${NC}"
 echo -e "${BLUE}║${NC}  ${GREEN}• save_current_transcript${NC} - Export session transcript         ${BLUE}║${NC}"
 echo -e "${BLUE}║${NC}  ${GREEN}• finalize_session${NC} - Save memories before ending              ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}  ${GREEN}• create_task${NC} - Create and manage development tasks           ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}  ${GREEN}• search_web${NC} - Research information on the web                ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}  ${GREEN}• fetch_url${NC} - Fetch and analyze web content                  ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}                                                                ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}  ${YELLOW}Keyboard Shortcuts:${NC}                                          ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}  ${YELLOW}• Ctrl+C${NC} - Exit session gracefully                          ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}                                                                ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}  ${YELLOW}Session Statistics:${NC}                                          ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}  ${YELLOW}• Profile:${NC} $PROFILE                                           ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}  ${YELLOW}• Memory System:${NC} ${MEMORY_SYSTEM_ENABLED}                     ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}  ${YELLOW}• Auto-save:${NC} ${AUTO_SAVE}                                   ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}  ${YELLOW}• Auto-checks:${NC} ${AUTO_CHECKS}                               ${BLUE}║${NC}"
 echo -e "${BLUE}║${NC}                                                                ${BLUE}║${NC}"
 echo -e "${BLUE}║${NC}  ${YELLOW}Recommended Workflow:${NC}                                         ${BLUE}║${NC}"
 echo -e "${BLUE}║${NC}  ${YELLOW}1. Start:${NC} Use initialize_session to load context              ${BLUE}║${NC}"
@@ -202,19 +248,42 @@ print_status "Executing: ${CODEX_CMD[*]}"
 
 # Trap SIGINT to ensure cleanup runs
 cleanup_needed=true
-trap 'cleanup_needed=true' SIGINT
+trap 'cleanup_needed=true; kill $AUTO_SAVE_PID 2>/dev/null || true' SIGINT
 
 # Run Codex
 "${CODEX_CMD[@]}"
 CODEX_EXIT_CODE=$?
 
+# Stop auto-save process
+if [ -n "$AUTO_SAVE_PID" ]; then
+    kill $AUTO_SAVE_PID 2>/dev/null || true
+fi
+
+# Auto-quality checks
+if [ "$AUTO_CHECKS" = true ]; then
+    print_status "Running auto-quality checks on modified files..."
+
+    # Detect modified files since session start
+    MODIFIED_FILES=$(find . -newer .codex/session_start_marker -type f \( -name "*.py" -o -name "*.md" -o -name "*.txt" \) 2>/dev/null | head -20 || echo "")
+
+    if [ -n "$MODIFIED_FILES" ]; then
+        # Create logs directory if it doesn't exist
+        mkdir -p .codex/logs
+
+        # Run auto-check script
+        echo "$MODIFIED_FILES" | uv run python .codex/tools/auto_check.py 2>&1 | tee .codex/logs/auto_checks.log || print_warning "Auto-quality checks failed"
+    else
+        print_status "No modified files detected for quality checks"
+    fi
+fi
+
 # Post-Session Cleanup
 if [ "$SKIP_CLEANUP" = false ] && [ "$cleanup_needed" = true ]; then
     print_status "Running post-session cleanup..."
-    
+
     # Create logs directory if it doesn't exist
     mkdir -p .codex/logs
-    
+
     # Run cleanup script
     if uv run python .codex/tools/session_cleanup.py 2>&1 | tee .codex/logs/session_cleanup.log; then
         # Extract summary from output
@@ -229,6 +298,28 @@ else
         print_status "Skipping post-session cleanup (--no-cleanup)"
     fi
 fi
+
+# Exit Summary
+echo ""
+print_status "Session Summary:"
+if [ -n "$MODIFIED_FILES" ]; then
+    FILE_COUNT=$(echo "$MODIFIED_FILES" | wc -l)
+    echo "  Files modified: $FILE_COUNT"
+else
+    echo "  Files modified: 0"
+fi
+echo "  Tasks created/completed: Check .codex/tasks/ for details"
+if [ "$AUTO_CHECKS" = true ] && [ -f ".codex/logs/auto_checks.log" ]; then
+    echo "  Quality check results: See .codex/logs/auto_checks.log"
+else
+    echo "  Quality check results: Auto-checks disabled or no results"
+fi
+echo "  Memories extracted: See cleanup logs"
+echo "  Transcript location: .codex/transcripts/"
+echo ""
+
+# Clean up session marker
+rm -f .codex/session_start_marker
 
 # Exit Handling
 if [ $CODEX_EXIT_CODE -eq 0 ]; then

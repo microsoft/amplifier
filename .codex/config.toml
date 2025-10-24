@@ -80,6 +80,24 @@ env = { AMPLIFIER_ROOT = "." }
 timeout = 30
 # Purpose: Save and manage session transcripts, integrate with existing transcript system
 
+# Task Tracker MCP Server
+# Replaces: Claude Code's TodoWrite functionality
+[mcp_servers.amplifier_tasks]
+command = "uv"
+args = ["run", "python", ".codex/mcp_servers/task_tracker/server.py"]
+env = { AMPLIFIER_ROOT = "." }
+timeout = 30
+# Purpose: Provide task management within Codex sessions, replicating TodoWrite
+
+# Web Research MCP Server
+# Replaces: Claude Code's WebFetch functionality
+[mcp_servers.amplifier_web]
+command = "uv"
+args = ["run", "python", ".codex/mcp_servers/web_research/server.py"]
+env = { AMPLIFIER_ROOT = "." }
+timeout = 60
+# Purpose: Provide web search and content fetching capabilities within Codex sessions
+
 # TODO: Knowledge Integration MCP Server will be added in a later phase
 # [mcp_servers.amplifier_knowledge]
 # command = "uv"
@@ -97,7 +115,7 @@ timeout = 30
 # sandbox_mode = "workspace-write"  # PLACEHOLDER: Verify with Codex CLI docs
 tool_timeout_sec = 600
 # All MCP servers enabled for full development experience
-mcp_servers = ["amplifier_session", "amplifier_quality", "amplifier_transcripts"]
+mcp_servers = ["amplifier_session", "amplifier_quality", "amplifier_transcripts", "amplifier_tasks", "amplifier_web"]
 
 # CI profile - restrictive settings for automated environments
 [profiles.ci]
@@ -112,8 +130,8 @@ mcp_servers = ["amplifier_quality"]
 # approval_policy = "on-request"  # PLACEHOLDER: Verify with Codex CLI docs
 # sandbox_mode = "workspace-write"  # PLACEHOLDER: Verify with Codex CLI docs
 tool_timeout_sec = 300
-# Quality checks and transcript export for code review workflows
-mcp_servers = ["amplifier_quality", "amplifier_transcripts"]
+# Quality checks, transcript export, and task tracking for code review workflows
+mcp_servers = ["amplifier_quality", "amplifier_transcripts", "amplifier_tasks"]
 
 # =============================================================================
 # Optional Extensions (Disabled by Default)
@@ -169,3 +187,14 @@ strict_mode = false  # Fail on warnings, not just errors
 default_format = "both"  # standard, extended, both, or compact
 output_dir = ".codex/transcripts"  # Relative to project root
 incremental = true  # Skip already-exported sessions
+
+[mcp_server_config.task_tracker]
+# Task tracker configuration
+task_storage_path = ".codex/tasks/session_tasks.json"
+max_tasks_per_session = 50
+
+[mcp_server_config.web_research]
+# Web research configuration
+cache_enabled = true
+cache_ttl_hours = 24
+max_results = 10
