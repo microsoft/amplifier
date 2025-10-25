@@ -24,6 +24,28 @@ CODEX_AGENTS_DIR = Path(".codex/agents")
 CLAUDE_TOOLS = ["Task", "TodoWrite", "WebFetch", "WebSearch", "SlashCommand"]
 
 
+def preprocess_frontmatter(frontmatter_text: str) -> str:
+    """Preprocess frontmatter to fix unquoted description fields with colons."""
+    def process_description(value: str) -> str:
+        stripped = value.strip()
+        if stripped.startswith(('|', '>', '"', "'")):
+            return value
+        else:
+            # Wrap in YAML literal block scalar
+            lines = stripped.split('\n')
+            indented = '\n'.join('  ' + line for line in lines)
+            return f"|\n{indented}"
+
+    try:
+        # Match description: followed by value until next key or end
+        pattern = r'(description:\s*)(.*?)(?=\n\w+:|\n---|\Z)'
+        processed = re.sub(pattern, lambda m: m.group(1) + process_description(m.group(2)), frontmatter_text, flags=re.DOTALL)
+        return processed
+    except Exception as e:
+        logger.warning(f"Regex preprocessing failed: {e}, returning original")
+        return frontmatter_text
+
+
 def parse_agent_file(file_path: Path) -> tuple[dict, str]:
     """Parse agent markdown file into frontmatter and content."""
     try:
@@ -33,7 +55,13 @@ def parse_agent_file(file_path: Path) -> tuple[dict, str]:
         parts = content.split("---", 2)
         if len(parts) < 3:
             raise ValueError("Invalid agent file format")
-        frontmatter = yaml.safe_load(parts[1])
+        frontmatter_text = parts[1]
+        try:
+            processed_frontmatter = preprocess_frontmatter(frontmatter_text)
+        except Exception as e:
+            logger.warning(f"Preprocessing failed for {file_path}: {e}, using original")
+            processed_frontmatter = frontmatter_text
+        frontmatter = yaml.safe_load(processed_frontmatter)
         markdown_content = parts[2].strip()
         return frontmatter, markdown_content
     except Exception as e:

@@ -615,8 +615,8 @@ class CodexBackend(AmplifierBackend):
             return {"success": False, "data": {}, "metadata": {"error": str(e)}}
 
     def spawn_agent_with_context(
-        self, agent_name: str, task: str, messages: List[Dict[str, Any]], context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        self, agent_name: str, task: str, messages: list[dict[str, Any]], context: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Codex delegates to agent backend with full context support."""
         try:
             from amplifier.core.agent_backend import get_agent_backend

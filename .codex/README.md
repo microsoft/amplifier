@@ -203,6 +203,8 @@ args = ["run", "python", ".codex/mcp_servers/session_manager/server.py"]
    codex --profile review
    ```
 
+**Configuration File Precedence**: The project's `.codex/config.toml` is the source of truth for configuration. It gets copied to `~/.codex/config.toml` on each wrapper script invocation. Any manual edits to `~/.codex/config.toml` will be overwritten by the next wrapper script run. For persistent changes, always edit `.codex/config.toml` in the project directory.
+
 #### Configuration Best Practices
 
 - Use the `development` profile for full-featured development sessions
@@ -915,6 +917,10 @@ These examples highlight the key visual and structural differences between the f
 - Project dependencies installed (`make install`)
 - Virtual environment activated
 
+### Configuration Management
+
+Codex CLI only reads from `~/.codex/config.toml` (the default location). The `amplify-codex.sh` wrapper script automatically copies `.codex/config.toml` to this location before launching Codex. Users should edit `.codex/config.toml` in the project directory, not `~/.codex/config.toml` directly. The `--config` flag in Codex CLI is for runtime overrides (e.g., `--config key="value"`), not for specifying config file paths.
+
 ### Quick Start with Wrapper Script
 
 > **New to Codex?** Check out our [5-minute quick start tutorial](../docs/tutorials/QUICK_START_CODEX.md) for a guided introduction.
@@ -1089,6 +1095,9 @@ tail -f .codex/logs/*.log
 # View specific server log
 tail -f .codex/logs/session_manager.log
 ```
+
+**Configuration Issues**:
+- **"Invalid override (missing '=')" error**: This occurs when using `--config` flag incorrectly with Codex CLI. The `--config` flag is for runtime key-value overrides (e.g., `--config key="value"`), not for specifying config file paths. The wrapper script automatically handles configuration file placement, so users should not need to specify config files manually. If this error appears, ensure you're using the wrapper script (`amplify-codex.sh`) instead of calling `codex` directly with config flags.
 
 ### Session Management Issues
 

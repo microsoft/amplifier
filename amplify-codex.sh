@@ -102,6 +102,8 @@ if [ "$SHOW_HELP" = true ]; then
     echo ""
     echo "All other arguments are passed through to Codex CLI."
     echo ""
+    echo "The script automatically manages Codex configuration by copying .codex/config.toml to ~/.codex/config.toml."
+    echo ""
     echo "Environment Variables:"
     echo "  CODEX_PROFILE       Override default profile"
     echo "  MEMORY_SYSTEM_ENABLED  Enable/disable memory system [default: true]"
@@ -184,6 +186,20 @@ print_status "Using profile: $PROFILE"
 # Check if profile exists in config (basic validation)
 if ! grep -q "\[profiles\.$PROFILE\]" .codex/config.toml; then
     print_warning "Profile '$PROFILE' not found in config.toml, using default behavior"
+fi
+
+# Configuration Setup
+print_status "Setting up Codex configuration..."
+
+# Create ~/.codex directory if it doesn't exist
+mkdir -p ~/.codex
+
+# Copy project config to Codex's default location
+if cp .codex/config.toml ~/.codex/config.toml; then
+    print_success "Configuration copied to ~/.codex/config.toml"
+else
+    print_error "Failed to copy configuration file"
+    exit 1
 fi
 
 # Pre-Session Initialization
@@ -281,9 +297,6 @@ print_status "Starting Codex CLI..."
 
 # Build Codex command
 CODEX_CMD=("codex" "--profile" "$PROFILE")
-
-# Add config if not default location (assuming .codex/config.toml is not default)
-CODEX_CMD+=("--config" ".codex/config.toml")
 
 # Pass through remaining arguments
 CODEX_CMD+=("$@")

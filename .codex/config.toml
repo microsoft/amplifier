@@ -1,4 +1,11 @@
 # Codex Configuration for Amplifier Project
+#
+# CONFIGURATION MANAGEMENT:
+# This file is automatically copied to ~/.codex/config.toml by the amplify-codex.sh wrapper script
+# before launching Codex CLI. Always edit this project file (.codex/config.toml), not the copy in
+# your home directory. Changes take effect on the next wrapper script invocation. Direct edits to
+# ~/.codex/config.toml will be overwritten.
+#
 # WARNING: Many configuration keys in this file are placeholders and should be verified
 # with the current Codex CLI documentation before use. Uncomment and test keys
 # individually to ensure compatibility with your Codex version.
