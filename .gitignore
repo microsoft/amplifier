@@ -91,3 +91,4 @@ ai_working/tmp
 .idea/
 activity-log/
 ai_working/productivity_tracker/
+.codex/tasks/session_tasks.json
