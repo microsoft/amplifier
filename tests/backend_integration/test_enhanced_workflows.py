@@ -18,7 +18,7 @@ import pytest
 
 # Import modules under test (will be mocked where necessary)
 try:
-    from amplifier.core.backend import BackendFactory
+    from amplifier.core.backend import BackendFactory  # noqa: F401
     from amplifier.core.backend import ClaudeCodeBackend
     from amplifier.core.backend import CodexBackend
 except ImportError:

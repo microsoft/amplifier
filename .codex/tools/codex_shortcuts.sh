@@ -5,33 +5,70 @@
 #
 # Usage: source .codex/tools/codex_shortcuts.sh
 
+set -euo pipefail
+
 # Colors for output
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
+RED='\033[0;31m'
 NC='\033[0m' # No Color
+
+# Helper: Check Codex availability and configuration
+codex-shortcuts-check() {
+    local silent="${1:-false}"
+
+    # Check for codex CLI
+    if ! command -v codex &> /dev/null; then
+        if [ "$silent" != "true" ]; then
+            echo -e "${RED}Error: Codex CLI not found. Install from https://github.com/xai-org/codex${NC}" >&2
+        fi
+        return 1
+    fi
+
+    # Check for config.toml
+    if [ ! -f ".codex/config.toml" ]; then
+        if [ "$silent" != "true" ]; then
+            echo -e "${RED}Error: .codex/config.toml not found. Ensure you're in the project directory.${NC}" >&2
+        fi
+        return 1
+    fi
+
+    return 0
+}
 
 # Quick session initialization
 codex-init() {
     local context="${1:-Starting development session}"
+
+    codex-shortcuts-check || return 1
+
     echo -e "${BLUE}Initializing Codex session...${NC}"
-    uv run python .codex/tools/session_init.py "$context"
+    uv run python .codex/tools/session_init.py "$context" || {
+        echo -e "${RED}Session initialization failed${NC}" >&2
+        return 1
+    }
 }
 
 # Run quality checks on files
 codex-check() {
+    codex-shortcuts-check || return 1
+
     if [ $# -eq 0 ]; then
         # No arguments - run on all Python files
         echo -e "${BLUE}Running quality checks on all Python files...${NC}"
-        make check
+        make check || {
+            echo -e "${RED}Quality checks failed${NC}" >&2
+            return 1
+        }
     else
         # Run on specific files
         echo -e "${BLUE}Running quality checks on specified files...${NC}"
         for file in "$@"; do
             if [ -f "$file" ]; then
                 echo "Checking: $file"
-                uv run ruff check "$file"
-                uv run pyright "$file"
+                uv run ruff check "$file" || echo -e "${YELLOW}Ruff check failed for $file${NC}"
+                uv run pyright "$file" || echo -e "${YELLOW}Pyright check failed for $file${NC}"
             else
                 echo -e "${YELLOW}Warning: File not found: $file${NC}"
             fi
@@ -41,93 +78,58 @@ codex-check() {
 
 # Save current transcript
 codex-save() {
+    codex-shortcuts-check || return 1
+
     echo -e "${BLUE}Saving current transcript...${NC}"
     uv run python -c "
 from amplifier.core.backend import BackendFactory
 backend = BackendFactory.create(backend_type='codex')
 result = backend.export_transcript()
 print(f'Transcript saved: {result}')
-"
+" || {
+        echo -e "${RED}Failed to save transcript${NC}" >&2
+        return 1
+    }
 }
 
 # Task management shortcuts
 codex-task-add() {
+    codex-shortcuts-check || return 1
+
     local title="${1:-Untitled Task}"
     local description="${2:-}"
     local priority="${3:-medium}"
-    
+
     echo -e "${BLUE}Creating task: $title${NC}"
-    uv run python -c "
-import asyncio
-import json
-from pathlib import Path
 
-async def create_task():
-    # Simple task creation without MCP overhead
-    tasks_file = Path('.codex/tasks/session_tasks.json')
-    
-    if not tasks_file.exists():
-        data = {'tasks': [], 'metadata': {}}
-    else:
-        with open(tasks_file) as f:
-            data = json.load(f)
-    
-    from datetime import datetime
-    import uuid
-    
-    task = {
-        'id': str(uuid.uuid4()),
-        'title': '$title',
-        'description': '$description',
-        'priority': '$priority',
-        'status': 'pending',
-        'created_at': datetime.now().isoformat(),
-        'updated_at': datetime.now().isoformat(),
-        'completed_at': None
+    # Use MCP tool via codex CLI
+    codex tool amplifier_tasks.create_task \
+        --args "{\"title\": \"$title\", \"description\": \"$description\", \"priority\": \"$priority\"}" 2>&1 || {
+        echo -e "${RED}Failed to create task via MCP. Ensure amplifier_tasks server is active.${NC}" >&2
+        return 1
     }
-    
-    data['tasks'].append(task)
-    
-    with open(tasks_file, 'w') as f:
-        json.dump(data, f, indent=2)
-    
-    print(f\"Task created: {task['id']}\")
-    return task
-
-asyncio.run(create_task())
-"
 }
 
 # List tasks
 codex-task-list() {
+    codex-shortcuts-check || return 1
+
     local filter="${1:-}"
-    
+
     echo -e "${BLUE}Tasks:${NC}"
-    uv run python -c "
-import json
-from pathlib import Path
 
-tasks_file = Path('.codex/tasks/session_tasks.json')
-
-if not tasks_file.exists():
-    print('No tasks found')
-else:
-    with open(tasks_file) as f:
-        data = json.load(f)
-    
-    tasks = data.get('tasks', [])
-    
-    if '$filter':
-        tasks = [t for t in tasks if t['status'] == '$filter']
-    
-    if not tasks:
-        print('No tasks found')
-    else:
-        for task in tasks:
-            status_emoji = {'pending': '⏳', 'in_progress': '🔄', 'completed': '✅', 'cancelled': '❌'}.get(task['status'], '❓')
-            priority_emoji = {'critical': '🔴', 'high': '🟠', 'medium': '🟡', 'low': '🟢'}.get(task['priority'], '⚪')
-            print(f\"{status_emoji} {priority_emoji} [{task['status']}] {task['title']} (ID: {task['id'][:8]})\")
-"
+    # Use MCP tool via codex CLI
+    if [ -n "$filter" ]; then
+        codex tool amplifier_tasks.list_tasks --args "{\"filter_status\": \"$filter\"}" 2>&1 || {
+            echo -e "${RED}Failed to list tasks via MCP. Ensure amplifier_tasks server is active.${NC}" >&2
+            return 1
+        }
+    else
+        codex tool amplifier_tasks.list_tasks 2>&1 || {
+            echo -e "${RED}Failed to list tasks via MCP. Ensure amplifier_tasks server is active.${NC}" >&2
+            return 1
+        }
+    fi
 }
 
 # Web search shortcut

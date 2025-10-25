@@ -33,14 +33,14 @@ sys.path.insert(0, str(project_root / ".codex"))
 
 # Import modules under test (will be mocked where necessary)
 try:
-    from codex.mcp_servers.base import MCPLogger
-    from codex.mcp_servers.quality_checker.server import check_code_quality
-    from codex.mcp_servers.quality_checker.server import validate_environment
-    from codex.mcp_servers.session_manager.server import finalize_session
-    from codex.mcp_servers.session_manager.server import health_check as session_health_check
-    from codex.mcp_servers.session_manager.server import initialize_session
-    from codex.mcp_servers.transcript_saver.server import list_available_sessions
-    from codex.mcp_servers.transcript_saver.server import save_current_transcript
+    from codex.mcp_servers.base import MCPLogger  # noqa: F401
+    from codex.mcp_servers.quality_checker.server import check_code_quality  # noqa: F401
+    from codex.mcp_servers.quality_checker.server import validate_environment  # noqa: F401
+    from codex.mcp_servers.session_manager.server import finalize_session  # noqa: F401
+    from codex.mcp_servers.session_manager.server import health_check as session_health_check  # noqa: F401
+    from codex.mcp_servers.session_manager.server import initialize_session  # noqa: F401
+    from codex.mcp_servers.transcript_saver.server import list_available_sessions  # noqa: F401
+    from codex.mcp_servers.transcript_saver.server import save_current_transcript  # noqa: F401
 except ImportError:
     # Modules not yet implemented - tests will use mocks
     pass

@@ -7,6 +7,8 @@ mirroring the functionality of Claude Code's PreCompact hook but with explicit t
 """
 
 import json
+import sys
+from datetime import UTC
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -20,9 +22,7 @@ except ImportError:
 # Import base utilities
 try:
     from ..base import AmplifierMCPServer
-    from ..base import MCPLogger
     from ..base import error_response
-    from ..base import get_project_root
     from ..base import success_response
 except ImportError:
     print("Error: Base utilities not found. Ensure base.py is available.", file=sys.stderr)
@@ -312,7 +312,7 @@ class TranscriptSaverServer(AmplifierMCPServer):
 
             # Get directory modification time as fallback start time
             if not metadata.get("started_at"):
-                mtime = datetime.fromtimestamp(session_dir.stat().st_mtime)
+                mtime = datetime.fromtimestamp(session_dir.stat().st_mtime, tz=UTC)
                 metadata["started_at"] = mtime.isoformat()
 
         except Exception as e:

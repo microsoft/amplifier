@@ -22,6 +22,161 @@ from ..base import AmplifierMCPServer
 from ..base import error_response
 from ..base import success_response
 
+# Capability flags - set based on import success
+DDGS_AVAILABLE = False
+REQUESTS_AVAILABLE = False
+BS4_AVAILABLE = False
+
+try:
+    import requests
+
+    REQUESTS_AVAILABLE = True
+except ImportError:
+    pass
+
+try:
+    from bs4 import BeautifulSoup
+
+    BS4_AVAILABLE = True
+except ImportError:
+    pass
+
+try:
+    from duckduckgo_search import DDGS
+
+    DDGS_AVAILABLE = True
+except ImportError:
+    pass
+
+
+class WebCache:
+    """Simple file-based cache for web content."""
+
+    def __init__(self, cache_dir: Path, ttl_seconds: int = 24 * 3600):
+        self.cache_dir = cache_dir
+        self.ttl_seconds = ttl_seconds
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+
+    def _get_cache_key(self, key: str) -> str:
+        """Generate cache key from string."""
+        return hashlib.md5(key.encode()).hexdigest()
+
+    def get(self, key: str) -> Any | None:
+        """Get cached data if it exists and is not expired."""
+        cache_key = self._get_cache_key(key)
+        cache_file = self.cache_dir / f"{cache_key}.json"
+
+        if not cache_file.exists():
+            return None
+
+        try:
+            with open(cache_file) as f:
+                cached = json.load(f)
+
+            # Check expiration
+            cached_at = cached.get("timestamp", 0)
+            age = time.time() - cached_at
+
+            if age > self.ttl_seconds:
+                cache_file.unlink()  # Clean up expired cache
+                return None
+
+            return cached.get("content")
+
+        except Exception:
+            # Clean up corrupted cache
+            if cache_file.exists():
+                cache_file.unlink()
+            return None
+
+    def set(self, key: str, data: Any):
+        """Store data in cache."""
+        cache_key = self._get_cache_key(key)
+        cache_file = self.cache_dir / f"{cache_key}.json"
+
+        try:
+            cached = {"timestamp": time.time(), "content": data}
+            with open(cache_file, "w") as f:
+                json.dump(cached, f, indent=2)
+        except Exception:
+            pass  # Fail silently on cache write errors
+
+    def clear(self, max_age_seconds: int | None = None):
+        """Clear cache files."""
+        cleared = 0
+        now = time.time()
+
+        for cache_file in self.cache_dir.glob("*.json"):
+            should_delete = False
+
+            if max_age_seconds is None:
+                should_delete = True
+            else:
+                try:
+                    with open(cache_file) as f:
+                        cached = json.load(f)
+                        age = now - cached.get("timestamp", 0)
+                        if age > max_age_seconds:
+                            should_delete = True
+                except Exception:
+                    should_delete = True
+
+            if should_delete:
+                cache_file.unlink()
+                cleared += 1
+
+        return cleared
+
+
+class RateLimiter:
+    """Simple rate limiter for web requests."""
+
+    def __init__(self, min_interval_seconds: float = 1.0):
+        self.min_interval_seconds = min_interval_seconds
+        self.last_request_time: dict[str, float] = {}
+
+    def wait(self, domain: str):
+        """Wait if necessary to enforce rate limit."""
+        now = time.time()
+        last_time = self.last_request_time.get(domain, 0)
+        elapsed = now - last_time
+
+        if elapsed < self.min_interval_seconds:
+            sleep_time = self.min_interval_seconds - elapsed
+            time.sleep(sleep_time)
+
+        self.last_request_time[domain] = time.time()
+
+
+class TextSummarizer:
+    """Simple text summarization (truncation-based)."""
+
+    def summarize(self, content: str, max_length: int = 500) -> dict[str, Any]:
+        """Summarize content by truncation."""
+        if len(content) <= max_length:
+            return {
+                "summary": content,
+                "original_length": len(content),
+                "summary_length": len(content),
+                "truncated": False,
+                "max_length_requested": max_length,
+            }
+
+        summary = content[:max_length] + "..."
+        return {
+            "summary": summary,
+            "original_length": len(content),
+            "summary_length": len(summary),
+            "truncated": True,
+            "max_length_requested": max_length,
+        }
+
+
+# Module-level instances (will be initialized by WebResearchServer)
+cache: WebCache | None = None
+rate_limiter: RateLimiter | None = None
+summarizer: TextSummarizer | None = None
+
 
 class WebResearchServer(AmplifierMCPServer):
     """MCP server for web research and content fetching"""
@@ -33,73 +188,29 @@ class WebResearchServer(AmplifierMCPServer):
         # Initialize base server
         super().__init__("web_research", mcp)
 
-        # Set up cache
-        self.cache_dir = Path(__file__).parent.parent.parent / "web_cache"
-        self.cache_dir.mkdir(exist_ok=True)
+        # Read config from [mcp_server_config.web_research]
+        config = self.get_server_config()
+        self.cache_enabled = config.get("cache_enabled", True)
+        cache_ttl_hours = config.get("cache_ttl_hours", 24)
+        self.max_results = config.get("max_results", 10)
+        self.min_request_interval = config.get("min_request_interval", 1.0)
 
-        # Rate limiting state
-        self.last_request_time = {}
-        self.min_request_interval = 1.0  # Minimum seconds between requests
+        # Set up cache
+        project_root = Path(__file__).parent.parent.parent.parent
+        cache_dir = project_root / ".codex" / "web_cache"
+
+        # Create module-level instances
+        global cache, rate_limiter, summarizer
+        cache = WebCache(cache_dir, ttl_seconds=int(cache_ttl_hours * 3600))
+        rate_limiter = RateLimiter(min_interval_seconds=self.min_request_interval)
+        summarizer = TextSummarizer()
+
+        self.cache = cache
+        self.rate_limiter = rate_limiter
+        self.summarizer = summarizer
 
         # Register tools
         self._register_tools()
-
-    def _get_cache_path(self, cache_key: str) -> Path:
-        """Get cache file path for a given key"""
-        return self.cache_dir / f"{cache_key}.json"
-
-    def _get_cached(self, cache_key: str, max_age_hours: int = 24) -> dict[str, Any] | None:
-        """Get cached data if it exists and is not expired"""
-        cache_path = self._get_cache_path(cache_key)
-
-        if not cache_path.exists():
-            return None
-
-        try:
-            with open(cache_path) as f:
-                cached = json.load(f)
-
-            # Check expiration
-            cached_at = datetime.fromisoformat(cached["cached_at"])
-            age = datetime.now() - cached_at
-
-            if age > timedelta(hours=max_age_hours):
-                self.logger.debug(f"Cache expired for {cache_key}")
-                return None
-
-            self.logger.debug(f"Cache hit for {cache_key}")
-            return cached["data"]
-
-        except Exception as e:
-            self.logger.warning(f"Failed to read cache for {cache_key}: {e}")
-            return None
-
-    def _set_cached(self, cache_key: str, data: Any):
-        """Store data in cache"""
-        cache_path = self._get_cache_path(cache_key)
-
-        try:
-            cached = {"cached_at": datetime.now().isoformat(), "data": data}
-            with open(cache_path, "w") as f:
-                json.dump(cached, f, indent=2)
-
-            self.logger.debug(f"Cached data for {cache_key}")
-
-        except Exception as e:
-            self.logger.warning(f"Failed to write cache for {cache_key}: {e}")
-
-    def _rate_limit(self, domain: str):
-        """Implement rate limiting per domain"""
-        now = time.time()
-        last_time = self.last_request_time.get(domain, 0)
-        elapsed = now - last_time
-
-        if elapsed < self.min_request_interval:
-            sleep_time = self.min_request_interval - elapsed
-            self.logger.debug(f"Rate limiting: sleeping {sleep_time:.2f}s for {domain}")
-            time.sleep(sleep_time)
-
-        self.last_request_time[domain] = time.time()
 
     def _register_tools(self):
         """Register all MCP tools"""
@@ -114,57 +225,49 @@ class WebResearchServer(AmplifierMCPServer):
                 use_cache: Use cached results if available (default True)
 
             Returns:
-                List of search results with titles, URLs, and snippets
+                Search results with query metadata
             """
             try:
                 self.logger.info(f"Searching web for: {query}")
 
+                # Clamp num_results to configured max
+                num_results = min(num_results, self.max_results)
+
                 # Create cache key
-                cache_key = hashlib.md5(f"search:{query}:{num_results}".encode()).hexdigest()
+                cache_key = f"search:{query}:{num_results}"
 
-                # Check cache
-                if use_cache:
-                    cached = self._get_cached(cache_key, max_age_hours=24)
+                # Check cache if enabled
+                if use_cache and self.cache_enabled:
+                    cached = self.cache.get(cache_key)
                     if cached:
-                        return success_response(cached, {"from_cache": True})
+                        return success_response(
+                            {"query": query, "results": cached},
+                            {"from_cache": True, "requested_results": num_results, "clamped": num_results < num_results},
+                        )
 
-                # Import requests here to avoid dependency issues
-                try:
-                    import requests
-                except ImportError:
+                # Check if requests is available
+                if not REQUESTS_AVAILABLE:
                     return error_response("requests library not available", {"install_command": "uv add requests"})
 
                 # Rate limit
-                self._rate_limit("duckduckgo.com")
+                self.rate_limiter.wait("duckduckgo.com")
 
                 # Search DuckDuckGo
                 search_url = f"https://html.duckduckgo.com/html/?q={quote_plus(query)}"
                 headers = {"User-Agent": "Mozilla/5.0 (compatible; Codex Web Research/1.0)"}
 
+                import requests
+
                 response = requests.get(search_url, headers=headers, timeout=10)
                 response.raise_for_status()
 
-                # Parse results (simple HTML parsing without BeautifulSoup)
+                # Parse results
                 results = []
-                html = response.text
 
-                # Simple extraction (this is basic - BeautifulSoup would be better)
-                # For now, return a simplified result
-                results.append(
-                    {
-                        "title": "Search completed",
-                        "url": search_url,
-                        "snippet": f"Search for '{query}' returned {num_results} results. Note: Full HTML parsing requires beautifulsoup4 library.",
-                    }
-                )
-
-                # Try to import BeautifulSoup for better parsing
-                try:
+                if BS4_AVAILABLE:
                     from bs4 import BeautifulSoup
 
-                    soup = BeautifulSoup(html, "html.parser")
-
-                    results = []
+                    soup = BeautifulSoup(response.text, "html.parser")
                     for result_div in soup.find_all("div", class_="result")[:num_results]:
                         title_elem = result_div.find("a", class_="result__a")
                         snippet_elem = result_div.find("a", class_="result__snippet")
@@ -177,15 +280,25 @@ class WebResearchServer(AmplifierMCPServer):
                                     "snippet": snippet_elem.get_text(strip=True) if snippet_elem else "",
                                 }
                             )
+                else:
+                    # Fallback without BeautifulSoup
+                    results.append(
+                        {
+                            "title": "Search completed (limited parsing)",
+                            "url": search_url,
+                            "snippet": f"Search for '{query}'. Install beautifulsoup4 for better parsing: uv add beautifulsoup4",
+                        }
+                    )
 
-                except ImportError:
-                    self.logger.warning("beautifulsoup4 not available - using basic parsing")
-
-                # Cache results
-                self._set_cached(cache_key, results)
+                # Cache results if enabled
+                if self.cache_enabled:
+                    self.cache.set(cache_key, results)
 
                 self.logger.info(f"Found {len(results)} search results")
-                return success_response(results, {"query": query, "result_count": len(results), "from_cache": False})
+                return success_response(
+                    {"query": query, "results": results},
+                    {"result_count": len(results), "from_cache": False, "bs4_available": BS4_AVAILABLE},
+                )
 
             except Exception as e:
                 self.logger.exception("search_web failed", e)
@@ -201,7 +314,7 @@ class WebResearchServer(AmplifierMCPServer):
                 use_cache: Use cached content if available (default True)
 
             Returns:
-                Fetched content (raw HTML or extracted text)
+                URL content with status and metadata
             """
             try:
                 self.logger.info(f"Fetching URL: {url}")
@@ -212,35 +325,36 @@ class WebResearchServer(AmplifierMCPServer):
                     return error_response("Invalid URL format", {"url": url})
 
                 # Create cache key
-                cache_key = hashlib.md5(f"fetch:{url}:{extract_text}".encode()).hexdigest()
+                cache_key = f"fetch:{url}:{extract_text}"
 
-                # Check cache
-                if use_cache:
-                    cached = self._get_cached(cache_key, max_age_hours=24)
+                # Check cache if enabled
+                if use_cache and self.cache_enabled:
+                    cached = self.cache.get(cache_key)
                     if cached:
                         return success_response(cached, {"from_cache": True})
 
-                # Import requests
-                try:
-                    import requests
-                except ImportError:
+                # Check if requests is available
+                if not REQUESTS_AVAILABLE:
                     return error_response("requests library not available", {"install_command": "uv add requests"})
 
                 # Rate limit
-                self._rate_limit(parsed.netloc)
+                self.rate_limiter.wait(parsed.netloc)
 
                 # Fetch URL
+                import requests
+
                 headers = {"User-Agent": "Mozilla/5.0 (compatible; Codex Web Research/1.0)"}
                 response = requests.get(url, headers=headers, timeout=15)
                 response.raise_for_status()
 
                 content = response.text
                 content_type = response.headers.get("Content-Type", "")
+                status_code = response.status_code
 
                 # Extract text if requested and content is HTML
                 extracted_text = None
                 if extract_text and "html" in content_type.lower():
-                    try:
+                    if BS4_AVAILABLE:
                         from bs4 import BeautifulSoup
 
                         soup = BeautifulSoup(content, "html.parser")
@@ -255,23 +369,25 @@ class WebResearchServer(AmplifierMCPServer):
                         # Clean up whitespace
                         lines = (line.strip() for line in extracted_text.splitlines())
                         extracted_text = "\n".join(line for line in lines if line)
-
-                    except ImportError:
+                    else:
                         self.logger.warning("beautifulsoup4 not available - cannot extract text")
 
                 result = {
                     "url": url,
+                    "status_code": status_code,
                     "content_type": content_type,
-                    "content_length": len(content),
-                    "raw_html": content if not extract_text else None,
+                    "content": content if not extract_text else None,
                     "extracted_text": extracted_text,
                 }
 
-                # Cache result
-                self._set_cached(cache_key, result)
+                # Cache result if enabled
+                if self.cache_enabled:
+                    self.cache.set(cache_key, result)
 
                 self.logger.info(f"Fetched {len(content)} bytes from {url}")
-                return success_response(result, {"url": url, "from_cache": False})
+                return success_response(
+                    result, {"content_length": len(content), "from_cache": False, "bs4_available": BS4_AVAILABLE}
+                )
 
             except Exception as e:
                 self.logger.exception("fetch_url failed", e)
@@ -286,33 +402,16 @@ class WebResearchServer(AmplifierMCPServer):
                 max_length: Maximum length of summary (default 500)
 
             Returns:
-                Summarized content
+                Summary with length metadata
             """
             try:
                 self.logger.info(f"Summarizing content of length {len(content)}")
 
-                if len(content) <= max_length:
-                    return success_response(
-                        {
-                            "summary": content,
-                            "original_length": len(content),
-                            "summary_length": len(content),
-                            "truncated": False,
-                        }
-                    )
+                # Use summarizer instance
+                result = self.summarizer.summarize(content, max_length)
 
-                # Simple truncation (for now - could use LLM for better summarization)
-                summary = content[:max_length] + "..."
-
-                self.logger.info(f"Truncated content from {len(content)} to {len(summary)}")
-                return success_response(
-                    {
-                        "summary": summary,
-                        "original_length": len(content),
-                        "summary_length": len(summary),
-                        "truncated": True,
-                    }
-                )
+                self.logger.info(f"Summary: {result['summary_length']} chars (truncated: {result['truncated']})")
+                return success_response(result)
 
             except Exception as e:
                 self.logger.exception("summarize_content failed", e)
@@ -326,36 +425,16 @@ class WebResearchServer(AmplifierMCPServer):
                 max_age_days: Only clear cache older than this many days (optional)
 
             Returns:
-                Number of cache files cleared
+                Cache clear results
             """
             try:
                 self.logger.info(f"Clearing cache (max_age_days={max_age_days})")
 
-                cleared_count = 0
-                now = datetime.now()
+                # Convert days to seconds if provided
+                max_age_seconds = max_age_days * 24 * 3600 if max_age_days is not None else None
 
-                for cache_file in self.cache_dir.glob("*.json"):
-                    should_delete = False
-
-                    if max_age_days is None:
-                        should_delete = True
-                    else:
-                        # Check file age
-                        try:
-                            with open(cache_file) as f:
-                                cached = json.load(f)
-                                cached_at = datetime.fromisoformat(cached["cached_at"])
-                                age = now - cached_at
-
-                                if age > timedelta(days=max_age_days):
-                                    should_delete = True
-                        except Exception:
-                            # Delete corrupted cache files
-                            should_delete = True
-
-                    if should_delete:
-                        cache_file.unlink()
-                        cleared_count += 1
+                # Use cache instance to clear
+                cleared_count = self.cache.clear(max_age_seconds)
 
                 self.logger.info(f"Cleared {cleared_count} cache files")
                 return success_response({"cleared_count": cleared_count, "max_age_days": max_age_days})

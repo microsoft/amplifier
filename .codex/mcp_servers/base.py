@@ -235,14 +235,14 @@ class AmplifierMCPServer:
                 # Test basic imports if amplifier is available
                 if self.amplifier_available:
                     try:
-                        from amplifier.memory import MemoryStore
+                        from amplifier.memory import MemoryStore  # noqa: F401
 
                         status["memory_store_import"] = True
                     except ImportError:
                         status["memory_store_import"] = False
 
                     try:
-                        from amplifier.search import MemorySearcher
+                        from amplifier.search import MemorySearcher  # noqa: F401
 
                         status["memory_searcher_import"] = True
                     except ImportError:

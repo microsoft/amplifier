@@ -43,6 +43,7 @@ PROFILE="development"
 SKIP_INIT=false
 SKIP_CLEANUP=false
 SHOW_HELP=false
+CHECK_ONLY=false
 AUTO_CHECKS=true
 AUTO_SAVE=true
 
@@ -69,6 +70,10 @@ while [[ $# -gt 0 ]]; do
             AUTO_SAVE=false
             shift
             ;;
+        --check-only)
+            CHECK_ONLY=true
+            shift
+            ;;
         --help)
             SHOW_HELP=true
             shift
@@ -92,6 +97,7 @@ if [ "$SHOW_HELP" = true ]; then
     echo "  --no-cleanup        Skip post-session cleanup"
     echo "  --no-auto-checks    Disable automatic quality checks after session"
     echo "  --no-auto-save      Disable periodic transcript auto-saves"
+    echo "  --check-only        Run prerequisite checks and exit (no Codex launch)"
     echo "  --help              Show this help message"
     echo ""
     echo "All other arguments are passed through to Codex CLI."
@@ -135,6 +141,29 @@ if ! command -v uv &> /dev/null; then
 fi
 
 print_success "Prerequisites validated"
+
+# Exit early if --check-only
+if [ "$CHECK_ONLY" = true ]; then
+    print_status "Check-only mode: Validating configuration..."
+
+    if [ ! -f ".codex/config.toml" ]; then
+        print_error ".codex/config.toml not found"
+        exit 1
+    fi
+
+    if [ -n "$CODEX_PROFILE" ]; then
+        PROFILE="$CODEX_PROFILE"
+    fi
+
+    if ! grep -q "\[profiles\.$PROFILE\]" .codex/config.toml; then
+        print_warning "Profile '$PROFILE' not found in config.toml"
+    else
+        print_success "Profile '$PROFILE' found in config.toml"
+    fi
+
+    print_success "All checks passed"
+    exit 0
+fi
 
 # Configuration Detection
 print_status "Detecting configuration..."
@@ -199,6 +228,17 @@ if [ "$AUTO_SAVE" = true ]; then
     AUTO_SAVE_PID=$!
 fi
 
+# Parse active MCP servers from config
+ACTIVE_SERVERS=""
+if [ -f ".codex/config.toml" ]; then
+    # Extract mcp_servers array from the profile section
+    ACTIVE_SERVERS=$(grep -A 20 "\[profiles\.$PROFILE\]" .codex/config.toml | grep "mcp_servers" | sed 's/.*\[//' | sed 's/\].*//' | tr ',' '\n' | tr -d '"' | tr -d ' ')
+fi
+
+# Check if specific servers are active
+HAS_TASK_TRACKER=$(echo "$ACTIVE_SERVERS" | grep -q "amplifier_tasks" && echo "yes" || echo "no")
+HAS_WEB_RESEARCH=$(echo "$ACTIVE_SERVERS" | grep -q "amplifier_web" && echo "yes" || echo "no")
+
 # User Guidance Display
 echo ""
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════════╗${NC}"
@@ -209,9 +249,13 @@ echo -e "${BLUE}║${NC}  ${GREEN}• initialize_session${NC} - Load context fro
 echo -e "${BLUE}║${NC}  ${GREEN}• check_code_quality${NC} - Run quality checks after changes       ${BLUE}║${NC}"
 echo -e "${BLUE}║${NC}  ${GREEN}• save_current_transcript${NC} - Export session transcript         ${BLUE}║${NC}"
 echo -e "${BLUE}║${NC}  ${GREEN}• finalize_session${NC} - Save memories before ending              ${BLUE}║${NC}"
-echo -e "${BLUE}║${NC}  ${GREEN}• create_task${NC} - Create and manage development tasks           ${BLUE}║${NC}"
-echo -e "${BLUE}║${NC}  ${GREEN}• search_web${NC} - Research information on the web                ${BLUE}║${NC}"
-echo -e "${BLUE}║${NC}  ${GREEN}• fetch_url${NC} - Fetch and analyze web content                  ${BLUE}║${NC}"
+if [ "$HAS_TASK_TRACKER" = "yes" ]; then
+    echo -e "${BLUE}║${NC}  ${GREEN}• create_task${NC} - Create and manage development tasks           ${BLUE}║${NC}"
+fi
+if [ "$HAS_WEB_RESEARCH" = "yes" ]; then
+    echo -e "${BLUE}║${NC}  ${GREEN}• search_web${NC} - Research information on the web                ${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC}  ${GREEN}• fetch_url${NC} - Fetch and analyze web content                  ${BLUE}║${NC}"
+fi
 echo -e "${BLUE}║${NC}                                                                ${BLUE}║${NC}"
 echo -e "${BLUE}║${NC}  ${YELLOW}Keyboard Shortcuts:${NC}                                          ${BLUE}║${NC}"
 echo -e "${BLUE}║${NC}  ${YELLOW}• Ctrl+C${NC} - Exit session gracefully                          ${BLUE}║${NC}"

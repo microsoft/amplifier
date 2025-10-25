@@ -24,15 +24,15 @@ sys.path.insert(0, str(project_root / ".codex"))
 
 # Import modules under test (will be mocked where necessary)
 try:
-    from .codex.mcp_servers.web_research.server import RateLimiter
-    from .codex.mcp_servers.web_research.server import TextSummarizer
-    from .codex.mcp_servers.web_research.server import WebCache
-    from .codex.mcp_servers.web_research.server import cache
-    from .codex.mcp_servers.web_research.server import fetch_url
-    from .codex.mcp_servers.web_research.server import rate_limiter
-    from .codex.mcp_servers.web_research.server import search_web
-    from .codex.mcp_servers.web_research.server import summarize_content
-    from .codex.mcp_servers.web_research.server import summarizer
+    from .codex.mcp_servers.web_research.server import RateLimiter  # noqa: F401
+    from .codex.mcp_servers.web_research.server import TextSummarizer  # noqa: F401
+    from .codex.mcp_servers.web_research.server import WebCache  # noqa: F401
+    from .codex.mcp_servers.web_research.server import cache  # noqa: F401
+    from .codex.mcp_servers.web_research.server import fetch_url  # noqa: F401
+    from .codex.mcp_servers.web_research.server import rate_limiter  # noqa: F401
+    from .codex.mcp_servers.web_research.server import search_web  # noqa: F401
+    from .codex.mcp_servers.web_research.server import summarize_content  # noqa: F401
+    from .codex.mcp_servers.web_research.server import summarizer  # noqa: F401
 except ImportError:
     # Modules not yet implemented - tests will use mocks
     pass

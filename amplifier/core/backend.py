@@ -127,6 +127,24 @@ class AmplifierBackend(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def spawn_agent_with_context(
+        self, agent_name: str, task: str, messages: list[dict[str, Any]], context: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        """
+        Spawn agent with full conversation context.
+
+        Args:
+            agent_name: Name of the agent to spawn
+            task: Task description
+            messages: Full conversation messages
+            context: Additional context metadata
+
+        Returns:
+            Dict with success, result, and metadata
+        """
+        pass
+
+    @abc.abstractmethod
     def get_capabilities(self) -> dict[str, Any]:
         """Return backend capabilities."""
         pass
@@ -298,31 +316,48 @@ class ClaudeCodeBackend(AmplifierBackend):
             raise BackendOperationError(f"Transcript export failed: {e}")
 
     def manage_tasks(self, action: str, **kwargs) -> dict[str, Any]:
-        # Claude Code has built-in TodoWrite tool
+        # Claude Code has built-in TodoWrite tool - feature not supported via backend API
         return {
-            "success": True,
-            "data": {"message": f"Task {action} handled by Claude Code's TodoWrite tool"},
-            "metadata": {"native": True, "action": action},
+            "success": False,
+            "data": {},
+            "metadata": {"unsupported": True, "native_tool": "TodoWrite", "action": action},
         }
 
     def search_web(self, query: str, num_results: int = 5) -> dict[str, Any]:
-        # Claude Code has built-in WebFetch tool
+        # Claude Code has built-in WebSearch/WebFetch tool - feature not supported via backend API
         return {
-            "success": True,
-            "data": {"message": f"Web search for '{query}' handled by Claude Code's WebFetch tool"},
-            "metadata": {"native": True, "query": query, "num_results": num_results},
+            "success": False,
+            "data": {},
+            "metadata": {"unsupported": True, "native_tool": "WebSearch", "query": query, "num_results": num_results},
         }
 
     def fetch_url(self, url: str) -> dict[str, Any]:
-        # Claude Code has built-in WebFetch tool
+        # Claude Code has built-in WebFetch tool - feature not supported via backend API
         return {
-            "success": True,
-            "data": {"message": f"URL fetch for '{url}' handled by Claude Code's WebFetch tool"},
-            "metadata": {"native": True, "url": url},
+            "success": False,
+            "data": {},
+            "metadata": {"unsupported": True, "native_tool": "WebFetch", "url": url},
+        }
+
+    def spawn_agent_with_context(
+        self, agent_name: str, task: str, messages: list[dict[str, Any]], context: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        """Claude Code doesn't support context serialization via backend API."""
+        # Return unsupported - Claude Code uses Task tool but doesn't expose context serialization
+        return {
+            "success": False,
+            "data": {},
+            "metadata": {"unsupported": True, "native_tool": "Task", "agent_name": agent_name, "task": task},
         }
 
     def get_capabilities(self) -> dict[str, Any]:
-        return {"task_management": True, "web_search": True, "url_fetch": True, "native_tools": True}
+        return {
+            "task_management": False,  # Native TodoWrite tool, not via backend API
+            "web_search": False,  # Native WebSearch tool, not via backend API
+            "url_fetch": False,  # Native WebFetch tool, not via backend API
+            "agent_spawning": False,  # Native Task tool, not via backend API
+            "native_tools": True,  # Has native tools for these features
+        }
 
 
 class CodexBackend(AmplifierBackend):
@@ -578,6 +613,23 @@ class CodexBackend(AmplifierBackend):
         except Exception as e:
             logger.error(f"Codex fetch_url error: {e}")
             return {"success": False, "data": {}, "metadata": {"error": str(e)}}
+
+    def spawn_agent_with_context(
+        self, agent_name: str, task: str, messages: List[Dict[str, Any]], context: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """Codex delegates to agent backend with full context support."""
+        try:
+            from amplifier.core.agent_backend import get_agent_backend
+
+            agent_backend = get_agent_backend()
+            # Codex agent backend has spawn_agent_with_context method
+            if hasattr(agent_backend, "spawn_agent_with_context"):
+                return agent_backend.spawn_agent_with_context(agent_name, task, messages, context)
+            # Fallback to regular spawn
+            return agent_backend.spawn_agent(agent_name, task, context)
+        except Exception as e:
+            logger.error(f"Codex spawn_agent_with_context error: {e}")
+            return {"success": False, "result": "", "metadata": {"error": str(e)}}
 
     def get_capabilities(self) -> dict[str, Any]:
         return {"task_management": True, "web_search": True, "url_fetch": True, "mcp_tools": True}

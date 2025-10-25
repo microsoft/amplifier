@@ -256,21 +256,21 @@ async def health_check() -> dict[str, Any]:
         # Test memory module imports if amplifier is available
         if amplifier_available:
             try:
-                from amplifier.memory import MemoryStore
+                from amplifier.memory import MemoryStore  # noqa: F401
 
                 status["memory_store_import"] = True
             except ImportError:
                 status["memory_store_import"] = False
 
             try:
-                from amplifier.search import MemorySearcher
+                from amplifier.search import MemorySearcher  # noqa: F401
 
                 status["memory_searcher_import"] = True
             except ImportError:
                 status["memory_searcher_import"] = False
 
             try:
-                from amplifier.extraction import MemoryExtractor
+                from amplifier.extraction import MemoryExtractor  # noqa: F401
 
                 status["memory_extractor_import"] = True
             except ImportError:

@@ -19,19 +19,11 @@ from typing import Any
 import yaml
 
 # Import agent context bridge utilities
-try:
-    from amplifier.codex_tools import cleanup_context_files
-    from amplifier.codex_tools import extract_agent_result
-    from amplifier.codex_tools import inject_context_to_agent
-    from amplifier.codex_tools import serialize_context
+from amplifier.codex_tools import extract_agent_result
+from amplifier.codex_tools import inject_context_to_agent
+from amplifier.codex_tools import serialize_context
 
-    CONTEXT_BRIDGE_AVAILABLE = True
-except ImportError:
-    CONTEXT_BRIDGE_AVAILABLE = False
-    serialize_context = None
-    inject_context_to_agent = None
-    extract_agent_result = None
-    cleanup_context_files = None
+CONTEXT_BRIDGE_AVAILABLE = True
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -408,10 +400,10 @@ class CodexAgentBackend(AgentBackend):
             cmd = [
                 self.codex_cli,
                 "exec",
-                f"--context-file={agent_file}",
+                f"--agent={agent_file}",
                 f"--task={task}",
                 f"--profile={self.profile}",
-                f"--context-file={context_file}",
+                f"--context={context_file}",
                 "--output-format=json",
             ]
 

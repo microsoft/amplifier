@@ -29,10 +29,16 @@ class TaskTrackerServer(AmplifierMCPServer):
         # Initialize base server
         super().__init__("task_tracker", mcp)
 
-        # Set up task storage
-        self.tasks_dir = Path(__file__).parent.parent.parent / "tasks"
-        self.tasks_dir.mkdir(exist_ok=True)
-        self.tasks_file = self.tasks_dir / "session_tasks.json"
+        # Set up task storage from config
+        # Read from [mcp_server_config.task_tracker] in config.toml
+        config = self.get_server_config()
+        task_storage_path = config.get("task_storage_path", ".codex/tasks/session_tasks.json")
+        self.max_tasks_per_session = config.get("max_tasks_per_session", 50)
+
+        # Use absolute path from project root
+        project_root = Path(__file__).parent.parent.parent.parent
+        self.tasks_file = project_root / task_storage_path
+        self.tasks_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Initialize tasks structure
         self._ensure_tasks_file()
@@ -121,7 +127,7 @@ class TaskTrackerServer(AmplifierMCPServer):
                 self._save_tasks(data)
 
                 self.logger.info(f"Created task {task['id']}: {title}")
-                return success_response(task, {"total_tasks": len(data["tasks"])})
+                return success_response({"task": task})
 
             except Exception as e:
                 self.logger.exception("create_task failed", e)
@@ -173,16 +179,15 @@ class TaskTrackerServer(AmplifierMCPServer):
 
                 self.logger.info(f"Returning {len(tasks)} tasks")
                 return success_response(
-                    tasks,
                     {
-                        "total_filtered": len(tasks),
-                        "total_all": len(data["tasks"]),
-                        "filters_applied": {
+                        "tasks": tasks,
+                        "count": len(tasks),
+                        "filters": {
                             "status": filter_status,
                             "priority": filter_priority,
                             "category": filter_category,
                         },
-                    },
+                    }
                 )
 
             except Exception as e:
@@ -253,7 +258,7 @@ class TaskTrackerServer(AmplifierMCPServer):
                 self._save_tasks(data)
 
                 self.logger.info(f"Updated task {task_id}")
-                return success_response(task)
+                return success_response({"task": task})
 
             except Exception as e:
                 self.logger.exception("update_task failed", e)
@@ -294,7 +299,7 @@ class TaskTrackerServer(AmplifierMCPServer):
                 self._save_tasks(data)
 
                 self.logger.info(f"Completed task {task_id}: {task['title']}")
-                return success_response(task)
+                return success_response({"task": task})
 
             except Exception as e:
                 self.logger.exception("complete_task failed", e)
@@ -327,7 +332,7 @@ class TaskTrackerServer(AmplifierMCPServer):
                 self._save_tasks(data)
 
                 self.logger.info(f"Deleted task {task_id}")
-                return success_response({"deleted": True, "task_id": task_id, "remaining_tasks": len(data["tasks"])})
+                return success_response({"task_id": task_id, "message": "Task deleted successfully", "remaining_tasks": len(data["tasks"])})
 
             except Exception as e:
                 self.logger.exception("delete_task failed", e)
@@ -341,7 +346,7 @@ class TaskTrackerServer(AmplifierMCPServer):
                 format_type: Export format ("markdown", "json")
 
             Returns:
-                Exported tasks in requested format
+                Export file path and format
             """
             try:
                 self.logger.info(f"Exporting tasks as {format_type}")
@@ -350,11 +355,14 @@ class TaskTrackerServer(AmplifierMCPServer):
                 data = self._load_tasks()
                 tasks = data["tasks"]
 
+                # Determine export file extension
                 if format_type == "json":
-                    # Return JSON dump
-                    export = json.dumps(data, indent=2)
+                    ext = "json"
+                    # Export JSON dump
+                    export_content = json.dumps(data, indent=2)
 
                 elif format_type == "markdown":
+                    ext = "md"
                     # Generate markdown
                     lines = ["# Tasks\n"]
 
@@ -380,15 +388,21 @@ class TaskTrackerServer(AmplifierMCPServer):
                                     lines.append(f"**Completed:** {task['completed_at'][:10]}  ")
                                 lines.append("")
 
-                    export = "\n".join(lines)
+                    export_content = "\n".join(lines)
 
                 else:
                     return error_response(
                         f"Unknown export format: {format_type}", {"valid_formats": ["markdown", "json"]}
                     )
 
-                self.logger.info(f"Exported {len(tasks)} tasks as {format_type}")
-                return success_response({"format": format_type, "content": export, "task_count": len(tasks)})
+                # Write export file
+                export_dir = self.tasks_file.parent
+                export_path = export_dir / f"export.{ext}"
+                with open(export_path, "w") as f:
+                    f.write(export_content)
+
+                self.logger.info(f"Exported {len(tasks)} tasks to {export_path}")
+                return success_response({"export_path": str(export_path), "format": format_type})
 
             except Exception as e:
                 self.logger.exception("export_tasks failed", e)
