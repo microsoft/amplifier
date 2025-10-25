@@ -1,0 +1,13 @@
+#!/bin/bash
+# Wrapper script for Session Manager MCP Server
+# Ensures correct working directory and environment for server execution
+
+# Navigate to project root (3 levels up from .codex/mcp_servers/session_manager/)
+cd "$(dirname "$0")/../../.." || exit 1
+
+# Set required environment variables
+export AMPLIFIER_ROOT="$(pwd)"
+export PYTHONPATH="$(pwd)"
+
+# Execute the server, replacing this shell process
+exec uv run python .codex/mcp_servers/session_manager/server.py

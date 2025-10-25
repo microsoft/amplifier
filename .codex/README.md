@@ -973,20 +973,38 @@ Amplifier provides standalone tools for session initialization and cleanup:
 
 Loads relevant memories before starting a Codex session.
 
-**Usage:**
+**Recommended Usage (via Makefile):**
 ```bash
 # Basic usage (uses default context)
-uv run python .codex/tools/session_init.py
+make session-init
 
 # With specific context
-uv run python .codex/tools/session_init.py --prompt "Refactoring authentication module"
+make session-init PROMPT="Refactoring authentication module"
+```
+
+**Direct Usage (when needed):**
+```bash
+# Basic usage (uses default context)
+.venv/bin/python .codex/tools/session_init.py
+
+# With specific context
+.venv/bin/python .codex/tools/session_init.py --prompt "Refactoring authentication module"
 
 # Custom output location
-uv run python .codex/tools/session_init.py --output ./my_context.md
+.venv/bin/python .codex/tools/session_init.py --output ./my_context.md
 
 # Verbose logging
-uv run python .codex/tools/session_init.py --verbose
+.venv/bin/python .codex/tools/session_init.py --verbose
 ```
+
+**Why `.venv/bin/python`?**
+
+The script requires project dependencies (pydantic, amplifier modules) to be available. Using `.venv/bin/python` directly:
+
+- ✅ Works in sandboxed environments (Claude Code, etc.)
+- ✅ Avoids "Operation not permitted" errors from `uv run`
+- ✅ Ensures correct Python interpreter with all dependencies
+- ✅ Bypasses cache directory permission issues
 
 **Output:**
 - `.codex/session_context.md` - Formatted memories for reference

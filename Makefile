@@ -757,3 +757,14 @@ validate-codex-agents: ## Validate converted Codex agents
 test-agent-conversion: ## Run agent conversion tests
 	@echo "Running agent conversion tests..."
 	uv run pytest tests/test_agent_conversion.py -v
+
+# Codex Session Initialization
+.PHONY: session-init
+session-init: ## Initialize Codex session with memory context. Usage: make session-init [PROMPT="..."]
+	@if [ -n "$(PROMPT)" ]; then \
+		echo "Initializing session with prompt: $(PROMPT)"; \
+		.venv/bin/python .codex/tools/session_init.py --prompt "$(PROMPT)"; \
+	else \
+		echo "Initializing session..."; \
+		.venv/bin/python .codex/tools/session_init.py; \
+	fi

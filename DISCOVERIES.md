@@ -409,3 +409,77 @@ Claude Code and Codex have fundamentally different architectures:
 - Maintain comprehensive documentation for both backends
 - Run smoke tests in CI to catch regressions early
 - Update DISCOVERIES.md when new limitations are found
+
+## MCP Server Handshake Failures: Working Directory and Path Issues (2025-10-26)
+
+### Issue
+
+All five Codex MCP servers (`amplifier_session`, `amplifier_quality`, `amplifier_transcripts`, `amplifier_tasks`, `amplifier_web`) failed to start with "connection closed: initialize response" errors when launched by Codex CLI. The servers would crash during startup before completing the MCP protocol handshake, preventing any MCP tools from being available in Codex sessions.
+
+### Root Cause
+
+The MCP servers were being launched by Codex CLI with `uv run python .codex/mcp_servers/<server>/server.py` without proper working directory context. This caused multiple failures:
+
+1. **Relative imports failed**: `from ..base import AmplifierMCPServer` could not resolve because `.codex/` and `.codex/mcp_servers/` lacked `__init__.py` files
+2. **Amplifier module imports failed**: `from amplifier.memory import MemoryStore` could not resolve because PYTHONPATH was not set to project root
+3. **Working directory mismatch**: `uv run` was being executed from a different directory than the project root, causing path resolution failures
+4. **Server processes crashed**: Before completing the MCP handshake, servers would exit due to import errors, resulting in "connection closed: initialize response"
+
+The `env = { AMPLIFIER_ROOT = "." }` configuration used relative paths which didn't work when Codex invoked the servers from a different context.
+
+### Solution
+
+Implemented **Solution Approach A**: Modified `.codex/config.toml` to add explicit working directory and PYTHONPATH for all five MCP servers:
+
+**Configuration changes:**
+```toml
+# Before (broken):
+[mcp_servers.amplifier_tasks]
+command = "uv"
+args = ["run", "python", ".codex/mcp_servers/task_tracker/server.py"]
+env = { AMPLIFIER_ROOT = "." }
+
+# After (working):
+[mcp_servers.amplifier_tasks]
+command = "uv"
+args = ["run", "--directory", "/absolute/path/to/project", "python", ".codex/mcp_servers/task_tracker/server.py"]
+env = {
+  AMPLIFIER_ROOT = "/absolute/path/to/project",
+  PYTHONPATH = "/absolute/path/to/project"
+}
+```
+
+**Python package structure:**
+- Created `.codex/__init__.py` to make `.codex/` a proper Python package
+- Created `.codex/mcp_servers/__init__.py` to enable relative imports in server modules
+
+**Alternative solution (wrapper scripts):**
+Also created bash wrapper scripts (`.codex/mcp_servers/<server>/run.sh`) as an alternative approach. These scripts:
+1. Navigate to project root using relative path from script location
+2. Set AMPLIFIER_ROOT and PYTHONPATH environment variables
+3. Execute the server with `exec uv run python`
+
+Wrapper scripts are provided as Solution Approach B for users who prefer not to hardcode absolute paths in config.toml.
+
+### Key Learnings
+
+1. **MCP servers must run from project root**: Relative imports and module resolution require proper working directory context
+2. **`uv run` needs explicit `--directory` flag**: When invoked from different context, uv run won't automatically find the correct project directory
+3. **PYTHONPATH is critical for module imports**: Without PYTHONPATH set to project root, amplifier module imports fail even with correct working directory
+4. **MCP handshake errors often indicate startup crashes**: "connection closed: initialize response" doesn't mean protocol issues - it means the server process crashed before responding
+5. **Manual server execution is essential for diagnosis**: Running servers manually (`uv run python .codex/mcp_servers/<server>/server.py` from project root) immediately reveals import errors and other startup issues
+6. **Absolute paths vs relative paths in config**: Relative paths in MCP server configs don't work reliably when Codex CLI invokes servers from different directories
+7. **Python package structure matters**: Missing `__init__.py` files prevent relative imports from working, causing immediate crashes
+8. **Server logs are invaluable**: `.codex/logs/<server>_<date>.log` files show the actual errors when servers crash during startup
+
+### Prevention
+
+1. **Always test MCP servers manually before configuring in Codex**: Run `uv run python .codex/mcp_servers/<server>/server.py` from project root to verify server starts without errors
+2. **Use absolute paths or explicit working directories in MCP server configs**: Avoid relative paths that break when invoked from different contexts
+3. **Ensure proper `__init__.py` files for Python package structure**: Any directory with Python modules that use relative imports needs to be a proper package
+4. **Set PYTHONPATH in server environment configuration**: Always include PYTHONPATH pointing to project root for servers that import project modules
+5. **Check `.codex/logs/` for server startup errors**: When servers fail to start, always check log files for the actual error before modifying configuration
+6. **Create diagnostic documentation**: Maintain `DIAGNOSTIC_STEPS.md` with step-by-step troubleshooting commands for future issues
+7. **Provide alternative solutions**: Offer both config-based (absolute paths) and script-based (wrapper scripts) approaches to accommodate different preferences
+8. **Document configuration requirements**: Clearly explain in `.codex/mcp_servers/README.md` why working directory and PYTHONPATH are required
+

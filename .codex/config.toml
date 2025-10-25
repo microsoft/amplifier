@@ -18,9 +18,9 @@
 # =============================================================================
 
 # Model configuration (equivalent to .claude/settings.json model settings)
-model = "claude-3-5-sonnet-20241022"
+model = "gpt-5-codex"
 # provider = "anthropic"  # PLACEHOLDER: Verify with Codex CLI docs
-# reasoning_effort = "medium"  # PLACEHOLDER: Verify with Codex CLI docs
+reasoning_effort = "medium"  # PLACEHOLDER: Verify with Codex CLI docs
 
 # Approval policy for tool usage
 # Options: "on-request" (user approval), "never" (auto-approve), "always" (ask every time)
@@ -64,8 +64,8 @@ CONDA_DEFAULT_ENV = true
 # Replaces: .claude/hooks/SessionStart.py and SessionStop.py
 [mcp_servers.amplifier_session]
 command = "uv"
-args = ["run", "python", ".codex/mcp_servers/session_manager/server.py"]
-env = { AMPLIFIER_ROOT = "." }
+args = ["run", "--directory", "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", "python", ".codex/mcp_servers/session_manager/server.py"]
+env = { AMPLIFIER_ROOT = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", PYTHONPATH = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex" }
 timeout = 30
 # Purpose: Initialize session context, set up workspace, handle session cleanup
 
@@ -73,8 +73,8 @@ timeout = 30
 # Replaces: .claude/hooks/PostToolUse.py
 [mcp_servers.amplifier_quality]
 command = "uv"
-args = ["run", "python", ".codex/mcp_servers/quality_checker/server.py"]
-env = { AMPLIFIER_ROOT = "." }
+args = ["run", "--directory", "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", "python", ".codex/mcp_servers/quality_checker/server.py"]
+env = { AMPLIFIER_ROOT = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", PYTHONPATH = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex" }
 timeout = 30
 # Purpose: Run code quality checks after tool usage, validate changes
 
@@ -82,8 +82,8 @@ timeout = 30
 # Replaces: .claude/hooks/PreCompact.py
 [mcp_servers.amplifier_transcripts]
 command = "uv"
-args = ["run", "python", ".codex/mcp_servers/transcript_saver/server.py"]
-env = { AMPLIFIER_ROOT = "." }
+args = ["run", "--directory", "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", "python", ".codex/mcp_servers/transcript_saver/server.py"]
+env = { AMPLIFIER_ROOT = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", PYTHONPATH = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex" }
 timeout = 30
 # Purpose: Save and manage session transcripts, integrate with existing transcript system
 
@@ -91,8 +91,8 @@ timeout = 30
 # Replaces: Claude Code's TodoWrite functionality
 [mcp_servers.amplifier_tasks]
 command = "uv"
-args = ["run", "python", ".codex/mcp_servers/task_tracker/server.py"]
-env = { AMPLIFIER_ROOT = "." }
+args = ["run", "--directory", "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", "python", ".codex/mcp_servers/task_tracker/server.py"]
+env = { AMPLIFIER_ROOT = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", PYTHONPATH = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex" }
 timeout = 30
 # Purpose: Provide task management within Codex sessions, replicating TodoWrite
 
@@ -100,8 +100,8 @@ timeout = 30
 # Replaces: Claude Code's WebFetch functionality
 [mcp_servers.amplifier_web]
 command = "uv"
-args = ["run", "python", ".codex/mcp_servers/web_research/server.py"]
-env = { AMPLIFIER_ROOT = "." }
+args = ["run", "--directory", "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", "python", ".codex/mcp_servers/web_research/server.py"]
+env = { AMPLIFIER_ROOT = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", PYTHONPATH = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex" }
 timeout = 60
 # Purpose: Provide web search and content fetching capabilities within Codex sessions
 
