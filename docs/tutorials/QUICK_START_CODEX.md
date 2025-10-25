@@ -1,3 +1,36 @@
+# Codex Quick Start (5 Minutes)
+
+Get started with Codex CLI integration in Amplifier in just 5 minutes. This quick start guide covers the essential steps to begin using Codex with the Amplifier project.
+
+## What You'll Learn
+
+- Installing prerequisites
+- Starting your first Codex session
+- Using basic MCP tools
+- Understanding key concepts
+
+## Prerequisites
+
+Before starting, you'll need:
+
+- **Codex CLI installed** - [Follow Anthropic's installation guide](https://docs.anthropic.com/codex/installation)
+- **Python 3.11+** and **uv** package manager
+- **Basic familiarity with command line**
+
+## Table of Contents
+
+1. [Prerequisites (1 minute)](#prerequisites-1-minute)
+2. [First Session (2 minutes)](#first-session-2-minutes)
+3. [Key Concepts (1 minute)](#key-concepts-1-minute)
+4. [Common Commands (1 minute)](#common-commands-1-minute)
+5. [Next Steps](#next-steps)
+
+---
+
+## Prerequisites (1 minute)
+
+1. **Verify Codex installation**:
+   ```bash
    # Follow Anthropic's installation guide
    # https://docs.anthropic.com/codex/installation
    codex --version
@@ -100,3 +133,33 @@ codex> complete_task with task_id "task_123"
 ```bash
 codex> search_web with query "python async patterns" and num_results 5
 codex> fetch_url with url "https://example.com/guide" and extract_text true
+```
+
+## Next Steps
+
+Congratulations! You've completed the 5-minute quick start. Now you know how to:
+
+- ✅ Start a Codex session with Amplifier integration
+- ✅ Use basic MCP tools for session management and quality checks
+- ✅ Understand profiles and memory system concepts
+- ✅ Execute common development commands
+
+**Continue learning:**
+
+- **[Beginner Guide (30 minutes)](./BEGINNER_GUIDE_CODEX.md)** - Comprehensive walkthrough of all Codex features and workflows
+- **[Workflow Diagrams](./WORKFLOW_DIAGRAMS.md)** - Visual guides to Codex architecture and processes
+- **[Troubleshooting Tree](./TROUBLESHOOTING_TREE.md)** - Systematic problem-solving guide
+
+**Need help?** Check the troubleshooting guide or open an issue in the project repository.
+
+## Summary
+
+In this quick start, you learned:
+
+- How to verify prerequisites and install dependencies
+- Starting your first Codex session using the wrapper script
+- Basic MCP tool usage (session management, quality checks, tasks, web research)
+- Key concepts: MCP tools vs hooks, profiles, and memory system
+- Common commands for session management and development workflows
+
+**Next up:** Dive into the [Beginner Guide](./BEGINNER_GUIDE_CODEX.md) for a comprehensive 30-minute walkthrough covering all advanced features, agents, and best practices.

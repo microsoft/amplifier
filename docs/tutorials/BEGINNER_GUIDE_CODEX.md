@@ -1,3 +1,66 @@
+# Codex Beginner Guide (30 Minutes)
+
+Welcome to the comprehensive Codex beginner guide! This 30-minute walkthrough covers everything you need to master Codex CLI integration with the Amplifier project, from basic setup through advanced features and troubleshooting.
+
+## What You'll Learn
+
+This guide covers:
+
+- **Complete installation and configuration** - Set up Codex with all MCP servers and profiles
+- **Your first Codex session** - Detailed explanation of session lifecycle and tool usage
+- **Core workflows** - Development, quality checks, task management, and web research patterns
+- **Advanced features** - Profiles, backend abstraction, agent spawning, and transcript management
+- **Troubleshooting** - Common issues and systematic problem-solving approaches
+
+## Prerequisites
+
+Before starting this guide:
+
+- ✅ **Quick Start completed** - If you haven't already, complete the [Quick Start Guide (5 minutes)](./QUICK_START_CODEX.md) first
+- ✅ **Codex CLI installed** - [Follow Anthropic's installation guide](https://docs.anthropic.com/codex/installation)
+- ✅ **Python 3.11+** and **uv** package manager available
+- ✅ **Basic command line familiarity**
+
+## Table of Contents
+
+1. [Setup (5 minutes)](#setup-5-minutes)
+   - Prerequisites Check
+   - Step-by-Step Installation
+   - Configuration Walkthrough
+   - Verification Steps
+2. [Your First Session (5 minutes)](#your-first-session-5-minutes)
+   - Starting a Session
+   - Understanding the Interface
+   - Using MCP Tools
+   - Ending a Session
+3. [Core Workflows (10 minutes)](#core-workflows-10-minutes)
+   - Development Workflow with Memory System
+   - Quality Checking Workflow
+   - Task Management Workflow
+   - Web Research Workflow
+   - Agent Spawning Workflow
+4. [Advanced Features (5 minutes)](#advanced-features-5-minutes)
+   - Profiles and When to Use Them
+   - Backend Abstraction
+   - Transcript Management
+   - Context Bridge for Agents
+5. [Troubleshooting (3 minutes)](#troubleshooting-3-minutes)
+   - Common Issues and Solutions
+   - Where to Find Logs
+   - How to Get Help
+6. [Next Steps (2 minutes)](#next-steps)
+
+---
+
+## Setup (5 minutes)
+
+Let's get your Codex environment properly configured.
+
+### Prerequisites Check
+
+First, verify all required tools are installed:
+
+```bash
 # Verify Python version
 python --version
 # Should show: Python 3.11.x or higher
@@ -642,3 +705,86 @@ export CODEX_DEBUG=true
 
 # Test servers individually
 uv run python .codex/mcp_servers/session_manager/server.py --debug
+```
+
+**Still having issues?** Consult the [Troubleshooting Tree](./TROUBLESHOOTING_TREE.md) for a systematic decision-tree approach to debugging.
+
+---
+
+## Next Steps (2 minutes)
+
+🎉 **Congratulations!** You've completed the Codex Beginner Guide and now have comprehensive knowledge of:
+
+- ✅ Complete Codex installation and configuration with MCP servers
+- ✅ Session lifecycle management and tool usage
+- ✅ Core development workflows (code, quality, tasks, research)
+- ✅ Advanced features (profiles, backend abstraction, agents, transcripts)
+- ✅ Troubleshooting approaches and debugging techniques
+
+### Continue Your Learning Journey
+
+**Deepen Your Understanding:**
+
+- **[Workflow Diagrams](./WORKFLOW_DIAGRAMS.md)** - Visual architecture guides showing how Codex components interact
+- **[Feature Parity Matrix](./FEATURE_PARITY_MATRIX.md)** - Detailed comparison between Claude Code and Codex capabilities
+- **[Troubleshooting Tree](./TROUBLESHOOTING_TREE.md)** - Systematic decision-tree for problem-solving
+
+**Explore Advanced Topics:**
+
+- **[Main Codex Integration Docs](../CODEX_INTEGRATION.md)** - Complete technical documentation
+- **[Backend Comparison](../BACKEND_COMPARISON.md)** - Deep dive into Claude Code vs Codex architectures
+- **[Migration Guide](../MIGRATION_GUIDE.md)** - Moving between Claude Code and Codex
+
+**Get Involved:**
+
+- Experiment with custom MCP servers in `.codex/mcp_servers/`
+- Create your own Codex profiles in `.codex/config.toml`
+- Contribute agent definitions to `.codex/agents/`
+- Share your workflow improvements with the team
+
+### Quick Reference Commands
+
+Bookmark these for daily use:
+
+```bash
+# Start development session
+./amplify-codex.sh
+
+# Run quality checks
+codex> check_code_quality with file_paths ["src/"]
+
+# Manage tasks
+codex> create_task with title "Feature name"
+codex> list_tasks
+codex> complete_task with task_id "task_123"
+
+# Research topics
+codex> search_web with query "topic"
+
+# Save work
+codex> save_current_transcript with format "both"
+```
+
+## Summary
+
+In this 30-minute guide, you mastered:
+
+1. **Setup & Configuration** - Installing dependencies, configuring MCP servers, and verifying the environment
+2. **Session Management** - Starting sessions, using MCP tools, and proper cleanup procedures
+3. **Core Workflows** - Development with memory system, quality checks, task tracking, and web research
+4. **Advanced Features** - Profiles for different contexts, backend abstraction, agent spawning, and transcript management
+5. **Troubleshooting** - Common issues, log locations, and systematic debugging approaches
+
+### Key Takeaways
+
+- **MCP tools provide powerful capabilities** - Session management, quality checks, tasks, and research all integrated
+- **Memory system maintains continuity** - Past sessions inform current work automatically
+- **Profiles optimize for different contexts** - Development, CI, and review workflows each have tailored tool sets
+- **Backend abstraction ensures flexibility** - Same workflows work with both Codex and Claude Code
+- **Agent spawning enables specialization** - Delegate complex tasks to focused AI assistants
+
+**You're now ready to use Codex productively!** Start with simple sessions, experiment with different workflows, and gradually incorporate advanced features as your needs grow.
+
+**Questions or feedback?** Open an issue in the project repository or consult the main documentation for more details.
+
+Happy coding with Codex! 🚀
