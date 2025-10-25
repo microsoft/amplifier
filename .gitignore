@@ -87,3 +87,6 @@ ai_working/tmp
 .codex/agents/CONVERSION_REPORT.md
 .codex/agents/*.backup
 .codex/agents/.conversion_cache/
+
+.idea/
+activity-log/
