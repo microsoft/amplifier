@@ -35,10 +35,18 @@ class TaskTrackerServer(AmplifierMCPServer):
         task_storage_path = config.get("task_storage_path", ".codex/tasks/session_tasks.json")
         self.max_tasks_per_session = config.get("max_tasks_per_session", 50)
 
-        # Use absolute path from project root
-        project_root = Path(__file__).parent.parent.parent.parent
-        self.tasks_file = project_root / task_storage_path
+        # Use absolute path from project root (use self.project_root from base)
+        if self.project_root:
+            self.tasks_file = self.project_root / task_storage_path
+        else:
+            # Fallback if project root not found
+            self.tasks_file = Path.cwd() / task_storage_path
+
+        # Ensure parent directories exist
         self.tasks_file.parent.mkdir(parents=True, exist_ok=True)
+
+        self.logger.info(f"Task storage configured at: {self.tasks_file}")
+        self.logger.info(f"Max tasks per session: {self.max_tasks_per_session}")
 
         # Initialize tasks structure
         self._ensure_tasks_file()
@@ -332,7 +340,9 @@ class TaskTrackerServer(AmplifierMCPServer):
                 self._save_tasks(data)
 
                 self.logger.info(f"Deleted task {task_id}")
-                return success_response({"task_id": task_id, "message": "Task deleted successfully", "remaining_tasks": len(data["tasks"])})
+                return success_response(
+                    {"task_id": task_id, "message": "Task deleted successfully", "remaining_tasks": len(data["tasks"])}
+                )
 
             except Exception as e:
                 self.logger.exception("delete_task failed", e)

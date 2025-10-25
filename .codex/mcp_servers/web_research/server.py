@@ -7,8 +7,6 @@ Enables searching the web, fetching URLs, and summarizing content.
 import hashlib
 import json
 import time
-from datetime import datetime
-from datetime import timedelta
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote_plus
@@ -195,11 +193,14 @@ class WebResearchServer(AmplifierMCPServer):
         self.max_results = config.get("max_results", 10)
         self.min_request_interval = config.get("min_request_interval", 1.0)
 
-        # Set up cache
-        project_root = Path(__file__).parent.parent.parent.parent
-        cache_dir = project_root / ".codex" / "web_cache"
+        # Set up cache using project root from base
+        if self.project_root:
+            cache_dir = self.project_root / ".codex" / "web_cache"
+        else:
+            # Fallback if project root not found
+            cache_dir = Path.cwd() / ".codex" / "web_cache"
 
-        # Create module-level instances
+        # Create module-level instances with configured values
         global cache, rate_limiter, summarizer
         cache = WebCache(cache_dir, ttl_seconds=int(cache_ttl_hours * 3600))
         rate_limiter = RateLimiter(min_interval_seconds=self.min_request_interval)
@@ -208,6 +209,9 @@ class WebResearchServer(AmplifierMCPServer):
         self.cache = cache
         self.rate_limiter = rate_limiter
         self.summarizer = summarizer
+
+        self.logger.info(f"Cache enabled: {self.cache_enabled}, TTL: {cache_ttl_hours}h, dir: {cache_dir}")
+        self.logger.info(f"Max results: {self.max_results}, min request interval: {self.min_request_interval}s")
 
         # Register tools
         self._register_tools()
@@ -242,7 +246,11 @@ class WebResearchServer(AmplifierMCPServer):
                     if cached:
                         return success_response(
                             {"query": query, "results": cached},
-                            {"from_cache": True, "requested_results": num_results, "clamped": num_results < num_results},
+                            {
+                                "from_cache": True,
+                                "requested_results": num_results,
+                                "clamped": num_results < num_results,
+                            },
                         )
 
                 # Check if requests is available

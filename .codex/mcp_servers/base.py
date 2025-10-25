@@ -6,6 +6,7 @@ Provides logging, common initialization, and error handling for all MCP servers.
 import json
 import os
 import sys
+import tomllib
 import traceback
 from collections.abc import Awaitable
 from collections.abc import Callable
@@ -216,6 +217,43 @@ class AmplifierMCPServer:
 
         # Register common tools
         self._register_health_check()
+
+    def get_server_config(self) -> dict[str, Any]:
+        """
+        Read server-specific configuration from .codex/config.toml.
+
+        Returns the configuration dict for [mcp_server_config.<server_name>] section.
+        Returns empty dict if config file is missing, unparseable, or section not found.
+        """
+        try:
+            if self.project_root is None:
+                self.logger.warning("Project root not found, cannot load server config")
+                return {}
+
+            config_path = self.project_root / ".codex" / "config.toml"
+
+            if not config_path.exists():
+                self.logger.info(f"Config file not found at {config_path}, using defaults")
+                return {}
+
+            # Read and parse TOML
+            with open(config_path, "rb") as f:
+                config_data = tomllib.load(f)
+
+            # Look up server-specific config section
+            server_config_key = f"mcp_server_config.{self.server_name}"
+            server_config = config_data.get("mcp_server_config", {}).get(self.server_name, {})
+
+            if server_config:
+                self.logger.info(f"Loaded config for {self.server_name}: {list(server_config.keys())}")
+            else:
+                self.logger.info(f"No config section found for {server_config_key}, using defaults")
+
+            return server_config
+
+        except Exception as e:
+            self.logger.warning(f"Failed to load server config: {e}, using defaults")
+            return {}
 
     def _register_health_check(self):
         """Register the common health check tool"""
