@@ -3,7 +3,7 @@
 [git-collector-data]
 
 **URL:** https://github.com/anthropics/claude-code-sdk-python/blob/main/  
-**Date:** 10/9/2025, 3:55:28 AM  
+**Date:** 10/27/2025, 9:16:37 AM
 **Files:** 16  
 
 === File: README.md ===
@@ -288,6 +288,16 @@ If you're upgrading from the Claude Code SDK (versions < 0.1.0), please see the 
 - Merged system prompt configuration
 - Settings isolation and explicit control
 - New programmatic subagents and session forking features
+
+## Development
+
+If you're contributing to this project, run the initial setup script to install git hooks:
+
+```bash
+./scripts/initial-setup.sh
+```
+
+This installs a pre-push hook that runs lint checks before pushing, matching the CI workflow. To skip the hook temporarily, use `git push --no-verify`.
 
 ## License
 
@@ -1209,7 +1219,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "claude-agent-sdk"
-version = "0.1.1"
+version = "0.1.5"
 description = "Python SDK for Claude Code"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -2948,6 +2958,15 @@ from claude_agent_sdk._internal.transport.subprocess_cli import (
 )
 from claude_agent_sdk.types import ClaudeAgentOptions
 
+DEFAULT_CLI_PATH = "/usr/bin/claude"
+
+
+def make_options(**kwargs: object) -> ClaudeAgentOptions:
+    """Construct ClaudeAgentOptions with a default CLI path for tests."""
+
+    cli_path = kwargs.pop("cli_path", DEFAULT_CLI_PATH)
+    return ClaudeAgentOptions(cli_path=cli_path, **kwargs)
+
 
 class MockTextReceiveStream:
     """Mock TextReceiveStream for testing."""
@@ -2983,9 +3002,7 @@ class TestSubprocessBuffering:
 
             buffered_line = json.dumps(json_obj1) + "\n" + json.dumps(json_obj2)
 
-            transport = SubprocessCLITransport(
-                prompt="test", options=ClaudeAgentOptions(), cli_path="/usr/bin/claude"
-            )
+            transport = SubprocessCLITransport(prompt="test", options=make_options())
 
             mock_process = MagicMock()
             mock_process.returncode = None
@@ -3018,9 +3035,7 @@ class TestSubprocessBuffering:
 
             buffered_line = json.dumps(json_obj1) + "\n" + json.dumps(json_obj2)
 
-            transport = SubprocessCLITransport(
-                prompt="test", options=ClaudeAgentOptions(), cli_path="/usr/bin/claude"
-            )
+            transport = SubprocessCLITransport(prompt="test", options=make_options())
 
             mock_process = MagicMock()
             mock_process.returncode = None
@@ -3048,9 +3063,7 @@ class TestSubprocessBuffering:
 
             buffered_line = json.dumps(json_obj1) + "\n\n\n" + json.dumps(json_obj2)
 
-            transport = SubprocessCLITransport(
-                prompt="test", options=ClaudeAgentOptions(), cli_path="/usr/bin/claude"
-            )
+            transport = SubprocessCLITransport(prompt="test", options=make_options())
 
             mock_process = MagicMock()
             mock_process.returncode = None
@@ -3094,9 +3107,7 @@ class TestSubprocessBuffering:
             part2 = complete_json[100:250]
             part3 = complete_json[250:]
 
-            transport = SubprocessCLITransport(
-                prompt="test", options=ClaudeAgentOptions(), cli_path="/usr/bin/claude"
-            )
+            transport = SubprocessCLITransport(prompt="test", options=make_options())
 
             mock_process = MagicMock()
             mock_process.returncode = None
@@ -3142,9 +3153,7 @@ class TestSubprocessBuffering:
                 for i in range(0, len(complete_json), chunk_size)
             ]
 
-            transport = SubprocessCLITransport(
-                prompt="test", options=ClaudeAgentOptions(), cli_path="/usr/bin/claude"
-            )
+            transport = SubprocessCLITransport(prompt="test", options=make_options())
 
             mock_process = MagicMock()
             mock_process.returncode = None
@@ -3172,9 +3181,7 @@ class TestSubprocessBuffering:
         async def _test() -> None:
             huge_incomplete = '{"data": "' + "x" * (_DEFAULT_MAX_BUFFER_SIZE + 1000)
 
-            transport = SubprocessCLITransport(
-                prompt="test", options=ClaudeAgentOptions(), cli_path="/usr/bin/claude"
-            )
+            transport = SubprocessCLITransport(prompt="test", options=make_options())
 
             mock_process = MagicMock()
             mock_process.returncode = None
@@ -3202,8 +3209,7 @@ class TestSubprocessBuffering:
 
             transport = SubprocessCLITransport(
                 prompt="test",
-                options=ClaudeAgentOptions(max_buffer_size=custom_limit),
-                cli_path="/usr/bin/claude",
+                options=make_options(max_buffer_size=custom_limit),
             )
 
             mock_process = MagicMock()
@@ -3242,9 +3248,7 @@ class TestSubprocessBuffering:
                 large_json[3000:] + "\n" + msg3,
             ]
 
-            transport = SubprocessCLITransport(
-                prompt="test", options=ClaudeAgentOptions(), cli_path="/usr/bin/claude"
-            )
+            transport = SubprocessCLITransport(prompt="test", options=make_options())
 
             mock_process = MagicMock()
             mock_process.returncode = None
@@ -3281,6 +3285,15 @@ import pytest
 from claude_agent_sdk._internal.transport.subprocess_cli import SubprocessCLITransport
 from claude_agent_sdk.types import ClaudeAgentOptions
 
+DEFAULT_CLI_PATH = "/usr/bin/claude"
+
+
+def make_options(**kwargs: object) -> ClaudeAgentOptions:
+    """Construct options using the standard CLI path unless overridden."""
+
+    cli_path = kwargs.pop("cli_path", DEFAULT_CLI_PATH)
+    return ClaudeAgentOptions(cli_path=cli_path, **kwargs)
+
 
 class TestSubprocessCLITransport:
     """Test subprocess transport implementation."""
@@ -3300,9 +3313,7 @@ class TestSubprocessCLITransport:
 
     def test_build_command_basic(self):
         """Test building basic CLI command."""
-        transport = SubprocessCLITransport(
-            prompt="Hello", options=ClaudeAgentOptions(), cli_path="/usr/bin/claude"
-        )
+        transport = SubprocessCLITransport(prompt="Hello", options=make_options())
 
         cmd = transport._build_command()
         assert cmd[0] == "/usr/bin/claude"
@@ -3318,8 +3329,7 @@ class TestSubprocessCLITransport:
         path = Path("/usr/bin/claude")
         transport = SubprocessCLITransport(
             prompt="Hello",
-            options=ClaudeAgentOptions(),
-            cli_path=path,
+            options=ClaudeAgentOptions(cli_path=path),
         )
 
         # Path object is converted to string, compare with str(path)
@@ -3329,10 +3339,9 @@ class TestSubprocessCLITransport:
         """Test building CLI command with system prompt as string."""
         transport = SubprocessCLITransport(
             prompt="test",
-            options=ClaudeAgentOptions(
+            options=make_options(
                 system_prompt="Be helpful",
             ),
-            cli_path="/usr/bin/claude",
         )
 
         cmd = transport._build_command()
@@ -3343,10 +3352,9 @@ class TestSubprocessCLITransport:
         """Test building CLI command with system prompt preset."""
         transport = SubprocessCLITransport(
             prompt="test",
-            options=ClaudeAgentOptions(
+            options=make_options(
                 system_prompt={"type": "preset", "preset": "claude_code"},
             ),
-            cli_path="/usr/bin/claude",
         )
 
         cmd = transport._build_command()
@@ -3357,14 +3365,13 @@ class TestSubprocessCLITransport:
         """Test building CLI command with system prompt preset and append."""
         transport = SubprocessCLITransport(
             prompt="test",
-            options=ClaudeAgentOptions(
+            options=make_options(
                 system_prompt={
                     "type": "preset",
                     "preset": "claude_code",
                     "append": "Be concise.",
                 },
             ),
-            cli_path="/usr/bin/claude",
         )
 
         cmd = transport._build_command()
@@ -3376,14 +3383,13 @@ class TestSubprocessCLITransport:
         """Test building CLI command with options."""
         transport = SubprocessCLITransport(
             prompt="test",
-            options=ClaudeAgentOptions(
+            options=make_options(
                 allowed_tools=["Read", "Write"],
                 disallowed_tools=["Bash"],
                 model="claude-sonnet-4-5",
                 permission_mode="acceptEdits",
                 max_turns=5,
             ),
-            cli_path="/usr/bin/claude",
         )
 
         cmd = transport._build_command()
@@ -3406,8 +3412,7 @@ class TestSubprocessCLITransport:
         dir2 = Path("/path/to/dir2")
         transport = SubprocessCLITransport(
             prompt="test",
-            options=ClaudeAgentOptions(add_dirs=[dir1, dir2]),
-            cli_path="/usr/bin/claude",
+            options=make_options(add_dirs=[dir1, dir2]),
         )
 
         cmd = transport._build_command()
@@ -3426,10 +3431,7 @@ class TestSubprocessCLITransport:
         """Test session continuation options."""
         transport = SubprocessCLITransport(
             prompt="Continue from before",
-            options=ClaudeAgentOptions(
-                continue_conversation=True, resume="session-123"
-            ),
-            cli_path="/usr/bin/claude",
+            options=make_options(continue_conversation=True, resume="session-123"),
         )
 
         cmd = transport._build_command()
@@ -3469,8 +3471,7 @@ class TestSubprocessCLITransport:
 
                 transport = SubprocessCLITransport(
                     prompt="test",
-                    options=ClaudeAgentOptions(),
-                    cli_path="/usr/bin/claude",
+                    options=make_options(),
                 )
 
                 await transport.connect()
@@ -3486,9 +3487,7 @@ class TestSubprocessCLITransport:
         """Test reading messages from CLI output."""
         # This test is simplified to just test the transport creation
         # The full async stream handling is tested in integration tests
-        transport = SubprocessCLITransport(
-            prompt="test", options=ClaudeAgentOptions(), cli_path="/usr/bin/claude"
-        )
+        transport = SubprocessCLITransport(prompt="test", options=make_options())
 
         # The transport now just provides raw message reading via read_messages()
         # So we just verify the transport can be created and basic structure is correct
@@ -3502,8 +3501,7 @@ class TestSubprocessCLITransport:
         async def _test():
             transport = SubprocessCLITransport(
                 prompt="test",
-                options=ClaudeAgentOptions(cwd="/this/directory/does/not/exist"),
-                cli_path="/usr/bin/claude",
+                options=make_options(cwd="/this/directory/does/not/exist"),
             )
 
             with pytest.raises(CLIConnectionError) as exc_info:
@@ -3517,8 +3515,7 @@ class TestSubprocessCLITransport:
         """Test building CLI command with settings as file path."""
         transport = SubprocessCLITransport(
             prompt="test",
-            options=ClaudeAgentOptions(settings="/path/to/settings.json"),
-            cli_path="/usr/bin/claude",
+            options=make_options(settings="/path/to/settings.json"),
         )
 
         cmd = transport._build_command()
@@ -3530,8 +3527,7 @@ class TestSubprocessCLITransport:
         settings_json = '{"permissions": {"allow": ["Bash(ls:*)"]}}'
         transport = SubprocessCLITransport(
             prompt="test",
-            options=ClaudeAgentOptions(settings=settings_json),
-            cli_path="/usr/bin/claude",
+            options=make_options(settings=settings_json),
         )
 
         cmd = transport._build_command()
@@ -3542,14 +3538,13 @@ class TestSubprocessCLITransport:
         """Test building CLI command with extra_args for future flags."""
         transport = SubprocessCLITransport(
             prompt="test",
-            options=ClaudeAgentOptions(
+            options=make_options(
                 extra_args={
                     "new-flag": "value",
                     "boolean-flag": None,
                     "another-option": "test-value",
                 }
             ),
-            cli_path="/usr/bin/claude",
         )
 
         cmd = transport._build_command()
@@ -3580,8 +3575,7 @@ class TestSubprocessCLITransport:
 
         transport = SubprocessCLITransport(
             prompt="test",
-            options=ClaudeAgentOptions(mcp_servers=mcp_servers),
-            cli_path="/usr/bin/claude",
+            options=make_options(mcp_servers=mcp_servers),
         )
 
         cmd = transport._build_command()
@@ -3604,8 +3598,7 @@ class TestSubprocessCLITransport:
         string_path = "/path/to/mcp-config.json"
         transport = SubprocessCLITransport(
             prompt="test",
-            options=ClaudeAgentOptions(mcp_servers=string_path),
-            cli_path="/usr/bin/claude",
+            options=make_options(mcp_servers=string_path),
         )
 
         cmd = transport._build_command()
@@ -3617,8 +3610,7 @@ class TestSubprocessCLITransport:
         path_obj = Path("/path/to/mcp-config.json")
         transport = SubprocessCLITransport(
             prompt="test",
-            options=ClaudeAgentOptions(mcp_servers=path_obj),
-            cli_path="/usr/bin/claude",
+            options=make_options(mcp_servers=path_obj),
         )
 
         cmd = transport._build_command()
@@ -3632,8 +3624,7 @@ class TestSubprocessCLITransport:
         json_config = '{"mcpServers": {"server": {"type": "stdio", "command": "test"}}}'
         transport = SubprocessCLITransport(
             prompt="test",
-            options=ClaudeAgentOptions(mcp_servers=json_config),
-            cli_path="/usr/bin/claude",
+            options=make_options(mcp_servers=json_config),
         )
 
         cmd = transport._build_command()
@@ -3650,7 +3641,7 @@ class TestSubprocessCLITransport:
                 "MY_TEST_VAR": test_value,
             }
 
-            options = ClaudeAgentOptions(env=custom_env)
+            options = make_options(env=custom_env)
 
             # Mock the subprocess to capture the env argument
             with patch(
@@ -3679,7 +3670,6 @@ class TestSubprocessCLITransport:
                 transport = SubprocessCLITransport(
                     prompt="test",
                     options=options,
-                    cli_path="/usr/bin/claude",
                 )
 
                 await transport.connect()
@@ -3711,7 +3701,7 @@ class TestSubprocessCLITransport:
 
         async def _test():
             custom_user = "claude"
-            options = ClaudeAgentOptions(user=custom_user)
+            options = make_options(user=custom_user)
 
             # Mock the subprocess to capture the env argument
             with patch(
@@ -3740,7 +3730,6 @@ class TestSubprocessCLITransport:
                 transport = SubprocessCLITransport(
                     prompt="test",
                     options=options,
-                    cli_path="/usr/bin/claude",
                 )
 
                 await transport.connect()
