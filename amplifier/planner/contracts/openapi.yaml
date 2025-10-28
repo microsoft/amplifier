@@ -1,0 +1,726 @@
+openapi: 3.0.0
+info:
+  title: Super-Planner API
+  description: |
+    Task planning and orchestration system for AI-driven development.
+    
+    This API defines the stable connection points ("studs") for the super-planner
+    system following the amplifier bricks-and-studs philosophy. Each endpoint
+    represents a minimal, clear contract that enables module regeneration without
+    breaking external consumers.
+    
+    The API is organized into logical resource groups that map to internal modules
+    while maintaining stable external contracts.
+  version: 1.0.0
+  
+servers:
+  - url: /api/v1
+    description: API v1 endpoint
+    
+paths:
+  # Project Management
+  /projects:
+    post:
+      summary: Create new project
+      operationId: createProject
+      tags: [Projects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectCreate'
+      responses:
+        '201':
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+                
+    get:
+      summary: List all projects
+      operationId: listProjects
+      tags: [Projects]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, completed, archived]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Projects retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Project'
+                  total:
+                    type: integer
+                    
+  /projects/{project_id}:
+    get:
+      summary: Get project details
+      operationId: getProject
+      tags: [Projects]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Project retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '404':
+          $ref: '#/components/responses/NotFound'
+          
+    patch:
+      summary: Update project
+      operationId: updateProject
+      tags: [Projects]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectUpdate'
+      responses:
+        '200':
+          description: Project updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+          
+    delete:
+      summary: Archive project
+      operationId: archiveProject
+      tags: [Projects]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '204':
+          description: Project archived
+        '404':
+          $ref: '#/components/responses/NotFound'
+          
+  # Task Management
+  /projects/{project_id}/tasks:
+    post:
+      summary: Create task
+      operationId: createTask
+      tags: [Tasks]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreate'
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+          
+    get:
+      summary: List project tasks
+      operationId: listTasks
+      tags: [Tasks]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, in_progress, completed, failed, blocked]
+        - name: assigned_to
+          in: query
+          schema:
+            type: string
+        - name: parent_id
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Tasks retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+                      
+  /tasks/{task_id}:
+    get:
+      summary: Get task details
+      operationId: getTask
+      tags: [Tasks]
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      responses:
+        '200':
+          description: Task retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          $ref: '#/components/responses/NotFound'
+          
+    patch:
+      summary: Update task
+      operationId: updateTask
+      tags: [Tasks]
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+      responses:
+        '200':
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+          
+  /tasks/{task_id}/transition:
+    post:
+      summary: Transition task state
+      operationId: transitionTask
+      tags: [Tasks]
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [state]
+              properties:
+                state:
+                  type: string
+                  enum: [pending, in_progress, completed, failed, blocked]
+                reason:
+                  type: string
+                  description: Optional reason for transition
+      responses:
+        '200':
+          description: Task transitioned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+          
+  # Planning Mode Operations
+  /planning/decompose:
+    post:
+      summary: Decompose goal into tasks
+      operationId: decomposeGoal
+      tags: [Planning]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [goal]
+              properties:
+                goal:
+                  type: string
+                  description: High-level goal to decompose
+                context:
+                  type: object
+                  description: Additional context for planning
+                constraints:
+                  type: object
+                  properties:
+                    max_depth:
+                      type: integer
+                      default: 3
+                    max_tasks:
+                      type: integer
+                      default: 50
+      responses:
+        '200':
+          description: Decomposition completed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [tasks, dependencies]
+                properties:
+                  tasks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PlannedTask'
+                  dependencies:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        from_task_id:
+                          type: string
+                        to_task_id:
+                          type: string
+                        type:
+                          type: string
+                          enum: [blocks, requires]
+                          
+  /planning/refine:
+    post:
+      summary: Refine task breakdown
+      operationId: refineTasks
+      tags: [Planning]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tasks]
+              properties:
+                tasks:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Task'
+                feedback:
+                  type: string
+                  description: User feedback on current plan
+      responses:
+        '200':
+          description: Refinement completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tasks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+                  changes:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        task_id:
+                          type: string
+                        change_type:
+                          type: string
+                          enum: [added, modified, removed]
+                        description:
+                          type: string
+                          
+  # Working Mode Operations
+  /orchestration/assign:
+    post:
+      summary: Assign tasks to agents
+      operationId: assignTasks
+      tags: [Orchestration]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [task_ids]
+              properties:
+                task_ids:
+                  type: array
+                  items:
+                    type: string
+                strategy:
+                  type: string
+                  enum: [optimal, round_robin, load_balanced]
+                  default: optimal
+                constraints:
+                  type: object
+                  properties:
+                    max_concurrent:
+                      type: integer
+                      default: 5
+                    agent_types:
+                      type: array
+                      items:
+                        type: string
+      responses:
+        '200':
+          description: Tasks assigned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  assignments:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        task_id:
+                          type: string
+                        agent_id:
+                          type: string
+                        agent_type:
+                          type: string
+                        estimated_duration:
+                          type: integer
+                          
+  /orchestration/spawn:
+    post:
+      summary: Spawn agent for task
+      operationId: spawnAgent
+      tags: [Orchestration]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [task_id, agent_type]
+              properties:
+                task_id:
+                  type: string
+                agent_type:
+                  type: string
+                config:
+                  type: object
+                  description: Agent-specific configuration
+      responses:
+        '202':
+          description: Agent spawn initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agent_id:
+                    type: string
+                  status:
+                    type: string
+                    enum: [spawning, ready]
+                  task_id:
+                    type: string
+                    
+  /orchestration/status:
+    get:
+      summary: Get orchestration status
+      operationId: getOrchestrationStatus
+      tags: [Orchestration]
+      parameters:
+        - name: project_id
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  active_agents:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        agent_id:
+                          type: string
+                        agent_type:
+                          type: string
+                        task_id:
+                          type: string
+                        status:
+                          type: string
+                        started_at:
+                          type: string
+                          format: date-time
+                  queued_tasks:
+                    type: integer
+                  completed_tasks:
+                    type: integer
+                  failed_tasks:
+                    type: integer
+                    
+  # Events and Notifications
+  /events/stream:
+    get:
+      summary: Stream events (SSE)
+      operationId: streamEvents
+      tags: [Events]
+      parameters:
+        - name: project_id
+          in: query
+          schema:
+            type: string
+        - name: task_id
+          in: query
+          schema:
+            type: string
+        - name: event_types
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [task_created, task_updated, task_completed, agent_spawned, agent_completed]
+      responses:
+        '200':
+          description: Event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                
+components:
+  parameters:
+    ProjectId:
+      name: project_id
+      in: path
+      required: true
+      schema:
+        type: string
+        
+    TaskId:
+      name: task_id
+      in: path
+      required: true
+      schema:
+        type: string
+        
+  schemas:
+    ProjectCreate:
+      type: object
+      required: [name, goal]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        goal:
+          type: string
+          minLength: 1
+        metadata:
+          type: object
+          
+    Project:
+      allOf:
+        - $ref: '#/components/schemas/ProjectCreate'
+        - type: object
+          required: [id, status, created_at, updated_at]
+          properties:
+            id:
+              type: string
+            status:
+              type: string
+              enum: [active, completed, archived]
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
+            version:
+              type: integer
+              
+    ProjectUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [active, completed, archived]
+        metadata:
+          type: object
+          
+    TaskCreate:
+      type: object
+      required: [title, type]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        type:
+          type: string
+          enum: [goal, task, subtask]
+        parent_id:
+          type: string
+        dependencies:
+          type: array
+          items:
+            type: string
+        estimated_effort:
+          type: string
+          enum: [xs, s, m, l, xl]
+        metadata:
+          type: object
+          
+    Task:
+      allOf:
+        - $ref: '#/components/schemas/TaskCreate'
+        - type: object
+          required: [id, status, created_at, updated_at]
+          properties:
+            id:
+              type: string
+            project_id:
+              type: string
+            status:
+              type: string
+              enum: [pending, in_progress, completed, failed, blocked]
+            assigned_to:
+              type: string
+            started_at:
+              type: string
+              format: date-time
+            completed_at:
+              type: string
+              format: date-time
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
+            version:
+              type: integer
+            result:
+              type: object
+              
+    TaskUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [pending, in_progress, completed, failed, blocked]
+        assigned_to:
+          type: string
+        result:
+          type: object
+        metadata:
+          type: object
+          
+    PlannedTask:
+      type: object
+      required: [title, description, type]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [goal, task, subtask]
+        estimated_effort:
+          type: string
+          enum: [xs, s, m, l, xl]
+        suggested_agent:
+          type: string
+        rationale:
+          type: string
+          
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+              
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+            
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+            
+    Conflict:
+      description: Resource conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
