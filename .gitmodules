@@ -1,0 +1,3 @@
+[submodule "workspaces"]
+	path = workspaces
+	url = https://github.com/microsoft/workspaces.git
