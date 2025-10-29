@@ -127,7 +127,7 @@ if [ "$LIST_PROMPTS" = true ]; then
         exit 1
     fi
 
-    PROMPT_FILES=$(find .codex/prompts -name "*.md" -type f | sort)
+    PROMPT_FILES=$(find .codex/prompts -name "*.md" -type f ! -name "README.md" | sort)
 
     if [ -z "$PROMPT_FILES" ]; then
         print_warning "No custom prompts found in .codex/prompts/"
@@ -138,18 +138,91 @@ if [ "$LIST_PROMPTS" = true ]; then
     while IFS= read -r prompt_file; do
         PROMPT_NAME=$(basename "$prompt_file" .md)
 
-        # Extract description from YAML frontmatter (robust parsing)
-        # Handles: optional quotes, multiline values, missing description
-        PROMPT_DESC=$(awk '
-            /^---$/ { if (++count == 2) exit }
-            count == 1 && /^description:/ {
-                sub(/^description: */, "")
-                gsub(/^["'"'"']|["'"'"']$/, "")  # Remove surrounding quotes
-                print
-                next
-            }
-        ' "$prompt_file" | head -1)
+        # Extract description from YAML frontmatter
+        # Strategy: Use yq if available (fast, reliable), else fallback to awk parser
+        # Works without external dependencies but uses yq for speed when present
+        if command -v yq &> /dev/null; then
+            # Fast path: Use yq to extract description and normalize to single line
+            # - Extracts .description field from first YAML document (frontmatter)
+            # - Converts newlines to spaces for display as single line
+            # - Normalizes multiple spaces and trims leading/trailing whitespace
+            PROMPT_DESC=$(yq eval '.description // ""' "$prompt_file" 2>/dev/null | tr '\n' ' ' | sed 's/  */ /g' | sed 's/^ *//;s/ *$//')
+        else
+            # Fallback: Pure awk parser (no external dependencies required)
+            # Robust YAML frontmatter parser that handles all common description formats:
+            # Handles:
+            # - Single-line plain text: description: Some text
+            # - Single-line quoted: description: "Some text" or description: 'Some text'
+            # - Multiline block scalar: description: | or description: >-
+            # - Missing description field
+            PROMPT_DESC=$(awk '
+                BEGIN { in_frontmatter = 0; in_description = 0; description = "" }
 
+                # Track frontmatter boundaries (between first and second ---)
+                /^---$/ {
+                    frontmatter_markers++
+                    if (frontmatter_markers == 1) {
+                        in_frontmatter = 1
+                        next
+                    }
+                    if (frontmatter_markers == 2) {
+                        in_frontmatter = 0
+                        exit
+                    }
+                }
+
+                # Skip if not in frontmatter
+                !in_frontmatter { next }
+
+                # Handle description field
+                /^description:/ {
+                    in_description = 1
+                    line = $0
+                    sub(/^description: */, "", line)
+
+                    # Check if value is on same line
+                    if (line != "" && line !~ /^[|>][-+]?$/) {
+                        # Single-line value (plain or quoted)
+                        gsub(/^["'"'"']|["'"'"']$/, "", line)  # Strip quotes
+                        description = line
+                        in_description = 0
+                        next
+                    }
+
+                    # If line is block scalar indicator (| or >-)
+                    if (line ~ /^[|>][-+]?$/) {
+                        # Next lines are block content
+                        next
+                    }
+
+                    # Empty value
+                    next
+                }
+
+                # Collect multiline block scalar content
+                in_description && /^[ \t]+/ {
+                    line = $0
+                    sub(/^[ \t]+/, "", line)  # Remove leading whitespace
+                    if (description != "") description = description " "
+                    description = description line
+                    next
+                }
+
+                # Non-indented line or new field ends description block
+                in_description && /^[^ \t]/ {
+                    in_description = 0
+                }
+
+                END {
+                    # Trim and output
+                    gsub(/^[ \t]+|[ \t]+$/, "", description)
+                    gsub(/  +/, " ", description)  # Normalize multiple spaces
+                    print description
+                }
+            ' "$prompt_file")
+        fi
+
+        # Default if no description found
         if [ -z "$PROMPT_DESC" ]; then
             PROMPT_DESC="No description available"
         fi
@@ -262,7 +335,7 @@ fi
 
 # Verify custom prompts directory exists
 if [ -d ".codex/prompts" ]; then
-    PROMPT_COUNT=$(find .codex/prompts -name "*.md" -type f | wc -l | tr -d ' ')
+    PROMPT_COUNT=$(find .codex/prompts -name "*.md" -type f ! -name "README.md" | wc -l | tr -d ' ')
     if [ "$PROMPT_COUNT" -gt 0 ]; then
         print_success "Found $PROMPT_COUNT custom prompt(s) in .codex/prompts/"
     else

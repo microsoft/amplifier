@@ -39,6 +39,71 @@ codex> save_current_transcript        # Save work
 codex> exit                           # End session
 ```
 
+### 3. **Complex Multi-Agent Orchestration**
+For tasks requiring multiple specialized agents working together:
+
+```bash
+./amplify-codex.sh                    # Start session
+
+# Primary method: Context file (works with all Codex versions)
+codex exec --context-file=.codex/prompts/ultrathink-task.md "Refactor authentication system to use JWT tokens"
+
+# Alternative: Interactive TUI (if prompt registry supported)
+codex> /prompts:                      # Browse available prompts
+codex> [Select ultrathink-task]       # Choose from menu
+
+# Alternative: Natural language delegation
+codex> Please analyze the codebase architecture and suggest improvements using ultrathink-task
+```
+
+**What is ultrathink-task?**
+A specialized custom prompt that orchestrates multiple agents for complex tasks:
+- **Triage Specialist**: Analyzes the task and creates a structured breakdown
+- **Analysis Expert**: Deep dives into specific aspects
+- **Synthesis Master**: Combines findings into actionable recommendations
+- **Bug Hunter / Architect / Tester**: Specialized agents as needed
+
+**When to use ultrathink-task:**
+- Complex refactoring requiring multiple perspectives
+- Architecture reviews needing comprehensive analysis
+- Bug investigations spanning multiple components
+- Feature planning requiring detailed exploration
+- Quality improvements needing systematic approach
+
+**Key features:**
+- Maintains task context across agent transitions
+- Synthesizes findings from multiple perspectives
+- Produces comprehensive documentation
+- Tracks progress and intermediate results
+- Generates actionable next steps
+
+**Example scenarios:**
+```bash
+# Architecture review (using --context-file, works reliably)
+codex exec --context-file=.codex/prompts/ultrathink-task.md "Review the authentication system architecture for security and maintainability"
+
+# Complex refactoring
+codex exec --context-file=.codex/prompts/ultrathink-task.md "Refactor the database layer to support multiple backends"
+
+# Bug investigation
+codex exec --context-file=.codex/prompts/ultrathink-task.md "Investigate intermittent connection failures in production"
+
+# Feature planning
+codex exec --context-file=.codex/prompts/ultrathink-task.md "Design a new caching layer for the API"
+```
+
+**Note**: If your Codex version supports `--prompt` and named arguments, you can use:
+```bash
+codex exec --prompt ultrathink-task --task_description "<your task>"
+```
+However, `--context-file` is the most portable approach.
+
+**Comparison with direct agent invocation:**
+- **Direct agents**: Quick, focused, single perspective
+- **ultrathink-task**: Comprehensive, multi-perspective, structured approach
+
+For more details on custom prompts, see `.codex/prompts/README.md` and `.codex/README.md`.
+
 ---
 
 ## 🐍 Python Scripts (Automation & Integration)
