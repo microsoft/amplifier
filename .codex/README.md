@@ -263,6 +263,115 @@ The configuration exposes essential environment variables:
 - `VIRTUAL_ENV`: Python virtual environment
 - `CONDA_DEFAULT_ENV`: Conda environment
 
+## Custom Prompts
+
+Codex uses custom prompts (stored in `.codex/prompts/`) as the equivalent of Claude Code's custom commands (stored in `.claude/commands/`). Custom prompts extend Codex functionality with reusable task templates and multi-agent orchestration workflows.
+
+### Available Custom Prompts
+
+#### ultrathink-task
+
+**Purpose**: Orchestrate multiple specialized agents for complex tasks requiring deep reasoning, architecture design, implementation, and validation cycles.
+
+**Invocation**:
+- **Interactive TUI**: Launch `codex`, type `/prompts:`, select `ultrathink-task`
+- **Command line**: `codex exec --context-file=.codex/prompts/ultrathink-task.md "<task>"`
+- **Wrapper script**: `./amplify-codex.sh` then use `/prompts:` menu
+
+**Arguments**:
+- `task_description` (required): Detailed description of the complex task to be accomplished
+
+**Key Features**:
+- Multi-agent coordination (zen-architect, modular-builder, bug-hunter, etc.)
+- Sequential and parallel delegation patterns
+- Architecture → Implementation → Review validation cycles
+- Integration with amplifier CLI tools via Makefile
+- Proactive contextualization for tool opportunities
+- Comprehensive task tracking and reasoning
+
+**Best used for**:
+- Complex feature implementation requiring multiple phases
+- Architecture design followed by implementation and review
+- Bug investigation requiring analysis, fix, and validation
+- Tasks benefiting from specialized agent expertise
+- Large-scale refactoring with validation steps
+
+**Source**: Converted from `.claude/commands/ultrathink-task.md`
+
+### Usage Examples
+
+**Interactive TUI Usage**:
+```bash
+# Launch Codex
+codex
+# or
+./amplify-codex.sh
+
+# In Codex session
+/prompts:
+# Select ultrathink-task
+# Provide task description: "Implement JWT authentication with refresh tokens"
+```
+
+**Command Line Usage**:
+```bash
+# Using codex exec
+codex exec --context-file=.codex/prompts/ultrathink-task.md \
+  "Refactor the API layer to use async/await patterns"
+
+# With full path
+codex exec --context-file=/path/to/project/.codex/prompts/ultrathink-task.md \
+  "Add comprehensive test coverage for authentication module"
+```
+
+**Programmatic Usage**:
+```bash
+#!/bin/bash
+TASK="Redesign the database schema for better performance"
+codex exec --context-file=.codex/prompts/ultrathink-task.md "$TASK"
+```
+
+### Comparison with Claude Code Commands
+
+| Aspect | Claude Code | Codex |
+|--------|-------------|-------|
+| **Invocation** | `/ultrathink-task <description>` | `/prompts:` → ultrathink-task |
+| **Format** | Plain Markdown | YAML frontmatter + Markdown |
+| **Arguments** | `$ARGUMENTS` variable | `{task_description}` placeholder |
+| **Task Tracking** | TodoWrite tool | Reasoning + optional MCP tools |
+| **Agent Spawning** | `Task(agent="name", task="...")` | Natural language delegation |
+| **Tools** | Task, TodoWrite, WebFetch | Read, Write, Edit, Grep, Glob, Bash |
+| **Location** | `.claude/commands/` | `.codex/prompts/` |
+| **Configuration** | Automatic discovery | Configured in `config.toml` |
+
+### Creating New Custom Prompts
+
+To create a new custom prompt:
+
+1. **Create prompt file** in `.codex/prompts/<name>.md`
+
+2. **Add YAML frontmatter**:
+   ```yaml
+   ---
+   name: my-prompt
+   description: What this prompt does
+   arguments:
+     - name: input_param
+       description: Parameter description
+       required: true
+   model: inherit
+   tools: [Read, Write, Edit]
+   ---
+   ```
+
+3. **Write prompt content** using `{argument_name}` placeholders
+
+4. **Test** with `codex` → `/prompts:` → select your prompt
+
+5. **Document** in `.codex/prompts/README.md`
+
+See `.codex/prompts/README.md` for detailed prompt creation guide and `.claude/commands/ultrathink-task.md` for the source material.
+
 ## Integration with Existing Systems
 
 ### Transcript Management

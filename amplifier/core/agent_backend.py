@@ -121,14 +121,14 @@ class ClaudeCodeAgentBackend(AgentBackend):
     def _get_sdk_client(self):
         """Get or create SDK client."""
         if self._sdk_client is None:
-            ClaudeSDKClient, ClaudeCodeOptions = self._ensure_sdk_available()
+            sdk_client_cls, sdk_options_cls = self._ensure_sdk_available()
 
             # Create options with Task tool enabled
-            self._sdk_options = ClaudeCodeOptions(
+            self._sdk_options = sdk_options_cls(
                 allowed_tools=["Task", "Read", "Write", "Bash", "Grep", "Glob"], working_directory=os.getcwd()
             )
 
-            self._sdk_client = ClaudeSDKClient(options=self._sdk_options)
+            self._sdk_client = sdk_client_cls(options=self._sdk_options)
 
         return self._sdk_client
 

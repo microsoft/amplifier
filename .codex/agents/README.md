@@ -87,6 +87,40 @@ Use agent definitions directly as context:
 codex exec --context-file=.codex/agents/bug-hunter.md "Debug the API timeout"
 ```
 
+### Using Agents via Custom Prompts
+
+For complex tasks requiring orchestration of multiple agents, use custom prompts instead of invoking agents directly. Custom prompts provide structured workflows that coordinate multiple specialized agents.
+
+**Direct Agent Invocation (Single Perspective):**
+```bash
+# Single agent, single perspective
+codex exec --agent bug-hunter "Investigate authentication failures"
+```
+
+**Orchestrated Multi-Agent Workflow (Comprehensive):**
+```bash
+# Multiple agents, structured approach via custom prompt (primary method)
+codex exec --context-file=.codex/prompts/ultrathink-task.md "Investigate authentication failures"
+
+# Alternative if --prompt flag supported in your Codex version:
+# codex exec --prompt ultrathink-task --task_description "Investigate authentication failures"
+```
+
+The `ultrathink-task` custom prompt orchestrates multiple agents (triage-specialist, analysis-expert, synthesis-master, and domain specialists) to provide:
+- Multi-perspective analysis (architecture, security, performance)
+- Structured task breakdown and execution
+- Comprehensive findings synthesis
+- Actionable recommendations
+
+**When to use custom prompts vs direct agents:**
+- **Direct agents**: Quick, focused tasks requiring single perspective
+- **Custom prompts**: Complex tasks benefiting from multiple perspectives and structured workflows
+
+For more information on custom prompts, see:
+- `.codex/prompts/README.md` - Custom prompts documentation
+- `.codex/README.md` - Codex integration overview
+- `TUTORIAL.md` - Usage examples and workflows
+
 ## Agent Invocation Patterns
 
 ### From Command Line

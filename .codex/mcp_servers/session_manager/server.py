@@ -6,19 +6,25 @@ Replaces Claude Code SessionStart and Stop hooks with explicit MCP tools.
 
 import asyncio
 import json
+
+# Add parent directory to path for absolute imports
+import sys
+from pathlib import Path
 from typing import Any
 
 # Import FastMCP for server framework
 from mcp.server.fastmcp import FastMCP
 
-# Import base utilities
-from ..base import MCPLogger
-from ..base import check_memory_system_enabled
-from ..base import error_response
-from ..base import get_project_root
-from ..base import metadata_response
-from ..base import setup_amplifier_path
-from ..base import success_response
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Import base utilities using absolute imports
+from base import MCPLogger
+from base import check_memory_system_enabled
+from base import error_response
+from base import get_project_root
+from base import metadata_response
+from base import setup_amplifier_path
+from base import success_response
 
 # Initialize FastMCP server
 mcp = FastMCP("amplifier-session")

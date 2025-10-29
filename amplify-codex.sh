@@ -44,8 +44,10 @@ SKIP_INIT=false
 SKIP_CLEANUP=false
 SHOW_HELP=false
 CHECK_ONLY=false
+LIST_PROMPTS=false
 AUTO_CHECKS=true
 AUTO_SAVE=true
+PROMPT_COUNT=0
 
 # Parse command-line arguments
 while [[ $# -gt 0 ]]; do
@@ -74,6 +76,10 @@ while [[ $# -gt 0 ]]; do
             CHECK_ONLY=true
             shift
             ;;
+        --list-prompts)
+            LIST_PROMPTS=true
+            shift
+            ;;
         --help)
             SHOW_HELP=true
             shift
@@ -98,6 +104,7 @@ if [ "$SHOW_HELP" = true ]; then
     echo "  --no-auto-checks    Disable automatic quality checks after session"
     echo "  --no-auto-save      Disable periodic transcript auto-saves"
     echo "  --check-only        Run prerequisite checks and exit (no Codex launch)"
+    echo "  --list-prompts      List available custom prompts and exit"
     echo "  --help              Show this help message"
     echo ""
     echo "All other arguments are passed through to Codex CLI."
@@ -107,6 +114,57 @@ if [ "$SHOW_HELP" = true ]; then
     echo "Environment Variables:"
     echo "  CODEX_PROFILE       Override default profile"
     echo "  MEMORY_SYSTEM_ENABLED  Enable/disable memory system [default: true]"
+    exit 0
+fi
+
+# List prompts if requested
+if [ "$LIST_PROMPTS" = true ]; then
+    echo "Available Custom Prompts:"
+    echo ""
+
+    if [ ! -d ".codex/prompts" ]; then
+        print_error "Custom prompts directory (.codex/prompts/) not found"
+        exit 1
+    fi
+
+    PROMPT_FILES=$(find .codex/prompts -name "*.md" -type f | sort)
+
+    if [ -z "$PROMPT_FILES" ]; then
+        print_warning "No custom prompts found in .codex/prompts/"
+        exit 0
+    fi
+
+    # List each prompt with name and description from YAML frontmatter
+    while IFS= read -r prompt_file; do
+        PROMPT_NAME=$(basename "$prompt_file" .md)
+
+        # Extract description from YAML frontmatter (robust parsing)
+        # Handles: optional quotes, multiline values, missing description
+        PROMPT_DESC=$(awk '
+            /^---$/ { if (++count == 2) exit }
+            count == 1 && /^description:/ {
+                sub(/^description: */, "")
+                gsub(/^["'"'"']|["'"'"']$/, "")  # Remove surrounding quotes
+                print
+                next
+            }
+        ' "$prompt_file" | head -1)
+
+        if [ -z "$PROMPT_DESC" ]; then
+            PROMPT_DESC="No description available"
+        fi
+
+        echo -e "  ${GREEN}$PROMPT_NAME${NC}"
+        echo "    $PROMPT_DESC"
+        echo ""
+    done <<< "$PROMPT_FILES"
+
+    echo "Usage:"
+    echo "  - Primary: codex exec --context-file=.codex/prompts/<name>.md \"<task>\""
+    echo "  - TUI: Use /prompts: to browse (if registry supported in your Codex version)"
+    echo ""
+    echo "For more information, see .codex/prompts/README.md"
+
     exit 0
 fi
 
@@ -202,6 +260,18 @@ else
     exit 1
 fi
 
+# Verify custom prompts directory exists
+if [ -d ".codex/prompts" ]; then
+    PROMPT_COUNT=$(find .codex/prompts -name "*.md" -type f | wc -l | tr -d ' ')
+    if [ "$PROMPT_COUNT" -gt 0 ]; then
+        print_success "Found $PROMPT_COUNT custom prompt(s) in .codex/prompts/"
+    else
+        print_warning "No custom prompts found in .codex/prompts/"
+    fi
+else
+    print_warning "Custom prompts directory (.codex/prompts/) not found"
+fi
+
 # Pre-Session Initialization
 if [ "$SKIP_INIT" = false ]; then
     print_status "Running pre-session initialization..."
@@ -271,6 +341,12 @@ fi
 if [ "$HAS_WEB_RESEARCH" = "yes" ]; then
     echo -e "${BLUE}║${NC}  ${GREEN}• search_web${NC} - Research information on the web                ${BLUE}║${NC}"
     echo -e "${BLUE}║${NC}  ${GREEN}• fetch_url${NC} - Fetch and analyze web content                  ${BLUE}║${NC}"
+fi
+echo -e "${BLUE}║${NC}                                                                ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}  ${GREEN}Custom Prompts Available:${NC}                                    ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}  ${GREEN}• Use: codex exec --context-file=.codex/prompts/<name>.md${NC}     ${BLUE}║${NC}"
+if [ -n "$PROMPT_COUNT" ] && [ "$PROMPT_COUNT" -gt 0 ]; then
+    echo -e "${BLUE}║${NC}  ${GREEN}• $PROMPT_COUNT prompt(s) found in .codex/prompts/${NC}               ${BLUE}║${NC}"
 fi
 echo -e "${BLUE}║${NC}                                                                ${BLUE}║${NC}"
 echo -e "${BLUE}║${NC}  ${YELLOW}Keyboard Shortcuts:${NC}                                          ${BLUE}║${NC}"

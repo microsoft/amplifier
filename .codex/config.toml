@@ -40,6 +40,18 @@ tool_timeout_sec = 300
 experimental_use_rmcp_client = false
 
 # =============================================================================
+# Custom Prompts Configuration
+# =============================================================================
+
+# IMPORTANT: The [prompts] section may not be supported in all Codex versions.
+# If you experience config parsing errors, keep this section commented out.
+# The reliable fallback is: codex exec --context-file=.codex/prompts/prompt-name.md
+#
+# [prompts]
+# # Project-specific prompts directory (in addition to ~/.codex/prompts)
+# directories = [".codex/prompts"]
+
+# =============================================================================
 # Shell Environment Policy
 # =============================================================================
 

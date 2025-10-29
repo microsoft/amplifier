@@ -5,6 +5,9 @@ Enables creating, listing, updating, completing, and exporting tasks.
 """
 
 import json
+
+# Add parent directory to path for absolute imports
+import sys
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -12,11 +15,13 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-from ..base import AmplifierMCPServer
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from base import AmplifierMCPServer
 
 # Import base utilities
-from ..base import error_response
-from ..base import success_response
+from base import error_response
+from base import success_response
 
 
 class TaskTrackerServer(AmplifierMCPServer):

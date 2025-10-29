@@ -291,13 +291,13 @@ def show_version() -> None:
         import platform
 
         print(f"Platform: {platform.platform()}")
-    except:
+    except Exception:
         pass
 
     try:
         config = get_backend_config()
         print(f"Configured Backend: {config.amplifier_backend}")
-    except:
+    except Exception:
         print("Configured Backend: Unknown")
 
 

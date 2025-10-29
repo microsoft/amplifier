@@ -19,18 +19,24 @@ except ImportError:
     print("Error: MCP SDK not installed. Run 'uv add mcp' to install.", file=sys.stderr)
     exit(1)
 
+# Add parent directory to path for absolute imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 # Import base utilities
 try:
-    from ..base import AmplifierMCPServer
-    from ..base import error_response
-    from ..base import success_response
+    from base import AmplifierMCPServer
+    from base import error_response
+    from base import success_response
 except ImportError:
     print("Error: Base utilities not found. Ensure base.py is available.", file=sys.stderr)
     exit(1)
 
+# Add .codex to path for tool imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
 # Import transcript exporter
 try:
-    from ...tools.transcript_exporter import CodexTranscriptExporter
+    from tools.transcript_exporter import CodexTranscriptExporter
 except ImportError:
     CodexTranscriptExporter = None
 

@@ -58,7 +58,7 @@ def inject_context_to_agent(
         Dictionary with agent invocation details including context metadata
     """
     # If it's a file path (string or Path), return metadata with that path
-    if isinstance(context_file_or_messages, (str, Path)):
+    if isinstance(context_file_or_messages, str | Path):
         from datetime import datetime
 
         return {

@@ -387,6 +387,92 @@ tail -f .codex/logs/session_manager.log
 - Check server logs for startup errors
 - Ensure amplifier modules are available in test environment
 
+### Troubleshooting MCP Server Handshake Failures
+
+**Symptom**: MCP servers fail to start with "connection closed: initialize response" error in Codex logs.
+
+**Common Root Causes**:
+1. **Working Directory Mismatch**: Server process starts in wrong directory
+2. **Import Path Issues**: Python can't find `amplifier` modules
+3. **Environment Variables**: PYTHONPATH or AMPLIFIER_ROOT not set correctly
+4. **Subprocess Execution**: `uv run` invoked from wrong location
+
+**Diagnostic Steps**:
+
+1. **Check Server Startup Manually**:
+```bash
+# Navigate to project root
+cd /path/to/project
+
+# Try running server directly
+uv run python .codex/mcp_servers/session_manager/server.py
+
+# Check if imports work
+uv run python -c "from amplifier.memory import MemoryStore"
+```
+
+2. **Verify config.toml Configuration**:
+```toml
+[mcp_servers.amplifier_session]
+command = "uv"
+# CRITICAL: Include --directory flag
+args = ["run", "--directory", "/absolute/path/to/project", "python", ".codex/mcp_servers/session_manager/server.py"]
+# CRITICAL: Set environment variables
+env = {
+    AMPLIFIER_ROOT = "/absolute/path/to/project",
+    PYTHONPATH = "/absolute/path/to/project"
+}
+```
+
+3. **Check Server Logs**:
+```bash
+# Find recent log files
+ls -ltr .codex/logs/*.log | tail -5
+
+# Check for import errors or startup failures
+tail -n 50 .codex/logs/session_manager.log
+```
+
+4. **Test Wrapper Script Alternative**:
+```bash
+# If --directory approach fails, try wrapper scripts
+chmod +x .codex/mcp_servers/session_manager/run.sh
+.codex/mcp_servers/session_manager/run.sh
+
+# Verify wrapper script sets correct paths
+cat .codex/mcp_servers/session_manager/run.sh
+```
+
+**Solutions**:
+
+**Solution A: Use --directory Flag (Recommended)**
+- Explicitly specify working directory in config.toml args
+- Set AMPLIFIER_ROOT and PYTHONPATH environment variables
+- Use absolute paths for all directory references
+- Ensures server starts in correct context
+
+**Solution B: Use Wrapper Scripts**
+- Create bash wrapper that sets up environment and changes directory
+- Wrapper handles path setup before launching server
+- More portable across systems
+- Reference wrapper script in config.toml instead of direct python invocation
+
+**Solution C: Package Structure Fix**
+- Ensure `.codex/__init__.py` exists (makes .codex a Python package)
+- Ensure `.codex/mcp_servers/__init__.py` exists
+- Verify relative imports work: `from ..base import AmplifierMCPServer`
+
+**Prevention**:
+- Always use `--directory` flag with absolute paths in config.toml
+- Set PYTHONPATH explicitly to project root
+- Test servers manually before configuring in Codex
+- Keep diagnostic steps documented for future debugging
+
+**Related Documentation**:
+- See `DIAGNOSTIC_STEPS.md` for comprehensive troubleshooting guide
+- See `DISCOVERIES.md` for detailed root cause analysis
+- See wrapper scripts in each server directory for alternative approach
+
 ## Comparison with Claude Code Hooks
 
 ### Hook vs MCP Tool Mappings

@@ -5,7 +5,9 @@ Enables searching the web, fetching URLs, and summarizing content.
 """
 
 import hashlib
+import importlib.util
 import json
+import sys
 import time
 from pathlib import Path
 from typing import Any
@@ -14,37 +16,21 @@ from urllib.parse import urlparse
 
 from mcp.server.fastmcp import FastMCP
 
-from ..base import AmplifierMCPServer
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# Import base utilities
-from ..base import error_response
-from ..base import success_response
+from base import AmplifierMCPServer
+from base import error_response
+from base import success_response
 
-# Capability flags - set based on import success
-DDGS_AVAILABLE = False
-REQUESTS_AVAILABLE = False
-BS4_AVAILABLE = False
 
-try:
-    import requests
+def _is_available(module: str) -> bool:
+    """Return True if module importable without actually importing it."""
+    return importlib.util.find_spec(module) is not None
 
-    REQUESTS_AVAILABLE = True
-except ImportError:
-    pass
 
-try:
-    from bs4 import BeautifulSoup
-
-    BS4_AVAILABLE = True
-except ImportError:
-    pass
-
-try:
-    from duckduckgo_search import DDGS
-
-    DDGS_AVAILABLE = True
-except ImportError:
-    pass
+DDGS_AVAILABLE = _is_available("duckduckgo_search")
+REQUESTS_AVAILABLE = _is_available("requests")
+BS4_AVAILABLE = _is_available("bs4")
 
 
 class WebCache:
