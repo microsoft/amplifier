@@ -211,8 +211,8 @@ claude
 _Tell Claude Code:_
 
 ```
-I'm working on @yourproject/ with Amplifier.
-Read @yourproject/AGENTS.md for project context.
+I'm working on @my-project/ with Amplifier.
+Read @my-project/AGENTS.md for project context.
 Let's use /ddd:1-plan to design the architecture.
 ```
 
