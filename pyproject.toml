@@ -55,7 +55,7 @@ venv = ".venv"
 exclude = [
     "**/__pycache__",
     "**/.venv/**",
-    "node_modules/**",
+    "**/node_modules/**",
     ".git/**",
     ".ruff_cache/**",
     ".pytest_cache/**",
@@ -64,6 +64,7 @@ exclude = [
     "dist/**",
     ".data/**",
     "ai_working/**",
+    "workspace/**",
 ]
 typeCheckingMode = "basic"
 reportMissingImports = false
