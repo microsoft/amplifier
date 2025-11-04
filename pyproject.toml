@@ -73,7 +73,7 @@ venv = ".venv"
 exclude = [
     "**/__pycache__",
     "**/.venv/**",
-    "node_modules/**",
+    "**/node_modules/**",
     ".git/**",
     ".ruff_cache/**",
     ".pytest_cache/**",
