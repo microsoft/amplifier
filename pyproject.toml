@@ -64,7 +64,6 @@ exclude = [
     "dist/**",
     ".data/**",
     "ai_working/**",
-    "workspace/**",
 ]
 typeCheckingMode = "basic"
 reportMissingImports = false
