@@ -97,8 +97,28 @@ Use the architect agent to analyze this codebase
 
 **Codex**: Uses `codex exec` command with agent files
 ```bash
-codex exec .codex/agents/architect.md --context="Analyze this codebase"
+codex exec --context-file=.codex/agents/architect.md "Analyze this codebase"
 ```
+
+### Agent Invocation Pattern
+
+- Agent definitions live in `.codex/agents/<name>.md` as markdown custom prompts
+- Direct CLI usage passes the definition with `codex exec --context-file=<agent_file> "<task>"`
+- Programmatic workflows generate combined files inside `.codex/agent_contexts/` that embed:
+  - Original agent definition
+  - Serialized conversation context (when available)
+  - The current task description
+- Temporary combined files are cleaned automatically after each run
+
+### Agent Context Bridge
+
+- `CodexAgentBackend` relies on the bridge to serialize context and assemble combined markdown prompts
+- Combined files follow this structure:
+  1. Agent definition content
+  2. `## Current Task Context` section with JSON payload
+  3. `## Task` section with the user request
+- Combined files are created via `create_combined_context_file()` and stored under `.codex/agent_contexts/`
+- Result artifacts remain in `.codex/agent_results/` for auditing, mirroring the previous workflow
 
 ### Configuration Management
 

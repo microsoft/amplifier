@@ -46,9 +46,8 @@ class TranscriptManager:
     def _get_transcript_dirs(self) -> list[Path]:
         """Get list of transcript directories based on backend."""
         dirs = []
-        if self.backend in ["claude", "auto"]:
-            if self.transcripts_dir.exists():
-                dirs.append(self.transcripts_dir)
+        if self.backend in ["claude", "auto"] and self.transcripts_dir.exists():
+            dirs.append(self.transcripts_dir)
         if self.backend in ["codex", "auto"]:
             if self.codex_global_dir.exists():
                 dirs.append(self.codex_global_dir)
@@ -279,7 +278,7 @@ class TranscriptManager:
             "%b %d, %Y %I:%M %p",
         ]:
             try:
-                dt = datetime.strptime(value, fmt)
+                dt = datetime.strptime(value, fmt)  # noqa: DTZ007
                 return dt.replace(tzinfo=UTC)
             except ValueError:
                 continue
@@ -409,7 +408,6 @@ class TranscriptManager:
     def search_transcripts(self, term: str, max_results: int = 10, backend_filter: str | None = None) -> str | None:
         """Search transcripts and output matching content with context"""
         results = []
-        search_backend = backend_filter or self.backend
 
         for transcript_file in self.list_transcripts():
             # Skip if backend filtering is requested

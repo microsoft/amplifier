@@ -16,6 +16,7 @@ if str(codex_tools_path) not in sys.path:
 try:
     from agent_context_bridge import AgentContextBridge
     from agent_context_bridge import cleanup_context_files
+    from agent_context_bridge import create_combined_context_file
     from agent_context_bridge import extract_agent_result
     from agent_context_bridge import inject_context_to_agent
     from agent_context_bridge import serialize_context
@@ -26,6 +27,7 @@ try:
         "inject_context_to_agent",
         "extract_agent_result",
         "cleanup_context_files",
+        "create_combined_context_file",
     ]
 except ImportError as e:
     # Raise ImportError with helpful message

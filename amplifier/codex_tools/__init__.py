@@ -95,9 +95,30 @@ def cleanup_context_files():
     _BRIDGE.cleanup()
 
 
+def create_combined_context_file(
+    agent_definition: str,
+    task: str,
+    context_data: dict[str, Any] | None = None,
+    agent_name: str | None = None,
+) -> Path:
+    """Create combined markdown context file via shared bridge."""
+    create_combined = getattr(_BRIDGE, "create_combined_context_file", None)
+    if create_combined is None:
+        msg = "AgentContextBridge missing create_combined_context_file implementation"
+        raise AttributeError(msg)
+
+    return create_combined(
+        agent_definition=agent_definition,
+        task=task,
+        context_data=context_data,
+        agent_name=agent_name,
+    )
+
+
 __all__ = [
     "serialize_context",
     "inject_context_to_agent",
     "extract_agent_result",
     "cleanup_context_files",
+    "create_combined_context_file",
 ]

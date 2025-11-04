@@ -7,7 +7,7 @@ integrating their results back into the main session.
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +28,8 @@ class AgentContextBridge:
         self.context_file = self.context_dir / "agent_context.json"
         self.results_dir = self.context_dir / "agent_results"
         self.results_dir.mkdir(exist_ok=True)
+        self.context_temp_dir = self.project_root / ".codex" / "agent_contexts"
+        self.context_temp_dir.mkdir(exist_ok=True)
 
     def serialize_context(
         self,
@@ -153,6 +155,55 @@ class AgentContextBridge:
         """Clean up context files"""
         if self.context_file.exists():
             self.context_file.unlink()
+
+        if self.context_temp_dir.exists():
+            cutoff = datetime.now() - timedelta(hours=1)
+            temp_files = sorted(self.context_temp_dir.glob("*.md"), key=lambda path: path.stat().st_mtime, reverse=True)
+            for index, path in enumerate(temp_files):
+                if index < 5:
+                    continue
+                file_modified = datetime.fromtimestamp(path.stat().st_mtime)
+                if file_modified < cutoff:
+                    path.unlink(missing_ok=True)
+
+    def create_combined_context_file(
+        self,
+        agent_definition: str,
+        task: str,
+        context_data: dict[str, Any] | None = None,
+        agent_name: str | None = None,
+    ) -> Path:
+        """Create markdown file combining agent definition, context, and task.
+
+        Args:
+            agent_definition: Raw markdown agent definition content.
+            task: Task to execute.
+            context_data: Optional serialized context payload.
+            agent_name: Agent name for file naming.
+
+        Returns:
+            Path to combined markdown context file.
+        """
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S%f")
+        agent_slug = agent_name or "agent"
+        combined_path = self.context_temp_dir / f"{agent_slug}_{timestamp}.md"
+
+        with open(combined_path, "w") as handle:
+            handle.write(agent_definition.rstrip())
+            handle.write("\n\n## Current Task Context\n")
+
+            if context_data:
+                context_json = json.dumps(context_data, indent=2)
+                handle.write(f"```json\n{context_json}\n```\n")
+            else:
+                handle.write("(no additional context supplied)\n")
+
+            handle.write("\n## Task\n")
+            handle.write(task.strip() or "(no task provided)")
+            handle.write("\n")
+
+        return combined_path
 
     def _compress_messages(self, messages: list[dict[str, Any]], max_tokens: int) -> list[dict[str, Any]]:
         """Compress messages to fit token budget
@@ -347,3 +398,15 @@ def cleanup_context_files():
     """Clean up context files (function interface)"""
     bridge = _get_bridge()
     bridge.cleanup()
+
+
+def create_combined_context_file(
+    agent_definition: str,
+    task: str,
+    context_data: dict[str, Any] | None = None,
+    agent_name: str | None = None,
+) -> Path:
+    """Create markdown context file combining agent definition, context, and task."""
+
+    bridge = _get_bridge()
+    return bridge.create_combined_context_file(agent_definition, task, context_data, agent_name=agent_name)

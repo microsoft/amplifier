@@ -303,7 +303,7 @@ def _parse_timestamp_with_fallbacks(value: Any) -> datetime | None:
 
         for fmt in fallback_formats:
             try:
-                dt = datetime.strptime(candidate, fmt)
+                dt = datetime.strptime(candidate, fmt)  # noqa: DTZ007
                 if dt.tzinfo is None:
                     dt = dt.replace(tzinfo=UTC)
                 return dt.astimezone(UTC)

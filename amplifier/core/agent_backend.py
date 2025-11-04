@@ -11,6 +11,7 @@ import asyncio
 import json
 import logging
 import os
+import shutil
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -19,11 +20,9 @@ from typing import Any
 import yaml
 
 # Import agent context bridge utilities
+from amplifier.codex_tools import create_combined_context_file
 from amplifier.codex_tools import extract_agent_result
-from amplifier.codex_tools import inject_context_to_agent
 from amplifier.codex_tools import serialize_context
-
-CONTEXT_BRIDGE_AVAILABLE = True
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -126,7 +125,7 @@ class ClaudeCodeAgentBackend(AgentBackend):
             # Create options with Task tool enabled
             self._sdk_options = sdk_options_cls(
                 allowed_tools=["Task", "Read", "Write", "Bash", "Grep", "Glob"], working_directory=os.getcwd()
-            )
+            )  # type: ignore[call-arg]
 
             self._sdk_client = sdk_client_cls(options=self._sdk_options)
 
@@ -177,7 +176,7 @@ class ClaudeCodeAgentBackend(AgentBackend):
                 # on the specific ClaudeSDKClient API
                 response = await client.query(task)
                 return response.get("content", "")
-        except TimeoutError:
+        except (asyncio.TimeoutError, TimeoutError):
             raise AgentTimeoutError("Agent execution timed out after 5 minutes")
 
     def _load_agent_definition(self, agent_name: str) -> AgentDefinition | None:
@@ -233,6 +232,15 @@ class ClaudeCodeAgentBackend(AgentBackend):
         agent_file = self.agents_dir / f"{agent_name}.md"
         return agent_file.exists()
 
+    def is_available(self) -> bool:
+        """Return True if the Claude Code SDK is importable."""
+
+        try:
+            self._ensure_sdk_available()
+            return True
+        except AgentBackendError:
+            return False
+
 
 class CodexAgentBackend(AgentBackend):
     """Agent backend for Codex using subprocess."""
@@ -241,61 +249,46 @@ class CodexAgentBackend(AgentBackend):
         self.agents_dir = Path(".codex/agents")
         self.codex_cli = os.getenv("CODEX_CLI_PATH", "codex")
         self.profile = os.getenv("CODEX_PROFILE", "development")
+        self.context_temp_dir = Path(".codex/agent_contexts")
+        self.context_temp_dir.mkdir(parents=True, exist_ok=True)
 
     def spawn_agent(self, agent_name: str, task: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
         """Spawn agent using Codex CLI."""
-        context_file = None
+        serialized_context_file: Path | None = None
+        combined_context_file: Path | None = None
+        preserve_serialized = False
+        preserve_combined = False
+        keep_on_error = bool(os.getenv("CODEX_KEEP_CONTEXT_FILES_ON_ERROR"))
         try:
             logger.info(f"Spawning Codex agent: {agent_name}")
 
             if not self.validate_agent_exists(agent_name):
                 raise AgentNotFoundError(f"Agent '{agent_name}' not found")
 
-            # Build command - agent definition passed via --agent flag, context via separate --context flag
-            agent_file = self.agents_dir / f"{agent_name}.md"
-            cmd = [
-                self.codex_cli,
-                "exec",
-                f"--agent={agent_file}",  # Agent definition
-                f"--task={task}",
-                f"--profile={self.profile}",
-                "--output-format=json",
-            ]
+            cli_path = shutil.which(self.codex_cli)
+            if cli_path is None:
+                explicit_path = Path(self.codex_cli)
+                if explicit_path.exists():
+                    cli_path = str(explicit_path)
 
-            # Handle context serialization if bridge is available
-            context_file = None
-            if context and CONTEXT_BRIDGE_AVAILABLE and serialize_context:
-                try:
-                    # Check if context contains messages for serialization
-                    messages = context.get("messages", [])
-                    if messages:
-                        # Serialize full context using bridge
-                        context_file = serialize_context(
-                            messages=messages,
-                            max_tokens=4000,
-                            current_task=task,
-                            relevant_files=context.get("relevant_files"),
-                            session_metadata=context.get("session_metadata"),
-                        )
-                        cmd.append(f"--context={context_file}")  # Separate context file
-                        logger.info(f"Serialized context to file: {context_file}")
-                    else:
-                        # Fallback to simple context data
-                        context_json = json.dumps(context)
-                        cmd.extend(["--context-data", context_json])
-                        logger.debug("Using simple context data (no messages found)")
-                except Exception as e:
-                    logger.warning(f"Failed to serialize context: {e}, falling back to simple context")
-                    context_json = json.dumps(context)
-                    cmd.extend(["--context-data", context_json])
-            elif context:
-                # Fallback without bridge
-                context_json = json.dumps(context)
-                cmd.extend(["--context-data", context_json])
+            if cli_path is None:
+                raise AgentSpawnError(
+                    "Codex CLI not found. Install the Codex CLI or set CODEX_CLI_PATH to the executable."
+                )
 
+            agent_definition = self._load_agent_definition_content(agent_name)
+            context_payload, serialized_context_file = self._prepare_context_payload(task, context)
+
+            combined_context_file = self._create_combined_context_file(
+                agent_name=agent_name,
+                agent_definition=agent_definition,
+                task=task,
+                context_payload=context_payload,
+            )
+
+            cmd = [cli_path, "exec", f"--context-file={combined_context_file}", task]
             logger.debug(f"Running command: {' '.join(cmd)}")
 
-            # Execute with timeout
             result = subprocess.run(
                 cmd,
                 capture_output=True,
@@ -304,59 +297,46 @@ class CodexAgentBackend(AgentBackend):
                 cwd=os.getcwd(),
             )
 
-            # Extract and format result using bridge if available
-            if CONTEXT_BRIDGE_AVAILABLE and extract_agent_result:
-                try:
-                    extracted = extract_agent_result(result.stdout.strip(), agent_name)
-                    return {
-                        "success": result.returncode == 0,
-                        "result": extracted["formatted_result"],
-                        "metadata": {
-                            "backend": "codex",
-                            "agent_name": agent_name,
-                            "task_length": len(task),
-                            "return_code": result.returncode,
-                            "result_file": extracted.get("result_file"),
-                            "context_used": context_file is not None,
-                            "context_bridge_used": True,
-                        },
-                    }
-                except Exception as e:
-                    logger.warning(f"Failed to extract agent result with bridge: {e}, using raw output")
-
-            # Fallback to original result handling
-            if result.returncode == 0:
-                return {
-                    "success": True,
-                    "result": result.stdout.strip(),
-                    "metadata": {
-                        "backend": "codex",
-                        "agent_name": agent_name,
-                        "task_length": len(task),
-                        "return_code": result.returncode,
-                        "context_used": context_file is not None,
-                        "context_bridge_used": False,
-                    },
-                }
-            error_msg = result.stderr.strip() or "Unknown error"
-            raise AgentSpawnError(f"Codex agent failed: {error_msg}")
+            return self._process_codex_result(
+                result=result,
+                agent_name=agent_name,
+                task=task,
+                combined_context_file=combined_context_file,
+                context_payload=context_payload,
+            )
 
         except subprocess.TimeoutExpired:
-            logger.warning(f"Agent {agent_name} timed out, preserving context file for debugging")
+            preserve_serialized = bool(serialized_context_file)
+            preserve_combined = bool(combined_context_file)
+            logger.warning(f"Agent {agent_name} timed out, preserving context files for debugging")
+            if combined_context_file:
+                logger.warning("Combined context preserved at: %s", combined_context_file)
+            if serialized_context_file:
+                logger.warning("Serialized context preserved at: %s", serialized_context_file)
             raise AgentTimeoutError("Agent execution timed out after 5 minutes")
         except AgentNotFoundError:
             raise
         except Exception as e:
+            if keep_on_error:
+                if combined_context_file:
+                    preserve_combined = True
+                    logger.warning(
+                        "CODEX_KEEP_CONTEXT_FILES_ON_ERROR set; preserving combined context file at %s",
+                        combined_context_file,
+                    )
+                if serialized_context_file:
+                    preserve_serialized = True
+                    logger.warning(
+                        "CODEX_KEEP_CONTEXT_FILES_ON_ERROR set; preserving serialized context file at %s",
+                        serialized_context_file,
+                    )
             logger.error(f"Error spawning Codex agent {agent_name}: {e}")
             raise AgentSpawnError(f"Failed to spawn agent {agent_name}: {e}")
         finally:
-            # Cleanup context file
-            if context_file and Path(context_file).exists():
-                try:
-                    Path(context_file).unlink()
-                    logger.debug(f"Cleaned up context file: {context_file}")
-                except Exception as e:
-                    logger.warning(f"Failed to cleanup context file {context_file}: {e}")
+            if not preserve_serialized:
+                self._cleanup_temp_file(serialized_context_file)
+            if not preserve_combined:
+                self._cleanup_temp_file(combined_context_file)
 
     def spawn_agent_with_context(
         self, agent_name: str, task: str, messages: list[dict[str, Any]], context: dict[str, Any] | None = None
@@ -373,85 +353,141 @@ class CodexAgentBackend(AgentBackend):
         Returns:
             Dict with keys: success (bool), result (str), metadata (Dict)
         """
-        context_file = None
+        logger.info(f"Spawning Codex agent with conversation context: {agent_name}")
+
+        extended_context: dict[str, Any] = dict(context or {})
+        extended_context["messages"] = messages
+
+        return self.spawn_agent(agent_name=agent_name, task=task, context=extended_context)
+
+    def _load_agent_definition_content(self, agent_name: str) -> str:
+        agent_file = self.agents_dir / f"{agent_name}.md"
+        if not agent_file.exists():
+            raise AgentNotFoundError(f"Agent '{agent_name}' not found")
+        return agent_file.read_text()
+
+    def _prepare_context_payload(
+        self, task: str, context: dict[str, Any] | None
+    ) -> tuple[dict[str, Any] | None, Path | None]:
+        if not context:
+            return None, None
+
+        messages = context.get("messages", [])
         try:
-            logger.info(f"Spawning Codex agent with full context: {agent_name}")
+            if messages:
+                serialized_path = serialize_context(
+                    messages=messages,
+                    max_tokens=4000,
+                    current_task=task,
+                    relevant_files=context.get("relevant_files"),
+                    session_metadata=context.get("session_metadata"),
+                )
+                payload = self._load_json_file(serialized_path)
+                payload.setdefault("metadata", {}).setdefault("extras", context)
+                return payload, serialized_path
 
-            if not self.validate_agent_exists(agent_name):
-                raise AgentNotFoundError(f"Agent '{agent_name}' not found")
+            logger.debug("No messages found in context; embedding raw context payload")
+            return context, None
+        except Exception as exc:
+            logger.warning(f"Failed to serialize context: {exc}; embedding raw context")
+            return context, None
 
-            if not CONTEXT_BRIDGE_AVAILABLE or not serialize_context:
-                raise AgentBackendError("Agent context bridge not available")
+    def _create_combined_context_file(
+        self,
+        agent_name: str,
+        agent_definition: str,
+        task: str,
+        context_payload: dict[str, Any] | None,
+    ) -> Path:
+        combined_path = create_combined_context_file(
+            agent_definition=agent_definition,
+            task=task,
+            context_data=context_payload,
+            agent_name=agent_name,
+        )
+        logger.debug(f"Created combined context file: {combined_path}")
+        return combined_path
 
-            # Serialize full conversation context
-            context_file = serialize_context(
-                messages=messages,
-                max_tokens=4000,
-                current_task=task,
-                relevant_files=context.get("relevant_files") if context else None,
-                session_metadata=context,
-            )
+    def _process_codex_result(
+        self,
+        result: subprocess.CompletedProcess[str],
+        agent_name: str,
+        task: str,
+        combined_context_file: Path,
+        context_payload: dict[str, Any] | None,
+    ) -> dict[str, Any]:
+        success = result.returncode == 0
+        output = result.stdout.strip()
+        if context_payload is not None:
+            try:
+                context_bytes = len(json.dumps(context_payload).encode("utf-8"))
+            except (TypeError, ValueError) as exc:
+                logger.warning(f"Failed to serialize context payload for metrics: {exc}")
+                context_bytes = 0
+        else:
+            context_bytes = 0
+        context_file_name = combined_context_file.name
 
-            # Prepare context injection
-            injection_data = inject_context_to_agent(agent_name, task, context_file)
+        if success:
+            try:
+                extracted = extract_agent_result(output, agent_name)
+                return {
+                    "success": True,
+                    "result": extracted.get("formatted_result", output),
+                    "metadata": {
+                        "backend": "codex",
+                        "agent_name": agent_name,
+                        "task_length": len(task),
+                        "return_code": result.returncode,
+                        "result_file": extracted.get("result_file"),
+                        "context_bridge_used": True,
+                        "invocation": "context-file",
+                        "context_payload_bytes": context_bytes,
+                        "context_file_name": context_file_name,
+                        "profile": self.profile,
+                    },
+                }
+            except Exception as exc:
+                logger.warning(f"Failed to extract agent result with bridge: {exc}; using raw output")
 
-            # Build command with context file
-            agent_file = self.agents_dir / f"{agent_name}.md"
-            cmd = [
-                self.codex_cli,
-                "exec",
-                f"--agent={agent_file}",
-                f"--task={task}",
-                f"--profile={self.profile}",
-                f"--context={context_file}",
-                "--output-format=json",
-            ]
-
-            logger.debug(f"Running command with full context: {' '.join(cmd)}")
-
-            # Execute with timeout
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=300,  # 5 minute timeout
-                cwd=os.getcwd(),
-            )
-
-            # Extract and format result
-            extracted = extract_agent_result(result.stdout.strip(), agent_name)
-
+        if success:
             return {
-                "success": result.returncode == 0,
-                "result": extracted["formatted_result"],
+                "success": True,
+                "result": output,
                 "metadata": {
                     "backend": "codex",
                     "agent_name": agent_name,
                     "task_length": len(task),
                     "return_code": result.returncode,
-                    "result_file": extracted.get("result_file"),
-                    "context_size": injection_data.get("context_size"),
-                    "context_hash": injection_data.get("context_hash"),
-                    "context_bridge_used": True,
+                    "context_bridge_used": False,
+                    "invocation": "context-file",
+                    "context_payload_bytes": context_bytes,
+                    "context_file_name": context_file_name,
+                    "profile": self.profile,
                 },
             }
 
-        except subprocess.TimeoutExpired:
-            logger.warning(f"Agent {agent_name} timed out with context, preserving context file for debugging")
-            raise AgentTimeoutError("Agent execution timed out after 5 minutes")
-        except AgentNotFoundError:
-            raise
-        except Exception as e:
-            logger.error(f"Error spawning Codex agent with context {agent_name}: {e}")
-            raise AgentSpawnError(f"Failed to spawn agent {agent_name}: {e}")
-        finally:
-            # Cleanup context file
-            if context_file and Path(context_file).exists():
-                try:
-                    Path(context_file).unlink()
-                    logger.debug(f"Cleaned up context file: {context_file}")
-                except Exception as e:
-                    logger.warning(f"Failed to cleanup context file {context_file}: {e}")
+        error_msg = result.stderr.strip() or output or "Unknown error"
+        raise AgentSpawnError(f"Codex agent failed: {error_msg}")
+
+    def _cleanup_temp_file(self, path: Path | None) -> None:
+        if not path:
+            return
+
+        try:
+            Path(path).unlink(missing_ok=True)
+            logger.debug(f"Cleaned up temporary file: {path}")
+        except Exception as exc:
+            logger.warning(f"Failed to cleanup temporary file {path}: {exc}")
+
+    @staticmethod
+    def _load_json_file(path: Path) -> dict[str, Any]:
+        try:
+            with open(path) as handle:
+                return json.load(handle)
+        except Exception as exc:
+            logger.warning(f"Failed to read serialized context from {path}: {exc}")
+            return {}
 
     def list_available_agents(self) -> list[str]:
         """List available Codex agents."""
@@ -475,6 +511,16 @@ class CodexAgentBackend(AgentBackend):
         """Check if Codex agent exists."""
         agent_file = self.agents_dir / f"{agent_name}.md"
         return agent_file.exists()
+
+    def is_available(self) -> bool:
+        """Return True if the Codex CLI executable can be located."""
+
+        cli_path = shutil.which(self.codex_cli)
+        if cli_path:
+            return True
+
+        explicit_path = Path(self.codex_cli)
+        return explicit_path.exists()
 
 
 class AgentBackendFactory:

@@ -92,3 +92,17 @@ ai_working/tmp
 activity-log/
 ai_working/productivity_tracker/
 .codex/tasks/session_tasks.json
+scenarios/*
+ai_working/*
+.vscode/launch.json
+.vscode/settings.json
+ai-study-extension/manifest.json
+ai-study-extension/README.md
+ai-study-extension/test-page.html
+ai-study-extension/background/background.js
+ai-study-extension/content/content.css
+ai-study-extension/content/content.js
+ai-study-extension/popup/popup.html
+ai-study-extension/popup/popup.js
+.vscode/*
+

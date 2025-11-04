@@ -28,6 +28,8 @@ class AgentContextBridge:
         self.context_file = self.context_dir / "agent_context.json"
         self.results_dir = self.context_dir / "agent_results"
         self.results_dir.mkdir(exist_ok=True)
+        self.context_temp_dir = self.context_dir / "agent_contexts"
+        self.context_temp_dir.mkdir(exist_ok=True)
 
     def serialize_context(
         self,
@@ -129,6 +131,35 @@ class AgentContextBridge:
 
         return result
 
+    def create_combined_context_file(
+        self,
+        agent_definition: str,
+        task: str,
+        context_data: dict[str, Any] | None = None,
+        agent_name: str | None = None,
+    ) -> Path:
+        """Create markdown file combining agent definition, context, and task."""
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S%f")
+        agent_slug = agent_name or "agent"
+        combined_path = self.context_temp_dir / f"{agent_slug}_{timestamp}.md"
+
+        with open(combined_path, "w") as handle:
+            handle.write(agent_definition.rstrip())
+            handle.write("\n\n## Current Task Context\n")
+
+            if context_data:
+                context_json = json.dumps(context_data, indent=2)
+                handle.write(f"```json\n{context_json}\n```\n")
+            else:
+                handle.write("(no additional context supplied)\n")
+
+            handle.write("\n## Task\n")
+            handle.write(task.strip() or "(no task provided)")
+            handle.write("\n")
+
+        return combined_path
+
     def get_context_summary(self) -> dict[str, Any] | None:
         """Get summary of current context
 
@@ -153,6 +184,10 @@ class AgentContextBridge:
         """Clean up context files"""
         if self.context_file.exists():
             self.context_file.unlink()
+
+        if self.context_temp_dir.exists():
+            for path in self.context_temp_dir.glob("*.md"):
+                path.unlink(missing_ok=True)
 
     def _compress_messages(self, messages: list[dict[str, Any]], max_tokens: int) -> list[dict[str, Any]]:
         """Compress messages to fit token budget

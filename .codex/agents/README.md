@@ -52,127 +52,59 @@ model: inherit
 - **performance-optimizer**: Optimizes code and system performance
 - **visualization-architect**: Designs data visualization solutions
 
-## Using Agents with Codex
+## Usage with Codex CLI
 
-### Automatic Agent Selection
+### Direct Invocation
 
-Codex can automatically select the most appropriate agent based on your task description:
-
-```bash
-# Codex auto-selects based on task description
-codex exec "Find and fix the authentication bug"
-# Likely routes to bug-hunter agent
-
-codex exec "Design the caching layer architecture"
-# Likely routes to zen-architect agent
-```
-
-### Manual Agent Selection
-
-For precise control, explicitly specify which agent to use:
+Agents are custom prompt files. Invoke them by pointing Codex at the markdown definition. Agents always run via the `--context-file` flag; see [.codex/prompts/README.md](../prompts/README.md) for additional details on composing custom prompts.
 
 ```bash
-# Explicitly specify agent
-codex exec --agent bug-hunter "Investigate the memory leak"
-
-codex exec --agent zen-architect "Review this module for complexity"
-```
-
-### Agent with Context File
-
-Use agent definitions directly as context:
-
-```bash
-# Use agent definition as context
-codex exec --context-file=.codex/agents/bug-hunter.md "Debug the API timeout"
-```
-
-### Using Agents via Custom Prompts
-
-For complex tasks requiring orchestration of multiple agents, use custom prompts instead of invoking agents directly. Custom prompts provide structured workflows that coordinate multiple specialized agents.
-
-**Direct Agent Invocation (Single Perspective):**
-```bash
-# Single agent, single perspective
-codex exec --agent bug-hunter "Investigate authentication failures"
-```
-
-**Orchestrated Multi-Agent Workflow (Comprehensive):**
-```bash
-# Multiple agents, structured approach via custom prompt (primary method)
-codex exec --context-file=.codex/prompts/ultrathink-task.md "Investigate authentication failures"
-
-# Alternative if --prompt flag supported in your Codex version:
-# codex exec --prompt ultrathink-task --task_description "Investigate authentication failures"
-```
-
-The `ultrathink-task` custom prompt orchestrates multiple agents (triage-specialist, analysis-expert, synthesis-master, and domain specialists) to provide:
-- Multi-perspective analysis (architecture, security, performance)
-- Structured task breakdown and execution
-- Comprehensive findings synthesis
-- Actionable recommendations
-
-**When to use custom prompts vs direct agents:**
-- **Direct agents**: Quick, focused tasks requiring single perspective
-- **Custom prompts**: Complex tasks benefiting from multiple perspectives and structured workflows
-
-For more information on custom prompts, see:
-- `.codex/prompts/README.md` - Custom prompts documentation
-- `.codex/README.md` - Codex integration overview
-- `TUTORIAL.md` - Usage examples and workflows
-
-## Agent Invocation Patterns
-
-### From Command Line
-
-Invoke agents directly for common development tasks:
-
-```bash
-# Bug investigation
-codex exec "The user authentication is failing intermittently"
-
 # Architecture design
-codex exec --agent zen-architect "Design the caching layer for the API"
+codex exec --context-file=.codex/agents/zen-architect.md "Design the caching layer"
+
+# Bug investigation
+codex exec --context-file=.codex/agents/bug-hunter.md "Debug the API timeout"
 
 # Test coverage analysis
-codex exec --agent test-coverage "Analyze test coverage for the payment module"
+codex exec --context-file=.codex/agents/test-coverage.md "Review coverage gaps in the payment module"
 ```
 
-### From Backend Abstraction
+Use `.codex/prompts/*.md` for orchestrated multi-agent workflows such as `ultrathink-task` when you need multiple perspectives.
 
-Use the programmatic API for agent spawning:
+### Programmatic Usage
+
+The high-level API wraps the same pattern, generating a temporary combined file that includes context:
 
 ```python
-from amplifier import spawn_agent
+from amplifier.core.agent_backend import CodexAgentBackend
 
-# Spawn agent programmatically
-result = spawn_agent(
-    agent_name="bug-hunter",
-    task="Find the root cause of the database connection timeout"
+backend = CodexAgentBackend()
+result = backend.spawn_agent(
+  "bug-hunter",
+  "Investigate the intermittent authentication failure",
+  context={
+    "messages": conversation_messages,
+    "relevant_files": ["src/auth.py"],
+  },
 )
-print(result['result'])
+print(result["result"])
 ```
 
-### From Codex Wrapper
+### Context Passing
 
-Use the wrapper script for seamless integration:
+- Conversation history is serialized to `.codex/agent_context.json`
+- `create_combined_context_file()` merges the agent definition, serialized context, and the active task into `.codex/agent_contexts/<agent>_<timestamp>.md`
+- Codex CLI receives that combined markdown via `--context-file`
+- Temporary files are cleaned automatically after execution; results persist in `.codex/agent_results/`
 
-```bash
-# Using amplify-codex.sh wrapper
-./amplify-codex.sh
-# Then in Codex session, agents are available automatically
-```
-
-## Key Differences from Claude Code
+### Differences from Claude Code
 
 | Aspect | Claude Code | Codex |
 |--------|-------------|-------|
-| Agent Invocation | Task tool (automatic) | Natural language or --agent flag |
-| Tool References | Task, TodoWrite, WebFetch | Read, Grep, Glob, Bash, Write |
-| Additional Instructions | Large boilerplate section | Not needed |
-| Agent Selection | Automatic via description | Automatic or manual |
-| Spawning Syntax | `Task(agent_name, task)` | `codex exec --agent <name> "<task>"` |
-| Configuration | settings.json | config.toml |
+| Agent Invocation | Task tool (automatic) | `codex exec --context-file=.codex/agents/<name>.md "<task>"` |
+| Context Handling | Automatic conversation sharing | Context merged into combined prompt file |
+| Delegation Style | IDE-native | CLI/custom prompt driven |
+| Result Storage | Inline conversation | `.codex/agent_results/<agent>_<timestamp>.md` |
 
 ## Agent Development
 
@@ -182,13 +114,13 @@ Use the wrapper script for seamless integration:
 2. Define clear purpose and triggers in the description field
 3. Specify minimal tool set needed for the agent's tasks
 4. Write focused methodology without Claude-specific references
-5. Test with: `codex exec --agent <name> "<test-task>"`
+5. Test with: `codex exec --context-file=.codex/agents/<name>.md "<test-task>"`
 
 ### Converting from Claude Code
 
 1. Use the `tools/convert_agents.py` script for automated conversion
 2. Review the converted agent for accuracy
-3. Test with Codex to ensure functionality
+3. Test with Codex using `codex exec --context-file=.codex/agents/<name>.md "<task>"`
 4. Adjust description for better auto-selection if needed
 
 ## Agent Methodology
@@ -223,7 +155,7 @@ Codex provides these tools for agent use:
 ### Agent not being selected automatically
 - Review description field for clarity
 - Make description more specific to task type
-- Use manual selection with `--agent` flag
+- Invoke the agent directly with `codex exec --context-file=.codex/agents/<name>.md "<task>"`
 
 ### Agent fails to execute
 - Check tool permissions in `.codex/config.toml`
@@ -246,18 +178,18 @@ Codex provides these tools for agent use:
 # Automatic selection
 codex exec "The user authentication is failing intermittently"
 
-# Manual selection
-codex exec --agent bug-hunter "Investigate auth failures"
+# Direct agent invocation
+codex exec --context-file=.codex/agents/bug-hunter.md "Investigate auth failures"
 ```
 
 ### Example 2: Architecture Design
 ```bash
-codex exec --agent zen-architect "Design a caching layer for the API"
+codex exec --context-file=.codex/agents/zen-architect.md "Design a caching layer for the API"
 ```
 
 ### Example 3: Test Coverage Analysis
 ```bash
-codex exec --agent test-coverage "Analyze test coverage for the payment module"
+codex exec --context-file=.codex/agents/test-coverage.md "Analyze test coverage for the payment module"
 ```
 
 ## Integration with Backend Abstraction
