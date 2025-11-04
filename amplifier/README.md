@@ -22,7 +22,7 @@ The system consists of four independent modules that work together:
 **Contract**: Text → List of categorized memories
 **Key Features**:
 
-- Claude Code SDK integration for AI extraction
+- Support for multiple AI providers (Claude, Gemini, OpenAI)
 - Categories: learning, decision, issue_solved, preference, pattern
 
 ### 3. Semantic Search (`search/`)
@@ -50,7 +50,24 @@ The system consists of four independent modules that work together:
 ```bash
 # Install optional dependencies for full functionality
 uv add sentence-transformers  # For semantic search
-npm install -g @anthropic-ai/claude-code  # For AI extraction
+
+# Install the desired AI provider's CLI
+npm install -g @anthropic-ai/claude-code  # For Claude
+# or
+pip install -U google-generativeai  # For Gemini
+# or
+pip install --upgrade openai  # For OpenAI
+```
+
+## Configuration
+
+Create a `.env` file in the root of the project to configure the AI provider and API keys:
+
+```
+AI_PROVIDER=claude  # or "gemini", "openai"
+ANTHROPIC_API_KEY="your-claude-api-key"
+GEMINI_API_KEY="your-gemini-api-key"
+OPENAI_API_KEY="your-openai-api-key"
 ```
 
 ## Usage Example
