@@ -135,12 +135,12 @@ codex-task-list() {
 # Web search shortcut
 codex-search() {
     local query="$*"
-    
+
     if [ -z "$query" ]; then
         echo -e "${YELLOW}Usage: codex-search <query>${NC}"
         return 1
     fi
-    
+
     echo -e "${BLUE}Searching for: $query${NC}"
     # This would call the web research MCP server
     # For now, just a placeholder
@@ -151,68 +151,215 @@ codex-search() {
 codex-agent() {
     local agent_name="${1:-}"
     local task="${2:-}"
-    
+
     if [ -z "$agent_name" ]; then
         echo -e "${YELLOW}Usage: codex-agent <agent-name> <task>${NC}"
         echo "Available agents: zen-architect, bug-hunter, test-coverage, etc."
         return 1
     fi
-    
+
     if [ -z "$task" ]; then
         echo -e "${YELLOW}Please specify a task for the agent${NC}"
         return 1
     fi
-    
+
     echo -e "${BLUE}Spawning agent: $agent_name${NC}"
     echo -e "${BLUE}Task: $task${NC}"
-    
+
     codex exec "$agent_name" --prompt "$task"
 }
 
-# Show session status
-codex-status() {
-    echo -e "${BLUE}=== Codex Session Status ===${NC}"
-    echo ""
-    
-    # Git info
-    if git rev-parse --git-dir > /dev/null 2>&1; then
-        echo -e "${GREEN}Git:${NC}"
-        echo "  Branch: $(git branch --show-current)"
-        echo "  Status: $(git status --short | wc -l) files modified"
-        echo ""
+# Agent analytics shortcuts
+codex-analytics-stats() {
+    codex-shortcuts-check || return 1
+
+    echo -e "${BLUE}Getting agent execution statistics...${NC}"
+    codex tool amplifier_agent_analytics.get_agent_stats 2>&1 || {
+        echo -e "${RED}Failed to get analytics stats. Ensure amplifier_agent_analytics server is active.${NC}" >&2
+        return 1
+    }
+}
+
+codex-analytics-recommendations() {
+    local task="${1:-}"
+
+    if [ -z "$task" ]; then
+        echo -e "${YELLOW}Usage: codex-analytics-recommendations <task-description>${NC}"
+        return 1
     fi
-    
-    # Tasks
-    if [ -f ".codex/tasks/session_tasks.json" ]; then
-        local pending_count=$(uv run python -c "import json; data = json.load(open('.codex/tasks/session_tasks.json')); print(len([t for t in data.get('tasks', []) if t['status'] == 'pending']))")
-        local in_progress_count=$(uv run python -c "import json; data = json.load(open('.codex/tasks/session_tasks.json')); print(len([t for t in data.get('tasks', []) if t['status'] == 'in_progress']))")
-        local completed_count=$(uv run python -c "import json; data = json.load(open('.codex/tasks/session_tasks.json')); print(len([t for t in data.get('tasks', []) if t['status'] == 'completed']))")
-        
-        echo -e "${GREEN}Tasks:${NC}"
-        echo "  Pending: $pending_count"
-        echo "  In Progress: $in_progress_count"
-        echo "  Completed: $completed_count"
-        echo ""
+
+    codex-shortcuts-check || return 1
+
+    echo -e "${BLUE}Getting agent recommendations for: $task${NC}"
+    codex tool amplifier_agent_analytics.get_agent_recommendations --args "{\"current_task\": \"$task\"}" 2>&1 || {
+        echo -e "${RED}Failed to get recommendations. Ensure amplifier_agent_analytics server is active.${NC}" >&2
+        return 1
+    }
+}
+
+codex-analytics-report() {
+    local format="${1:-markdown}"
+
+    codex-shortcuts-check || return 1
+
+    echo -e "${BLUE}Generating agent analytics report...${NC}"
+    codex tool amplifier_agent_analytics.export_agent_report --args "{\"format\": \"$format\"}" 2>&1 || {
+        echo -e "${RED}Failed to generate report. Ensure amplifier_agent_analytics server is active.${NC}" >&2
+        return 1
+    }
+}
+
+# Memory management shortcuts
+codex-memory-suggest() {
+    local context="${1:-current work}"
+    local limit="${2:-5}"
+
+    codex-shortcuts-check || return 1
+
+    echo -e "${BLUE}Suggesting relevant memories for: $context${NC}"
+    codex tool amplifier_memory_enhanced.suggest_relevant_memories --args "{\"current_context\": \"$context\", \"limit\": $limit}" 2>&1 || {
+        echo -e "${RED}Failed to get memory suggestions. Ensure amplifier_memory_enhanced server is active.${NC}" >&2
+        return 1
+    }
+}
+
+codex-memory-tag() {
+    local memory_id="${1:-}"
+    local tags="${2:-}"
+
+    if [ -z "$memory_id" ] || [ -z "$tags" ]; then
+        echo -e "${YELLOW}Usage: codex-memory-tag <memory-id> <tags>${NC}"
+        echo "Example: codex-memory-tag mem_123 'important,bugfix'"
+        return 1
     fi
-    
-    # Memory system
-    if [ -d "amplifier_data/memory" ]; then
-        local memory_count=$(find amplifier_data/memory -name "*.jsonl" -exec wc -l {} \; 2>/dev/null | awk '{sum += $1} END {print sum}')
-        echo -e "${GREEN}Memory System:${NC}"
-        echo "  Stored memories: ${memory_count:-0}"
-        echo ""
+
+    codex-shortcuts-check || return 1
+
+    echo -e "${BLUE}Tagging memory $memory_id with: $tags${NC}"
+    # Convert comma-separated tags to JSON array
+    local tag_array=$(echo "$tags" | sed 's/,/","/g' | sed 's/^/["/' | sed 's/$/"]/')
+    codex tool amplifier_memory_enhanced.tag_memory --args "{\"memory_id\": \"$memory_id\", \"tags\": $tag_array}" 2>&1 || {
+        echo -e "${RED}Failed to tag memory. Ensure amplifier_memory_enhanced server is active.${NC}" >&2
+        return 1
+    }
+}
+
+codex-memory-related() {
+    local memory_id="${1:-}"
+
+    if [ -z "$memory_id" ]; then
+        echo -e "${YELLOW}Usage: codex-memory-related <memory-id>${NC}"
+        return 1
     fi
-    
-    # Recent logs
-    if [ -f ".codex/logs/session_init.log" ]; then
-        echo -e "${GREEN}Recent Activity:${NC}"
-        echo "  Last session init: $(ls -lh .codex/logs/session_init.log | awk '{print $6, $7, $8}')"
+
+    codex-shortcuts-check || return 1
+
+    echo -e "${BLUE}Finding memories related to: $memory_id${NC}"
+    codex tool amplifier_memory_enhanced.find_related_memories --args "{\"memory_id\": \"$memory_id\"}" 2>&1 || {
+        echo -e "${RED}Failed to find related memories. Ensure amplifier_memory_enhanced server is active.${NC}" >&2
+        return 1
+    }
+}
+
+codex-memory-score() {
+    local memory_id="${1:-}"
+
+    if [ -z "$memory_id" ]; then
+        echo -e "${YELLOW}Usage: codex-memory-score <memory-id>${NC}"
+        return 1
     fi
-    
-    if [ -f ".codex/logs/auto_saves.log" ]; then
-        local last_save=$(tail -n 1 .codex/logs/auto_saves.log | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}' || echo "Never")
-        echo "  Last auto-save: $last_save"
+
+    codex-shortcuts-check || return 1
+
+    echo -e "${BLUE}Scoring quality of memory: $memory_id${NC}"
+    codex tool amplifier_memory_enhanced.score_memory_quality --args "{\"memory_id\": \"$memory_id\"}" 2>&1 || {
+        echo -e "${RED}Failed to score memory. Ensure amplifier_memory_enhanced server is active.${NC}" >&2
+        return 1
+    }
+}
+
+codex-memory-cleanup() {
+    local threshold="${1:-0.3}"
+
+    codex-shortcuts-check || return 1
+
+    echo -e "${BLUE}Cleaning up memories with quality threshold: $threshold${NC}"
+    codex tool amplifier_memory_enhanced.cleanup_memories --args "{\"quality_threshold\": $threshold}" 2>&1 || {
+        echo -e "${RED}Failed to cleanup memories. Ensure amplifier_memory_enhanced server is active.${NC}" >&2
+        return 1
+    }
+}
+
+codex-memory-insights() {
+    codex-shortcuts-check || return 1
+
+    echo -e "${BLUE}Getting memory system insights...${NC}"
+    codex tool amplifier_memory_enhanced.get_memory_insights 2>&1 || {
+        echo -e "${RED}Failed to get memory insights. Ensure amplifier_memory_enhanced server is active.${NC}" >&2
+        return 1
+    }
+}
+
+# Hooks management shortcuts
+codex-hooks-list() {
+    codex-shortcuts-check || return 1
+
+    echo -e "${BLUE}Listing active hooks...${NC}"
+    codex tool amplifier_hooks.list_active_hooks 2>&1 || {
+        echo -e "${RED}Failed to list hooks. Ensure amplifier_hooks server is active.${NC}" >&2
+        return 1
+    }
+}
+
+codex-hooks-trigger() {
+    local hook_id="${1:-}"
+
+    if [ -z "$hook_id" ]; then
+        echo -e "${YELLOW}Usage: codex-hooks-trigger <hook-id>${NC}"
+        return 1
     fi
+
+    codex-shortcuts-check || return 1
+
+    echo -e "${BLUE}Triggering hook: $hook_id${NC}"
+    codex tool amplifier_hooks.trigger_hook_manually --args "{\"hook_id\": \"$hook_id\"}" 2>&1 || {
+        echo -e "${RED}Failed to trigger hook. Ensure amplifier_hooks server is active.${NC}" >&2
+        return 1
+    }
+}
+
+codex-hooks-watch() {
+    local enable="${1:-true}"
+    local patterns="${2:-*.py,*.js,*.ts}"
+    local interval="${3:-5}"
+
+    codex-shortcuts-check || return 1
+
+    if [ "$enable" = "true" ]; then
+        echo -e "${BLUE}Enabling file watching with patterns: $patterns${NC}"
+        # Convert comma-separated patterns to JSON array
+        local pattern_array=$(echo "$patterns" | sed 's/,/","/g' | sed 's/^/["/' | sed 's/$/"]/')
+        codex tool amplifier_hooks.enable_watch_mode --args "{\"file_patterns\": $pattern_array, \"check_interval\": $interval}" 2>&1 || {
+            echo -e "${RED}Failed to enable file watching. Ensure amplifier_hooks server is active.${NC}" >&2
+            return 1
+        }
+    else
+        echo -e "${BLUE}Disabling file watching...${NC}"
+        codex tool amplifier_hooks.disable_watch_mode 2>&1 || {
+            echo -e "${RED}Failed to disable file watching. Ensure amplifier_hooks server is active.${NC}" >&2
+            return 1
+        }
+    fi
+}
+
+codex-hooks-history() {
+    codex-shortcuts-check || return 1
+
+    echo -e "${BLUE}Getting hook execution history...${NC}"
+    codex tool amplifier_hooks.get_hook_history 2>&1 || {
+        echo -e "${RED}Failed to get hook history. Ensure amplifier_hooks server is active.${NC}" >&2
+        return 1
+    }
 }
 
 # Show help
@@ -223,6 +370,25 @@ codex-help() {
     echo "  codex-init [context]           - Initialize session with context"
     echo "  codex-save                     - Save current transcript"
     echo "  codex-status                   - Show session status"
+    echo ""
+    echo -e "${BLUE}Agent Analytics:${NC}"
+    echo "  codex-analytics-stats                      - Get agent execution statistics"
+    echo "  codex-analytics-recommendations <task>     - Get agent recommendations for a task"
+    echo "  codex-analytics-report [format]            - Export analytics report (markdown/json)"
+    echo ""
+    echo -e "${BLUE}Memory Management:${NC}"
+    echo "  codex-memory-suggest [context] [limit]     - Suggest relevant memories"
+    echo "  codex-memory-tag <id> <tags>               - Tag a memory (comma-separated)"
+    echo "  codex-memory-related <id> [limit]          - Find related memories"
+    echo "  codex-memory-score <id>                    - Score memory quality"
+    echo "  codex-memory-cleanup [thresh]              - Cleanup low-quality memories"
+    echo "  codex-memory-insights                      - Get memory system insights"
+    echo ""
+    echo -e "${BLUE}Hooks Management:${NC}"
+    echo "  codex-hooks-list                           - List active hooks"
+    echo "  codex-hooks-trigger <id>                   - Trigger a hook manually"
+    echo "  codex-hooks-watch [true/false] [patterns] [interval] - Enable/disable file watching"
+    echo "  codex-hooks-history [limit]                - Get hook execution history"
     echo ""
     echo -e "${BLUE}Quality & Testing:${NC}"
     echo "  codex-check [files...]         - Run quality checks (default: all files)"
@@ -248,14 +414,14 @@ if [ -n "$BASH_VERSION" ]; then
         local agents="zen-architect bug-hunter test-coverage modular-builder integration-specialist performance-optimizer api-contract-designer"
         COMPREPLY=($(compgen -W "$agents" -- "${COMP_WORDS[1]}"))
     }
-    
+
     complete -F _codex_agent_completion codex-agent
-    
+
     _codex_task_list_completion() {
         local statuses="pending in_progress completed cancelled"
         COMPREPLY=($(compgen -W "$statuses" -- "${COMP_WORDS[1]}"))
     }
-    
+
     complete -F _codex_task_list_completion codex-task-list
 fi
 

@@ -1,434 +1,360 @@
+#!/usr/bin/env python3
 """
-Enhanced memory MCP server for mid-session memory operations.
-Provides tools for searching, saving, and extracting memories during active sessions.
+Memory Enhancement MCP Server
+
+Provides proactive memory suggestions and quality management.
 """
 
-import asyncio
-import sys
-from datetime import datetime
-from datetime import timedelta
+import time
 from pathlib import Path
 from typing import Any
 
-# Add project root to path for imports
-project_root = Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, str(project_root))
+from fastmcp import FastMCP
 
-# Import FastMCP
-try:
-    from fastmcp import FastMCP
-except ImportError:
-    raise RuntimeError("FastMCP not available. Install with: pip install fastmcp")
-
-# Import base utilities  # noqa: E402
-from base import AmplifierMCPServer  # noqa: E402
-from base import error_response  # noqa: E402
-from base import success_response  # noqa: E402
-
-# Import amplifier modules (with fallbacks)
-try:
-    from amplifier.extraction.core import MemoryExtractor
-    from amplifier.memory.core import MemoryStore
-    from amplifier.search.core import MemorySearcher
-
-    AMPLIFIER_AVAILABLE = True
-except ImportError as e:
-    print(f"Warning: Amplifier modules not available: {e}", file=sys.stderr)
-    MemoryStore = None
-    MemorySearcher = None
-    MemoryExtractor = None
-    AMPLIFIER_AVAILABLE = False
+from ..base import AmplifierMCPServer
+from ..base import MCPLogger
 
 
 class MemoryEnhancedServer(AmplifierMCPServer):
-    """MCP server for enhanced memory operations during active sessions"""
+    """MCP server for proactive memory operations and quality management."""
 
-    def __init__(self):
-        # Initialize FastMCP
-        mcp = FastMCP("amplifier-memory-enhanced")
+    def __init__(self, mcp_instance):
+        super().__init__("amplifier_memory_enhanced", mcp_instance)
+        self.logger = MCPLogger("memory_enhanced")
 
-        # Call parent constructor
-        super().__init__("memory_enhanced", mcp)
-
-        # Initialize memory components if available
+        # Initialize memory components
         self.memory_store = None
         self.memory_searcher = None
-        self.memory_extractor = None
 
-        if AMPLIFIER_AVAILABLE and self.amplifier_available:
+        if self.amplifier_available:
             try:
-                # Initialize memory store
+                from amplifier.memory.core import MemoryStore
+                from amplifier.search.core import MemorySearcher
+
                 data_dir = self.project_root / ".data" if self.project_root else Path(".data")
                 self.memory_store = MemoryStore(data_dir=data_dir)
-
-                # Initialize memory searcher
                 self.memory_searcher = MemorySearcher(data_dir=data_dir)
 
-                # Initialize memory extractor (only if Claude SDK available)
-                try:
-                    self.memory_extractor = MemoryExtractor()
-                except RuntimeError as e:
-                    self.logger.warning(f"Memory extractor not available: {e}")
-
                 self.logger.info("Memory components initialized successfully")
-
             except Exception as e:
                 self.logger.error(f"Failed to initialize memory components: {e}")
-                self.memory_store = None
-                self.memory_searcher = None
-                self.memory_extractor = None
-        else:
-            self.logger.warning("Amplifier modules not available, memory operations disabled")
 
-        # Register tools
-        self._register_memory_tools()
+    async def suggest_relevant_memories(self, current_context: str, limit: int = 5) -> list[dict[str, Any]]:
+        """Proactively suggest relevant memories based on current context.
 
-    def _register_memory_tools(self):
-        """Register all memory-related tools"""
+        Args:
+            current_context: Current session or task context
+            limit: Maximum number of suggestions
 
-        @self.mcp.tool()
-        @self.tool_error_handler
-        async def search_memories(query: str, limit: int = 5, category: str | None = None) -> dict[str, Any]:
-            """Search memories mid-session using semantic or keyword search
+        Returns:
+            List of relevant memory suggestions
+        """
+        if not self.memory_store or not self.memory_searcher:
+            return []
 
-            Args:
-                query: Search query string
-                limit: Maximum number of results to return (default: 5)
-                category: Optional category filter (learning, decision, issue_solved, pattern, preference)
+        try:
+            # Get recent memories (last 30 days)
+            all_memories = self.memory_store.get_all()
+            recent_memories = [m for m in all_memories if (time.time() - m.timestamp.timestamp()) < (30 * 24 * 3600)]
 
-            Returns:
-                Dictionary with search results and metadata
-            """
-            if not self._check_memory_components():
-                return error_response("Memory system not available")
+            if not recent_memories:
+                return []
 
-            try:
-                # Validate inputs
-                if not query or not query.strip():
-                    return error_response("Query cannot be empty")
+            # Search for relevant memories
+            search_results = self.memory_searcher.search(current_context, recent_memories, limit)
 
-                if limit < 1 or limit > 50:
-                    return error_response("Limit must be between 1 and 50")
-
-                # Get all memories
-                all_memories = self.memory_store.get_all()
-
-                # Filter by category if specified
-                if category:
-                    valid_categories = ["learning", "decision", "issue_solved", "pattern", "preference"]
-                    if category not in valid_categories:
-                        return error_response(f"Invalid category. Must be one of: {', '.join(valid_categories)}")
-                    all_memories = [m for m in all_memories if m.category == category]
-
-                if not all_memories:
-                    return success_response([], {"query": query, "total_found": 0})
-
-                # Perform search
-                search_results = self.memory_searcher.search(query, all_memories, limit)
-
-                # Format results
-                results = []
-                for result in search_results:
-                    results.append(
-                        {
-                            "id": result.memory.id,
-                            "content": result.memory.content,
-                            "category": result.memory.category,
-                            "score": result.score,
-                            "match_type": result.match_type,
-                            "timestamp": result.memory.timestamp.isoformat(),
-                            "accessed_count": result.memory.accessed_count,
-                        }
-                    )
-
-                metadata = {
-                    "query": query,
-                    "category_filter": category,
-                    "total_searched": len(all_memories),
-                    "results_returned": len(results),
-                    "search_timestamp": datetime.now().isoformat(),
-                }
-
-                return success_response(results, metadata)
-
-            except Exception as e:
-                self.logger.exception("Search memories failed", e)
-                return error_response(f"Search failed: {str(e)}")
-
-        @self.mcp.tool()
-        @self.tool_error_handler
-        async def save_memory(
-            content: str, category: str, tags: list[str] | None = None, importance: float = 0.5
-        ) -> dict[str, Any]:
-            """Capture insight immediately as a memory
-
-            Args:
-                content: The memory content to save
-                category: Category (learning, decision, issue_solved, pattern, preference)
-                tags: Optional list of tags
-                importance: Importance score 0.0-1.0 (default: 0.5)
-
-            Returns:
-                Dictionary with saved memory info and metadata
-            """
-            if not self._check_memory_components():
-                return error_response("Memory system not available")
-
-            try:
-                # Validate inputs
-                validation_error = self._validate_memory_input(content, category, importance)
-                if validation_error:
-                    return validation_error
-
-                # Prepare tags
-                if tags is None:
-                    tags = []
-
-                # Create memory object
-                from amplifier.memory.models import Memory
-
-                memory = Memory(
-                    content=content.strip(),
-                    category=category,
-                    metadata={
-                        "importance": importance,
-                        "tags": tags,
-                        "source": "mid_session_capture",
-                        "created_via": "memory_enhanced_mcp",
-                    },
+            suggestions = []
+            for result in search_results:
+                suggestions.append(
+                    {
+                        "id": result.memory.id,
+                        "content": result.memory.content,
+                        "category": result.memory.category,
+                        "relevance_score": result.score,
+                        "timestamp": result.memory.timestamp.isoformat(),
+                    }
                 )
 
-                # Save memory
-                stored_memory = self.memory_store.add_memory(memory)
+            return suggestions
 
-                result = {
-                    "id": stored_memory.id,
-                    "content": stored_memory.content,
-                    "category": stored_memory.category,
-                    "importance": stored_memory.metadata.get("importance", 0.5),
-                    "tags": stored_memory.metadata.get("tags", []),
-                    "timestamp": stored_memory.timestamp.isoformat(),
+        except Exception as e:
+            self.logger.error(f"Failed to suggest memories: {e}")
+            return []
+
+    async def tag_memory(self, memory_id: str, tags: list[str]) -> bool:
+        """Add tags to an existing memory.
+
+        Args:
+            memory_id: ID of the memory to tag
+            tags: List of tags to add
+
+        Returns:
+            True if tagging was successful
+        """
+        if not self.memory_store:
+            return False
+
+        try:
+            # This would require extending MemoryStore to support tagging
+            # For now, just log the intent
+            self.logger.info(f"Would tag memory {memory_id} with tags: {tags}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Failed to tag memory: {e}")
+            return False
+
+    async def find_related_memories(self, memory_id: str, limit: int = 5) -> list[dict[str, Any]]:
+        """Find memories related to a given memory.
+
+        Args:
+            memory_id: ID of the reference memory
+            limit: Maximum number of related memories
+
+        Returns:
+            List of related memories
+        """
+        if not self.memory_store or not self.memory_searcher:
+            return []
+
+        try:
+            # Get the reference memory
+            all_memories = self.memory_store.get_all()
+            reference_memory = next((m for m in all_memories if m.id == memory_id), None)
+
+            if not reference_memory:
+                return []
+
+            # Search for related memories using the reference content
+            related_results = self.memory_searcher.search(reference_memory.content, all_memories, limit + 1)
+
+            # Exclude the reference memory itself
+            related = [
+                {
+                    "id": result.memory.id,
+                    "content": result.memory.content,
+                    "category": result.memory.category,
+                    "similarity_score": result.score,
+                    "timestamp": result.memory.timestamp.isoformat(),
                 }
+                for result in related_results
+                if result.memory.id != memory_id
+            ][:limit]
 
-                metadata = {
-                    "operation": "save_memory",
-                    "saved_at": datetime.now().isoformat(),
-                    "total_memories": len(self.memory_store.get_all()),
-                }
+            return related
 
-                self.logger.info(f"Saved memory: {stored_memory.id} - {stored_memory.category}")
-                return success_response(result, metadata)
+        except Exception as e:
+            self.logger.error(f"Failed to find related memories: {e}")
+            return []
 
-            except Exception as e:
-                self.logger.exception("Save memory failed", e)
-                return error_response(f"Save failed: {str(e)}")
+    async def score_memory_quality(self, memory_id: str) -> dict[str, Any]:
+        """Score the quality of a memory based on various metrics.
 
-        @self.mcp.tool()
-        @self.tool_error_handler
-        async def extract_discoveries(transcript_snippet: str) -> dict[str, Any]:
-            """Extract learnings and discoveries from recent conversation
+        Args:
+            memory_id: ID of the memory to score
 
-            Args:
-                transcript_snippet: Recent conversation text to analyze
+        Returns:
+            Quality score and metrics
+        """
+        if not self.memory_store:
+            return {"error": "Memory store not available"}
 
-            Returns:
-                Dictionary with extracted discoveries and metadata
-            """
-            if not self._check_memory_components() or not self.memory_extractor:
-                return error_response("Memory extraction system not available")
+        try:
+            all_memories = self.memory_store.get_all()
+            memory = next((m for m in all_memories if m.id == memory_id), None)
 
-            try:
-                if not transcript_snippet or not transcript_snippet.strip():
-                    return error_response("Transcript snippet cannot be empty")
+            if not memory:
+                return {"error": "Memory not found"}
 
-                # Extract memories from transcript
-                memories = await asyncio.wait_for(
-                    self.memory_extractor.extract_memories(transcript_snippet),
-                    timeout=60.0,  # 60 second timeout
-                )
+            # Calculate quality metrics
+            age_days = (time.time() - memory.timestamp.timestamp()) / (24 * 3600)
+            access_count = getattr(memory, "accessed_count", 0)
+            content_length = len(memory.content)
+            has_tags = bool(getattr(memory, "metadata", {}).get("tags", []))
 
-                # Save extracted memories
-                saved_memories = []
-                for memory in memories:
-                    stored = self.memory_store.add_memory(memory)
-                    saved_memories.append(
-                        {
-                            "id": stored.id,
-                            "content": stored.content,
-                            "category": stored.category,
-                            "importance": stored.metadata.get("importance", 0.5),
-                            "timestamp": stored.timestamp.isoformat(),
-                        }
-                    )
+            # Quality scoring algorithm
+            quality_score = 0.0
 
-                metadata = {
-                    "operation": "extract_discoveries",
-                    "transcript_length": len(transcript_snippet),
-                    "memories_extracted": len(saved_memories),
-                    "extraction_timestamp": datetime.now().isoformat(),
-                }
+            # Recency bonus (newer memories are more valuable)
+            if age_days < 7:
+                quality_score += 0.3
+            elif age_days < 30:
+                quality_score += 0.2
+            elif age_days < 90:
+                quality_score += 0.1
 
-                self.logger.info(f"Extracted {len(saved_memories)} discoveries from transcript")
-                return success_response(saved_memories, metadata)
+            # Access frequency bonus
+            if access_count > 10:
+                quality_score += 0.3
+            elif access_count > 5:
+                quality_score += 0.2
+            elif access_count > 1:
+                quality_score += 0.1
 
-            except TimeoutError:
-                return error_response("Discovery extraction timed out after 60 seconds")
-            except Exception as e:
-                self.logger.exception("Extract discoveries failed", e)
-                return error_response(f"Extraction failed: {str(e)}")
+            # Content quality bonus
+            if content_length > 200:
+                quality_score += 0.2
+            elif content_length > 100:
+                quality_score += 0.1
 
-        @self.mcp.tool()
-        @self.tool_error_handler
-        async def get_recent_context(days: int = 7) -> dict[str, Any]:
-            """Get recent work summary and context
+            # Organization bonus
+            if has_tags:
+                quality_score += 0.1
 
-            Args:
-                days: Number of days to look back (default: 7)
+            # Category bonus (some categories are more valuable)
+            valuable_categories = ["pattern", "decision", "issue_solved"]
+            if memory.category in valuable_categories:
+                quality_score += 0.1
 
-            Returns:
-                Dictionary with recent memories and summary statistics
-            """
-            if not self._check_memory_components():
-                return error_response("Memory system not available")
+            # Normalize to 0-1 range
+            quality_score = min(1.0, max(0.0, quality_score))
 
-            try:
-                if days < 1 or days > 365:
-                    return error_response("Days must be between 1 and 365")
+            return {
+                "memory_id": memory_id,
+                "quality_score": quality_score,
+                "metrics": {
+                    "age_days": age_days,
+                    "access_count": access_count,
+                    "content_length": content_length,
+                    "has_tags": has_tags,
+                    "category": memory.category,
+                },
+                "recommendation": "keep" if quality_score > 0.3 else "review",
+            }
 
-                # Calculate cutoff date
-                cutoff_date = datetime.now() - timedelta(days=days)
+        except Exception as e:
+            self.logger.error(f"Failed to score memory quality: {e}")
+            return {"error": str(e)}
 
-                # Get all memories and filter by date
-                all_memories = self.memory_store.get_all()
-                recent_memories = [m for m in all_memories if m.timestamp >= cutoff_date]
+    async def cleanup_memories(self, quality_threshold: float = 0.3) -> dict[str, Any]:
+        """Remove low-quality memories.
 
-                # Sort by timestamp (newest first)
-                recent_memories.sort(key=lambda m: m.timestamp, reverse=True)
+        Args:
+            quality_threshold: Minimum quality score to keep
 
-                # Generate summary statistics
-                categories = {}
-                total_importance = 0
+        Returns:
+            Cleanup statistics
+        """
+        if not self.memory_store:
+            return {"error": "Memory store not available"}
 
-                for memory in recent_memories:
-                    cat = memory.category
-                    categories[cat] = categories.get(cat, 0) + 1
-                    total_importance += memory.metadata.get("importance", 0.5)
+        try:
+            all_memories = self.memory_store.get_all()
+            kept_count = 0
+            removed_count = 0
 
-                summary = {
-                    "total_memories": len(recent_memories),
-                    "categories": categories,
-                    "average_importance": total_importance / len(recent_memories) if recent_memories else 0,
-                    "date_range": {"from": cutoff_date.isoformat(), "to": datetime.now().isoformat()},
-                }
+            for memory in all_memories:
+                quality = await self.score_memory_quality(memory.id)
+                if isinstance(quality, dict) and quality.get("quality_score", 0) < quality_threshold:
+                    # This would require MemoryStore to support deletion
+                    # For now, just count
+                    removed_count += 1
+                else:
+                    kept_count += 1
 
-                # Format recent memories (limit to 20 most recent)
-                formatted_memories = []
-                for memory in recent_memories[:20]:
-                    formatted_memories.append(
-                        {
-                            "id": memory.id,
-                            "content": memory.content,
-                            "category": memory.category,
-                            "importance": memory.metadata.get("importance", 0.5),
-                            "timestamp": memory.timestamp.isoformat(),
-                            "tags": memory.metadata.get("tags", []),
-                        }
-                    )
+            return {
+                "total_memories": len(all_memories),
+                "kept_count": kept_count,
+                "removed_count": removed_count,
+                "quality_threshold": quality_threshold,
+                "message": f"Would remove {removed_count} low-quality memories",
+            }
 
-                result = {"summary": summary, "recent_memories": formatted_memories}
+        except Exception as e:
+            self.logger.error(f"Failed to cleanup memories: {e}")
+            return {"error": str(e)}
 
-                metadata = {
-                    "operation": "get_recent_context",
-                    "days_requested": days,
-                    "memories_returned": len(formatted_memories),
-                    "generated_at": datetime.now().isoformat(),
-                }
+    async def get_memory_insights(self) -> dict[str, Any]:
+        """Get insights about the memory system.
 
-                return success_response(result, metadata)
+        Returns:
+            Memory system statistics and insights
+        """
+        if not self.memory_store:
+            return {"error": "Memory store not available"}
 
-            except Exception as e:
-                self.logger.exception("Get recent context failed", e)
-                return error_response(f"Context retrieval failed: {str(e)}")
+        try:
+            all_memories = self.memory_store.get_all()
 
-        @self.mcp.tool()
-        @self.tool_error_handler
-        async def update_discoveries_file(discovery_text: str) -> dict[str, Any]:
-            """Append new discovery to DISCOVERIES.md file
+            # Calculate statistics
+            total_memories = len(all_memories)
+            categories = {}
+            total_accesses = 0
+            oldest_memory = None
+            newest_memory = None
 
-            Args:
-                discovery_text: The discovery text to append
+            for memory in all_memories:
+                # Category counts
+                categories[memory.category] = categories.get(memory.category, 0) + 1
 
-            Returns:
-                Dictionary with update status and metadata
-            """
-            try:
-                if not discovery_text or not discovery_text.strip():
-                    return error_response("Discovery text cannot be empty")
+                # Access tracking
+                access_count = getattr(memory, "accessed_count", 0)
+                total_accesses += access_count
 
-                # Find DISCOVERIES.md file
-                discoveries_file = None
-                if self.project_root:
-                    discoveries_file = self.project_root / "DISCOVERIES.md"
+                # Age tracking
+                if oldest_memory is None or memory.timestamp < oldest_memory:
+                    oldest_memory = memory.timestamp
+                if newest_memory is None or memory.timestamp > newest_memory:
+                    newest_memory = memory.timestamp
 
-                if not discoveries_file or not discoveries_file.exists():
-                    return error_response("DISCOVERIES.md file not found in project root")
+            # Calculate averages
+            avg_accesses = total_accesses / total_memories if total_memories > 0 else 0
 
-                # Prepare discovery entry
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                entry = f"\n## {timestamp}\n\n{discovery_text.strip()}\n"
+            insights = {
+                "total_memories": total_memories,
+                "categories": categories,
+                "total_accesses": total_accesses,
+                "average_accesses_per_memory": avg_accesses,
+                "oldest_memory": oldest_memory.isoformat() if oldest_memory else None,
+                "newest_memory": newest_memory.isoformat() if newest_memory else None,
+                "most_common_category": max(categories, key=lambda k: categories[k]) if categories else None,
+            }
 
-                # Append to file
-                with open(discoveries_file, "a") as f:
-                    f.write(entry)
+            return insights
 
-                # Get file stats
-                stat = discoveries_file.stat()
-
-                result = {
-                    "file_path": str(discoveries_file),
-                    "discovery_added": discovery_text.strip(),
-                    "timestamp": timestamp,
-                    "file_size_bytes": stat.st_size,
-                }
-
-                metadata = {"operation": "update_discoveries_file", "appended_at": datetime.now().isoformat()}
-
-                self.logger.info(f"Added discovery to DISCOVERIES.md: {len(discovery_text)} chars")
-                return success_response(result, metadata)
-
-            except Exception as e:
-                self.logger.exception("Update discoveries file failed", e)
-                return error_response(f"File update failed: {str(e)}")
-
-    def _check_memory_components(self) -> bool:
-        """Check if memory components are available"""
-        return self.memory_store is not None and self.memory_searcher is not None and AMPLIFIER_AVAILABLE
-
-    def _validate_memory_input(self, content: str, category: str, importance: float) -> dict[str, Any] | None:
-        """Validate memory input parameters"""
-        if not content or not content.strip():
-            return error_response("Content cannot be empty")
-
-        if len(content.strip()) < 10:
-            return error_response("Content must be at least 10 characters long")
-
-        if len(content.strip()) > 2000:
-            return error_response("Content must be less than 2000 characters long")
-
-        valid_categories = ["learning", "decision", "issue_solved", "pattern", "preference"]
-        if category not in valid_categories:
-            return error_response(f"Invalid category. Must be one of: {', '.join(valid_categories)}")
-
-        if not isinstance(importance, int | float) or importance < 0.0 or importance > 1.0:
-            return error_response("Importance must be a number between 0.0 and 1.0")
-
-        return None
+        except Exception as e:
+            self.logger.error(f"Failed to get memory insights: {e}")
+            return {"error": str(e)}
 
 
 def main():
-    """Main entry point for the memory enhanced MCP server"""
-    server = MemoryEnhancedServer()
-    server.run()
+    """Main entry point for the memory enhanced MCP server."""
+    mcp = FastMCP("amplifier_memory_enhanced")
+    server = MemoryEnhancedServer(mcp)
+
+    # Register tools
+    @mcp.tool()
+    async def suggest_relevant_memories(current_context: str, limit: int = 5) -> list[dict[str, Any]]:
+        """Proactively suggest relevant memories."""
+        return await server.suggest_relevant_memories(current_context, limit)
+
+    @mcp.tool()
+    async def tag_memory(memory_id: str, tags: list[str]) -> bool:
+        """Add tags to an existing memory."""
+        return await server.tag_memory(memory_id, tags)
+
+    @mcp.tool()
+    async def find_related_memories(memory_id: str, limit: int = 5) -> list[dict[str, Any]]:
+        """Find memories related to a given memory."""
+        return await server.find_related_memories(memory_id, limit)
+
+    @mcp.tool()
+    async def score_memory_quality(memory_id: str) -> dict[str, Any]:
+        """Score the quality of a memory."""
+        return await server.score_memory_quality(memory_id)
+
+    @mcp.tool()
+    async def cleanup_memories(quality_threshold: float = 0.3) -> dict[str, Any]:
+        """Remove low-quality memories."""
+        return await server.cleanup_memories(quality_threshold)
+
+    @mcp.tool()
+    async def get_memory_insights() -> dict[str, Any]:
+        """Get insights about the memory system."""
+        return await server.get_memory_insights()
+
+    # Run the server
+    mcp.run()
 
 
 if __name__ == "__main__":

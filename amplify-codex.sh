@@ -14,28 +14,64 @@
 
 set -e
 
-# Colors for output
+# Source amplify.sh for print_* helper functions
+source ./amplify.sh
+
+# Colors for output (amplify.sh already defines these, but keeping for safety)
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Function to print colored output
-print_status() {
-    echo -e "${BLUE}[Amplifier-Codex]${NC} $1"
+# Function to send notifications
+send_notification() {
+    local title="$1"
+    local message="$2"
+
+    if [ "$NOTIFICATIONS" = false ]; then
+        return
+    fi
+
+    # Try different notification systems
+    if command -v notify-send &> /dev/null; then
+        # Linux notify-send
+        notify-send "$title" "$message" 2>/dev/null || true
+    elif command -v osascript &> /dev/null; then
+        # macOS notification
+        osascript -e "display notification \"$message\" with title \"$title\"" 2>/dev/null || true
+    elif command -v terminal-notifier &> /dev/null; then
+        # macOS terminal-notifier
+        terminal-notifier -title "$title" -message "$message" 2>/dev/null || true
+    fi
+
+    # Also log to console
+    print_status "Notification: $title - $message"
 }
 
-print_success() {
-    echo -e "${GREEN}[Amplifier-Codex]${NC} $1"
+# Function to send session start notification
+notify_session_start() {
+    local profile="$1"
+    local resume_id="$2"
+
+    if [ -n "$resume_id" ]; then
+        send_notification "Codex Session Resumed" "Resuming session $resume_id with profile: $profile"
+    else
+        send_notification "Codex Session Started" "Starting new session with profile: $profile"
+    fi
 }
 
-print_warning() {
-    echo -e "${YELLOW}[Amplifier-Codex]${NC} $1"
-}
+# Function to send session end notification
+notify_session_end() {
+    local exit_code="$1"
+    local modified_files="$2"
 
-print_error() {
-    echo -e "${RED}[Amplifier-Codex]${NC} $1"
+    if [ "$exit_code" -eq 0 ]; then
+        local file_count=$(echo "$modified_files" | wc -l | tr -d ' ')
+        send_notification "Codex Session Completed" "Session finished successfully. $file_count files modified."
+    else
+        send_notification "Codex Session Ended" "Session exited with code $exit_code"
+    fi
 }
 
 # Default values
@@ -47,6 +83,9 @@ CHECK_ONLY=false
 LIST_PROMPTS=false
 AUTO_CHECKS=true
 AUTO_SAVE=true
+SESSION_RESUME=""
+NOTIFICATIONS=true
+SMART_CONTEXT=true
 PROMPT_COUNT=0
 
 # Parse command-line arguments
@@ -56,12 +95,24 @@ while [[ $# -gt 0 ]]; do
             PROFILE="$2"
             shift 2
             ;;
+        --resume)
+            SESSION_RESUME="$2"
+            shift 2
+            ;;
         --no-init)
             SKIP_INIT=true
             shift
             ;;
         --no-cleanup)
             SKIP_CLEANUP=true
+            shift
+            ;;
+        --no-notifications)
+            NOTIFICATIONS=false
+            shift
+            ;;
+        --no-smart-context)
+            SMART_CONTEXT=false
             shift
             ;;
         --no-auto-checks)
@@ -98,21 +149,24 @@ if [ "$SHOW_HELP" = true ]; then
     echo "Usage: $0 [options] [codex-options]"
     echo ""
     echo "Options:"
-    echo "  --profile <name>    Select Codex profile (development, ci, review) [default: development]"
-    echo "  --no-init           Skip pre-session initialization"
-    echo "  --no-cleanup        Skip post-session cleanup"
-    echo "  --no-auto-checks    Disable automatic quality checks after session"
-    echo "  --no-auto-save      Disable periodic transcript auto-saves"
-    echo "  --check-only        Run prerequisite checks and exit (no Codex launch)"
-    echo "  --list-prompts      List available custom prompts and exit"
-    echo "  --help              Show this help message"
+    echo "  --profile <name>       Select Codex profile (development, ci, review) [default: development]"
+    echo "  --resume <session-id>  Resume a previous session by ID"
+    echo "  --no-init              Skip pre-session initialization"
+    echo "  --no-cleanup           Skip post-session cleanup"
+    echo "  --no-notifications     Disable session notifications"
+    echo "  --no-smart-context     Disable smart context detection"
+    echo "  --no-auto-checks       Disable automatic quality checks after session"
+    echo "  --no-auto-save         Disable periodic transcript auto-saves"
+    echo "  --check-only           Run prerequisite checks and exit (no Codex launch)"
+    echo "  --list-prompts         List available custom prompts and exit"
+    echo "  --help                 Show this help message"
     echo ""
     echo "All other arguments are passed through to Codex CLI."
     echo ""
     echo "The script automatically manages Codex configuration by copying .codex/config.toml to ~/.codex/config.toml."
     echo ""
     echo "Environment Variables:"
-    echo "  CODEX_PROFILE       Override default profile"
+    echo "  CODEX_PROFILE          Override default profile"
     echo "  MEMORY_SYSTEM_ENABLED  Enable/disable memory system [default: true]"
     exit 0
 fi
@@ -353,21 +407,58 @@ if [ "$SKIP_INIT" = false ]; then
     mkdir -p .codex/logs
 
     # Smart context detection
-    export GIT_BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
-    export RECENT_COMMITS=$(git log --oneline -5 2>/dev/null | tr '\n' '|' | sed 's/|$//' || echo "none")
-    export TODO_FILES=$(find . -name "*.py" -type f -exec grep -l "TODO\|FIXME\|XXX" {} \; 2>/dev/null | head -5 | tr '\n' ' ' || echo "none")
+    if [ "$SMART_CONTEXT" = true ]; then
+        print_status "Performing smart context detection..."
+
+        export GIT_BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
+        export RECENT_COMMITS=$(git log --oneline -5 2>/dev/null | tr '\n' '|' | sed 's/|$//' || echo "none")
+        export TODO_FILES=$(find . -name "*.py" -type f -exec grep -l "TODO\|FIXME\|XXX" {} \; 2>/dev/null | head -5 | tr '\n' ' ' || echo "none")
+
+        # Detect project type and technologies
+        if [ -f "pyproject.toml" ]; then
+            export PROJECT_TYPE="python"
+            export DEPENDENCIES=$(grep -E "^\s*[\"'][^\"']*[\"']\s*=" pyproject.toml | head -10 | tr '\n' '|' | sed 's/|$//' || echo "none")
+        elif [ -f "package.json" ]; then
+            export PROJECT_TYPE="javascript"
+            export DEPENDENCIES=$(grep -A 10 '"dependencies"' package.json | grep -E '"[^"]*":' | head -10 | tr '\n' '|' | sed 's/|$//' || echo "none")
+        else
+            export PROJECT_TYPE="unknown"
+            export DEPENDENCIES="none"
+        fi
+
+        # Detect recent file changes
+        export RECENT_CHANGES=$(find . -name "*.py" -o -name "*.js" -o -name "*.ts" -o -name "*.md" | head -10 | xargs ls -lt 2>/dev/null | head -5 | awk '{print $9}' | tr '\n' ' ' || echo "none")
+
+        print_success "Smart context detection completed"
+    fi
+
+    # Session resume logic
+    if [ -n "$SESSION_RESUME" ]; then
+        print_status "Resuming session: $SESSION_RESUME"
+
+        # Run session resume script
+        if uv run python .codex/tools/session_resume.py --session-id "$SESSION_RESUME" 2>&1 | tee .codex/logs/session_resume.log; then
+            RESUME_SUMMARY=$(tail -n 1 .codex/logs/session_resume.log | grep -o "Resumed session" || echo "Session resumed")
+            print_success "$RESUME_SUMMARY"
+        else
+            print_warning "Session resume failed, falling back to normal initialization"
+            SESSION_RESUME=""  # Clear to prevent confusion
+        fi
+    fi
 
     # Create session start marker for file tracking
     touch .codex/session_start_marker
 
-    # Run initialization script
-    if uv run python .codex/tools/session_init.py 2>&1 | tee .codex/logs/session_init.log; then
-        # Extract summary from output (assuming it prints something like "Loaded X memories")
-        SUMMARY=$(tail -n 1 .codex/logs/session_init.log | grep -o "Loaded [0-9]* memories" || echo "Initialization completed")
-        print_success "$SUMMARY"
-    else
-        print_warning "Pre-session initialization failed, continuing anyway"
-        print_warning "Check .codex/logs/session_init.log for details"
+    # Run initialization script (skip if resuming)
+    if [ -z "$SESSION_RESUME" ]; then
+        if uv run python .codex/tools/session_init.py 2>&1 | tee .codex/logs/session_init.log; then
+            # Extract summary from output (assuming it prints something like "Loaded X memories")
+            SUMMARY=$(tail -n 1 .codex/logs/session_init.log | grep -o "Loaded [0-9]* memories" || echo "Initialization completed")
+            print_success "$SUMMARY"
+        else
+            print_warning "Pre-session initialization failed, continuing anyway"
+            print_warning "Check .codex/logs/session_init.log for details"
+        fi
     fi
 else
     print_status "Skipping pre-session initialization (--no-init)"
@@ -427,7 +518,12 @@ echo -e "${BLUE}║${NC}  ${YELLOW}• Ctrl+C${NC} - Exit session gracefully    
 echo -e "${BLUE}║${NC}                                                                ${BLUE}║${NC}"
 echo -e "${BLUE}║${NC}  ${YELLOW}Session Statistics:${NC}                                          ${BLUE}║${NC}"
 echo -e "${BLUE}║${NC}  ${YELLOW}• Profile:${NC} $PROFILE                                           ${BLUE}║${NC}"
+if [ -n "$SESSION_RESUME" ]; then
+    echo -e "${BLUE}║${NC}  ${YELLOW}• Resumed Session:${NC} $SESSION_RESUME                          ${BLUE}║${NC}"
+fi
 echo -e "${BLUE}║${NC}  ${YELLOW}• Memory System:${NC} ${MEMORY_SYSTEM_ENABLED}                     ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}  ${YELLOW}• Smart Context:${NC} ${SMART_CONTEXT}                             ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}  ${YELLOW}• Notifications:${NC} ${NOTIFICATIONS}                             ${BLUE}║${NC}"
 echo -e "${BLUE}║${NC}  ${YELLOW}• Auto-save:${NC} ${AUTO_SAVE}                                   ${BLUE}║${NC}"
 echo -e "${BLUE}║${NC}  ${YELLOW}• Auto-checks:${NC} ${AUTO_CHECKS}                               ${BLUE}║${NC}"
 echo -e "${BLUE}║${NC}                                                                ${BLUE}║${NC}"
@@ -440,6 +536,9 @@ echo -e "${BLUE}║${NC}                                                        
 echo -e "${BLUE}║${NC}  ${YELLOW}Press Ctrl+C to exit${NC}                                          ${BLUE}║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}"
 echo ""
+
+# Send session start notification
+notify_session_start "$PROFILE" "$SESSION_RESUME"
 
 # Codex Execution
 print_status "Starting Codex CLI..."
@@ -526,6 +625,9 @@ echo ""
 
 # Clean up session marker
 rm -f .codex/session_start_marker
+
+# Send session end notification
+notify_session_end "$CODEX_EXIT_CODE" "$MODIFIED_FILES"
 
 # Exit Handling
 if [ $CODEX_EXIT_CODE -eq 0 ]; then

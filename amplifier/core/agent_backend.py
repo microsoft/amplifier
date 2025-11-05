@@ -176,7 +176,7 @@ class ClaudeCodeAgentBackend(AgentBackend):
                 # on the specific ClaudeSDKClient API
                 response = await client.query(task)
                 return response.get("content", "")
-        except (asyncio.TimeoutError, TimeoutError):
+        except TimeoutError:
             raise AgentTimeoutError("Agent execution timed out after 5 minutes")
 
     def _load_agent_definition(self, agent_name: str) -> AgentDefinition | None:

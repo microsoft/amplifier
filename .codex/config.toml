@@ -117,12 +117,41 @@ env = { AMPLIFIER_ROOT = "/Users/aleksandarilic/Documents/github/acailic/improve
 timeout = 60
 # Purpose: Provide web search and content fetching capabilities within Codex sessions
 
-# TODO: Knowledge Integration MCP Server will be added in a later phase
-# [mcp_servers.amplifier_knowledge]
-# command = "uv"
-# args = ["run", "python", ".codex/mcp_servers/knowledge_integration/server.py"]
-# env = { AMPLIFIER_ROOT = "." }
-# Purpose: Interface with amplifier's knowledge synthesis and memory systems
+# Notifications MCP Server
+# Provides: Desktop notifications for task completion and errors
+[mcp_servers.amplifier_notifications]
+command = "uv"
+args = ["run", "--directory", "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", "python", ".codex/mcp_servers/notifications/server.py"]
+env = { AMPLIFIER_ROOT = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", PYTHONPATH = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex" }
+timeout = 30
+# Purpose: Send desktop notifications for task completion, errors, and important events
+
+# Hooks Orchestration MCP Server
+# Provides: Automatic triggers for file changes, session events, periodic tasks
+[mcp_servers.amplifier_hooks]
+command = "uv"
+args = ["run", "--directory", "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", "python", ".codex/mcp_servers/hooks/server.py"]
+env = { AMPLIFIER_ROOT = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", PYTHONPATH = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex" }
+timeout = 60
+# Purpose: Orchestrate automatic hooks for file changes, session events, and periodic tasks
+
+# Agent Analytics MCP Server
+# Provides: Tracking and analysis of agent usage patterns
+[mcp_servers.amplifier_agent_analytics]
+command = "uv"
+args = ["run", "--directory", "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", "python", ".codex/mcp_servers/agent_analytics/server.py"]
+env = { AMPLIFIER_ROOT = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", PYTHONPATH = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex" }
+timeout = 30
+# Purpose: Track agent executions, provide usage statistics and recommendations
+
+# Memory Enhancement MCP Server
+# Provides: Proactive memory suggestions and quality management
+[mcp_servers.amplifier_memory_enhanced]
+command = "uv"
+args = ["run", "--directory", "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", "python", ".codex/mcp_servers/memory_enhanced/server.py"]
+env = { AMPLIFIER_ROOT = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", PYTHONPATH = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex" }
+timeout = 30
+# Purpose: Provide proactive memory suggestions and manage memory quality
 
 # =============================================================================
 # Profiles Section - Configure which servers to use per profile
@@ -134,7 +163,7 @@ timeout = 60
 # sandbox_mode = "workspace-write"  # PLACEHOLDER: Verify with Codex CLI docs
 tool_timeout_sec = 600
 # All MCP servers enabled for full development experience
-mcp_servers = ["amplifier_session", "amplifier_quality", "amplifier_transcripts", "amplifier_tasks", "amplifier_web"]
+mcp_servers = ["amplifier_session", "amplifier_quality", "amplifier_transcripts", "amplifier_tasks", "amplifier_web", "amplifier_notifications", "amplifier_hooks", "amplifier_agent_analytics", "amplifier_memory_enhanced"]
 
 # CI profile - restrictive settings for automated environments
 [profiles.ci]
@@ -150,7 +179,7 @@ mcp_servers = ["amplifier_quality"]
 # sandbox_mode = "workspace-write"  # PLACEHOLDER: Verify with Codex CLI docs
 tool_timeout_sec = 300
 # Quality checks, transcript export, and task tracking for code review workflows
-mcp_servers = ["amplifier_quality", "amplifier_transcripts", "amplifier_tasks"]
+mcp_servers = ["amplifier_quality", "amplifier_transcripts", "amplifier_tasks", "amplifier_agent_analytics", "amplifier_memory_enhanced"]
 
 # =============================================================================
 # Optional Extensions (Disabled by Default)
@@ -189,31 +218,51 @@ mcp_servers = ["amplifier_quality", "amplifier_transcripts", "amplifier_tasks"]
 # MCP Server-Specific Configuration
 # =============================================================================
 
-[mcp_server_config.session_manager]
+[mcp_server_config.amplifier_session]
 # Memory system configuration
 memory_enabled = true  # Can be overridden by MEMORY_SYSTEM_ENABLED env var
 memory_search_limit = 5
 recent_memory_limit = 3
 
-[mcp_server_config.quality_checker]
+[mcp_server_config.amplifier_quality]
 # Quality check configuration
 check_timeout = 300  # seconds
 auto_fix = false  # Whether to attempt automatic fixes
 strict_mode = false  # Fail on warnings, not just errors
 
-[mcp_server_config.transcript_saver]
+[mcp_server_config.amplifier_transcripts]
 # Transcript export configuration
 default_format = "both"  # standard, extended, both, or compact
 output_dir = ".codex/transcripts"  # Relative to project root
 incremental = true  # Skip already-exported sessions
 
-[mcp_server_config.task_tracker]
+[mcp_server_config.amplifier_tasks]
 # Task tracker configuration
 task_storage_path = ".codex/tasks/session_tasks.json"
 max_tasks_per_session = 50
 
-[mcp_server_config.web_research]
+[mcp_server_config.amplifier_web]
 # Web research configuration
 cache_enabled = true
 cache_ttl_hours = 24
 max_results = 10
+
+[mcp_server_config.amplifier_notifications]
+# Notifications configuration
+desktop_notifications = true
+notification_history_limit = 100
+
+[mcp_server_config.amplifier_hooks]
+# Hooks orchestration configuration
+auto_enable_file_watch = false
+check_interval_seconds = 5
+
+[mcp_server_config.amplifier_agent_analytics]
+# Agent analytics configuration
+retention_days = 90
+auto_log_enabled = true
+
+[mcp_server_config.amplifier_memory_enhanced]
+# Memory enhancement configuration
+auto_suggest_enabled = true
+quality_threshold = 0.3
