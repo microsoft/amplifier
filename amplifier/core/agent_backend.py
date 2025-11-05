@@ -133,6 +133,10 @@ class ClaudeCodeAgentBackend(AgentBackend):
 
     def spawn_agent(self, agent_name: str, task: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
         """Spawn agent using Claude Code SDK Task tool."""
+        import time
+
+        start_time = time.time()
+
         try:
             logger.info(f"Spawning Claude Code agent: {agent_name}")
 
@@ -156,6 +160,18 @@ class ClaudeCodeAgentBackend(AgentBackend):
             # Execute via SDK
             result = asyncio.run(self._execute_agent_task(client, full_task))
 
+            execution_time = time.time() - start_time
+
+            # Log analytics
+            self._log_agent_execution(
+                agent_name=agent_name,
+                task=task,
+                duration_seconds=execution_time,
+                success=True,
+                result_summary=result[:500] if result else None,  # Truncate for summary
+                context_tokens=None,  # Claude SDK doesn't provide this
+            )
+
             return {
                 "success": True,
                 "result": result,
@@ -165,8 +181,74 @@ class ClaudeCodeAgentBackend(AgentBackend):
         except AgentNotFoundError:
             raise
         except Exception as e:
+            execution_time = time.time() - start_time
+
+            # Log failed execution
+            self._log_agent_execution(
+                agent_name=agent_name,
+                task=task,
+                duration_seconds=execution_time,
+                success=False,
+                error_message=str(e),
+            )
+
             logger.error(f"Error spawning Claude Code agent {agent_name}: {e}")
             raise AgentSpawnError(f"Failed to spawn agent {agent_name}: {e}")
+
+    def _log_agent_execution(
+        self,
+        agent_name: str,
+        task: str,
+        duration_seconds: float,
+        success: bool,
+        result_summary: str | None = None,
+        context_tokens: int | None = None,
+        error_message: str | None = None,
+    ):
+        """Log agent execution to analytics MCP server if available."""
+        try:
+            # Try to invoke the agent analytics MCP server
+            import subprocess
+            import sys
+
+            # Escape single quotes in strings for shell safety
+            safe_task = task.replace("'", "'\"'\"'")
+            safe_result = result_summary.replace("'", "'\"'\"'") if result_summary else ""
+            safe_error = error_message.replace("'", "'\"'\"'") if error_message else ""
+
+            # Build the Python command
+            python_cmd = f"""
+import sys
+sys.path.insert(0, '.')
+from .codex.mcp_servers.agent_analytics.server import AgentAnalyticsServer
+import asyncio
+
+async def log_execution():
+    server = AgentAnalyticsServer(None)  # MCP instance not needed for direct logging
+    return await server.log_agent_execution(
+        agent_name='{agent_name}',
+        task='{safe_task}',
+        duration_seconds={duration_seconds},
+        success={str(success).lower()},
+        result_summary={"None" if result_summary is None else f"'{safe_result}'"},
+        context_tokens={context_tokens if context_tokens else "None"},
+        error_message={"None" if error_message is None else f"'{safe_error}'"}
+    )
+
+result = asyncio.run(log_execution())
+print('LOGGED' if result else 'FAILED')
+"""
+
+            cmd = [sys.executable, "-c", python_cmd]
+
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            if result.returncode == 0 and "LOGGED" in result.stdout:
+                logger.debug(f"Successfully logged agent execution for {agent_name}")
+            else:
+                logger.debug(f"Failed to log agent execution: {result.stderr}")
+
+        except Exception as e:
+            logger.debug(f"Could not log agent execution to analytics: {e}")
 
     async def _execute_agent_task(self, client, task: str) -> str:
         """Execute agent task with timeout."""
@@ -254,6 +336,10 @@ class CodexAgentBackend(AgentBackend):
 
     def spawn_agent(self, agent_name: str, task: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
         """Spawn agent using Codex CLI."""
+        import time
+
+        start_time = time.time()
+
         serialized_context_file: Path | None = None
         combined_context_file: Path | None = None
         preserve_serialized = False
@@ -297,7 +383,9 @@ class CodexAgentBackend(AgentBackend):
                 cwd=os.getcwd(),
             )
 
-            return self._process_codex_result(
+            execution_time = time.time() - start_time
+
+            processed_result = self._process_codex_result(
                 result=result,
                 agent_name=agent_name,
                 task=task,
@@ -305,7 +393,20 @@ class CodexAgentBackend(AgentBackend):
                 context_payload=context_payload,
             )
 
+            # Log successful execution
+            self._log_agent_execution(
+                agent_name=agent_name,
+                task=task,
+                duration_seconds=execution_time,
+                success=True,
+                result_summary=processed_result.get("result", "")[:500] if processed_result.get("result") else None,
+                context_tokens=context_payload.get("metadata", {}).get("token_count") if context_payload else None,
+            )
+
+            return processed_result
+
         except subprocess.TimeoutExpired:
+            execution_time = time.time() - start_time
             preserve_serialized = bool(serialized_context_file)
             preserve_combined = bool(combined_context_file)
             logger.warning(f"Agent {agent_name} timed out, preserving context files for debugging")
@@ -313,10 +414,22 @@ class CodexAgentBackend(AgentBackend):
                 logger.warning("Combined context preserved at: %s", combined_context_file)
             if serialized_context_file:
                 logger.warning("Serialized context preserved at: %s", serialized_context_file)
+
+            # Log timeout execution
+            self._log_agent_execution(
+                agent_name=agent_name,
+                task=task,
+                duration_seconds=execution_time,
+                success=False,
+                error_message="Execution timed out after 5 minutes",
+            )
+
             raise AgentTimeoutError("Agent execution timed out after 5 minutes")
         except AgentNotFoundError:
             raise
         except Exception as e:
+            execution_time = time.time() - start_time
+
             if keep_on_error:
                 if combined_context_file:
                     preserve_combined = True
@@ -330,6 +443,16 @@ class CodexAgentBackend(AgentBackend):
                         "CODEX_KEEP_CONTEXT_FILES_ON_ERROR set; preserving serialized context file at %s",
                         serialized_context_file,
                     )
+
+            # Log failed execution
+            self._log_agent_execution(
+                agent_name=agent_name,
+                task=task,
+                duration_seconds=execution_time,
+                success=False,
+                error_message=str(e),
+            )
+
             logger.error(f"Error spawning Codex agent {agent_name}: {e}")
             raise AgentSpawnError(f"Failed to spawn agent {agent_name}: {e}")
         finally:
@@ -521,6 +644,61 @@ class CodexAgentBackend(AgentBackend):
 
         explicit_path = Path(self.codex_cli)
         return explicit_path.exists()
+
+    def _log_agent_execution(
+        self,
+        agent_name: str,
+        task: str,
+        duration_seconds: float,
+        success: bool,
+        result_summary: str | None = None,
+        context_tokens: int | None = None,
+        error_message: str | None = None,
+    ):
+        """Log agent execution to analytics MCP server if available."""
+        try:
+            # Try to invoke the agent analytics MCP server
+            import subprocess
+            import sys
+
+            # Escape single quotes in strings for shell safety
+            safe_task = task.replace("'", "'\"'\"'")
+            safe_result = result_summary.replace("'", "'\"'\"'") if result_summary else ""
+            safe_error = error_message.replace("'", "'\"'\"'") if error_message else ""
+
+            # Build the Python command
+            python_cmd = f"""
+import sys
+sys.path.insert(0, '.')
+from .codex.mcp_servers.agent_analytics.server import AgentAnalyticsServer
+import asyncio
+
+async def log_execution():
+    server = AgentAnalyticsServer(None)  # MCP instance not needed for direct logging
+    return await server.log_agent_execution(
+        agent_name='{agent_name}',
+        task='{safe_task}',
+        duration_seconds={duration_seconds},
+        success={str(success).lower()},
+        result_summary={"None" if result_summary is None else f"'{safe_result}'"},
+        context_tokens={context_tokens if context_tokens else "None"},
+        error_message={"None" if error_message is None else f"'{safe_error}'"}
+    )
+
+result = asyncio.run(log_execution())
+print('LOGGED' if result else 'FAILED')
+"""
+
+            cmd = [sys.executable, "-c", python_cmd]
+
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            if result.returncode == 0 and "LOGGED" in result.stdout:
+                logger.debug(f"Successfully logged agent execution for {agent_name}")
+            else:
+                logger.debug(f"Failed to log agent execution: {result.stderr}")
+
+        except Exception as e:
+            logger.debug(f"Could not log agent execution to analytics: {e}")
 
 
 class AgentBackendFactory:

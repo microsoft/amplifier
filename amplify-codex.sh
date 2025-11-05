@@ -14,26 +14,33 @@
 
 set -e
 
-# Source amplify.sh for print_* helper functions
-source ./amplify.sh
+# Source print helper functions
+source .codex/tools/print_helpers.sh
 
-# Colors for output (amplify.sh already defines these, but keeping for safety)
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# Colors are now sourced from print_helpers.sh
 
 # Function to send notifications
 send_notification() {
     local title="$1"
     local message="$2"
+    local urgency="${3:-normal}"
 
     if [ "$NOTIFICATIONS" = false ]; then
         return
     fi
 
-    # Try different notification systems
+    # Try MCP server notification first (if available)
+    if command -v codex &> /dev/null && [ -f ".codex/config.toml" ]; then
+        # Check if notifications MCP server is active in current profile
+        if grep -q "amplifier_notifications" ~/.codex/config.toml 2>/dev/null; then
+            codex tool amplifier_notifications.notify --args "{\"title\": \"$title\", \"message\": \"$message\", \"urgency\": \"$urgency\"}" >/dev/null 2>&1 && {
+                print_status "MCP notification sent: $title"
+                return
+            }
+        fi
+    fi
+
+    # Fallback to system notifications
     if command -v notify-send &> /dev/null; then
         # Linux notify-send
         notify-send "$title" "$message" 2>/dev/null || true
@@ -66,7 +73,9 @@ notify_session_end() {
     local exit_code="$1"
     local modified_files="$2"
 
-    if [ "$exit_code" -eq 0 ]; then
+    if [ "$session_interrupted" = true ]; then
+        send_notification "Codex Session Interrupted" "Session was interrupted and cleaned up gracefully" "critical"
+    elif [ "$exit_code" -eq 0 ]; then
         local file_count=$(echo "$modified_files" | wc -l | tr -d ' ')
         send_notification "Codex Session Completed" "Session finished successfully. $file_count files modified."
     else
@@ -366,6 +375,46 @@ if [ -n "$CODEX_PROFILE" ]; then
     PROFILE="$CODEX_PROFILE"
 fi
 
+# Smart profile selection based on git status and context
+if [ -z "$CODEX_PROFILE" ] && [ "$1" != "--profile" ]; then
+    print_status "Performing smart profile selection..."
+
+    # Check git status for hints about current work
+    if command -v git &> /dev/null && [ -d ".git" ]; then
+        # Check if we're on a review branch or have review-related commits
+        CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "")
+        if [[ "$CURRENT_BRANCH" =~ (review|pr|pull|feature) ]] || git log --oneline -10 2>/dev/null | grep -qi "review\|pr\|pull\|merge"; then
+            PROFILE="review"
+            print_status "Detected review context, switching to review profile"
+        fi
+
+        # Check for uncommitted changes (development mode)
+        if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+            PROFILE="development"
+            print_status "Detected active development with uncommitted changes"
+        fi
+
+        # Check for recent commits (might be in CI/testing phase)
+        RECENT_COMMITS=$(git log --oneline --since="1 hour ago" 2>/dev/null | wc -l)
+        if [ "$RECENT_COMMITS" -gt 3 ]; then
+            PROFILE="ci"
+            print_status "Detected high commit activity, switching to ci profile"
+        fi
+    fi
+
+    # Check for CI environment variables
+    if [ -n "$CI" ] || [ -n "$CONTINUOUS_INTEGRATION" ] || [ -n "$GITHUB_ACTIONS" ]; then
+        PROFILE="ci"
+        print_status "Detected CI environment, switching to ci profile"
+    fi
+
+    # Check for testing-related files or commands
+    if [[ "$*" =~ (test|spec|pytest|unittest) ]] || [ -d "tests" ] || [ -f "pytest.ini" ] || [ -f "tox.ini" ]; then
+        PROFILE="ci"
+        print_status "Detected testing context, switching to ci profile"
+    fi
+fi
+
 print_status "Using profile: $PROFILE"
 
 # Check if profile exists in config (basic validation)
@@ -551,9 +600,34 @@ CODEX_CMD+=("$@")
 
 print_status "Executing: ${CODEX_CMD[*]}"
 
-# Trap SIGINT to ensure cleanup runs
+# Signal handling for graceful shutdown
 cleanup_needed=true
-trap 'cleanup_needed=true; kill $AUTO_SAVE_PID 2>/dev/null || true' SIGINT
+session_interrupted=false
+
+# Cleanup function for signal handling
+cleanup_on_signal() {
+    local signal="$1"
+    print_warning "Received $signal signal, initiating graceful shutdown..."
+
+    session_interrupted=true
+    cleanup_needed=true
+
+    # Kill background processes
+    if [ -n "$AUTO_SAVE_PID" ]; then
+        kill $AUTO_SAVE_PID 2>/dev/null || true
+        print_status "Stopped auto-save process"
+    fi
+
+    # Send interruption notification
+    send_notification "Codex Session Interrupted" "Session interrupted by $signal signal" "critical"
+
+    # Don't exit here - let the script continue to cleanup
+}
+
+# Set up signal handlers
+trap 'cleanup_on_signal SIGINT' SIGINT
+trap 'cleanup_on_signal SIGTERM' SIGTERM
+trap 'cleanup_on_signal SIGHUP' SIGHUP
 
 # Run Codex
 "${CODEX_CMD[@]}"

@@ -77,8 +77,18 @@ class HooksServer(AmplifierMCPServer):
         self.watch_enabled = False
         self.logger = MCPLogger("hooks")
 
+        # Load server configuration
+        self.server_config = self.get_server_config()
+        self.auto_enable_file_watch = self.server_config.get("auto_enable_file_watch", False)
+        self.check_interval_seconds = self.server_config.get("check_interval_seconds", 5)
+
         # Load existing hooks
         self._load_hooks()
+
+        # Auto-enable file watching if configured
+        if self.auto_enable_file_watch:
+            self.logger.info("Auto-enabling file watching based on config")
+            self._start_file_watching(["*.py", "*.js", "*.ts", "*.md"], self.check_interval_seconds)
 
     def _load_hooks(self):
         """Load hooks from storage."""
@@ -296,16 +306,24 @@ class HooksServer(AmplifierMCPServer):
         self._execute_hook(hook, {"manual_trigger": True, "timestamp": time.time()})
         return True
 
-    async def enable_watch_mode(self, file_patterns: list[str], check_interval: int) -> bool:
+    async def enable_watch_mode(
+        self, file_patterns: list[str] | None = None, check_interval: int | None = None
+    ) -> bool:
         """Start file watching mode.
 
         Args:
-            file_patterns: List of file patterns to watch
-            check_interval: Interval between checks in seconds
+            file_patterns: List of file patterns to watch (uses config default if None)
+            check_interval: Interval between checks in seconds (uses config default if None)
 
         Returns:
             True if watching was started
         """
+        # Use config defaults if not specified
+        if file_patterns is None:
+            file_patterns = ["*.py", "*.js", "*.ts", "*.md"]  # Default patterns
+        if check_interval is None:
+            check_interval = self.check_interval_seconds
+
         try:
             self._start_file_watching(file_patterns, check_interval)
             return True
@@ -343,7 +361,7 @@ def main():
     mcp = FastMCP("amplifier_hooks")
     server = HooksServer(mcp)
 
-    # Register tools
+    # Register tools with error handling
     @mcp.tool()
     async def register_hook(
         event_type: str,
@@ -353,32 +371,32 @@ def main():
         tool_args: dict[str, Any] | None = None,
     ) -> str:
         """Register a new automatic hook."""
-        return await server.register_hook(event_type, action, matcher, tool_name, tool_args)
+        return await server.tool_error_handler(server.register_hook)(event_type, action, matcher, tool_name, tool_args)
 
     @mcp.tool()
     async def list_active_hooks() -> list[dict[str, Any]]:
         """List all active hooks."""
-        return await server.list_active_hooks()
+        return await server.tool_error_handler(server.list_active_hooks)()
 
     @mcp.tool()
     async def trigger_hook_manually(hook_id: str) -> bool:
         """Manually trigger a hook for testing."""
-        return await server.trigger_hook_manually(hook_id)
+        return await server.tool_error_handler(server.trigger_hook_manually)(hook_id)
 
     @mcp.tool()
-    async def enable_watch_mode(file_patterns: list[str], check_interval: int) -> bool:
+    async def enable_watch_mode(file_patterns: list[str] | None = None, check_interval: int = 5) -> bool:
         """Enable file watching mode."""
-        return await server.enable_watch_mode(file_patterns, check_interval)
+        return await server.tool_error_handler(server.enable_watch_mode)(file_patterns, check_interval)
 
     @mcp.tool()
     async def disable_watch_mode() -> bool:
         """Disable file watching mode."""
-        return await server.disable_watch_mode()
+        return await server.tool_error_handler(server.disable_watch_mode)()
 
     @mcp.tool()
     async def get_hook_history(limit: int = 10) -> list[dict[str, Any]]:
         """Get recent hook execution history."""
-        return await server.get_hook_history(limit)
+        return await server.tool_error_handler(server.get_hook_history)(limit)
 
     # Run the server
     mcp.run()

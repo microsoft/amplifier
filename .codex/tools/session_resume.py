@@ -290,7 +290,11 @@ def main():
         context_file.parent.mkdir(exist_ok=True)
         context_file.write_text(full_context)
 
-        # Write metadata
+        # Write metadata to dedicated session resume metadata file
+        # Note: Session metadata files are now separated by component:
+        # - session_memory_init_metadata.json: Memory loading during session init
+        # - session_memory_cleanup_metadata.json: Memory extraction during session cleanup
+        # - session_resume_metadata.json: Session resume operations
         metadata = {
             "sessionResumed": args.session_id,
             "contextLoaded": True,
@@ -300,7 +304,7 @@ def main():
             "timestamp": datetime.now().isoformat(),
         }
 
-        metadata_file = Path(".codex/session_init_metadata.json")
+        metadata_file = Path(".codex/session_resume_metadata.json")
         metadata_file.parent.mkdir(exist_ok=True)
         metadata_file.write_text(json.dumps(metadata, indent=2))
 
@@ -314,7 +318,7 @@ def main():
         context_file = Path(args.output)
         context_file.parent.mkdir(exist_ok=True)
         context_file.write_text("")
-        metadata_file = Path(".codex/session_init_metadata.json")
+        metadata_file = Path(".codex/session_resume_metadata.json")
         metadata_file.parent.mkdir(exist_ok=True)
         metadata = {
             "sessionResumed": args.session_id if args.session_id else None,

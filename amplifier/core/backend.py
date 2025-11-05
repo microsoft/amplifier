@@ -378,6 +378,10 @@ class CodexBackend(AmplifierBackend):
             return False
 
     def initialize_session(self, prompt: str, context: str | None = None) -> dict[str, Any]:
+        # Session metadata files are now separated by component to avoid conflicts:
+        # - session_memory_init_metadata.json: Memory loading during session initialization
+        # - session_memory_cleanup_metadata.json: Memory extraction during session finalization
+        # - session_resume_metadata.json: Session resume operations
         try:
             memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "true").lower() in ["true", "1", "yes"]
             if not memory_enabled:
@@ -385,7 +389,7 @@ class CodexBackend(AmplifierBackend):
                 context_file.parent.mkdir(exist_ok=True)
                 context_file.write_text("")
                 metadata = {"memoriesLoaded": 0, "source": "disabled"}
-                metadata_file = Path(".codex/session_init_metadata.json")
+                metadata_file = Path(".codex/session_memory_init_metadata.json")
                 metadata_file.write_text(json.dumps(metadata))
                 return {"success": True, "data": {"context": ""}, "metadata": metadata}
 
@@ -429,7 +433,7 @@ class CodexBackend(AmplifierBackend):
                 "source": "amplifier_memory",
                 "contextFile": str(context_file),
             }
-            metadata_file = Path(".codex/session_init_metadata.json")
+            metadata_file = Path(".codex/session_memory_init_metadata.json")
             metadata_file.write_text(json.dumps(metadata))
 
             return {
@@ -446,7 +450,7 @@ class CodexBackend(AmplifierBackend):
             memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "true").lower() in ["true", "1", "yes"]
             if not memory_enabled:
                 metadata = {"memoriesExtracted": 0, "source": "disabled"}
-                metadata_file = Path(".codex/session_cleanup_metadata.json")
+                metadata_file = Path(".codex/session_memory_cleanup_metadata.json")
                 metadata_file.write_text(json.dumps(metadata))
                 return {"success": True, "data": {}, "metadata": metadata}
 
@@ -482,7 +486,7 @@ class CodexBackend(AmplifierBackend):
                 "transcriptPath": transcript_path,
                 "source": "amplifier_cleanup",
             }
-            metadata_file = Path(".codex/session_cleanup_metadata.json")
+            metadata_file = Path(".codex/session_memory_cleanup_metadata.json")
             metadata_file.write_text(json.dumps(metadata))
 
             return {"success": True, "data": {"transcriptPath": transcript_path}, "metadata": metadata}
