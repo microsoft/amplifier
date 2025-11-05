@@ -1,0 +1,69 @@
+# Private settings
+**/certs/*.pem
+**/certs/config.json
+**/certs/mkcert
+.env
+*.local
+*.user
+*__local__*
+appsettings.*.json
+**/.DS_Store
+.claude/settings.local.json
+
+# Dependencies and build cache
+node_modules
+.venv
+__pycache__
+.pytest_cache
+.ruff_cache
+.cache
+*.egg-info
+bin
+obj
+dist
+build
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+#azd files
+.azure
+azure.yaml
+next-steps.md
+
+# Generated files
+output
+logs
+
+# Test files
+.coverage
+
+# Working folders
+ai_working/tmp
+.tmp
+
+# Ignore Windows Alternate Data Streams (ADS) files that may appear in WSL
+**/*Zone.Identifier
+**/*:Zone.Identifier
+**/*sec.endpointdlp
+**/*:sec.endpointdlp
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Default data directory
+.data/
+
+# .claude-trace Logs
+.claude-trace
+
+# Smoke test runtime logs
+.smoke_test_data/data
+*.log.jsonl
