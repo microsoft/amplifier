@@ -95,6 +95,7 @@ AUTO_SAVE=true
 SESSION_RESUME=""
 NOTIFICATIONS=true
 SMART_CONTEXT=true
+AUTO_DRAFT=false
 PROMPT_COUNT=0
 
 # Parse command-line arguments
@@ -132,6 +133,10 @@ while [[ $# -gt 0 ]]; do
             AUTO_SAVE=false
             shift
             ;;
+        --auto-draft)
+            AUTO_DRAFT=true
+            shift
+            ;;
         --check-only)
             CHECK_ONLY=true
             shift
@@ -166,6 +171,7 @@ if [ "$SHOW_HELP" = true ]; then
     echo "  --no-smart-context     Disable smart context detection"
     echo "  --no-auto-checks       Disable automatic quality checks after session"
     echo "  --no-auto-save         Disable periodic transcript auto-saves"
+    echo "  --auto-draft           Create draft commit for uncommitted changes on exit"
     echo "  --check-only           Run prerequisite checks and exit (no Codex launch)"
     echo "  --list-prompts         List available custom prompts and exit"
     echo "  --help                 Show this help message"
@@ -525,6 +531,7 @@ if [ "$AUTO_SAVE" = true ]; then
         done
     ) &
     AUTO_SAVE_PID=$!
+    echo $AUTO_SAVE_PID >> .codex/background_pids.txt
 fi
 
 # Parse active MCP servers from config
@@ -569,6 +576,9 @@ echo -e "${BLUE}║${NC}  ${YELLOW}Session Statistics:${NC}                     
 echo -e "${BLUE}║${NC}  ${YELLOW}• Profile:${NC} $PROFILE                                           ${BLUE}║${NC}"
 if [ -n "$SESSION_RESUME" ]; then
     echo -e "${BLUE}║${NC}  ${YELLOW}• Resumed Session:${NC} $SESSION_RESUME                          ${BLUE}║${NC}"
+    if [ -f ".codex/session_context.md" ]; then
+        echo -e "${BLUE}║${NC}  ${YELLOW}• Resume Context:${NC} Loaded from session_context.md         ${BLUE}║${NC}"
+    fi
 fi
 echo -e "${BLUE}║${NC}  ${YELLOW}• Memory System:${NC} ${MEMORY_SYSTEM_ENABLED}                     ${BLUE}║${NC}"
 echo -e "${BLUE}║${NC}  ${YELLOW}• Smart Context:${NC} ${SMART_CONTEXT}                             ${BLUE}║${NC}"
@@ -595,6 +605,12 @@ print_status "Starting Codex CLI..."
 # Build Codex command
 CODEX_CMD=("codex" "--profile" "$PROFILE")
 
+# Add context file if resuming session
+if [ -n "$SESSION_RESUME" ] && [ -f ".codex/session_context.md" ]; then
+    CODEX_CMD+=("--context-file" ".codex/session_context.md")
+    print_status "Resume context will be loaded from .codex/session_context.md"
+fi
+
 # Pass through remaining arguments
 CODEX_CMD+=("$@")
 
@@ -612,7 +628,18 @@ cleanup_on_signal() {
     session_interrupted=true
     cleanup_needed=true
 
-    # Kill background processes
+    # Kill background processes from PID file
+    if [ -f ".codex/background_pids.txt" ]; then
+        while read -r pid; do
+            if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+                kill "$pid" 2>/dev/null || true
+                print_status "Killed background process $pid"
+            fi
+        done < .codex/background_pids.txt
+        rm -f .codex/background_pids.txt
+    fi
+
+    # Kill auto-save process (legacy, in case not in PID file)
     if [ -n "$AUTO_SAVE_PID" ]; then
         kill $AUTO_SAVE_PID 2>/dev/null || true
         print_status "Stopped auto-save process"
@@ -636,6 +663,27 @@ CODEX_EXIT_CODE=$?
 # Stop auto-save process
 if [ -n "$AUTO_SAVE_PID" ]; then
     kill $AUTO_SAVE_PID 2>/dev/null || true
+fi
+
+# Clean up background PIDs file
+rm -f .codex/background_pids.txt
+
+# Git dirty check and auto-draft
+if command -v git &> /dev/null && [ -d ".git" ]; then
+    if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+        print_warning "⚠️  Uncommitted changes detected in git repository"
+        if [ "$AUTO_DRAFT" = true ]; then
+            print_status "Creating draft commit (--auto-draft enabled)..."
+            if git add -A && git commit -m "chore(codex): draft snapshot before exit" --no-verify; then
+                COMMIT_HASH=$(git rev-parse HEAD)
+                print_success "Draft commit created: $COMMIT_HASH"
+            else
+                print_warning "Failed to create draft commit"
+            fi
+        else
+            print_warning "Consider committing changes or use --auto-draft flag"
+        fi
+    fi
 fi
 
 # Auto-quality checks

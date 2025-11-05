@@ -109,7 +109,7 @@ class AgentAnalyticsServer(AmplifierMCPServer):
             stats["durations"].append(exec.duration_seconds)
 
         # Calculate derived metrics
-        for agent, stats in agent_stats.items():
+        for _agent, stats in agent_stats.items():
             stats["success_rate"] = stats["successful_executions"] / stats["total_executions"]
             stats["avg_duration"] = stats["total_duration"] / stats["total_executions"]
             stats["durations"].sort()
@@ -242,7 +242,7 @@ class AgentAnalyticsServer(AmplifierMCPServer):
                 stats["durations"].append(exec.duration_seconds)
 
             # Calculate derived metrics
-            for agent, stats in agent_stats.items():
+            for _agent, stats in agent_stats.items():
                 stats["success_rate"] = stats["successful_executions"] / stats["total_executions"]
                 stats["avg_duration"] = stats["total_duration"] / stats["total_executions"]
                 stats["durations"].sort()
@@ -393,29 +393,29 @@ def main():
         error_message: str | None = None,
     ) -> bool:
         """Log an agent execution for analytics."""
-        return await server.log_agent_execution(
+        return await server.tool_error_handler(server.log_agent_execution)(
             agent_name, task, duration_seconds, success, result_summary, context_tokens, error_message
         )
 
     @mcp.tool()
     async def get_agent_stats(agent_name: str | None = None, time_period: int | None = None) -> dict[str, Any]:
         """Get statistics for agent(s)."""
-        return await server.get_agent_stats(agent_name, time_period)
+        return await server.tool_error_handler(server.get_agent_stats)(agent_name, time_period)
 
     @mcp.tool()
     async def get_agent_recommendations(current_task: str) -> dict[str, Any]:
         """Get agent recommendations for a task."""
-        return await server.get_agent_recommendations(current_task)
+        return await server.tool_error_handler(server.get_agent_recommendations)(current_task)
 
     @mcp.tool()
     async def export_agent_report(format: str = "markdown", time_period: int | None = None) -> str:
         """Export agent analytics report."""
-        return await server.export_agent_report(format, time_period)
+        return await server.tool_error_handler(server.export_agent_report)(format, time_period)
 
     @mcp.tool()
     async def get_recent_executions(limit: int = 10) -> list[dict[str, Any]]:
         """Get recent agent executions."""
-        return await server.get_recent_executions(limit)
+        return await server.tool_error_handler(server.get_recent_executions)(limit)
 
     # Run the server
     mcp.run()

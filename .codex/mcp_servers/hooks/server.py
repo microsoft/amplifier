@@ -8,6 +8,7 @@ Replicates Claude Code's automatic hook behavior through MCP tools.
 
 import asyncio
 import json
+import os
 import threading
 import time
 from pathlib import Path
@@ -20,6 +21,7 @@ from watchdog.observers import Observer
 
 from ..base import AmplifierMCPServer
 from ..base import MCPLogger
+from ..tools.codex_mcp_client import CodexMCPClient
 
 
 class HookConfig:
@@ -158,26 +160,31 @@ class HooksServer(AmplifierMCPServer):
                     "success": False,
                 }
 
+                # Get Codex profile from environment
+                codex_profile = os.environ.get("CODEX_PROFILE")
+
                 # Execute action based on hook configuration
                 if hook.action == "run_tool" and hook.tool_name:
-                    # Actually invoke the MCP tool
                     try:
-                        # Import the MCP client to invoke tools
+                        # Split tool_name into server.tool format
+                        if "." not in hook.tool_name:
+                            raise ValueError(f"Invalid tool_name format: {hook.tool_name}. Expected 'server.tool'")
 
-                        # Create a client to invoke the tool
-                        # Note: This is a simplified implementation. In a real MCP setup,
-                        # you'd need proper client initialization and tool discovery
-                        self.logger.info(f"Invoking tool {hook.tool_name} with args {hook.tool_args}")
+                        server_name, tool_name = hook.tool_name.split(".", 1)
 
-                        # For now, simulate tool invocation success
-                        # In a full implementation, this would:
-                        # 1. Connect to the MCP server hosting the tool
-                        # 2. Call the tool with the provided arguments
-                        # 3. Handle the response
+                        # Create MCP client
+                        client = CodexMCPClient(profile=codex_profile)
+
+                        # Call the tool
+                        self.logger.info(f"Invoking MCP tool {server_name}.{tool_name} with args {hook.tool_args}")
+                        result = await asyncio.to_thread(client.call_tool, server_name, tool_name, **hook.tool_args)
 
                         execution["tool_invoked"] = hook.tool_name
                         execution["tool_args"] = hook.tool_args
-                        execution["success"] = True
+                        execution["tool_response"] = result
+                        execution["success"] = result.get("success", False)
+                        if not execution["success"]:
+                            execution["error"] = result.get("metadata", {}).get("error", "Unknown error")
 
                     except Exception as tool_error:
                         self.logger.error(f"Tool invocation failed: {tool_error}")
@@ -185,23 +192,58 @@ class HooksServer(AmplifierMCPServer):
                         execution["success"] = False
 
                 elif hook.action == "quality_check":
-                    # Trigger quality checker MCP server
                     try:
-                        # This would invoke the quality checker tool
-                        # For now, simulate the action
-                        self.logger.info("Triggering quality check")
-                        execution["success"] = True
+                        # Create MCP client
+                        client = CodexMCPClient(profile=codex_profile)
+
+                        # Determine file paths to check
+                        file_paths = []
+                        if context.get("file_path"):
+                            file_paths = [context["file_path"]]
+
+                        # Call quality check tool
+                        tool_name = "check_code_quality"
+                        tool_args = {"file_paths": file_paths} if file_paths else {}
+
+                        self.logger.info(f"Invoking quality check tool with args {tool_args}")
+                        result = await asyncio.to_thread(client.call_tool, "amplifier_quality", tool_name, **tool_args)
+
+                        execution["tool_invoked"] = f"amplifier_quality.{tool_name}"
+                        execution["tool_args"] = tool_args
+                        execution["tool_response"] = result
+                        execution["success"] = result.get("success", False)
+                        if not execution["success"]:
+                            execution["error"] = result.get("metadata", {}).get("error", "Unknown error")
+
                     except Exception as e:
                         self.logger.error(f"Quality check failed: {e}")
                         execution["error"] = str(e)
 
                 elif hook.action == "memory_operation":
-                    # Trigger memory MCP server
                     try:
-                        # This would invoke memory-related tools
-                        # For now, simulate the action
-                        self.logger.info("Triggering memory operation")
-                        execution["success"] = True
+                        # Create MCP client
+                        client = CodexMCPClient(profile=codex_profile)
+
+                        # Use sensible defaults for memory operation
+                        # Could be enhanced to parse hook.tool_args for specific operations
+                        tool_name = "get_memory_insights"  # Default memory operation
+                        tool_args = {}
+
+                        # If context has messages, use finalize_session instead
+                        if context.get("messages"):
+                            tool_name = "finalize_session"
+                            tool_args = {"messages": context["messages"]}
+
+                        self.logger.info(f"Invoking memory tool {tool_name} with args {tool_args}")
+                        result = await asyncio.to_thread(client.call_tool, "amplifier_session", tool_name, **tool_args)
+
+                        execution["tool_invoked"] = f"amplifier_session.{tool_name}"
+                        execution["tool_args"] = tool_args
+                        execution["tool_response"] = result
+                        execution["success"] = result.get("success", False)
+                        if not execution["success"]:
+                            execution["error"] = result.get("metadata", {}).get("error", "Unknown error")
+
                     except Exception as e:
                         self.logger.error(f"Memory operation failed: {e}")
                         execution["error"] = str(e)

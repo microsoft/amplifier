@@ -326,32 +326,32 @@ def main():
     @mcp.tool()
     async def suggest_relevant_memories(current_context: str, limit: int = 5) -> list[dict[str, Any]]:
         """Proactively suggest relevant memories."""
-        return await server.suggest_relevant_memories(current_context, limit)
+        return await server.tool_error_handler(server.suggest_relevant_memories)(current_context, limit)
 
     @mcp.tool()
     async def tag_memory(memory_id: str, tags: list[str]) -> bool:
         """Add tags to an existing memory."""
-        return await server.tag_memory(memory_id, tags)
+        return await server.tool_error_handler(server.tag_memory)(memory_id, tags)
 
     @mcp.tool()
     async def find_related_memories(memory_id: str, limit: int = 5) -> list[dict[str, Any]]:
         """Find memories related to a given memory."""
-        return await server.find_related_memories(memory_id, limit)
+        return await server.tool_error_handler(server.find_related_memories)(memory_id, limit)
 
     @mcp.tool()
     async def score_memory_quality(memory_id: str) -> dict[str, Any]:
         """Score the quality of a memory."""
-        return await server.score_memory_quality(memory_id)
+        return await server.tool_error_handler(server.score_memory_quality)(memory_id)
 
     @mcp.tool()
     async def cleanup_memories(quality_threshold: float = 0.3) -> dict[str, Any]:
         """Remove low-quality memories."""
-        return await server.cleanup_memories(quality_threshold)
+        return await server.tool_error_handler(server.cleanup_memories)(quality_threshold)
 
     @mcp.tool()
     async def get_memory_insights() -> dict[str, Any]:
         """Get insights about the memory system."""
-        return await server.get_memory_insights()
+        return await server.tool_error_handler(server.get_memory_insights)()
 
     # Run the server
     mcp.run()
