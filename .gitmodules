@@ -1,0 +1,3 @@
+[submodule "brand-composer-sprint-backend"]
+	path = brand-composer-sprint-backend
+	url = ssh://git@github.com/napfen9999/brand-composer-sprint-backend.git
