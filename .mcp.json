@@ -26,6 +26,20 @@
         "git+https://github.com/BeehiveInnovations/zen-mcp-server.git",
         "zen-mcp-server"
       ]
+    },
+    "token-monitor": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex",
+        "python",
+        ".codex/mcp_servers/token_monitor/server.py"
+      ],
+      "env": {
+        "AMPLIFIER_ROOT": "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex",
+        "PYTHONPATH": "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex"
+      }
     }
   }
 }

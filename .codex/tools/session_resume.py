@@ -126,7 +126,7 @@ def find_available_sessions():
                             hour = int(timestamp_str[9:11])
                             minute = int(timestamp_str[11:13])
                             second = int(timestamp_str[13:15])
-                            timestamp = datetime(year, month, day, hour, minute, second)
+                            timestamp = datetime(year, month, day, hour, minute, second)  # noqa: DTZ001
                         else:
                             # Try ISO format or skip
                             continue
@@ -160,7 +160,7 @@ def find_available_sessions():
 
                 try:
                     timestamp = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
-                except:
+                except (ValueError, AttributeError):
                     timestamp = datetime.now()  # fallback
 
                 sessions.append(
