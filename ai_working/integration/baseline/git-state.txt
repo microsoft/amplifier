@@ -1,0 +1,74 @@
+=== GIT STATE CAPTURE ===
+Date: Thu Nov  6 14:56:27 CET 2025
+
+=== Current Branch ===
+main
+
+=== Recent Commits (last 10) ===
+bec9e27 Revert "Update brand-composer-sprint-backend: Restructured AGENTS.md"
+a5f19f7 Update brand-composer-sprint-backend: Restructured AGENTS.md
+16f040c Add brand-composer-sprint-backend submodule and config
+fd25e54 Update list of folders ignored by python builds (#108)
+07d1cb8 Readme update (#106)
+b3bb6a2 chore: update uv.lock for pyright v1.1.407
+0c3fd7b chore: upgrade pyright to v1.1.407
+c5644d0 docs: add git commit message guidelines and improve formatting
+2d82ca7 Add Design Intelligence Capability to Amplifier (#99)
+d57d05d dev environment: cache and shell (#92)
+
+=== Git Status ===
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	modified:   .gitmodules
+	new file:   brand_composer_amplifyier
+	new file:   claude-code-infrastructure-showcase
+	new file:   claude-code-kit
+	new file:   superpowers
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+  (commit or discard the untracked or modified content in submodules)
+	modified:   ai_context/git_collector/CLAUDE_CODE_SDK_PYTHON_REPO.md
+	modified:   brand-composer-sprint-backend (modified content)
+	modified:   brand_composer_amplifyier (untracked content)
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	SCENARIOS_DOCUMENTATION.md
+	SCENARIOS_INDEX.md
+	SCENARIOS_SUMMARY.md
+	TESTING_INDEX.md
+	TESTING_QUICK_START.md
+	TESTING_REPORT.md
+	ai_working/HOOKS_INDEX.md
+	ai_working/HOOKS_QUICK_REFERENCE.md
+	ai_working/HOOKS_SYSTEM_DOCUMENTATION.md
+	ai_working/README_HOOKS.md
+	ai_working/ddd/
+	ai_working/integration/
+
+
+=== Detailed File Status ===
+M  .gitmodules
+ M ai_context/git_collector/CLAUDE_CODE_SDK_PYTHON_REPO.md
+ M brand-composer-sprint-backend
+AM brand_composer_amplifyier
+A  claude-code-infrastructure-showcase
+A  claude-code-kit
+A  superpowers
+?? SCENARIOS_DOCUMENTATION.md
+?? SCENARIOS_INDEX.md
+?? SCENARIOS_SUMMARY.md
+?? TESTING_INDEX.md
+?? TESTING_QUICK_START.md
+?? TESTING_REPORT.md
+?? ai_working/HOOKS_INDEX.md
+?? ai_working/HOOKS_QUICK_REFERENCE.md
+?? ai_working/HOOKS_SYSTEM_DOCUMENTATION.md
+?? ai_working/README_HOOKS.md
+?? ai_working/ddd/
+?? ai_working/integration/

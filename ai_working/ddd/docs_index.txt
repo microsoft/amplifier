@@ -1,0 +1,7 @@
+[ ] ai_working/integration/baseline/hooks-inventory.md
+[ ] ai_working/integration/baseline/commands-inventory.md
+[ ] ai_working/integration/baseline/agents-inventory.md
+[ ] ai_working/integration/baseline/scenarios-inventory.md
+[ ] ai_working/integration/baseline/functionality-test-results.md
+[ ] ai_working/integration/baseline/amplifier-baseline-master.md
+[ ] ai_working/integration/baseline/git-state.txt
