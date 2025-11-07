@@ -83,6 +83,11 @@ ai_working/tmp
 .codex/logs/session_init.log*
 .codex/logs/session_cleanup.log*
 
+# Session monitor runtime artifacts
+.codex/session_monitor.pid
+.codex/session_monitor_config.json
+.codex/workspaces/
+
 # Agent conversion artifacts
 .codex/agents/CONVERSION_REPORT.md
 .codex/agents/*.backup
