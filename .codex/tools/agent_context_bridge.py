@@ -7,6 +7,7 @@ integrating their results back into the main session.
 """
 
 import json
+from datetime import UTC
 from datetime import datetime
 from datetime import timedelta
 from pathlib import Path
@@ -158,12 +159,12 @@ class AgentContextBridge:
             self.context_file.unlink()
 
         if self.context_temp_dir.exists():
-            cutoff = datetime.now() - timedelta(hours=1)
+            cutoff = datetime.now(UTC) - timedelta(hours=1)
             temp_files = sorted(self.context_temp_dir.glob("*.md"), key=lambda path: path.stat().st_mtime, reverse=True)
             for index, path in enumerate(temp_files):
                 if index < 5:
                     continue
-                file_modified = datetime.fromtimestamp(path.stat().st_mtime)
+                file_modified = datetime.fromtimestamp(path.stat().st_mtime, tz=UTC)
                 if file_modified < cutoff:
                     path.unlink(missing_ok=True)
 
