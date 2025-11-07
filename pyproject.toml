@@ -82,7 +82,6 @@ exclude = [
     "dist/**",
     ".data/**",
     "ai_working/**",
-    "amplifier-dev/examples/**",  # DDD Phase 2: Exclude example hooks until implementation (Phase 4)
     "amplifier-dev/ansiterm/**",
 ]
 typeCheckingMode = "basic"
