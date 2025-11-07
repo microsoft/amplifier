@@ -7,6 +7,12 @@ from uuid import uuid4
 from pydantic import BaseModel
 from pydantic import Field
 
+# Import TokenUsageSnapshot if available (for type hints)
+try:
+    from amplifier.session_monitor.models import TokenUsageSnapshot
+except ImportError:
+    TokenUsageSnapshot = Any  # Fallback for type checking
+
 
 class SessionMetadata(BaseModel):
     """Metadata about a session.
@@ -61,12 +67,18 @@ class SessionState(BaseModel):
         messages: List of conversation messages
         context: Any additional context data
         config: Configuration used for this session
+        checkpoint_data: Optional checkpoint data for session resume
+        token_usage_history: History of token usage snapshots
+        last_checkpoint_at: Timestamp of last checkpoint
     """
 
     metadata: SessionMetadata
     messages: list[dict[str, Any]] = Field(default_factory=list)
     context: dict[str, Any] = Field(default_factory=dict)
     config: dict[str, Any] = Field(default_factory=dict)
+    checkpoint_data: dict[str, Any] | None = None
+    token_usage_history: list[dict] = Field(default_factory=list)
+    last_checkpoint_at: datetime | None = None
 
     def add_message(self, role: str, content: str, metadata: dict | None = None):
         """Add a message to the session.
@@ -99,6 +111,38 @@ class SessionState(BaseModel):
             content = msg["content"]
             lines.append(f"{role}: {content}\n")
         return "\n".join(lines)
+
+    def create_checkpoint(self, data: dict) -> None:
+        """Create a checkpoint with the given data.
+
+        Args:
+            data: Checkpoint data to store
+        """
+        self.checkpoint_data = data
+        self.last_checkpoint_at = datetime.now()
+
+    def restore_from_checkpoint(self) -> dict | None:
+        """Restore checkpoint data.
+
+        Returns:
+            Checkpoint data if available, None otherwise
+        """
+        return self.checkpoint_data
+
+    def record_token_usage(self, usage) -> None:
+        """Record token usage in history.
+
+        Args:
+            usage: Token usage snapshot to record
+        """
+        self.token_usage_history.append(
+            {
+                "timestamp": usage.timestamp.isoformat(),
+                "estimated_tokens": usage.estimated_tokens,
+                "usage_pct": usage.usage_pct,
+                "source": usage.source,
+            }
+        )
 
     class Config:
         json_schema_extra = {

@@ -153,6 +153,15 @@ env = { AMPLIFIER_ROOT = "/Users/aleksandarilic/Documents/github/acailic/improve
 timeout = 30
 # Purpose: Provide proactive memory suggestions and manage memory quality
 
+# Token Monitor MCP Server
+# Provides: Programmatic access to token usage monitoring and session termination
+[mcp_servers.token_monitor]
+command = "uv"
+args = ["run", "--directory", "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", "python", ".codex/mcp_servers/token_monitor/server.py"]
+env = { AMPLIFIER_ROOT = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", PYTHONPATH = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex" }
+timeout = 30
+# Purpose: Monitor token usage, provide termination requests, support checkpoint/resume
+
 # =============================================================================
 # Profiles Section - Configure which servers to use per profile
 # =============================================================================
@@ -163,7 +172,7 @@ timeout = 30
 # sandbox_mode = "workspace-write"  # PLACEHOLDER: Verify with Codex CLI docs
 tool_timeout_sec = 600
 # All MCP servers enabled for full development experience
-mcp_servers = ["amplifier_session", "amplifier_quality", "amplifier_transcripts", "amplifier_tasks", "amplifier_web", "amplifier_notifications", "amplifier_hooks", "amplifier_agent_analytics", "amplifier_memory_enhanced"]
+mcp_servers = ["amplifier_session", "amplifier_quality", "amplifier_transcripts", "amplifier_tasks", "amplifier_web", "amplifier_notifications", "amplifier_hooks", "amplifier_agent_analytics", "amplifier_memory_enhanced", "token_monitor"]
 
 # CI profile - restrictive settings for automated environments
 [profiles.ci]
@@ -179,7 +188,7 @@ mcp_servers = ["amplifier_quality"]
 # sandbox_mode = "workspace-write"  # PLACEHOLDER: Verify with Codex CLI docs
 tool_timeout_sec = 300
 # Quality checks, transcript export, and task tracking for code review workflows
-mcp_servers = ["amplifier_quality", "amplifier_transcripts", "amplifier_tasks", "amplifier_agent_analytics", "amplifier_memory_enhanced"]
+mcp_servers = ["amplifier_quality", "amplifier_transcripts", "amplifier_tasks", "amplifier_agent_analytics", "amplifier_memory_enhanced", "token_monitor"]
 
 # =============================================================================
 # Optional Extensions (Disabled by Default)
@@ -266,3 +275,13 @@ auto_log_enabled = true
 # Memory enhancement configuration
 auto_suggest_enabled = true
 quality_threshold = 0.3
+
+[mcp_server_config.token_monitor]
+# Token monitor configuration
+warning_threshold_pct = 80.0  # Warn when token usage exceeds this percentage
+critical_threshold_pct = 90.0  # Create termination request when exceeded
+max_token_limit = 128000  # Maximum tokens for Claude Code sessions
+check_interval_seconds = 30  # How often to check token usage
+workspace_dir = ".codex/workspaces"  # Directory for workspace-specific files
+termination_timeout_seconds = 300  # How long to wait for graceful termination
+restart_backoff_seconds = 5  # Initial backoff for restart attempts

@@ -14,8 +14,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 try:
+    from amplifier.session_monitor.models import TerminationPriority
+    from amplifier.session_monitor.models import TerminationReason
+    from amplifier.session_monitor.models import TerminationRequest
     from amplifier.session_monitor.token_tracker import TokenTracker
-    from amplifier.session_monitor.models import TerminationRequest, TerminationReason, TerminationPriority
 except ImportError as e:
     print(f"Failed to import session monitor modules: {e}", file=sys.stderr)
     # Exit gracefully to not break wrapper
@@ -33,7 +35,7 @@ def check_token_budget():
         tracker = TokenTracker()
         usage = tracker.get_current_usage(workspace_id)
 
-        if usage.source == 'no_files':
+        if usage.source == "no_files":
             print(f"No session files found for workspace '{workspace_id}'")
             return 0
 
@@ -60,7 +62,7 @@ def check_token_budget():
         return 1
 
 
-def request_termination(reason, continuation_cmd, priority='graceful'):
+def request_termination(reason, continuation_cmd, priority="graceful"):
     """Create a termination request file.
 
     Args:
@@ -95,7 +97,7 @@ def request_termination(reason, continuation_cmd, priority='graceful'):
             priority=termination_priority,
             token_usage_pct=usage.usage_pct,
             pid=pid,
-            workspace_id=workspace_id
+            workspace_id=workspace_id,
         )
 
         # Write to file
@@ -103,7 +105,7 @@ def request_termination(reason, continuation_cmd, priority='graceful'):
         workspace_dir.mkdir(parents=True, exist_ok=True)
         request_file = workspace_dir / "termination-request"
 
-        with open(request_file, 'w') as f:
+        with open(request_file, "w") as f:
             json.dump(request.model_dump(), f, indent=2)
 
         print(f"✓ Termination request created: {request_file}")
@@ -134,29 +136,27 @@ def get_workspace_id():
 
 def main():
     parser = argparse.ArgumentParser(description="Session monitor helper for token tracking")
-    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # check-tokens command
-    subparsers.add_parser('check-tokens', help='Check current token usage')
+    subparsers.add_parser("check-tokens", help="Check current token usage")
 
     # request-termination command
-    term_parser = subparsers.add_parser('request-termination', help='Request session termination')
-    term_parser.add_argument('--reason', required=True,
-                           choices=[r.value for r in TerminationReason],
-                           help='Reason for termination')
-    term_parser.add_argument('--continuation-command', required=True,
-                           help='Command to restart the session')
-    term_parser.add_argument('--priority',
-                           choices=[p.value for p in TerminationPriority],
-                           default='graceful',
-                           help='Termination priority')
+    term_parser = subparsers.add_parser("request-termination", help="Request session termination")
+    term_parser.add_argument(
+        "--reason", required=True, choices=[r.value for r in TerminationReason], help="Reason for termination"
+    )
+    term_parser.add_argument("--continuation-command", required=True, help="Command to restart the session")
+    term_parser.add_argument(
+        "--priority", choices=[p.value for p in TerminationPriority], default="graceful", help="Termination priority"
+    )
 
     args = parser.parse_args()
 
-    if args.command == 'check-tokens':
+    if args.command == "check-tokens":
         exit_code = check_token_budget()
         sys.exit(exit_code)
-    elif args.command == 'request-termination':
+    elif args.command == "request-termination":
         request_termination(args.reason, args.continuation_command, args.priority)
     else:
         parser.print_help()

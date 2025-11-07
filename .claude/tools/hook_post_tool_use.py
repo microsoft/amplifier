@@ -21,6 +21,15 @@ logger = HookLogger("post_tool_use")
 try:
     from amplifier.memory import MemoryStore
     from amplifier.validation import ClaimValidator
+
+    # Import token tracker if available
+    try:
+        from amplifier.session_monitor.token_tracker import TokenTracker
+
+        TOKEN_MONITORING_AVAILABLE = True
+    except ImportError:
+        TOKEN_MONITORING_AVAILABLE = False
+        logger.debug("Token monitoring not available")
 except ImportError as e:
     logger.error(f"Failed to import amplifier modules: {e}")
     # Exit gracefully to not break hook chain
@@ -108,6 +117,98 @@ async def main():
             logger.info(f"Returned {len(warnings) if 'warnings' in locals() else 0} warnings")
         else:
             logger.info("No contradictions found")
+
+        # Token monitoring (if available)
+        if TOKEN_MONITORING_AVAILABLE:
+            token_monitoring_enabled = os.getenv("TOKEN_MONITORING_ENABLED", "true").lower() in ["true", "1", "yes"]
+            if token_monitoring_enabled:
+                try:
+                    logger.debug("Checking token usage")
+                    tracker = TokenTracker()
+
+                    # Auto-detect workspace from current directory
+                    workspace_id = Path.cwd().name
+                    usage = tracker.get_current_usage(workspace_id)
+
+                    if usage.source != "no_files":
+                        # Log token usage
+                        logger.info(f"Token usage: {usage.usage_pct:.1f}% ({usage.estimated_tokens:,} tokens)")
+
+                        # Check thresholds and take action
+                        if usage.usage_pct >= 90:
+                            # Critical - create termination request
+                            logger.warning(
+                                f"Token usage critical ({usage.usage_pct:.1f}%), creating termination request"
+                            )
+                            try:
+                                import os
+
+                                from amplifier.session_monitor.models import TerminationPriority
+                                from amplifier.session_monitor.models import TerminationReason
+                                from amplifier.session_monitor.models import TerminationRequest
+
+                                request = TerminationRequest(
+                                    reason=TerminationReason.TOKEN_LIMIT_APPROACHING,
+                                    continuation_command="claude --continue-session",  # Generic continuation
+                                    priority=TerminationPriority.GRACEFUL,
+                                    token_usage_pct=usage.usage_pct,
+                                    pid=os.getpid(),
+                                    workspace_id=workspace_id,
+                                )
+
+                                # Write to file
+                                workspace_dir = Path(".codex/workspaces") / workspace_id
+                                workspace_dir.mkdir(parents=True, exist_ok=True)
+                                request_file = workspace_dir / "termination-request"
+
+                                with open(request_file, "w") as f:
+                                    json.dump(request.model_dump(), f, indent=2)
+
+                                logger.info(f"Termination request created: {request_file}")
+
+                            except Exception as e:
+                                logger.error(f"Failed to create termination request: {e}")
+
+                        elif usage.usage_pct >= 80:
+                            # Warning - log to stderr for user visibility
+                            warning_msg = (
+                                f"⚠️ Token usage high: {usage.usage_pct:.1f}% ({usage.estimated_tokens:,} tokens)"
+                            )
+                            print(warning_msg, file=sys.stderr)
+                            logger.warning(warning_msg)
+
+                            # Also write to warning file
+                            try:
+                                workspace_dir = Path(".codex/workspaces") / workspace_id
+                                workspace_dir.mkdir(parents=True, exist_ok=True)
+                                warning_file = workspace_dir / "token_warning.txt"
+
+                                with open(warning_file, "a") as f:
+                                    f.write(f"{usage.timestamp.isoformat()}: {warning_msg}\n")
+
+                            except Exception as e:
+                                logger.error(f"Failed to write warning file: {e}")
+
+                        # Record usage in history
+                        try:
+                            history_file = Path(".codex/workspaces") / workspace_id / "token_history.jsonl"
+                            history_file.parent.mkdir(parents=True, exist_ok=True)
+
+                            history_entry = {
+                                "timestamp": usage.timestamp.isoformat(),
+                                "estimated_tokens": usage.estimated_tokens,
+                                "usage_pct": usage.usage_pct,
+                                "source": usage.source,
+                            }
+
+                            with open(history_file, "a") as f:
+                                f.write(json.dumps(history_entry) + "\n")
+
+                        except Exception as e:
+                            logger.error(f"Failed to record token history: {e}")
+
+                except Exception as e:
+                    logger.error(f"Error during token monitoring: {e}")
 
     except Exception as e:
         logger.exception("Error during claim validation", e)

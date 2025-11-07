@@ -67,7 +67,7 @@ async def get_token_usage(workspace_id: str) -> dict[str, Any]:
                 "usage_pct": usage.usage_pct,
                 "source": usage.source,
                 "timestamp": usage.timestamp.isoformat(),
-            }
+            },
         }
 
         logger.info(f"Token usage retrieved: {usage.usage_pct:.1f}% from {usage.source}")
@@ -100,8 +100,8 @@ async def check_should_terminate(workspace_id: str) -> dict[str, Any]:
 
         # Import required modules
         try:
-            from amplifier.session_monitor.token_tracker import TokenTracker
             from amplifier.session_monitor.models import MonitorConfig
+            from amplifier.session_monitor.token_tracker import TokenTracker
         except ImportError as e:
             logger.error(f"Failed to import session monitor modules: {e}")
             return error_response("Session monitor modules not available", {"import_error": str(e)})
@@ -127,7 +127,7 @@ async def check_should_terminate(workspace_id: str) -> dict[str, Any]:
             "thresholds": {
                 "warning": config.token_warning_threshold,
                 "critical": config.token_critical_threshold,
-            }
+            },
         }
 
         logger.info(f"Termination check: {should_terminate} - {reason}")
@@ -139,7 +139,9 @@ async def check_should_terminate(workspace_id: str) -> dict[str, Any]:
 
 
 @mcp.tool()
-async def request_termination(workspace_id: str, reason: str, continuation_command: str, priority: str = "graceful") -> dict[str, Any]:
+async def request_termination(
+    workspace_id: str, reason: str, continuation_command: str, priority: str = "graceful"
+) -> dict[str, Any]:
     """
     Create a termination request file for programmatic session termination.
 
@@ -163,7 +165,9 @@ async def request_termination(workspace_id: str, reason: str, continuation_comma
 
         # Import required modules
         try:
-            from amplifier.session_monitor.models import TerminationRequest, TerminationReason, TerminationPriority
+            from amplifier.session_monitor.models import TerminationPriority
+            from amplifier.session_monitor.models import TerminationReason
+            from amplifier.session_monitor.models import TerminationRequest
             from amplifier.session_monitor.token_tracker import TokenTracker
         except ImportError as e:
             logger.error(f"Failed to import session monitor modules: {e}")
@@ -181,7 +185,10 @@ async def request_termination(workspace_id: str, reason: str, continuation_comma
             termination_reason = TerminationReason(reason)
             termination_priority = TerminationPriority(priority)
         except ValueError as e:
-            return error_response(f"Invalid reason or priority: {e}", {"valid_reasons": list(TerminationReason), "valid_priorities": list(TerminationPriority)})
+            return error_response(
+                f"Invalid reason or priority: {e}",
+                {"valid_reasons": list(TerminationReason), "valid_priorities": list(TerminationPriority)},
+            )
 
         # Create termination request
         request = TerminationRequest(
@@ -190,7 +197,7 @@ async def request_termination(workspace_id: str, reason: str, continuation_comma
             priority=termination_priority,
             token_usage_pct=usage.usage_pct,
             pid=pid,
-            workspace_id=workspace_id
+            workspace_id=workspace_id,
         )
 
         # Write to file
@@ -198,7 +205,7 @@ async def request_termination(workspace_id: str, reason: str, continuation_comma
         workspace_dir.mkdir(parents=True, exist_ok=True)
         request_file = workspace_dir / "termination-request"
 
-        with open(request_file, 'w') as f:
+        with open(request_file, "w") as f:
             json.dump(request.model_dump(), f, indent=2)
 
         # Build response
@@ -244,7 +251,7 @@ async def get_monitor_status() -> dict[str, Any]:
 
         if pid_file.exists():
             try:
-                with open(pid_file, 'r') as f:
+                with open(pid_file) as f:
                     daemon_pid = int(f.read().strip())
                 os.kill(daemon_pid, 0)  # Check if process exists
                 daemon_running = True
@@ -265,7 +272,7 @@ async def get_monitor_status() -> dict[str, Any]:
 
                     if session_pid_file.exists():
                         try:
-                            with open(session_pid_file, 'r') as f:
+                            with open(session_pid_file) as f:
                                 pid = int(f.read().strip())
                             os.kill(pid, 0)  # Check if exists
                             session_info["session_pid"] = pid
@@ -286,7 +293,9 @@ async def get_monitor_status() -> dict[str, Any]:
             "workspaces_dir": str(workspaces_dir),
         }
 
-        logger.info(f"Monitor status retrieved: daemon {'running' if daemon_running else 'stopped'}, {len(active_sessions)} sessions")
+        logger.info(
+            f"Monitor status retrieved: daemon {'running' if daemon_running else 'stopped'}, {len(active_sessions)} sessions"
+        )
         return success_response(response_data)
 
     except Exception as e:

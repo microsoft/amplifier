@@ -154,3 +154,90 @@ class SessionManager:
             Path to session file
         """
         return self.session_dir / f"{session_id}.json"
+
+    def save_checkpoint(self, session_id: str, checkpoint_data: dict) -> Path:
+        """Save checkpoint data for a session.
+
+        Args:
+            session_id: Session identifier
+            checkpoint_data: Data to checkpoint
+
+        Returns:
+            Path to checkpoint file
+        """
+        # Load current session to update it
+        session = self.load_session(session_id)
+        if session:
+            session.create_checkpoint(checkpoint_data)
+            self.save_session(session)
+
+        # Save checkpoint to dedicated file
+        checkpoint_dir = Path(".codex/workspaces") / session_id
+        checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        checkpoint_file = checkpoint_dir / "checkpoint.json"
+
+        checkpoint_content = {
+            "session_id": session_id,
+            "checkpoint_data": checkpoint_data,
+            "timestamp": datetime.now().isoformat(),
+        }
+
+        with open(checkpoint_file, "w") as f:
+            json.dump(checkpoint_content, f, indent=2)
+
+        return checkpoint_file
+
+    def load_checkpoint(self, session_id: str) -> dict | None:
+        """Load checkpoint data for a session.
+
+        Args:
+            session_id: Session identifier
+
+        Returns:
+            Checkpoint data if available, None otherwise
+        """
+        checkpoint_file = Path(".codex/workspaces") / session_id / "checkpoint.json"
+        if not checkpoint_file.exists():
+            return None
+
+        try:
+            with open(checkpoint_file) as f:
+                data = json.load(f)
+            return data.get("checkpoint_data")
+        except (json.JSONDecodeError, KeyError):
+            return None
+
+    def resume_session(self, session_id: str, continuation_command: str) -> SessionState | None:
+        """Resume a session from checkpoint.
+
+        Args:
+            session_id: Session identifier
+            continuation_command: Command to continue execution
+
+        Returns:
+            SessionState with restored checkpoint, None if not found
+        """
+        session = self.load_session(session_id)
+        if not session:
+            return None
+
+        # Load checkpoint data
+        checkpoint_data = self.load_checkpoint(session_id)
+        if checkpoint_data:
+            session.checkpoint_data = checkpoint_data
+
+        return session
+
+    def get_session_token_usage(self, session_id: str) -> list[dict]:
+        """Get token usage history for a session.
+
+        Args:
+            session_id: Session identifier
+
+        Returns:
+            List of token usage snapshots
+        """
+        session = self.load_session(session_id)
+        if not session:
+            return []
+        return session.token_usage_history
