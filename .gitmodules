@@ -1,3 +1,15 @@
 [submodule "brand-composer-sprint-backend"]
 	path = brand-composer-sprint-backend
 	url = ssh://git@github.com/napfen9999/brand-composer-sprint-backend.git
+[submodule "brand_composer_amplifyier"]
+	path = brand_composer_amplifyier
+	url = https://github.com/napfen9999/brand_composer_amplifyier.git
+[submodule "superpowers"]
+	path = superpowers
+	url = https://github.com/obra/superpowers.git
+[submodule "claude-code-infrastructure-showcase"]
+	path = claude-code-infrastructure-showcase
+	url = https://github.com/diet103/claude-code-infrastructure-showcase.git
+[submodule "claude-code-kit"]
+	path = claude-code-kit
+	url = https://github.com/blencorp/claude-code-kit.git
