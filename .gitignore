@@ -106,5 +106,4 @@ ai-study-extension/popup/popup.html
 ai-study-extension/popup/popup.js
 .vscode/*
 .codex/web_cache/*
-.vscode/launch.json
-.vscode/settings.json
+.vscode/*
