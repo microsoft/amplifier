@@ -15,6 +15,17 @@ git config --global push.autoSetupRemote true
 echo "    ✅ Git configured"
 
 echo ""
+echo "🔧  Setting up pnpm global bin directory..."
+# Ensure SHELL is set for pnpm setup
+export SHELL="${SHELL:-/bin/bash}"
+# Configure pnpm to use a global bin directory
+pnpm setup 2>&1 | grep -v "^$" || true
+# Export for current session (will also be in ~/.bashrc for future sessions)
+export PNPM_HOME="/home/vscode/.local/share/pnpm"
+export PATH="$PNPM_HOME:$PATH"
+echo "    ✅ pnpm configured"
+
+echo ""
 echo "========================================="
 echo "✅  Post-create tasks complete at $(date)"
 echo "========================================="

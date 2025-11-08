@@ -76,7 +76,7 @@
     // for workspaces.
     // Ensure the cache is on the same disk for optimal uv performance. https://docs.astral.sh/uv/concepts/cache/#cache-directory
     // ${containerWorkspaceFolder} == /workspaces/repo-name
-    "UV_CACHE_DIR": "${containerWorkspaceFolder}/../.cache/uv"
+    "UV_CACHE_DIR": "${containerWorkspaceFolder}/.cache/uv"
   }
   // Connect as root instead. More info: https://aka.ms/dev-containers-non-root.
   // "remoteUser": "root"

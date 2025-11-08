@@ -53,7 +53,7 @@ Current working tree state:
 
 ## Unpushed Commits
 
-!`git log --oneline origin/$(git branch --show-current)..HEAD 2>/dev/null || echo "No unpushed commits or remote branch doesn't exist"`
+!`git log --oneline @{u}..HEAD 2>/dev/null || echo "No unpushed commits or remote tracking branch"`
 
 ---
 
@@ -215,9 +215,14 @@ Phase 5: Finish ━━━━━━━━┛
 
 ## Git Summary
 
-!`echo "Branch: $(git branch --show-current)"`
-!`echo "Uncommitted changes: $(git status --short | wc -l) files"`
-!`echo "Unpushed commits: $(git log --oneline origin/$(git branch --show-current)..HEAD 2>/dev/null | wc -l) commits"`
+**Current Branch:**
+!`git branch --show-current`
+
+**Uncommitted Changes:**
+!`git status --short | wc -l | xargs -I {} echo "{} files"`
+
+**Unpushed Commits:**
+!`git log --oneline @{u}..HEAD 2>/dev/null | wc -l | xargs -I {} echo "{} commits" || echo "0 commits (no remote tracking)"`
 
 ---
 

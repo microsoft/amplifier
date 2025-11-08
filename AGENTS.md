@@ -2,6 +2,39 @@
 
 This file provides guidance to AI assistants when working with code in this repository.
 
+---
+
+## 💎 CRITICAL: Respect User Time - Test Before Presenting
+
+**The user's time is their most valuable resource.** When you present work as "ready" or "done", you must have:
+
+1. **Tested it yourself thoroughly** - Don't make the user your QA
+2. **Fixed obvious issues** - Syntax errors, import problems, broken logic
+3. **Verified it actually works** - Run tests, check structure, validate logic
+4. **Only then present it** - "This is ready for your review" means YOU'VE already validated it
+
+**User's role:** Strategic decisions, design approval, business context, stakeholder judgment
+**Your role:** Implementation, testing, debugging, fixing issues before engaging user
+
+**Anti-pattern**: "I've implemented X, can you test it and let me know if it works?"
+**Correct pattern**: "I've implemented and tested X. Tests pass, structure verified, logic validated. Ready for your review. Here is how you can verify."
+
+**Remember**: Every time you ask the user to debug something you could have caught, you're wasting their time on non-stakeholder work. Be thorough BEFORE engaging them.
+
+---
+
+## Git Commit Message Guidelines
+
+When creating git commit messages, always insert the following at the end of your commit message:
+
+```
+🤖 Generated with [Amplifier](https://github.com/microsoft/amplifier)
+
+Co-Authored-By: Amplifier <240397093+microsoft-amplifier@users.noreply.github.com>
+```
+
+---
+
 ## Important: Consult DISCOVERIES.md
 
 Before implementing solutions to complex problems:
@@ -319,6 +352,7 @@ Every function must work or not exist. Every file must be complete or not create
 **For detailed guidance on organizing amplifier CLI tools, consult the `amplifier-cli-architect` agent.**
 
 This specialized agent has comprehensive context on:
+
 - Progressive Maturity Model (scenarios/ vs ai_working/ vs amplifier/)
 - Tool creation patterns and templates
 - Documentation requirements
@@ -326,6 +360,7 @@ This specialized agent has comprehensive context on:
 - THE exemplar to model after: @scenarios/blog_writer/
 
 When creating amplifier CLI tools:
+
 1. Delegate to `amplifier-cli-architect` in GUIDE mode for complete guidance
 2. When in doubt about tool organization, consult `amplifier-cli-architect` and validate against @scenarios/blog_writer/ implementation
 

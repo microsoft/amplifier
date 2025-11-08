@@ -254,25 +254,43 @@ Legacy commands continue to work:
 
 ### Setup Your Project
 
+```bash
+# Clone Amplifier repository
+git clone https://github.com/microsoft/amplifier.git amplifier
+```
+
 1. For existing GitHub projects
 
    ```bash
    # Add your project as a submodule
    cd amplifier
-   git submodule add git@github.com:yourname/my-project.git my-project
+   git submodule add https://github.com/<your-username>/<your-project-name>.git my-project
    ```
 
 2. For new projects
 
    ```bash
-   # Create new project and add as a submodule
-   cd amplifier
-   mkdir my-project
-   cd my-project
-   git init
-   git remote add origin git@github.com:yourname/my-project.git
-   cd ..
-   git submodule add ./my-project my-project
+   # Create a new GitHub repository
+
+   # Option 1: gh CLI
+   gh repo create <your-username>/<your-project-name> --private
+
+   # Option 2: Go to https://github.com/new
+   ```
+
+   ```bash
+   # Initialize your new project
+   git init my-project
+   cd my-project/
+   git remote add origin https://github.com/<your-username>/<your-project-name>.git
+   echo "# My Project" > README.md
+   git add .
+   git commit -m "Initial commit"
+   git push -u origin main
+
+   # 2. Add as submodule
+   cd ../amplifier
+   git submodule add https://github.com/<your-username>/<your-project-name>.git my-project
    ```
 
 ```bash
@@ -291,8 +309,8 @@ claude
 _Tell Claude Code:_
 
 ```
-I'm working on @yourproject/ with Amplifier.
-Read @yourproject/AGENTS.md for project context.
+I'm working on @my-project/ with Amplifier.
+Read @my-project/AGENTS.md for project context.
 Let's use /ddd:1-plan to design the architecture.
 ```
 
@@ -492,6 +510,36 @@ Amplifier is designed so **you can create new AI-powered tools** just by describ
 - _Tell Claude Code:_ `Walk me through creating my own scenario tool`
 
 - _View the documentation:_ [Scenario Creation Guide](docs/CREATE_YOUR_OWN_TOOLS.md)
+
+### 🎨 Design Intelligence
+
+Amplifier includes comprehensive design intelligence with 7 specialist agents, evidence-based design knowledge, and orchestrated design workflows:
+
+- _Tell Claude Code:_
+
+  `/designer create a button component with hover states and accessibility`
+
+  `Use the art-director agent to establish visual direction for my app`
+
+  `Deploy component-designer to create a reusable card component`
+
+- _Available Design Specialists:_
+
+  - **animation-choreographer** - Motion design and transitions
+  - **art-director** - Aesthetic strategy and visual direction
+  - **component-designer** - Component design and creation
+  - **design-system-architect** - Design system architecture
+  - **layout-architect** - Information architecture and layout
+  - **responsive-strategist** - Device adaptation and responsive design
+  - **voice-strategist** - Voice & tone for UI copy
+
+- _Design Framework:_
+
+  - **9 Dimensions** - Purpose, hierarchy, color, typography, spacing, responsive, accessibility, motion, voice
+  - **4 Layers** - Foundational, structural, behavioral, experiential
+  - **Evidence-based** - WCAG 2.1, color theory, animation principles, accessibility standards
+
+- _View the documentation:_ [Design Intelligence](docs/design/README.md)
 
 ### 🤖 Explore Amplifier's agents on your code
 
