@@ -123,9 +123,7 @@ class ClaudeCodeAgentBackend(AgentBackend):
             sdk_client_cls, sdk_options_cls = self._ensure_sdk_available()
 
             # Create options with Task tool enabled
-            self._sdk_options = sdk_options_cls(
-                allowed_tools=["Task", "Read", "Write", "Bash", "Grep", "Glob"], working_directory=os.getcwd()
-            )  # type: ignore[call-arg]
+            self._sdk_options = sdk_options_cls(allowed_tools=["Task", "Read", "Write", "Bash", "Grep", "Glob"])  # type: ignore[call-arg]
 
             self._sdk_client = sdk_client_cls(options=self._sdk_options)
 

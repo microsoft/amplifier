@@ -27,13 +27,14 @@ mcp = FastMCP("token_monitor")
 # Initialize logger
 logger = MCPLogger("token_monitor")
 WORKSPACES_DIR = Path(".codex/workspaces")
-_TOKEN_TRACKER_CLASS: Any | None = None
-_MONITOR_CONFIG_CLASS: Any | None = None
 
 
 def _package_override(name: str) -> Any:
     """Fetch attribute from the package namespace if present."""
-    package = sys.modules.get(__package__)
+    package_name = __package__
+    if package_name is None:
+        return None
+    package = sys.modules.get(package_name)
     return getattr(package, name, None) if package else None
 
 
@@ -41,14 +42,17 @@ def _setup_amplifier(project_root: Path) -> bool:
     """Call setup_amplifier_path, allowing tests to override."""
     override = _package_override("setup_amplifier_path")
     func = override if callable(override) else base_setup_amplifier_path
-    return func(project_root)
+    return bool(func(project_root))
 
 
 def _project_root() -> Path:
     """Get the project root, allowing tests to override."""
     override = _package_override("get_project_root")
     func = override if callable(override) else base_get_project_root
-    return func()
+    result = func()
+    if not isinstance(result, Path):
+        raise TypeError(f"Expected Path from get_project_root, got {type(result)}")
+    return result
 
 
 def _get_token_tracker_cls():
@@ -57,12 +61,9 @@ def _get_token_tracker_cls():
     if override is not None:
         return override
 
-    global _TOKEN_TRACKER_CLASS
-    if _TOKEN_TRACKER_CLASS is None:
-        from amplifier.session_monitor.token_tracker import TokenTracker
+    from amplifier.session_monitor.token_tracker import TokenTracker
 
-        _TOKEN_TRACKER_CLASS = TokenTracker
-    return _TOKEN_TRACKER_CLASS
+    return TokenTracker
 
 
 def _get_monitor_config_cls():
@@ -71,12 +72,9 @@ def _get_monitor_config_cls():
     if override is not None:
         return override
 
-    global _MONITOR_CONFIG_CLASS
-    if _MONITOR_CONFIG_CLASS is None:
-        from amplifier.session_monitor.models import MonitorConfig
+    from amplifier.session_monitor.models import MonitorConfig
 
-        _MONITOR_CONFIG_CLASS = MonitorConfig
-    return _MONITOR_CONFIG_CLASS
+    return MonitorConfig
 
 
 def _read_pid(pid_file: Path) -> int | None:
@@ -267,7 +265,6 @@ async def request_termination(
             from amplifier.session_monitor.models import TerminationPriority
             from amplifier.session_monitor.models import TerminationReason
             from amplifier.session_monitor.models import TerminationRequest
-            from amplifier.session_monitor.token_tracker import TokenTracker
         except ImportError as e:
             logger.error(f"Failed to import session monitor modules: {e}")
             return error_response("Session monitor modules not available", {"import_error": str(e)})
@@ -288,6 +285,7 @@ async def request_termination(
             )
 
         # Get current token usage
+        tracker_cls = _get_token_tracker_cls()
         tracker = tracker_cls()
         usage = tracker.get_current_usage(workspace_id)
 

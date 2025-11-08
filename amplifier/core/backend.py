@@ -509,7 +509,8 @@ class CodexBackend(AmplifierBackend):
             from ...codex.tools.transcript_exporter import CodexTranscriptExporter
 
             exporter = CodexTranscriptExporter()
-            output_dir = Path(output_dir) if output_dir else Path(".codex/transcripts")
+            output_path = Path(output_dir) if output_dir else Path(".codex/transcripts")
+            output_dir = str(output_path)
             result = exporter.export_codex_transcript(session_id or "unknown", output_dir, format)
             return {
                 "success": result is not None,
@@ -633,11 +634,8 @@ class CodexBackend(AmplifierBackend):
             from amplifier.core.agent_backend import get_agent_backend
 
             agent_backend = get_agent_backend()
-            # Codex agent backend has spawn_agent_with_context method
-            if hasattr(agent_backend, "spawn_agent_with_context"):
-                result = agent_backend.spawn_agent_with_context(agent_name, task, messages, context)
-            else:
-                result = agent_backend.spawn_agent(agent_name, task, context)
+            # Use spawn_agent method (all backends support this)
+            result = agent_backend.spawn_agent(agent_name, task, context)
 
             # Determine success and extract summary
             success = result.get("success", False)
