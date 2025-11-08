@@ -6,11 +6,9 @@ from datetime import UTC
 from datetime import datetime
 from datetime import timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING
 from typing import Any
 
-if TYPE_CHECKING:  # pragma: no cover - type hint support
-    from amplifier.session_monitor.models import TokenUsageSnapshot
+from amplifier.session_monitor.models import TokenUsageSnapshot
 
 from .models import SessionMetadata
 from .models import SessionState
@@ -248,7 +246,7 @@ class SessionManager:
         self.save_session(session)
         return session
 
-    def get_session_token_usage(self, session_id: str) -> list["TokenUsageSnapshot"]:
+    def get_session_token_usage(self, session_id: str) -> list[TokenUsageSnapshot]:
         """Get token usage history for a session.
 
         Args:

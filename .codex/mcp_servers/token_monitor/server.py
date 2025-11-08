@@ -17,8 +17,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # Import base utilities using absolute imports
 from base import MCPLogger
 from base import error_response
-from base import get_project_root
-from base import setup_amplifier_path
+from base import get_project_root as base_get_project_root
+from base import setup_amplifier_path as base_setup_amplifier_path
 from base import success_response
 
 # Initialize FastMCP server
@@ -27,6 +27,56 @@ mcp = FastMCP("token_monitor")
 # Initialize logger
 logger = MCPLogger("token_monitor")
 WORKSPACES_DIR = Path(".codex/workspaces")
+_TOKEN_TRACKER_CLASS: Any | None = None
+_MONITOR_CONFIG_CLASS: Any | None = None
+
+
+def _package_override(name: str) -> Any:
+    """Fetch attribute from the package namespace if present."""
+    package = sys.modules.get(__package__)
+    return getattr(package, name, None) if package else None
+
+
+def _setup_amplifier(project_root: Path) -> bool:
+    """Call setup_amplifier_path, allowing tests to override."""
+    override = _package_override("setup_amplifier_path")
+    func = override if callable(override) else base_setup_amplifier_path
+    return func(project_root)
+
+
+def _project_root() -> Path:
+    """Get the project root, allowing tests to override."""
+    override = _package_override("get_project_root")
+    func = override if callable(override) else base_get_project_root
+    return func()
+
+
+def _get_token_tracker_cls():
+    """Return the TokenTracker class, honoring overrides."""
+    override = _package_override("TokenTracker")
+    if override is not None:
+        return override
+
+    global _TOKEN_TRACKER_CLASS
+    if _TOKEN_TRACKER_CLASS is None:
+        from amplifier.session_monitor.token_tracker import TokenTracker
+
+        _TOKEN_TRACKER_CLASS = TokenTracker
+    return _TOKEN_TRACKER_CLASS
+
+
+def _get_monitor_config_cls():
+    """Return the MonitorConfig class, honoring overrides."""
+    override = _package_override("MonitorConfig")
+    if override is not None:
+        return override
+
+    global _MONITOR_CONFIG_CLASS
+    if _MONITOR_CONFIG_CLASS is None:
+        from amplifier.session_monitor.models import MonitorConfig
+
+        _MONITOR_CONFIG_CLASS = MonitorConfig
+    return _MONITOR_CONFIG_CLASS
 
 
 def _read_pid(pid_file: Path) -> int | None:
@@ -64,8 +114,8 @@ async def health_check() -> dict[str, Any]:
         Dictionary containing server metadata and module availability.
     """
     try:
-        project_root = get_project_root()
-        modules_available = setup_amplifier_path(project_root)
+        project_root = _project_root()
+        modules_available = _setup_amplifier(project_root)
         response_data = {
             "server": "token_monitor",
             "project_root": str(project_root),
@@ -92,20 +142,20 @@ async def get_token_usage(workspace_id: str) -> dict[str, Any]:
         logger.info(f"Getting token usage for workspace: {workspace_id}")
 
         # Set up amplifier path
-        project_root = get_project_root()
-        if not setup_amplifier_path(project_root):
+        project_root = _project_root()
+        if not _setup_amplifier(project_root):
             logger.warning("Failed to set up amplifier path")
             return error_response("Amplifier modules not available")
 
         # Import token tracker
         try:
-            from amplifier.session_monitor.token_tracker import TokenTracker
+            tracker_cls = _get_token_tracker_cls()
         except ImportError as e:
             logger.error(f"Failed to import TokenTracker: {e}")
             return error_response("TokenTracker not available", {"import_error": str(e)})
 
         # Get token usage
-        tracker = TokenTracker()
+        tracker = tracker_cls()
         usage = tracker.get_current_usage(workspace_id)
 
         # Build response
@@ -142,22 +192,22 @@ async def check_should_terminate(workspace_id: str) -> dict[str, Any]:
         logger.info(f"Checking termination recommendation for workspace: {workspace_id}")
 
         # Set up amplifier path
-        project_root = get_project_root()
-        if not setup_amplifier_path(project_root):
+        project_root = _project_root()
+        if not _setup_amplifier(project_root):
             logger.warning("Failed to set up amplifier path")
             return error_response("Amplifier modules not available")
 
         # Import required modules
         try:
-            from amplifier.session_monitor.models import MonitorConfig
-            from amplifier.session_monitor.token_tracker import TokenTracker
+            tracker_cls = _get_token_tracker_cls()
+            config_cls = _get_monitor_config_cls()
         except ImportError as e:
             logger.error(f"Failed to import session monitor modules: {e}")
             return error_response("Session monitor modules not available", {"import_error": str(e)})
 
         # Get token usage and check thresholds
-        tracker = TokenTracker()
-        config = MonitorConfig()  # Use defaults, could be loaded from config file
+        tracker = tracker_cls()
+        config = config_cls()  # Use defaults, could be loaded from config file
         usage = tracker.get_current_usage(workspace_id)
 
         should_terminate, reason = tracker.should_terminate(usage, config)
@@ -207,8 +257,8 @@ async def request_termination(
         logger.info(f"Creating termination request for workspace: {workspace_id}")
 
         # Set up amplifier path
-        project_root = get_project_root()
-        if not setup_amplifier_path(project_root):
+        project_root = _project_root()
+        if not _setup_amplifier(project_root):
             logger.warning("Failed to set up amplifier path")
             return error_response("Amplifier modules not available")
 
@@ -238,7 +288,7 @@ async def request_termination(
             )
 
         # Get current token usage
-        tracker = TokenTracker()
+        tracker = tracker_cls()
         usage = tracker.get_current_usage(workspace_id)
 
         # Validate inputs
@@ -299,8 +349,8 @@ async def get_monitor_status() -> dict[str, Any]:
         logger.info("Getting monitor daemon status")
 
         # Set up amplifier path
-        project_root = get_project_root()
-        if not setup_amplifier_path(project_root):
+        project_root = _project_root()
+        if not _setup_amplifier(project_root):
             logger.warning("Failed to set up amplifier path")
             return error_response("Amplifier modules not available")
 

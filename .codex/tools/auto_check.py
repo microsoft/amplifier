@@ -32,7 +32,7 @@ def main():
         print(f"Running quality checks on {len(modified_files)} files...")
 
         # Get backend
-        backend = BackendFactory.create(backend_type="codex")
+        backend = BackendFactory.create_backend(backend_type="codex")
 
         # Run quality checks
         result = backend.run_quality_checks(file_paths=modified_files)

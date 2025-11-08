@@ -18,7 +18,7 @@ def main():
     """Run periodic transcript save"""
     try:
         # Get backend
-        backend = BackendFactory.create(backend_type="codex")
+        backend = BackendFactory.create_backend(backend_type="codex")
 
         # Export transcript
         result = backend.export_transcript()

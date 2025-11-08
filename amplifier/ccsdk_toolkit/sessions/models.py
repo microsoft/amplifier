@@ -8,18 +8,7 @@ from pydantic import BaseModel
 from pydantic import Field
 from pydantic import model_validator
 
-# Import TokenUsageSnapshot if available (for type hints)
-try:
-    from amplifier.session_monitor.models import TokenUsageSnapshot
-except ImportError:  # pragma: no cover - optional dependency for lint/type-check contexts
-
-    class TokenUsageSnapshot(BaseModel):  # type: ignore[too-many-ancestors]
-        """Fallback snapshot used when session_monitor models unavailable."""
-
-        timestamp: datetime = Field(default_factory=datetime.now)
-        estimated_tokens: int
-        usage_pct: float
-        source: str = "unknown"
+from amplifier.session_monitor.models import TokenUsageSnapshot
 
 
 class SessionMetadata(BaseModel):

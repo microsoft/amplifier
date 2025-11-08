@@ -314,7 +314,7 @@ class TranscriptSaverServer(AmplifierMCPServer):
                     for line in f:
                         if line.strip():
                             message_count += 1
-                metadata["message_count"] = message_count
+                metadata["message_count"] = str(message_count)
 
             # Get directory modification time as fallback start time
             if not metadata.get("started_at"):
