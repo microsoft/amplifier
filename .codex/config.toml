@@ -65,6 +65,18 @@ VIRTUAL_ENV = true
 CONDA_DEFAULT_ENV = true
 
 # =============================================================================
+# Session Monitor Configuration
+# =============================================================================
+
+[session_monitor]
+workspace_base_dir = ".codex/workspaces"
+check_interval_seconds = 5
+token_warning_threshold = 80.0
+token_critical_threshold = 90.0
+max_restart_attempts = 3
+restart_backoff_seconds = 2
+
+# =============================================================================
 # MCP Servers Section - Implemented and ready for use
 # =============================================================================
 # These MCP servers replace Claude Code's native hooks system:
@@ -126,6 +138,15 @@ env = { AMPLIFIER_ROOT = "/Users/aleksandarilic/Documents/github/acailic/improve
 timeout = 30
 # Purpose: Send desktop notifications for task completion, errors, and important events
 
+# Token Monitor MCP Server
+# Provides: Token usage tracking, checkpoint/resume data, and termination tooling
+[mcp_servers.token_monitor]
+command = "uv"
+args = ["run", "--directory", "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", "python", ".codex/mcp_servers/token_monitor/server.py"]
+env = { AMPLIFIER_ROOT = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", PYTHONPATH = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex" }
+timeout = 30
+# Purpose: Monitor token usage, handle termination requests, and surface daemon health checks
+
 # Hooks Orchestration MCP Server
 # Provides: Automatic triggers for file changes, session events, periodic tasks
 [mcp_servers.amplifier_hooks]
@@ -152,15 +173,6 @@ args = ["run", "--directory", "/Users/aleksandarilic/Documents/github/acailic/im
 env = { AMPLIFIER_ROOT = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", PYTHONPATH = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex" }
 timeout = 30
 # Purpose: Provide proactive memory suggestions and manage memory quality
-
-# Token Monitor MCP Server
-# Provides: Programmatic access to token usage monitoring and session termination
-[mcp_servers.token_monitor]
-command = "uv"
-args = ["run", "--directory", "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", "python", ".codex/mcp_servers/token_monitor/server.py"]
-env = { AMPLIFIER_ROOT = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex", PYTHONPATH = "/Users/aleksandarilic/Documents/github/acailic/improvements-ampl/amplifier-adding-codex" }
-timeout = 30
-# Purpose: Monitor token usage, provide termination requests, support checkpoint/resume
 
 # =============================================================================
 # Profiles Section - Configure which servers to use per profile

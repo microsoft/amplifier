@@ -186,7 +186,8 @@ async def finalize_session(messages: list[dict[str, Any]], context: str | None =
                 for msg in messages:
                     if msg.get("role") == "user":
                         context = msg.get("content", "")[:200]
-                        logger.debug(f"Extracted context from first user message: {context[:50]}...")
+                        if context:
+                            logger.debug(f"Extracted context from first user message: {context[:50]}...")
                         break
 
             # Initialize modules

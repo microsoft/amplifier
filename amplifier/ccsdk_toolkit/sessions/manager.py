@@ -6,6 +6,11 @@ from datetime import UTC
 from datetime import datetime
 from datetime import timedelta
 from pathlib import Path
+from typing import TYPE_CHECKING
+from typing import Any
+
+if TYPE_CHECKING:  # pragma: no cover - type hint support
+    from amplifier.session_monitor.models import TokenUsageSnapshot
 
 from .models import SessionMetadata
 from .models import SessionState
@@ -30,6 +35,7 @@ class SessionManager:
         """
         self.session_dir = session_dir or (Path.home() / ".ccsdk" / "sessions")
         self.session_dir.mkdir(parents=True, exist_ok=True)
+        self.workspace_base_dir = Path(".codex/workspaces")
 
     def create_session(self, name: str = "unnamed", tags: list[str] | None = None) -> SessionState:
         """Create a new session.
@@ -60,12 +66,23 @@ class SessionManager:
         with open(session_file) as f:
             data = json.load(f)
 
-        # Convert datetime strings back to datetime objects
-        if "metadata" in data:
-            if "created_at" in data["metadata"]:
-                data["metadata"]["created_at"] = datetime.fromisoformat(data["metadata"]["created_at"])
-            if "updated_at" in data["metadata"]:
-                data["metadata"]["updated_at"] = datetime.fromisoformat(data["metadata"]["updated_at"])
+        # Ensure new optional fields exist for backward compatibility
+        data.setdefault("checkpoint_data", None)
+        data.setdefault("token_usage_history", [])
+        data.setdefault("last_checkpoint_at", None)
+
+        # Convert datetime strings back to datetime objects where necessary
+        metadata = data.get("metadata") or {}
+        created_at = metadata.get("created_at")
+        updated_at = metadata.get("updated_at")
+        last_checkpoint_at = data.get("last_checkpoint_at")
+
+        if isinstance(created_at, str):
+            metadata["created_at"] = datetime.fromisoformat(created_at)
+        if isinstance(updated_at, str):
+            metadata["updated_at"] = datetime.fromisoformat(updated_at)
+        if isinstance(last_checkpoint_at, str):
+            data["last_checkpoint_at"] = datetime.fromisoformat(last_checkpoint_at)
 
         return SessionState(**data)
 
@@ -80,18 +97,10 @@ class SessionManager:
         """
         session_file = self.session_dir / f"{session.metadata.session_id}.json"
 
-        # Convert to JSON-serializable format
-        data = session.model_dump()
-
-        # Convert datetime objects to ISO format strings
-        if "metadata" in data:
-            if "created_at" in data["metadata"]:
-                data["metadata"]["created_at"] = data["metadata"]["created_at"].isoformat()
-            if "updated_at" in data["metadata"]:
-                data["metadata"]["updated_at"] = data["metadata"]["updated_at"].isoformat()
+        data = session.model_dump(mode="json")
 
         with open(session_file, "w") as f:
-            json.dump(data, f, indent=2, default=str)
+            json.dump(data, f, indent=2)
 
         return session_file
 
@@ -155,7 +164,7 @@ class SessionManager:
         """
         return self.session_dir / f"{session_id}.json"
 
-    def save_checkpoint(self, session_id: str, checkpoint_data: dict) -> Path:
+    def save_checkpoint(self, session_id: str, checkpoint_data: dict[str, Any]) -> Path:
         """Save checkpoint data for a session.
 
         Args:
@@ -165,21 +174,24 @@ class SessionManager:
         Returns:
             Path to checkpoint file
         """
-        # Load current session to update it
         session = self.load_session(session_id)
-        if session:
-            session.create_checkpoint(checkpoint_data)
-            self.save_session(session)
+        if not session:
+            metadata = SessionMetadata(session_id=session_id, name=session_id)
+            session = SessionState(metadata=metadata)
 
-        # Save checkpoint to dedicated file
-        checkpoint_dir = Path(".codex/workspaces") / session_id
+        session.create_checkpoint(checkpoint_data)
+        self.save_session(session)
+
+        checkpoint_dir = self.workspace_base_dir / session_id
         checkpoint_dir.mkdir(parents=True, exist_ok=True)
         checkpoint_file = checkpoint_dir / "checkpoint.json"
 
         checkpoint_content = {
             "session_id": session_id,
             "checkpoint_data": checkpoint_data,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": session.last_checkpoint_at.isoformat()
+            if session.last_checkpoint_at
+            else datetime.now().isoformat(),
         }
 
         with open(checkpoint_file, "w") as f:
@@ -187,7 +199,7 @@ class SessionManager:
 
         return checkpoint_file
 
-    def load_checkpoint(self, session_id: str) -> dict | None:
+    def load_checkpoint(self, session_id: str) -> dict[str, Any] | None:
         """Load checkpoint data for a session.
 
         Args:
@@ -196,18 +208,18 @@ class SessionManager:
         Returns:
             Checkpoint data if available, None otherwise
         """
-        checkpoint_file = Path(".codex/workspaces") / session_id / "checkpoint.json"
+        checkpoint_file = self.workspace_base_dir / session_id / "checkpoint.json"
         if not checkpoint_file.exists():
             return None
 
         try:
             with open(checkpoint_file) as f:
                 data = json.load(f)
-            return data.get("checkpoint_data")
-        except (json.JSONDecodeError, KeyError):
+            return data
+        except json.JSONDecodeError:
             return None
 
-    def resume_session(self, session_id: str, continuation_command: str) -> SessionState | None:
+    def resume_session(self, session_id: str, continuation_command: str) -> SessionState:
         """Resume a session from checkpoint.
 
         Args:
@@ -219,16 +231,24 @@ class SessionManager:
         """
         session = self.load_session(session_id)
         if not session:
-            return None
+            raise FileNotFoundError(f"Session '{session_id}' not found.")
 
-        # Load checkpoint data
-        checkpoint_data = self.load_checkpoint(session_id)
-        if checkpoint_data:
-            session.checkpoint_data = checkpoint_data
+        checkpoint = self.load_checkpoint(session_id)
+        if checkpoint:
+            session.checkpoint_data = checkpoint.get("checkpoint_data")
+            timestamp = checkpoint.get("timestamp")
+            if isinstance(timestamp, str):
+                try:
+                    session.last_checkpoint_at = datetime.fromisoformat(timestamp)
+                except ValueError:
+                    session.last_checkpoint_at = None
 
+        session.context["continuation_command"] = continuation_command
+        session.metadata.update()
+        self.save_session(session)
         return session
 
-    def get_session_token_usage(self, session_id: str) -> list[dict]:
+    def get_session_token_usage(self, session_id: str) -> list["TokenUsageSnapshot"]:
         """Get token usage history for a session.
 
         Args:

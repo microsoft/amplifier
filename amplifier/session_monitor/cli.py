@@ -4,7 +4,13 @@ import asyncio
 import json
 import logging
 import os
+import signal
+import subprocess
+import sys
+import time
+import tomllib
 from pathlib import Path
+from typing import Any
 
 import click
 
@@ -19,6 +25,130 @@ from .token_tracker import TokenTracker
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
+WORKSPACES_DIR = Path(".codex/workspaces")
+DAEMON_PID_FILE = Path(".codex/session_monitor.pid")
+DEFAULT_TOML_CONFIG = Path(".codex/config.toml")
+LEGACY_JSON_CONFIG = Path(".codex/session_monitor_config.json")
+
+
+def resolve_workspace_name(workspace: str | None) -> str:
+    """Return a sanitized workspace identifier."""
+    return workspace or Path.cwd().name
+
+
+def _read_pid(pid_file: Path) -> int | None:
+    """Read a PID from disk, returning None if unavailable."""
+    try:
+        return int(pid_file.read_text().strip())
+    except FileNotFoundError:
+        return None
+    except ValueError:
+        logger.debug("Invalid PID file contents at %s", pid_file)
+        return None
+
+
+def _is_process_alive(pid: int | None) -> bool:
+    """Check whether a PID represents a running process."""
+    if pid is None:
+        return False
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        # Process exists but may belong to another user; treat as alive.
+        return True
+    return True
+
+
+def _ensure_session_pid(workspace: str, override_pid: int | None = None) -> int:
+    """Resolve the current session PID, optionally using an override."""
+    if override_pid is not None:
+        pid = override_pid
+    else:
+        pid_file = WORKSPACES_DIR / workspace / "session.pid"
+        pid = _read_pid(pid_file)
+        if pid is None:
+            raise click.ClickException(
+                f"Session PID file not found or invalid for workspace '{workspace}'. "
+                "Pass --pid explicitly or ensure session.pid exists."
+            )
+    if not _is_process_alive(pid):
+        raise click.ClickException(
+            f"Process {pid} is not running. Restart the session or provide an updated --pid value."
+        )
+    return pid
+
+
+def _parse_toml_config(path: Path, require_section: bool) -> MonitorConfig | None:
+    """Load MonitorConfig from a TOML file."""
+    if not path.exists():
+        return None
+
+    try:
+        with open(path, "rb") as f:
+            data = tomllib.load(f)
+    except (tomllib.TOMLDecodeError, OSError) as exc:
+        logger.error("Failed to read TOML config at %s: %s", path, exc)
+        return None
+
+    section: dict[str, Any] | None = None
+    if isinstance(data, dict):
+        if "session_monitor" in data and isinstance(data["session_monitor"], dict):
+            section = data["session_monitor"]
+        elif not require_section:
+            section = data  # Treat entire file as config
+
+    if not section:
+        return None
+
+    return MonitorConfig(**section)
+
+
+def _parse_json_config(path: Path) -> MonitorConfig | None:
+    """Load MonitorConfig from a legacy JSON file."""
+    if not path.exists():
+        return None
+
+    try:
+        with open(path) as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, OSError) as exc:
+        logger.error("Failed to read legacy JSON config at %s: %s", path, exc)
+        return None
+
+    if not isinstance(data, dict):
+        return None
+
+    return MonitorConfig(**data)
+
+
+def load_monitor_config(config_override: str | None = None) -> tuple[MonitorConfig, str]:
+    """Load monitor configuration with override/legacy fallbacks."""
+    if config_override:
+        override_path = Path(config_override)
+        config = None
+        if override_path.suffix.lower() == ".json":
+            config = _parse_json_config(override_path)
+        elif override_path.suffix.lower() in {".toml", ".tml"}:
+            config = _parse_toml_config(override_path, require_section=False)
+        else:
+            raise click.BadParameter("Config override must be a .json or .toml file.", param_hint="--config")
+
+        if not config:
+            raise click.ClickException(f"Unable to load config from {override_path}")
+        return config, str(override_path)
+
+    config = _parse_toml_config(DEFAULT_TOML_CONFIG, require_section=True)
+    if config:
+        return config, f"{DEFAULT_TOML_CONFIG}[session_monitor]"
+
+    config = _parse_json_config(LEGACY_JSON_CONFIG)
+    if config:
+        return config, str(LEGACY_JSON_CONFIG)
+
+    return MonitorConfig(), "defaults"
+
 
 @click.group()
 def cli():
@@ -28,42 +158,69 @@ def cli():
 
 @cli.command("start")
 @click.option(
-    "--config", type=click.Path(exists=True), default=".codex/session_monitor_config.json", help="Path to config file"
+    "--config",
+    "config_override",
+    type=click.Path(dir_okay=False, path_type=Path),
+    help="Override session monitor config file (.toml or .json)",
 )
 @click.option("--workspace", help="Workspace identifier (auto-detect from cwd if not provided)")
 @click.option("--verbose", is_flag=True, help="Enable verbose logging")
-def start(config: str, workspace: str | None, verbose: bool):
-    """Start the session monitor daemon in background."""
+def start(config_override: Path | None, workspace: str | None, verbose: bool):
+    """Launch the session monitor daemon as a detached background process."""
     if verbose:
         logging.getLogger().setLevel(logging.DEBUG)
 
-    # Load or create config
-    config_path = Path(config)
-    if config_path.exists():
-        with open(config_path) as f:
-            config_data = json.load(f)
-        monitor_config = MonitorConfig(**config_data)
-    else:
-        monitor_config = MonitorConfig()
-        # Save default config
-        config_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(config_path, "w") as f:
-            json.dump(monitor_config.model_dump(), f, indent=2)
+    resolved_workspace = resolve_workspace_name(workspace)
+    config_path_str = str(config_override) if config_override else None
+    monitor_config, source = load_monitor_config(config_path_str)
+    logger.info("Using monitor config from %s (workspace dir: %s)", source, monitor_config.workspace_base_dir)
+    monitor_config.workspace_base_dir.mkdir(parents=True, exist_ok=True)
 
-    # Auto-detect workspace if not provided
-    if not workspace:
-        workspace = Path.cwd().name
+    existing_pid = _read_pid(DAEMON_PID_FILE)
+    if _is_process_alive(existing_pid):
+        click.echo(click.style(f"Daemon already running (PID: {existing_pid})", fg="yellow"))
+        raise click.Abort()
+    if existing_pid and DAEMON_PID_FILE.exists():
+        logger.info("Removing stale daemon PID file at %s", DAEMON_PID_FILE)
+        DAEMON_PID_FILE.unlink(missing_ok=True)
 
-    logger.info(f"Starting session monitor daemon for workspace: {workspace}")
+    cmd = [sys.executable, "-m", "amplifier.session_monitor.cli", "_run_daemon"]
+    if config_path_str:
+        cmd.extend(["--config-path", config_path_str])
+
+    logger.info("Starting session monitor daemon for workspace context: %s", resolved_workspace)
+    try:
+        process = subprocess.Popen(cmd, start_new_session=True)
+    except OSError as exc:
+        raise click.ClickException(f"Failed to spawn daemon process: {exc}") from exc
+
+    DAEMON_PID_FILE.parent.mkdir(parents=True, exist_ok=True)
+    DAEMON_PID_FILE.write_text(str(process.pid))
+    click.echo(click.style(f"✓ Session monitor daemon started (PID: {process.pid})", fg="green"))
+    click.echo(f"Config source: {source}")
+
+
+@cli.command("_run_daemon", hidden=True)
+@click.option(
+    "--config-path",
+    type=click.Path(dir_okay=False, path_type=Path),
+    required=False,
+    help="Internal use: override config file for daemon process.",
+)
+def run_daemon(config_path: Path | None):
+    """Internal entry point that runs the daemon event loop."""
+    config_path_str = str(config_path) if config_path else None
+    monitor_config, source = load_monitor_config(config_path_str)
+    logger.info("Session monitor daemon booting with config source: %s", source)
 
     try:
         daemon = SessionMonitorDaemon(monitor_config)
         asyncio.run(daemon.start())
     except KeyboardInterrupt:
         logger.info("Daemon stopped by user")
-    except Exception as e:
-        logger.error(f"Failed to start daemon: {e}")
-        raise click.Abort()
+    except Exception as exc:  # pragma: no cover - surfaced via logs
+        logger.error("Failed to run daemon: %s", exc)
+        raise click.Abort() from exc
 
 
 @cli.command("stop")
@@ -73,73 +230,60 @@ def stop(verbose: bool):
     if verbose:
         logging.getLogger().setLevel(logging.DEBUG)
 
-    pid_file = Path(".codex/session_monitor.pid")
-    if not pid_file.exists():
+    pid = _read_pid(DAEMON_PID_FILE)
+    if pid is None:
         logger.error("Daemon PID file not found. Is the daemon running?")
         raise click.Abort()
 
+    if not _is_process_alive(pid):
+        click.echo(click.style("Daemon PID file exists but process not found", fg="yellow"))
+        DAEMON_PID_FILE.unlink(missing_ok=True)
+        return
+
+    logger.info("Stopping daemon (PID: %s)", pid)
     try:
-        with open(pid_file) as f:
-            pid = int(f.read().strip())
+        os.kill(pid, signal.SIGTERM)
+    except PermissionError as exc:
+        raise click.ClickException(f"Insufficient permissions to stop daemon ({exc})") from exc
 
-        logger.info(f"Stopping daemon (PID: {pid})")
-        os.kill(pid, 15)  # SIGTERM
+    time.sleep(2)
 
-        # Wait for graceful shutdown
-        import time
+    if _is_process_alive(pid):
+        logger.warning("Daemon still running after SIGTERM, sending SIGKILL")
+        os.kill(pid, signal.SIGKILL)
 
-        time.sleep(2)
-
-        # Check if still running
-        try:
-            os.kill(pid, 0)
-            logger.warning("Daemon still running, sending SIGKILL")
-            os.kill(pid, 9)  # SIGKILL
-        except OSError:
-            pass  # Process has exited
-
-        # Remove PID file
-        pid_file.unlink()
-        logger.info("Daemon stopped successfully")
-
-    except Exception as e:
-        logger.error(f"Failed to stop daemon: {e}")
-        raise click.Abort()
+    DAEMON_PID_FILE.unlink(missing_ok=True)
+    click.echo(click.style("✓ Daemon stopped successfully", fg="green"))
 
 
 @cli.command("status")
 @click.option("--workspace", help="Workspace identifier (auto-detect from cwd if not provided)")
+@click.option("--clean", is_flag=True, help="Remove stale PID files")
 @click.option("--verbose", is_flag=True, help="Enable verbose logging")
-def status(workspace: str | None, verbose: bool):
+def status(workspace: str | None, clean: bool, verbose: bool):
     """Show session monitor status and active sessions."""
     if verbose:
         logging.getLogger().setLevel(logging.DEBUG)
 
-    # Auto-detect workspace if not provided
-    if not workspace:
-        workspace = Path.cwd().name
+    workspace_name = resolve_workspace_name(workspace)
 
-    pid_file = Path(".codex/session_monitor.pid")
-    daemon_running = pid_file.exists()
-
-    if daemon_running:
-        try:
-            with open(pid_file) as f:
-                pid = int(f.read().strip())
-            os.kill(pid, 0)  # Check if process exists
-            click.echo(click.style(f"✓ Daemon running (PID: {pid})", fg="green"))
-        except OSError:
-            click.echo(click.style("✗ Daemon PID file exists but process not found", fg="red"))
-            daemon_running = False
+    pid = _read_pid(DAEMON_PID_FILE)
+    if _is_process_alive(pid):
+        click.echo(click.style(f"✓ Daemon running (PID: {pid})", fg="green"))
+    elif pid is not None:
+        click.echo(click.style("✗ Daemon PID file exists but process not found", fg="red"))
+        if clean:
+            DAEMON_PID_FILE.unlink(missing_ok=True)
+            click.echo("Removed stale daemon PID file.")
     else:
         click.echo(click.style("✗ Daemon not running", fg="red"))
 
     # Check token usage
     tracker = TokenTracker()
-    usage = tracker.get_current_usage(workspace)
+    usage = tracker.get_current_usage(workspace_name)
 
     if usage.source == "no_files":
-        click.echo(f"Token usage: No session files found for workspace '{workspace}'")
+        click.echo(f"Token usage: No session files found for workspace '{workspace_name}'")
     else:
         color = "red" if usage.usage_pct >= 90 else "yellow" if usage.usage_pct >= 80 else "green"
         click.echo(
@@ -149,24 +293,24 @@ def status(workspace: str | None, verbose: bool):
         )
 
     # Check for termination request
-    request_file = Path(".codex/workspaces") / workspace / "termination-request"
+    request_file = WORKSPACES_DIR / workspace_name / "termination-request"
     if request_file.exists():
         click.echo(click.style(f"⚠ Termination request pending: {request_file}", fg="yellow"))
     else:
         click.echo("No termination requests pending")
 
     # Show active sessions
-    workspace_dir = Path(".codex/workspaces") / workspace
+    workspace_dir = WORKSPACES_DIR / workspace_name
     if workspace_dir.exists():
         pid_file = workspace_dir / "session.pid"
-        if pid_file.exists():
-            try:
-                with open(pid_file) as f:
-                    session_pid = int(f.read().strip())
-                os.kill(session_pid, 0)  # Check if exists
-                click.echo(f"Active session: PID {session_pid}")
-            except OSError:
-                click.echo(click.style("Session PID file exists but process not found", fg="red"))
+        session_pid = _read_pid(pid_file)
+        if _is_process_alive(session_pid):
+            click.echo(f"Active session: PID {session_pid}")
+        elif session_pid is not None:
+            click.echo(click.style("Session PID file exists but process not found", fg="red"))
+            if clean:
+                pid_file.unlink(missing_ok=True)
+                click.echo("Removed stale session PID file.")
 
 
 @cli.command("request-termination")
@@ -183,6 +327,7 @@ def status(workspace: str | None, verbose: bool):
 @click.option("--phase", help="Current workflow phase")
 @click.option("--issue", help="Specific issue description")
 @click.option("--workspace", help="Workspace identifier (auto-detect from cwd if not provided)")
+@click.option("--pid", type=int, help="Session PID (defaults to workspace session.pid file)")
 @click.option("--notify", is_flag=True, help="Send desktop notification")
 @click.option("--verbose", is_flag=True, help="Enable verbose logging")
 def request_termination(
@@ -192,6 +337,7 @@ def request_termination(
     phase: str | None,
     issue: str | None,
     workspace: str | None,
+    pid: int | None,
     notify: bool,
     verbose: bool,
 ):
@@ -200,15 +346,14 @@ def request_termination(
         logging.getLogger().setLevel(logging.DEBUG)
 
     # Auto-detect workspace if not provided
-    if not workspace:
-        workspace = Path.cwd().name
+    workspace_name = resolve_workspace_name(workspace)
 
     # Get current token usage
     tracker = TokenTracker()
-    usage = tracker.get_current_usage(workspace)
+    usage = tracker.get_current_usage(workspace_name)
 
-    # Get current process ID (assume this is the session process)
-    pid = os.getpid()
+    # Resolve the session PID
+    target_pid = _ensure_session_pid(workspace_name, pid)
 
     # Create termination request
     request = TerminationRequest(
@@ -218,17 +363,17 @@ def request_termination(
         continuation_command=continuation_command,
         priority=TerminationPriority(priority),
         token_usage_pct=usage.usage_pct,
-        pid=pid,
-        workspace_id=workspace,
+        pid=target_pid,
+        workspace_id=workspace_name,
     )
 
     # Write to file
-    workspace_dir = Path(".codex/workspaces") / workspace
+    workspace_dir = WORKSPACES_DIR / workspace_name
     workspace_dir.mkdir(parents=True, exist_ok=True)
     request_file = workspace_dir / "termination-request"
 
     with open(request_file, "w") as f:
-        json.dump(request.model_dump(), f, indent=2)
+        json.dump(request.model_dump(mode="json"), f, indent=2)
 
     click.echo(click.style(f"✓ Termination request created: {request_file}", fg="green"))
     click.echo(f"  Reason: {reason}")
@@ -258,15 +403,13 @@ def check_tokens(workspace: str | None, verbose: bool):
     if verbose:
         logging.getLogger().setLevel(logging.DEBUG)
 
-    # Auto-detect workspace if not provided
-    if not workspace:
-        workspace = Path.cwd().name
+    workspace_name = resolve_workspace_name(workspace)
 
     tracker = TokenTracker()
-    usage = tracker.get_current_usage(workspace)
+    usage = tracker.get_current_usage(workspace_name)
 
     if usage.source == "no_files":
-        click.echo(f"No session files found for workspace '{workspace}'")
+        click.echo(f"No session files found for workspace '{workspace_name}'")
         return
 
     # Determine status and color
@@ -290,21 +433,23 @@ def check_tokens(workspace: str | None, verbose: bool):
 
 
 @cli.command("list-sessions")
+@click.option("--clean", is_flag=True, help="Remove stale session PID files")
 @click.option("--verbose", is_flag=True, help="Enable verbose logging")
-def list_sessions(verbose: bool):
+def list_sessions(clean: bool, verbose: bool):
     """List all monitored sessions with status."""
     if verbose:
         logging.getLogger().setLevel(logging.DEBUG)
 
-    workspaces_dir = Path(".codex/workspaces")
-    if not workspaces_dir.exists():
+    if not WORKSPACES_DIR.exists():
         click.echo("No workspaces found")
         return
 
     click.echo("Monitored Sessions:")
     click.echo("-" * 60)
 
-    for workspace_dir in workspaces_dir.iterdir():
+    tracker = TokenTracker()
+
+    for workspace_dir in WORKSPACES_DIR.iterdir():
         if not workspace_dir.is_dir():
             continue
 
@@ -313,14 +458,14 @@ def list_sessions(verbose: bool):
 
         # Check for active session
         pid_file = workspace_dir / "session.pid"
-        if pid_file.exists():
-            try:
-                with open(pid_file) as f:
-                    pid = int(f.read().strip())
-                os.kill(pid, 0)  # Check if exists
-                click.echo(f"  Session: PID {pid} (running)")
-            except OSError:
-                click.echo(click.style("  Session: PID file exists but process not found", fg="red"))
+        pid = _read_pid(pid_file)
+        if _is_process_alive(pid):
+            click.echo(f"  Session: PID {pid} (running)")
+        elif pid is not None:
+            click.echo(click.style("  Session: PID file exists but process not found", fg="red"))
+            if clean:
+                pid_file.unlink(missing_ok=True)
+                click.echo("  Cleanup: removed stale session PID file.")
         else:
             click.echo("  Session: No active session")
 
@@ -332,7 +477,6 @@ def list_sessions(verbose: bool):
             click.echo("  Status: Active")
 
         # Show token usage
-        tracker = TokenTracker()
         usage = tracker.get_current_usage(workspace)
         if usage.source != "no_files":
             color = "red" if usage.usage_pct >= 90 else "yellow" if usage.usage_pct >= 80 else "green"

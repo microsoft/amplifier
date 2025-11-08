@@ -26,6 +26,55 @@ mcp = FastMCP("token_monitor")
 
 # Initialize logger
 logger = MCPLogger("token_monitor")
+WORKSPACES_DIR = Path(".codex/workspaces")
+
+
+def _read_pid(pid_file: Path) -> int | None:
+    """Read a PID from a file, returning None if unavailable."""
+    try:
+        return int(pid_file.read_text().strip())
+    except (FileNotFoundError, ValueError):
+        return None
+
+
+def _is_pid_active(pid: int | None) -> bool:
+    """Check whether a PID represents a running process."""
+    if pid is None:
+        return False
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def _workspace_dir(workspace_id: str) -> Path:
+    """Return the workspace directory for a given workspace id."""
+    return WORKSPACES_DIR / workspace_id
+
+
+@mcp.tool()
+async def health_check() -> dict[str, Any]:
+    """
+    Health check for the token monitor MCP server.
+
+    Returns:
+        Dictionary containing server metadata and module availability.
+    """
+    try:
+        project_root = get_project_root()
+        modules_available = setup_amplifier_path(project_root)
+        response_data = {
+            "server": "token_monitor",
+            "project_root": str(project_root),
+            "modules_available": modules_available,
+        }
+        return success_response(response_data)
+    except Exception as exc:
+        logger.exception("Error running token monitor health check")
+        return error_response("Failed to run health check", {"error": str(exc)})
 
 
 @mcp.tool()
@@ -74,7 +123,7 @@ async def get_token_usage(workspace_id: str) -> dict[str, Any]:
         return success_response(response_data)
 
     except Exception as e:
-        logger.exception("Error getting token usage", e)
+        logger.exception("Error getting token usage")
         return error_response("Failed to get token usage", {"error": str(e)})
 
 
@@ -134,7 +183,7 @@ async def check_should_terminate(workspace_id: str) -> dict[str, Any]:
         return success_response(response_data)
 
     except Exception as e:
-        logger.exception("Error checking termination recommendation", e)
+        logger.exception("Error checking termination recommendation")
         return error_response("Failed to check termination recommendation", {"error": str(e)})
 
 
@@ -173,12 +222,24 @@ async def request_termination(
             logger.error(f"Failed to import session monitor modules: {e}")
             return error_response("Session monitor modules not available", {"import_error": str(e)})
 
+        # Ensure session PID is available
+        workspace_dir = _workspace_dir(workspace_id)
+        session_pid_file = workspace_dir / "session.pid"
+        session_pid = _read_pid(session_pid_file)
+        if session_pid is None:
+            return error_response(
+                f"No session PID found for workspace '{workspace_id}'",
+                {"pid_file": str(session_pid_file)},
+            )
+        if not _is_pid_active(session_pid):
+            return error_response(
+                f"Session PID {session_pid} is not running",
+                {"pid_file": str(session_pid_file), "pid": session_pid},
+            )
+
         # Get current token usage
         tracker = TokenTracker()
         usage = tracker.get_current_usage(workspace_id)
-
-        # Get current process ID (assume this is called from the session process)
-        pid = os.getpid()
 
         # Validate inputs
         try:
@@ -196,26 +257,25 @@ async def request_termination(
             continuation_command=continuation_command,
             priority=termination_priority,
             token_usage_pct=usage.usage_pct,
-            pid=pid,
+            pid=session_pid,
             workspace_id=workspace_id,
         )
 
         # Write to file
-        workspace_dir = Path(".codex/workspaces") / workspace_id
         workspace_dir.mkdir(parents=True, exist_ok=True)
         request_file = workspace_dir / "termination-request"
 
         with open(request_file, "w") as f:
-            json.dump(request.model_dump(), f, indent=2)
+            json.dump(request.model_dump(mode="json"), f, indent=2)
 
         # Build response
-        response_data = {
+        response_data: dict[str, Any] = {
             "workspace_id": workspace_id,
             "request_file": str(request_file),
             "reason": reason,
             "priority": priority,
             "token_usage_pct": usage.usage_pct,
-            "pid": pid,
+            "pid": session_pid,
             "continuation_command": continuation_command,
         }
 
@@ -223,7 +283,7 @@ async def request_termination(
         return success_response(response_data, {"created_at": request.timestamp.isoformat()})
 
     except Exception as e:
-        logger.exception("Error creating termination request", e)
+        logger.exception("Error creating termination request")
         return error_response("Failed to create termination request", {"error": str(e)})
 
 
@@ -247,38 +307,35 @@ async def get_monitor_status() -> dict[str, Any]:
         # Check daemon status
         pid_file = Path(".codex/session_monitor.pid")
         daemon_running = False
-        daemon_pid = None
+        daemon_pid = _read_pid(pid_file)
+        daemon_pid_stale = False
 
-        if pid_file.exists():
-            try:
-                with open(pid_file) as f:
-                    daemon_pid = int(f.read().strip())
-                os.kill(daemon_pid, 0)  # Check if process exists
+        if daemon_pid is not None:
+            if _is_pid_active(daemon_pid):
                 daemon_running = True
-            except (OSError, ValueError):
-                daemon_running = False
+            else:
+                daemon_pid_stale = True
 
         # Check active sessions
         active_sessions = []
-        workspaces_dir = Path(".codex/workspaces")
-        if workspaces_dir.exists():
-            for workspace_dir in workspaces_dir.iterdir():
+        if WORKSPACES_DIR.exists():
+            for workspace_dir in WORKSPACES_DIR.iterdir():
                 if workspace_dir.is_dir():
                     workspace_id = workspace_dir.name
                     session_pid_file = workspace_dir / "session.pid"
                     termination_request = workspace_dir / "termination-request"
 
-                    session_info = {"workspace_id": workspace_id}
+                    session_info: dict[str, str | int | bool] = {"workspace_id": workspace_id}
 
                     if session_pid_file.exists():
-                        try:
-                            with open(session_pid_file) as f:
-                                pid = int(f.read().strip())
-                            os.kill(pid, 0)  # Check if exists
+                        pid = _read_pid(session_pid_file)
+                        if pid is not None:
                             session_info["session_pid"] = pid
+                        if _is_pid_active(pid):
                             session_info["session_running"] = True
-                        except (OSError, ValueError):
+                        else:
                             session_info["session_running"] = False
+                            session_info["stale_pid"] = pid is not None
                     else:
                         session_info["session_running"] = False
 
@@ -289,8 +346,9 @@ async def get_monitor_status() -> dict[str, Any]:
         response_data = {
             "daemon_running": daemon_running,
             "daemon_pid": daemon_pid,
+            "daemon_pid_stale": daemon_pid_stale,
             "active_sessions": active_sessions,
-            "workspaces_dir": str(workspaces_dir),
+            "workspaces_dir": str(WORKSPACES_DIR),
         }
 
         logger.info(
@@ -299,7 +357,7 @@ async def get_monitor_status() -> dict[str, Any]:
         return success_response(response_data)
 
     except Exception as e:
-        logger.exception("Error getting monitor status", e)
+        logger.exception("Error getting monitor status")
         return error_response("Failed to get monitor status", {"error": str(e)})
 
 

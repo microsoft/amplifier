@@ -3,9 +3,13 @@
 import json
 import logging
 from pathlib import Path
+from typing import TYPE_CHECKING
 from typing import Any
 
 from .models import TokenUsageSnapshot
+
+if TYPE_CHECKING:
+    from .models import MonitorConfig
 
 logger = logging.getLogger(__name__)
 

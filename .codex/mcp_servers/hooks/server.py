@@ -82,7 +82,7 @@ class HooksServer(AmplifierMCPServer):
         # Load server configuration
         self.server_config = self.get_server_config()
         self.auto_enable_file_watch = self.server_config.get("auto_enable_file_watch", False)
-        self.check_interval_seconds = self.server_config.get("check_interval_seconds", 5)
+        self.check_interval_seconds: int = self.server_config.get("check_interval_seconds", 5)
 
         # Load existing hooks
         self._load_hooks()

@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import os
+import shlex
 import signal
 import subprocess
 import time
@@ -11,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from .models import MonitorConfig
+from .models import TerminationPriority
 from .models import TerminationRequest
 
 logger = logging.getLogger(__name__)
@@ -72,7 +74,6 @@ class SessionMonitorDaemon:
                 request_file = workspace_dir / "termination-request"
                 if request_file.exists():
                     try:
-                        request = await self._load_termination_request(request_file)
                         await self.handle_termination_request(request_file)
                     except Exception as e:
                         self.logger.error(f"Error processing request in {workspace_dir}: {e}")
@@ -170,7 +171,7 @@ class SessionMonitorDaemon:
             return
 
         # Wait for graceful shutdown
-        wait_time = 30 if request.priority == "graceful" else 5
+        wait_time = 30 if request.priority == TerminationPriority.GRACEFUL else 5
         await self._wait_for_process_exit(pid, wait_time)
 
         # Check if process is still running
@@ -213,6 +214,13 @@ class SessionMonitorDaemon:
         command = request.continuation_command
         self.logger.info(f"Restarting session with command: {command}")
 
+        workspace_dir = self.config.workspace_base_dir / request.workspace_id
+        if not workspace_dir.exists():
+            self.logger.error("Workspace %s does not exist; skipping restart.", workspace_dir)
+            return
+
+        command_parts = shlex.split(command)
+
         # Implement exponential backoff for retries
         backoff = self.config.restart_backoff_seconds
         max_attempts = self.config.max_restart_attempts
@@ -221,12 +229,10 @@ class SessionMonitorDaemon:
             try:
                 # Start the process
                 process = await asyncio.create_subprocess_exec(
-                    *command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=os.getcwd()
+                    *command_parts, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=str(workspace_dir)
                 )
 
                 # Write new PID file
-                workspace_dir = self.config.workspace_base_dir / request.workspace_id
-                workspace_dir.mkdir(parents=True, exist_ok=True)
                 pid_file = workspace_dir / "session.pid"
                 with open(pid_file, "w") as f:
                     f.write(str(process.pid))

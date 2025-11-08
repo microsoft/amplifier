@@ -151,7 +151,7 @@ class AgentAnalyticsServer(AmplifierMCPServer):
             return None
 
         # Return agent with highest score
-        return max(scores, key=scores.get)
+        return max(scores, key=lambda k: scores[k])
 
     async def log_agent_execution(
         self,
@@ -283,7 +283,7 @@ class AgentAnalyticsServer(AmplifierMCPServer):
                 for exec in self.executions:
                     agent_counts[exec.agent_name] = agent_counts.get(exec.agent_name, 0) + 1
 
-                most_used = max(agent_counts, key=agent_counts.get)
+                most_used = max(agent_counts, key=lambda k: agent_counts[k])
                 stats = await self.get_agent_stats(most_used)
                 agent_stats = stats.get(most_used, {})
 

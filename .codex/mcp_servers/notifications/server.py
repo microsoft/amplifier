@@ -26,7 +26,8 @@ class NotificationsServer(AmplifierMCPServer):
         super().__init__("notifications", mcp)
 
         # Setup notification history storage
-        self.history_file = self.project_root / ".codex" / "notifications" / "history.json"
+        project_root = self.project_root if self.project_root else Path.cwd()
+        self.history_file = project_root / ".codex" / "notifications" / "history.json"
         self.history_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Register tools

@@ -260,10 +260,8 @@ def validate_session_entry(entry: HistoryEntry) -> bool:
     """Validate that a HistoryEntry has required fields and reasonable values."""
     if not entry.session_id or not isinstance(entry.session_id, str):
         return False
-    if not isinstance(entry.ts, int) or entry.ts <= 0:
-        return False
     # Allow empty text as some entries may have no text content
-    return True
+    return isinstance(entry.ts, int) and entry.ts > 0
 
 
 def _parse_timestamp_with_fallbacks(value: Any) -> datetime | None:
