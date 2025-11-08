@@ -8,6 +8,7 @@ Claude Code's Task tool and Codex's `codex exec` command.
 
 import abc
 import asyncio
+import inspect
 import json
 import logging
 import os
@@ -23,6 +24,10 @@ import yaml
 from amplifier.codex_tools import create_combined_context_file
 from amplifier.codex_tools import extract_agent_result
 from amplifier.codex_tools import serialize_context
+
+# Optional Claude SDK symbols are defined lazily so tests can patch them
+ClaudeSDKClient = None
+ClaudeCodeOptions = None
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -65,6 +70,90 @@ class AgentDefinition:
     model: str | None = None
 
 
+def _resolve_workspace_path(
+    project_root: Path,
+    workspace_dir: str,
+    *subdirs: str,
+    prefer_non_empty: bool = False,
+) -> Path:
+    """Resolve workspace-relative path, searching parent/home fallbacks when available.
+
+    Args:
+        project_root: Current working directory for the project
+        workspace_dir: Hidden workspace directory name (e.g., ".claude")
+        *subdirs: Nested subdirectories inside the workspace dir
+        prefer_non_empty: When True, prefer directories that already contain files
+    """
+    subpath = Path(*subdirs) if subdirs else Path()
+    search_roots = [project_root, project_root.parent]
+
+    # Include home directory for user-level agents if workspace dir is hidden (e.g., ".claude")
+    if workspace_dir.startswith("."):
+        search_roots.append(Path.home())
+
+    fallback: Path | None = None
+
+    for root in search_roots:
+        candidate = root / workspace_dir / subpath
+        if candidate.exists():
+            if not prefer_non_empty:
+                return candidate
+            if candidate.is_dir() and any(candidate.glob("*")):
+                return candidate
+            if fallback is None:
+                fallback = candidate
+
+    # Default to project root even if it doesn't exist yet
+    return fallback or (project_root / workspace_dir / subpath)
+
+
+def _extract_agent_metadata(content: str) -> tuple[dict[str, Any], str]:
+    """Extract YAML frontmatter (with flexible formatting) and body prompt."""
+    stripped = content.lstrip()
+    if not stripped:
+        return {}, ""
+
+    frontmatter_text = ""
+    body_text = ""
+
+    if stripped.startswith("---"):
+        parts = stripped.split("---", 2)
+        if len(parts) < 3:
+            raise ValueError("Agent definition frontmatter is incomplete")
+        frontmatter_text = parts[1]
+        body_text = parts[2]
+    else:
+        parts = stripped.split("---", 1)
+        if len(parts) == 2:
+            frontmatter_text = parts[0]
+            body_text = parts[1]
+        else:
+            # Treat entire file as YAML metadata if separator missing
+            frontmatter_text = stripped
+            body_text = ""
+
+    try:
+        frontmatter = yaml.safe_load(frontmatter_text) or {}
+    except yaml.YAMLError as exc:
+        raise ValueError(f"Invalid YAML in agent definition: {exc}") from exc
+
+    return frontmatter, body_text.strip()
+
+
+def _parse_tools_field(frontmatter: dict[str, Any]) -> list[str]:
+    """Normalize allowed tools declarations from multiple schema variants."""
+    tools_value = frontmatter.get("tools") or frontmatter.get("allowed_tools") or frontmatter.get("allowed_tools_csv")
+
+    if isinstance(tools_value, list):
+        return [str(tool).strip() for tool in tools_value if str(tool).strip()]
+
+    if isinstance(tools_value, str):
+        cleaned = tools_value.strip().strip("[]")
+        return [tool.strip() for tool in cleaned.split(",") if tool.strip()]
+
+    return []
+
+
 class AgentBackend(abc.ABC):
     """Abstract base class for agent spawning backends."""
 
@@ -103,16 +192,24 @@ class ClaudeCodeAgentBackend(AgentBackend):
     """Agent backend for Claude Code using the SDK."""
 
     def __init__(self):
-        self.agents_dir = Path(".claude/agents")
+        self.project_root = Path.cwd()
+        self.agents_dir = _resolve_workspace_path(self.project_root, ".claude", "agents", prefer_non_empty=True)
         self._sdk_client = None
         self._sdk_options = None
 
     def _ensure_sdk_available(self):
         """Ensure Claude Code SDK is available."""
-        try:
-            from claude_code_sdk import ClaudeCodeOptions
-            from claude_code_sdk import ClaudeSDKClient
+        global ClaudeSDKClient, ClaudeCodeOptions
 
+        if ClaudeSDKClient is not None and ClaudeCodeOptions is not None:
+            return ClaudeSDKClient, ClaudeCodeOptions
+
+        try:
+            from claude_code_sdk import ClaudeCodeOptions as ImportedOptions
+            from claude_code_sdk import ClaudeSDKClient as ImportedClient
+
+            ClaudeSDKClient = ImportedClient
+            ClaudeCodeOptions = ImportedOptions
             return ClaudeSDKClient, ClaudeCodeOptions
         except ImportError as e:
             raise AgentBackendError(f"Claude Code SDK not available: {e}")
@@ -152,7 +249,7 @@ class ClaudeCodeAgentBackend(AgentBackend):
             # Create task prompt that includes agent context
             full_task = f"Use the {agent_name} subagent to: {task}"
             if context:
-                context_str = json.dumps(context, indent=2)
+                context_str = json.dumps(context, separators=(", ", ": "))
                 full_task += f"\n\nAdditional context:\n{context_str}"
 
             # Execute via SDK
@@ -177,6 +274,8 @@ class ClaudeCodeAgentBackend(AgentBackend):
             }
 
         except AgentNotFoundError:
+            raise
+        except AgentTimeoutError:
             raise
         except Exception as e:
             execution_time = time.time() - start_time
@@ -204,6 +303,10 @@ class ClaudeCodeAgentBackend(AgentBackend):
         error_message: str | None = None,
     ):
         """Log agent execution to analytics MCP server if available."""
+        analytics_flag = os.getenv("AMPLIFIER_ENABLE_AGENT_ANALYTICS", "").strip().lower()
+        if analytics_flag not in {"1", "true", "yes"}:
+            return
+
         try:
             # Try to invoke the agent analytics MCP server
             import subprocess
@@ -254,7 +357,8 @@ print('LOGGED' if result else 'FAILED')
             async with asyncio.timeout(300):  # 5 minute timeout
                 # This is a simplified implementation - actual SDK usage would depend
                 # on the specific ClaudeSDKClient API
-                response = await client.query(task)
+                result = client.query(task)
+                response = await result if inspect.isawaitable(result) else result
                 return response.get("content", "")
         except TimeoutError:
             raise AgentTimeoutError("Agent execution timed out after 5 minutes")
@@ -267,24 +371,18 @@ print('LOGGED' if result else 'FAILED')
 
         try:
             content = agent_file.read_text()
+            frontmatter, system_prompt_body = _extract_agent_metadata(content)
 
-            # Parse YAML frontmatter
-            if content.startswith("---"):
-                parts = content.split("---", 2)
-                if len(parts) >= 3:
-                    frontmatter = yaml.safe_load(parts[1])
-                    system_prompt = parts[2].strip()
+            system_prompt_text = frontmatter.get("system_prompt") or system_prompt_body
 
-                    return AgentDefinition(
-                        name=frontmatter.get("name", agent_name),
-                        description=frontmatter.get("description", ""),
-                        system_prompt=system_prompt,
-                        allowed_tools=frontmatter.get("tools", "").split(",") if frontmatter.get("tools") else [],
-                        max_turns=frontmatter.get("max_turns", 10),
-                        model=frontmatter.get("model"),
-                    )
-
-            return None
+            return AgentDefinition(
+                name=frontmatter.get("name", agent_name),
+                description=frontmatter.get("description", ""),
+                system_prompt=system_prompt_text,
+                allowed_tools=_parse_tools_field(frontmatter),
+                max_turns=frontmatter.get("max_turns", 10),
+                model=frontmatter.get("model"),
+            )
         except Exception as e:
             logger.error(f"Error parsing agent definition {agent_name}: {e}")
             return None
@@ -326,10 +424,11 @@ class CodexAgentBackend(AgentBackend):
     """Agent backend for Codex using subprocess."""
 
     def __init__(self):
-        self.agents_dir = Path(".codex/agents")
+        self.project_root = Path.cwd()
+        self.agents_dir = _resolve_workspace_path(self.project_root, ".codex", "agents", prefer_non_empty=True)
         self.codex_cli = os.getenv("CODEX_CLI_PATH", "codex")
         self.profile = os.getenv("CODEX_PROFILE", "development")
-        self.context_temp_dir = Path(".codex/agent_contexts")
+        self.context_temp_dir = _resolve_workspace_path(self.project_root, ".codex", "agent_contexts")
         self.context_temp_dir.mkdir(parents=True, exist_ok=True)
 
     def spawn_agent(self, agent_name: str, task: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -370,7 +469,7 @@ class CodexAgentBackend(AgentBackend):
                 context_payload=context_payload,
             )
 
-            cmd = [cli_path, "exec", f"--context-file={combined_context_file}", task]
+            cmd = [cli_path, "exec", f"--context-file={combined_context_file}", task, "--agent", agent_name]
             logger.debug(f"Running command: {' '.join(cmd)}")
 
             result = subprocess.run(
@@ -654,6 +753,10 @@ class CodexAgentBackend(AgentBackend):
         error_message: str | None = None,
     ):
         """Log agent execution to analytics MCP server if available."""
+        analytics_flag = os.getenv("AMPLIFIER_ENABLE_AGENT_ANALYTICS", "").strip().lower()
+        if analytics_flag not in {"1", "true", "yes"}:
+            return
+
         try:
             # Try to invoke the agent analytics MCP server
             import subprocess
@@ -750,36 +853,19 @@ def parse_agent_definition(content: str) -> AgentDefinition:
         ValueError: If parsing fails
     """
     try:
-        if not content.startswith("---"):
-            raise ValueError("Agent definition must start with YAML frontmatter")
+        frontmatter, body = _extract_agent_metadata(content)
 
-        parts = content.split("---", 2)
-        if len(parts) < 3:
-            raise ValueError("Invalid agent definition format")
-
-        frontmatter = yaml.safe_load(parts[1])
-        system_prompt = parts[2].strip()
-
-        # Parse tools
-        tools_str = frontmatter.get("tools", "")
-        if isinstance(tools_str, str):
-            allowed_tools = [t.strip() for t in tools_str.split(",") if t.strip()]
-        elif isinstance(tools_str, list):
-            allowed_tools = tools_str
-        else:
-            allowed_tools = []
+        system_prompt_text = frontmatter.get("system_prompt") or body
 
         return AgentDefinition(
             name=frontmatter.get("name", "unnamed"),
             description=frontmatter.get("description", ""),
-            system_prompt=system_prompt,
-            allowed_tools=allowed_tools,
+            system_prompt=system_prompt_text,
+            allowed_tools=_parse_tools_field(frontmatter),
             max_turns=frontmatter.get("max_turns", 10),
             model=frontmatter.get("model"),
         )
 
-    except yaml.YAMLError as e:
-        raise ValueError(f"Invalid YAML in agent definition: {e}")
     except Exception as e:
         raise ValueError(f"Failed to parse agent definition: {e}")
 

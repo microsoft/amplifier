@@ -111,7 +111,7 @@ Please respond in JSON format with an array of quotes:
             content = ""
             for block in response.content:
                 if hasattr(block, "text"):
-                    content = block.text  # type: ignore[attr-defined]
+                    content = block.text  # type: ignore[attr-defined]  # type: ignore[attr-defined]
                     break
             if not content:
                 content = str(response.content[0])
