@@ -54,6 +54,9 @@ default: ## Show essential commands
 	@echo "Web to Markdown:"
 	@echo "  make web-to-md       Convert web pages to markdown"
 	@echo ""
+	@echo "Recipe Extraction:"
+	@echo "  make recipe-extract  Extract recipes from websites to markdown"
+	@echo ""
 	@echo "Other:"
 	@echo "  make clean          Clean build artifacts"
 	@echo "  make help           Show ALL available commands"
@@ -131,6 +134,9 @@ help: ## Show ALL available commands
 	@echo ""
 	@echo "WEB TO MARKDOWN:"
 	@echo "  make web-to-md URL=<url> [URL2=<url>] [OUTPUT=<path>]  Convert web pages to markdown (saves to content_dirs[0]/sites/)"
+	@echo ""
+	@echo "RECIPE EXTRACTION:"
+	@echo "  make recipe-extract URL=<url> [URL2=<url>]  Extract recipes from websites (saves to content_dirs[0]/recipes/)"
 	@echo ""
 	@echo "UTILITIES:"
 	@echo "  make clean           Clean build artifacts"
@@ -639,6 +645,20 @@ web-to-md: ## Convert web pages to markdown. Usage: make web-to-md URL=https://e
 	if [ -n "$(URL4)" ]; then CMD="$$CMD --url \"$(URL4)\""; fi; \
 	if [ -n "$(URL5)" ]; then CMD="$$CMD --url \"$(URL5)\""; fi; \
 	if [ -n "$(OUTPUT)" ]; then CMD="$$CMD --output \"$(OUTPUT)\""; fi; \
+	eval $$CMD
+
+# Recipe Extraction
+recipe-extract: ## Extract recipes from websites. Usage: make recipe-extract URL=https://example.com/recipe [URL2=https://another.com/recipe]
+	@if [ -z "$(URL)" ]; then \
+		echo "Error: Please provide at least one URL. Usage: make recipe-extract URL=https://example.com/recipe"; \
+		exit 1; \
+	fi
+	@echo "🍳 Extracting recipe(s) from website(s)..."
+	@CMD="uv run python -m scenarios.recipe_extractor --url \"$(URL)\""; \
+	if [ -n "$(URL2)" ]; then CMD="$$CMD --url \"$(URL2)\""; fi; \
+	if [ -n "$(URL3)" ]; then CMD="$$CMD --url \"$(URL3)\""; fi; \
+	if [ -n "$(URL4)" ]; then CMD="$$CMD --url \"$(URL4)\""; fi; \
+	if [ -n "$(URL5)" ]; then CMD="$$CMD --url \"$(URL5)\""; fi; \
 	eval $$CMD
 
 # Clean WSL Files

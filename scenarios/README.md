@@ -69,6 +69,26 @@ Automatically generate contextually relevant AI illustrations for your markdown 
 
 ---
 
+### 🍳 [recipe-extractor](./recipe_extractor/)
+
+Transform recipe URLs into clean, searchable markdown files with automatic scaling and unit conversions.
+
+**The Problem**: Recipes are scattered across bookmarks and various websites, buried in ads and life stories. Scaling recipes for different serving sizes is tedious, and metric conversions are time-consuming.
+
+**The Solution**: A tool that extracts recipes from 200+ websites:
+
+- Fetches recipe data using the recipe-scrapers library
+- Generates 1x, 2x, and 3x ingredient sections automatically
+- Converts volume measurements to weight (cups → grams/ml)
+- Saves as searchable markdown with rich metadata
+- Resumes automatically if interrupted
+
+**How it was built**: User described the goal in one paragraph. Amplifier used Document-Driven Development (DDD) methodology - created complete documentation first, then built code to match. Design leveraged proven libraries (recipe-scrapers, pint) instead of custom parsing. Philosophy: ruthless simplicity with library-first thinking.
+
+**Status**: Ready to use (experimental)
+
+---
+
 ## What Makes a Good Scenario Tool?
 
 ### 1. Solves a Real Problem
