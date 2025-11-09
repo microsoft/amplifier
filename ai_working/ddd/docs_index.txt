@@ -1,6 +1,0 @@
-[x] scenarios/recipe_extractor/README.md
-[x] scenarios/recipe_extractor/HOW_TO_CREATE_YOUR_OWN.md
-[x] scenarios/recipe_extractor/pyproject.toml
-[x] scenarios/README.md
-[x] Makefile
-[x] .gitignore

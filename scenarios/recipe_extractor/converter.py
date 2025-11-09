@@ -167,12 +167,12 @@ def convert_to_metric(ingredient: Ingredient) -> Ingredient:
             # Try to convert to grams (for weight) or milliliters (for volume)
             try:
                 # Try weight conversion first
-                converted = pint_quantity.to(ureg.gram)
+                converted = pint_quantity.to(ureg.gram)  # type: ignore[attr-defined]
                 metric_quantity = float(converted.magnitude)
                 metric_unit = "g"
             except Exception:
                 # Try volume conversion
-                converted = pint_quantity.to(ureg.milliliter)
+                converted = pint_quantity.to(ureg.milliliter)  # type: ignore[attr-defined]
                 metric_quantity = float(converted.magnitude)
                 metric_unit = "ml"
 
