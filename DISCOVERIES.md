@@ -2,6 +2,104 @@
 
 This file documents non-obvious problems, solutions, and patterns discovered during development. Make sure these are regularly reviewed and updated, removing outdated entries or those replaced by better practices or code or tools, updating those where the best practice has evolved.
 
+## Context Compaction: Orphaned Tool Results with Multiple Tool Calls (2025-11-09)
+
+### Issue
+
+Amplifier sessions would fail with Anthropic API error when context compaction occurred during conversations with multiple tool calls:
+
+```
+Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error',
+'message': 'messages.0.content.0: unexpected `tool_use_id` found in `tool_result` blocks:
+toolu_01XQiWirRkAarnHRXo8iDshV. Each `tool_result` block must have a corresponding `tool_use`
+block in the previous message.'}}
+```
+
+Session transcripts showed orphaned tool results appearing right after system messages, with no preceding assistant message containing the tool_use blocks.
+
+### Root Cause
+
+The context compaction logic in both `amplifier-module-context-simple` and `amplifier-module-context-persistent` had a critical flaw when handling assistant messages with multiple tool_calls.
+
+**The Scenario:**
+```
+Message N: assistant with 3 tool_calls
+Message N+1: tool result 1
+Message N+2: tool result 2  <- If compaction keeps this...
+Message N+3: tool result 3
+```
+
+**The Bug:**
+
+When preserving tool results during compaction, the code only checked the **immediate previous message** (i-1):
+
+```python
+# BUGGY CODE
+elif msg.get("role") == "tool" and i > 0:
+    prev_msg = self.messages[i - 1]  # Only checks i-1!
+    if prev_msg.get("role") == "assistant" and prev_msg.get("tool_calls"):
+        expanded.add(i - 1)
+```
+
+If `keep_indices` contained message N+2 (tool result 2), the code would:
+1. Check message N+1 (tool result 1) - NOT an assistant with tool_calls
+2. Fail to add the assistant at message N to the preserved set
+3. Result: Keep tool results N+1, N+2, N+3 but DROP message N
+4. API error: Tool results without matching tool_use blocks
+
+This commonly occurred when the "keep last 10 messages" window included some but not all tool results from a multi-tool assistant message that fell outside the window.
+
+### Solution
+
+Fixed both context modules to **walk backwards** through consecutive tool messages to find the originating assistant:
+
+```python
+# FIXED CODE
+elif msg.get("role") == "tool":
+    # Find the assistant message with tool_calls that this result belongs to
+    for j in range(i - 1, -1, -1):
+        check_msg = self.messages[j]
+        if check_msg.get("role") == "assistant" and check_msg.get("tool_calls"):
+            expanded.add(j)
+            logger.debug(
+                f"Preserving tool group: message {j} (assistant with tool_calls) "
+                f"includes tool result at {i}"
+            )
+            break
+        if check_msg.get("role") != "tool":
+            # Hit a non-tool message before finding the assistant
+            logger.warning(
+                f"Tool result at {i} has no matching assistant with tool_calls "
+                f"(found {check_msg.get('role')} at {j} instead)"
+            )
+            break
+```
+
+**Files changed:**
+- `amplifier-module-context-simple/amplifier_module_context_simple/__init__.py:172-192`
+- `amplifier-module-context-persistent/amplifier_module_context_persistent/__init__.py:192-217`
+- Both module READMEs updated to document the fix
+
+**Tests:**
+- Existing regression test `test_compact_with_multiple_tool_calls_in_one_message` now passes
+- All 5 tool pair compaction tests pass
+
+### Key Learnings
+
+1. **Tool pairs are message groups, not pairs**: An assistant with N tool_calls creates 1+N messages that must be preserved as an atomic unit
+2. **Adjacent-only checks fail**: Checking only the immediate previous message doesn't work when multiple tool results follow one assistant
+3. **Walk backwards through tool results**: Must traverse backwards through consecutive tool messages to find the originating assistant
+4. **Test regression scenarios**: The existing test suite already had a test for this exact scenario, proving the importance of comprehensive testing
+5. **Both directions matter**: Compaction logic must handle both forward (assistant → results) and backward (result → assistant) preservation
+
+### Prevention
+
+- When implementing message sequence preservation, consider groups not just pairs
+- Walk backwards/forwards through message sequences, don't assume adjacency
+- Test with realistic scenarios (multiple tool calls in one message is common in practice)
+- Add logging to help diagnose message sequence issues during compaction
+- Verify test suite covers edge cases before they manifest as bugs in production
+
 ## DevContainer Setup: Using Official Features Instead of Custom Scripts (2025-10-22)
 
 ### Issue
