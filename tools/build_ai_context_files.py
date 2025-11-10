@@ -65,6 +65,8 @@ def strip_date_line(text: str) -> str:
 
 def build_context_files(force=False) -> None:
     # Define the tasks to run
+    # NOTE: brand_composer_amplifyier was removed as a submodule (circular reference)
+    # Each project now manages its own documentation automation
     tasks = []
 
     # Execute each task
