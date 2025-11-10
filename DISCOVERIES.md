@@ -2,6 +2,105 @@
 
 This file documents non-obvious problems, solutions, and patterns discovered during development. Make sure these are regularly reviewed and updated, removing outdated entries or those replaced by better practices or code or tools, updating those where the best practice has evolved.
 
+## Hybrid Packaging @Mention Resolution Requires Parent Fallback (2025-11-10)
+
+### Issue
+
+Collection @mentions like `@toolkit:docs/TOOLKIT_GUIDE.md` were not loading into agent context. Agent system instructions referenced these files but they weren't being injected into the LLM request.
+
+Additionally, cross-references WITHIN loaded toolkit docs used incorrect paths (`toolkit/METACOGNITIVE_RECIPES.md`, `toolkit/examples/`) that didn't exist from any working directory.
+
+### Root Cause
+
+**Two separate but related issues:**
+
+**Issue 1: MentionResolver couldn't find collection resources**
+
+Collections installed via pip/uv create nested package structure:
+```
+~/.amplifier/collections/amplifier-collection-toolkit/
+  docs/                    <-- Resources at ROOT
+  agents/
+  scenario-tools/
+
+  amplifier_collection_toolkit/    <-- Package subdir
+    __init__.py
+    pyproject.toml         <-- Metadata here (why resolver returns this path)
+```
+
+CollectionResolver returns package subdir (for metadata reading), but resources are at collection ROOT. MentionResolver constructed `collection_path / "docs/FILE.md"` which pointed to non-existent package subdirectory.
+
+**Issue 2: Toolkit docs had incorrect internal cross-references**
+
+- Used `toolkit/` prefix that doesn't exist as directory
+- Used `examples/` instead of `scenario-tools/` for tool directory
+- Used `tutorial_analyzer` (underscore) instead of `tutorial-analyzer` (hyphen) for directory paths
+
+### Solution
+
+**Fix 1: Add hybrid packaging fallback to MentionResolver**
+
+```python
+# Try at collection path first (package subdirectory)
+if resource_path.exists() and resource_path.is_file():
+    return resource_path.resolve()
+
+# Hybrid packaging fallback: try parent directory
+if (collection_path / "pyproject.toml").exists():
+    parent_resource_path = collection_path.parent / path
+    if parent_resource_path.exists() and parent_resource_path.is_file():
+        return parent_resource_path.resolve()
+```
+
+Mirrors `discovery.py:66-75` pattern for resource discovery.
+
+**Fix 2: Correct all cross-reference paths in toolkit docs**
+
+Global replacements across 7 doc files:
+- `toolkit/examples/` → `scenario-tools/`
+- `toolkit/DOCFILE.md` → `DOCFILE.md` (same directory)
+- `toolkit/templates/` → `templates/`
+- `tutorial_analyzer/` → `tutorial-analyzer/` (for directory paths)
+- Preserved `src/tutorial_analyzer/` (Python package name, correct with underscore)
+
+### Key Learnings
+
+1. **Hybrid packaging creates dual path perspectives**: Package subdir has metadata, collection root has resources
+2. **CollectionResolver vs MentionResolver serve different purposes**: Collection finds metadata, Mention finds resources
+3. **Parent fallback pattern is reusable**: Same pattern in both discovery.py and resolver.py
+4. **Cross-references must work from collection root**: Both dev repo and installed collection share same structure
+5. **Directory names vs Python package names**: tutorial-analyzer (dir) vs tutorial_analyzer (package)
+6. **Documentation references are runtime-critical**: When loaded as context, AI verifies paths work
+
+### Prevention
+
+- **When creating collections**: Test @mention loading from installed collection, not just dev repo
+- **Use collection-root-relative paths**: Work from both dev and installed contexts
+- **Mirror existing patterns**: When similar functionality exists (like discovery.py), reuse the pattern
+- **Separate directory paths from package names**: Hyphens in paths, underscores in Python packages
+- **Test with subagent delegation**: Issues may only manifest when docs loaded into subagent context
+
+### Verification
+
+```bash
+# Test @mention resolution works
+python3 -c "
+from amplifier_app_cli.lib.mention_loading import MentionResolver
+resolver = MentionResolver()
+result = resolver.resolve('@toolkit:docs/TOOLKIT_GUIDE.md')
+print(f'Resolved: {result}')
+"
+
+# Test agent loading with @mentions
+from amplifier_profiles import AgentLoader
+agent = loader.load_agent('tool-builder')
+print(f'Instruction length: {len(agent.system.instruction)} chars')  # Should be ~270KB
+```
+
+**Files changed:**
+- `amplifier-app-cli/amplifier_app_cli/lib/mention_loading/resolver.py:77-141`
+- `amplifier-collection-toolkit/docs/*.md` (7 files, 49 path corrections)
+
 ## Context Compaction: Orphaned Tool Results with Multiple Tool Calls (2025-11-09)
 
 ### Issue
