@@ -180,7 +180,7 @@ check: ## Format, lint, and type-check all code
 	@echo "Formatting code with ruff..."
 	@VIRTUAL_ENV= uv run ruff format .
 	@echo "Linting code with ruff..."
-	@VIRTUAL_ENV= uv run ruff check . --fix
+	@VIRTUAL_ENV= uv run ruff check .
 	@echo "Type-checking code with pyright..."
 	@VIRTUAL_ENV= uv run pyright
 	@echo "Checking for stubs and placeholders..."
