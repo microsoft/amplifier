@@ -125,6 +125,7 @@
     "cooccurrences",
     "creds",
     "datetimez",
+    "ddgs",
     "debugpy",
     "docstrings",
     "dotenv",

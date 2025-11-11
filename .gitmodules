@@ -1,3 +1,6 @@
 [submodule "amplifier-dev"]
 	path = amplifier-dev
 	url = https://github.com/microsoft/amplifier-dev.git
+[submodule "claude-trace-viewer"]
+	path = claude-trace-viewer
+	url = https://github.com/bkrabach/claude-trace-viewer
