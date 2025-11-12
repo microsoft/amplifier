@@ -207,15 +207,10 @@ Built something cool? Share it with the community!
 
 ### Community-Contributed Modules
 
-*No community modules yet - be the first to contribute!*
-
-**Example entry format:**
-```markdown
-- **tool-git** by @username - Git operations and repository management
-  - Repository: https://github.com/username/amplifier-module-tool-git
+- **provider-bedrock** by @brycecutt-msft - AWS Bedrock integration with cross-region inference support for Claude models
+  - Repository: https://github.com/brycecutt-msft/amplifier-module-provider-bedrock
   - Compatible: Amplifier 0.1.x
   - Status: Active
-```
 
 ---
 
