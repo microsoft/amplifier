@@ -66,6 +66,9 @@ norecursedirs = [
 ]
 # Use importlib mode to avoid import collisions from duplicate test file names
 addopts = "--import-mode=importlib"
+markers = [
+    "integration: mark tests that exercise integration workflows or external systems",
+]
 
 [tool.pyright]
 venvPath = "."
