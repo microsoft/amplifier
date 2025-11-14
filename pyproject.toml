@@ -29,6 +29,9 @@ dependencies = [
     "yt-dlp>=2025.9.26",
 ]
 
+[project.scripts]
+fma = "fma.cli:main"
+
 [tool.uv.workspace]
 # Add all projects in the workspace
 members = []
