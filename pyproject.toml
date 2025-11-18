@@ -62,6 +62,8 @@ norecursedirs = [
     "dist",
     ".data",
     "scenario-tools",   # Scenario tools have their own test environments
+    "amplifier-collection-recipes/tools/tool-recipes/tests",  # Generated test artifacts from recipes
+    "amplifier-app-log-viewer",  # Standalone app with own test environment
     "dev_verification", # Standalone verification scripts (not pytest tests)
 ]
 # Use importlib mode to avoid import collisions from duplicate test file names
