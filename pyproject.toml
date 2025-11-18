@@ -61,8 +61,8 @@ norecursedirs = [
     "build",
     "dist",
     ".data",
-    "scenario-tools",  # Scenario tools have their own test environments
-    "dev_verification",  # Standalone verification scripts (not pytest tests)
+    "scenario-tools",   # Scenario tools have their own test environments
+    "dev_verification", # Standalone verification scripts (not pytest tests)
 ]
 # Use importlib mode to avoid import collisions from duplicate test file names
 addopts = "--import-mode=importlib"
@@ -77,15 +77,14 @@ exclude = [
     "**/__pycache__",
     "**/.venv/**",
     "**/node_modules/**",
-    ".git/**",
-    ".ruff_cache/**",
-    ".pytest_cache/**",
+    "**/.git/**",
+    "**/.ruff_cache/**",
+    "**/.pytest_cache/**",
     "*.egg-info",
-    "build/**",
-    "dist/**",
-    ".data/**",
-    "ai_working/**",
-    "amplifier-dev/ansiterm/**",
+    "**/build/**",
+    "**/dist/**",
+    "**/.data/**",
+    "**/ai_working/**",
 ]
 typeCheckingMode = "basic"
 reportMissingImports = false
