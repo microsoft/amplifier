@@ -14,7 +14,7 @@ Embodies a Zen-like minimalism that values simplicity and clarity above all. Thi
 
 This development philosophy values clear documentation, readable code, and belief that good architecture emerges from simplicity rather than being imposed through complexity.
 
-**Verification-driven mindset**: AI-generated code is fundamentally non-deterministic and cannot be trusted blindly. We prove code works by verifying real user flows as we build, treating verification as the core feedback loop that makes AI coding reliable.
+**Flow-driven mindset**: AI-generated code is fundamentally non-deterministic and cannot be trusted blindly. We prove code works by validating real user flows as we build, treating this verification as the core feedback loop that makes AI coding reliable.
 
 ## Core Design Principles
 
@@ -33,17 +33,17 @@ This development philosophy values clear documentation, readable code, and belie
 - **Scrappy but structured**: Lightweight implementations of solid architectural foundations
 - **End-to-end thinking**: Focus on complete flows rather than perfect components
 
-### 3. Verification-Driven Development
+### 3. Flow-Driven Development
 
-AI code generation is non-deterministic. We cannot blindly trust generated code. Therefore:
+AI code generation is non-deterministic. We cannot blindly trust generated code. Therefore, we prove it works by validating user flows:
 
-- **Verify after each chunk of work**: Don't wait until the end - prove it works as you go
-- **Test real user behavior**: Simulate actual user interactions, not just unit tests
-- **All source code changes require verification**: If you can't verify it works like a user would, don't ship it
-- **Keep verification lightweight**: Use tools like Playwright MCP for web apps, ephemeral scripts for backend
-- **Fail fast and fix immediately**: If verification fails, stop and fix before proceeding
+- **Validate flows after each chunk of work**: Don't wait until the end - prove it works as you go
+- **Test real user behavior**: Simulate actual user interactions through complete flows
+- **All source code changes require flow validation**: If you can't verify the user flow works, don't ship it
+- **Keep it lightweight**: Use tools like Playwright MCP for web apps, curl for backend endpoints
+- **Fail fast and fix immediately**: If the flow breaks, stop and fix before proceeding
 
-**This is NOT traditional testing** - it's immediate sanity checking, like a developer opening a browser to see if their UI changes actually work. Verification is the core feedback loop that makes AI coding reliable.
+**This is NOT traditional testing** - it's immediate sanity checking of user flows, like a developer opening a browser to see if their UI changes actually work. Flow validation is the core feedback loop that makes AI coding reliable.
 
 ### 4. Library vs Custom Code
 
@@ -167,12 +167,12 @@ The key is avoiding lock-in. Keep library integration points minimal and isolate
 - Validate with real usage before enhancing
 - Be willing to refactor early work as patterns emerge
 
-### Verification & Testing Strategy
+### Flow Validation & Testing Strategy
 
-**Immediate Verification** (Sanity Checking):
-- **Verify after each implementation chunk**: Don't accumulate unverified code
+**Flow Validation** (Immediate Proof):
+- **Validate flows after each implementation chunk**: Don't accumulate unverified code
 - **Simulate real user flows**: Use Playwright MCP for web apps to click, navigate, and verify
-- **Generate ephemeral validation scripts**: For backend/API changes, create lightweight test scripts
+- **Use lightweight verification**: For backend/API changes, use curl or simple scripts
 - **Check visual elements and state**: Verify UI appears correctly and data persists
 - **Write flows dynamically**: Use text/roles (resilient), not brittle IDs or classes
 
@@ -183,7 +183,7 @@ The key is avoiding lock-in. Keep library integration points minimal and isolate
 - Add unit tests for complex logic and edge cases
 - Testing pyramid: 60% unit, 30% integration, 10% end-to-end
 
-**The Distinction**: Verification proves "it works now" during development. Testing ensures "it keeps working" over time. Both are essential.
+**The Distinction**: Flow validation proves "the user flow works now" during development. Testing ensures "it keeps working" over time. Both are essential.
 
 ### Error Handling
 
@@ -223,7 +223,7 @@ Push for extreme simplicity in these areas:
 
 ## Practical Examples
 
-### Verification Workflow Example
+### Flow Validation Workflow Example
 
 **Scenario**: Implementing a "Create Project" feature
 
@@ -235,19 +235,19 @@ Push for extreme simplicity in these areas:
    - Add API endpoint
    - Wire up state management
 
-3. Verify immediately (before moving on):
+3. Validate the flow immediately (before moving on):
    - Use Playwright MCP to navigate to home page
    - Click "Create Project" button (by text/role, not ID)
    - Verify project page appears
    - Check project details are visible
    - Confirm expected elements exist
 
-4. If verification fails:
+4. If flow validation fails:
    - Stop and fix immediately
    - Don't accumulate technical debt
-   - Re-verify after fix
+   - Re-validate the flow after fix
 
-5. If verification passes:
+5. If flow validation passes:
    - Move to next chunk of work
    - Consider documenting critical flows
 ```
@@ -273,7 +273,7 @@ Navigate to http://localhost:3000
      Verify position updates in real-time
 ```
 
-**For Backend** (Quick curl validation):
+**For Backend** (Quick flow validation with curl):
 ```bash
 # Create project
 curl -X POST http://localhost:8000/api/projects \
@@ -390,6 +390,6 @@ class EnhancedMcpClient:
 - Code you don't write has no bugs
 - Favor clarity over cleverness
 - The best code is often the simplest
-- **If you can't verify it works like a user would, don't ship it**
+- **If you can't verify the user flow works, don't ship it**
 
 This philosophy document serves as the foundational guide for all implementation decisions in the project.
