@@ -1,5 +1,5 @@
 ---
-last_updated: 2025-10-16
+last_updated: 2025-11-18
 status: stable
 audience: all
 ---
@@ -22,6 +22,13 @@ audience: all
 - **[Collections User Guide](https://github.com/microsoft/amplifier-collections/blob/main/docs/USER_GUIDE.md)** — Using collections
 - **[Collection Authoring](https://github.com/microsoft/amplifier-collections/blob/main/docs/AUTHORING.md)** — Creating collections
 - [SCENARIO_TOOLS_GUIDE.md](./SCENARIO_TOOLS_GUIDE.md) — Building sophisticated CLI tools
+
+**Configuration & Settings:**
+
+- **[Configuration Management](https://github.com/microsoft/amplifier-config/blob/main/README.md)** — Settings system, scopes, and resolution
+- **[Configuration Specification](https://github.com/microsoft/amplifier-config/blob/main/docs/SPECIFICATION.md)** — Technical contracts and algorithms
+- **[Configuration Patterns](https://github.com/microsoft/amplifier-config/blob/main/docs/USER_GUIDE.md)** — When to use which scope
+- **[Profile System Design](https://github.com/microsoft/amplifier-profiles/blob/main/docs/DESIGN.md)** — Profile system architecture
 
 **When you need help:**
 

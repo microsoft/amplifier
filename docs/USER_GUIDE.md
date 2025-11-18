@@ -1,3 +1,9 @@
+---
+last_updated: 2025-11-18
+status: stable
+audience: user
+---
+
 # Amplifier User Guide
 
 Complete guide to using Amplifier for AI-assisted development.
@@ -401,6 +407,26 @@ amplifier source remove tool-bash --local
 ---
 
 ## Troubleshooting
+
+### Configuration Not Working
+
+**Q: My settings aren't taking effect**  
+A: Check scope precedence. Local (`.amplifier/settings.local.yaml`) overrides project and user.  
+→ See [Configuration Resolution](https://github.com/microsoft/amplifier-config/blob/main/docs/SPECIFICATION.md#three-scope-resolution-algorithm)
+
+**Q: How do I see what's actually active?**  
+A: Use these commands:
+```bash
+amplifier provider current  # Active provider
+amplifier profile current   # Active profile
+amplifier module current    # Loaded modules
+```
+
+**Q: Where are configuration files?**  
+A: Three locations:
+- `.amplifier/settings.local.yaml` (local, gitignored)
+- `.amplifier/settings.yaml` (project, committed)
+- `~/.amplifier/settings.yaml` (user-global)
 
 ### "No providers mounted"
 

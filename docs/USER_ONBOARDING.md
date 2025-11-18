@@ -1,5 +1,5 @@
 ---
-last_updated: 2025-10-18
+last_updated: 2025-11-18
 status: stable
 audience: user
 ---
@@ -209,6 +209,30 @@ amplifier session show <session-id>
 ---
 
 ## Configuration Basics
+
+Amplifier uses two complementary systems:
+
+### Settings (Runtime Configuration)
+
+**What**: Which profile to use, provider credentials, model selection  
+**Commands**: `amplifier provider use`, `amplifier profile use`  
+**Files**: `settings.yaml` (three-tier: local > project > user)  
+**Learn more**: [Configuration Management](https://github.com/microsoft/amplifier-config)
+
+### Profiles (Capability Presets)
+
+**What**: Which tools/hooks/agents are available, system instructions  
+**Format**: YAML frontmatter + markdown (`.md` files)  
+**Inheritance**: Profiles can extend other profiles  
+**Learn more**: [Profile Authoring](https://github.com/microsoft/amplifier-profiles)
+
+**How they work together**:
+- Settings say: "Use the 'dev' profile with Anthropic as the provider"
+- Profiles define: "The 'dev' profile includes filesystem tools, web search, and 5 agents"
+
+In other words: **Settings choose which profile and provider to use. Profiles define what capabilities are available.**
+
+---
 
 Amplifier has 4 configuration dimensions:
 
