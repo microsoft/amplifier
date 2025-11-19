@@ -53,6 +53,7 @@ Packaged bundles of profiles, agents, and context for specific domains.
 |------------|-------------|------------|
 | **toolkit** | Building sophisticated CLI tools using metacognitive recipes | [amplifier-collection-toolkit](https://github.com/microsoft/amplifier-collection-toolkit) |
 | **design-intelligence** | Comprehensive design intelligence capability with specialized agents | [amplifier-collection-design-intelligence](https://github.com/microsoft/amplifier-collection-design-intelligence) |
+| **recipes** | Multi-step AI agent orchestration for repeatable workflows | [amplifier-collection-recipes](https://github.com/microsoft/amplifier-collection-recipes) |
 
 **Installation**: Collections are **not loaded by default**. Install them explicitly:
 
@@ -309,12 +310,12 @@ For technical details, see:
 
 ## Component Summary
 
-**Total Components**: 33
+**Total Components**: 34
 
 - **Core**: 1 (amplifier-core)
 - **Applications**: 3 (amplifier, amplifier-app-cli, amplifier-app-log-viewer)
 - **Libraries**: 4 (profiles, collections, module-resolution, config)
-- **Collections**: 2 (toolkit, design-intelligence)
+- **Collections**: 3 (toolkit, design-intelligence, recipes)
 - **Runtime Modules**: 24
   - Orchestrators: 3
   - Providers: 5
