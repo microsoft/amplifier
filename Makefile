@@ -41,6 +41,13 @@ default: ## Show essential commands
 	@echo "AI Context:"
 	@echo "  make ai-context-files Build AI context documentation"
 	@echo ""
+	@echo "Project Planning:"
+	@echo "  make project-init    Initialize project with AI planning"
+	@echo "  make project-plan    Generate and execute project plan"
+	@echo "  make project-status  Show project status and progress"
+	@echo "  make project-execute Execute project tasks with orchestration"
+	@echo "  make smart-decomposer Smart task decomposition CLI"
+	@echo ""
 	@echo "Blog Writing:"
 	@echo "  make blog-write      Create a blog post from your ideas"
 	@echo ""
@@ -184,7 +191,7 @@ check: ## Format, lint, and type-check all code
 	@echo "Type-checking code with pyright..."
 	@VIRTUAL_ENV= uv run pyright
 	@echo "Checking for stubs and placeholders..."
-	@python tools/check_stubs.py
+	@uv run python tools/check_stubs.py
 	@echo "All checks passed!"
 
 test: ## Run all tests
@@ -487,6 +494,69 @@ ai-context-files: ## Build AI context files
 	uv run python tools/build_ai_context_files.py
 	uv run python tools/build_git_collector_files.py
 	@echo "AI context files generated"
+
+# Project Planning
+project-init: ## Initialize project with AI planning. Usage: make project-init PROJECT_NAME="My Project" [PROJECT_PATH=/path/to/project]
+	@if [ -z "$(PROJECT_NAME)" ]; then \
+		echo "Error: Please provide a project name. Usage: make project-init PROJECT_NAME=\"My Project\""; \
+		exit 1; \
+	fi
+	@echo "🚀 Initializing AI-driven project planning..."; \
+	echo "  Project: $(PROJECT_NAME)"; \
+	if [ -n "$(PROJECT_PATH)" ]; then \
+		echo "  Path: $(PROJECT_PATH)"; \
+		uv run python -m scenarios.project_planner init --name "$(PROJECT_NAME)" --path "$(PROJECT_PATH)"; \
+	else \
+		uv run python -m scenarios.project_planner init --name "$(PROJECT_NAME)"; \
+	fi
+
+project-plan: ## Generate and execute project plan. Usage: make project-plan PROJECT_ID="proj-abc123" [GOAL="Custom goal"]
+	@if [ -z "$(PROJECT_ID)" ]; then \
+		echo "Error: Please provide a project ID. Usage: make project-plan PROJECT_ID=\"proj-abc123\""; \
+		exit 1; \
+	fi
+	@echo "📋 Generating project plan..."; \
+	if [ -n "$(GOAL)" ]; then \
+		echo "  Goal: $(GOAL)"; \
+		uv run python -m scenarios.project_planner plan --project-id "$(PROJECT_ID)" --goal "$(GOAL)"; \
+	else \
+		uv run python -m scenarios.project_planner plan --project-id "$(PROJECT_ID)"; \
+	fi
+
+project-status: ## Show project status and progress. Usage: make project-status PROJECT_ID="proj-abc123"
+	@if [ -z "$(PROJECT_ID)" ]; then \
+		echo "Error: Please provide a project ID. Usage: make project-status PROJECT_ID=\"proj-abc123\""; \
+		exit 1; \
+	fi
+	@echo "📊 Checking project status..."; \
+	uv run python -m scenarios.project_planner status --project-id "$(PROJECT_ID)"
+
+project-execute: ## Execute project tasks with orchestration. Usage: make project-execute PROJECT_ID="proj-abc123" [MAX_PARALLEL=5]
+	@if [ -z "$(PROJECT_ID)" ]; then \
+		echo "Error: Please provide a project ID. Usage: make project-execute PROJECT_ID=\"proj-abc123\""; \
+		exit 1; \
+	fi
+	@echo "🚀 Executing project tasks..."; \
+	if [ -n "$(MAX_PARALLEL)" ]; then \
+		uv run python -m scenarios.project_planner execute --project-id "$(PROJECT_ID)" --max-parallel "$(MAX_PARALLEL)"; \
+	else \
+		uv run python -m scenarios.project_planner execute --project-id "$(PROJECT_ID)"; \
+	fi
+
+smart-decomposer: ## Smart task decomposition CLI. Usage: make smart-decomposer COMMAND="decompose --goal 'Build feature X'"
+	@if [ -z "$(COMMAND)" ]; then \
+		echo "Usage: make smart-decomposer COMMAND=\"decompose --goal 'Build feature X'\""; \
+		echo ""; \
+		echo "Available commands:"; \
+		echo "  decompose --goal 'Goal text'    Decompose goal into tasks"; \
+		echo "  assign --project-id ID          Assign agents to tasks"; \
+		echo "  execute --project-id ID         Execute tasks with orchestration"; \
+		echo "  status --project-id ID          Show project status"; \
+		echo ""; \
+		exit 1; \
+	fi
+	@echo "🧠 Running smart decomposer..."; \
+	uv run python -m scenarios.smart_decomposer $(COMMAND)
 
 # Blog Writing
 blog-write: ## Create a blog post from your ideas. Usage: make blog-write IDEA=ideas.md WRITINGS=my_writings/ [INSTRUCTIONS="..."]
