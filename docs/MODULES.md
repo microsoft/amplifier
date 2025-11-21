@@ -169,6 +169,32 @@ amplifier module show tool-filesystem
 
 ---
 
+## Community Applications
+
+Applications built by the community using Amplifier.
+
+> **⚠️ SECURITY WARNING**
+>
+> Community applications execute arbitrary code in your environment with full access to your filesystem, network, and credentials.
+>
+> - **Only use applications from sources you absolutely trust**
+> - **Review application code before installation** - read every line
+> - **Understand what the application does** - don't trust descriptions alone
+> - **Use at your own risk** - no warranties, guarantees, or security vetting
+>
+> You are responsible for what runs on your machine. When in doubt, don't install it.
+
+| Application | Description | Author | Repository | Compatible | Status |
+|-------------|-------------|--------|------------|------------|--------|
+| **app-transcribe** | Transform YouTube videos and audio files into searchable transcripts with AI-powered insights (uses tool-youtube-dl and tool-whisper) | @robotdad | [amplifier-app-transcribe](https://github.com/robotdad/amplifier-app-transcribe) | Amplifier 0.1.x | Active |
+| **app-blog-creator** | AI-powered blog creation with style-aware generation and rich markdown editor (web interface designed with design-intelligence collection, uses image-generation, style-extraction, and markdown-utils modules) | @robotdad | [amplifier-app-blog-creator](https://github.com/robotdad/amplifier-app-blog-creator) | Amplifier 0.1.x | Active |
+| **app-voice** | Desktop voice assistant with native speech-to-speech via OpenAI Realtime API (uses provider-openai-realtime) | @robotdad | [amplifier-app-voice](https://github.com/robotdad/amplifier-app-voice) | Amplifier 0.1.x | Experimental |
+| **amplifier-app-tool-generator** | AI-powered tool generator for creating custom Amplifier tools | @samueljklee | [amplifier-app-tool-generator](https://github.com/samueljklee/amplifier-app-tool-generator) | Amplifier@next | Active |
+
+**Want to showcase your application?** Submit a PR to add your Amplifier-powered application to this list!
+
+---
+
 ## Community Modules
 
 > **⚠️ CRITICAL SECURITY WARNING**
@@ -233,11 +259,6 @@ Built something cool? Share it with the community!
   - Compatible: Amplifier 0.1.x
   - Status: Experimental
 
-- **app-transcribe** by @robotdad - Transform YouTube videos and audio files into searchable transcripts with AI-powered insights (uses tool-youtube-dl and tool-whisper)
-  - Repository: https://github.com/robotdad/amplifier-app-transcribe
-  - Compatible: Amplifier 0.1.x
-  - Status: Active
-
 - **tool-youtube-dl** by @robotdad - Download audio and video from YouTube with metadata extraction and screenshot capture
   - Repository: https://github.com/robotdad/amplifier-module-tool-youtube-dl
   - Compatible: Amplifier 0.1.x
@@ -245,11 +266,6 @@ Built something cool? Share it with the community!
 
 - **tool-whisper** by @robotdad - Speech-to-text transcription using OpenAI's Whisper API with timestamped segments
   - Repository: https://github.com/robotdad/amplifier-module-tool-whisper
-  - Compatible: Amplifier 0.1.x
-  - Status: Active
-
-- **app-blog-creator** by @robotdad - AI-powered blog creation with style-aware generation and rich markdown editor (web interface designed with design-intelligence collection, uses image-generation, style-extraction, and markdown-utils modules)
-  - Repository: https://github.com/robotdad/amplifier-app-blog-creator
   - Compatible: Amplifier 0.1.x
   - Status: Active
 
@@ -267,11 +283,6 @@ Built something cool? Share it with the community!
   - Repository: https://github.com/robotdad/amplifier-module-markdown-utils
   - Compatible: Amplifier 0.1.x
   - Status: Active
-
-- **app-voice** by @robotdad - Desktop voice assistant with native speech-to-speech via OpenAI Realtime API (uses provider-openai-realtime)
-  - Repository: https://github.com/robotdad/amplifier-app-voice
-  - Compatible: Amplifier 0.1.x
-  - Status: Experimental
 
 - **provider-openai-realtime** by @robotdad - OpenAI Realtime API provider enabling native speech-to-speech interactions with ultra-low latency
   - Repository: https://github.com/robotdad/amplifier-module-provider-openai-realtime
