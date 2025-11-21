@@ -16,20 +16,11 @@ from memory.models import Memory
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Import Claude Code SDK - REQUIRED for memory extraction
-try:
-    from claude_code_sdk import ClaudeCodeOptions
-    from claude_code_sdk import ClaudeSDKClient
-except ImportError:
-    raise RuntimeError(
-        "Claude Code SDK not available. Memory extraction requires Claude Code SDK. "
-        "Install with: pip install claude-code-sdk"
-    )
+from .ai_providers import ClaudeProvider
+from .ai_providers import GeminiProvider
+from .ai_providers import OpenAIProvider
 
 # Import extraction configuration
-
-# Configuration (deprecated - use config module)
-CLAUDE_SDK_TIMEOUT = 120  # seconds
 
 
 class MemoryExtractor:
@@ -42,25 +33,22 @@ class MemoryExtractor:
         from amplifier.extraction.config import get_config
 
         self.config = get_config()
+        self.provider = self._get_provider()
 
-        # Check if Claude CLI is installed and available
-        try:
-            result = subprocess.run(["which", "claude"], capture_output=True, text=True, timeout=2)
-            if result.returncode != 0:
-                raise RuntimeError(
-                    "Claude CLI not found. Memory extraction requires Claude CLI. "
-                    "Install with: npm install -g @anthropic-ai/claude-code"
-                )
-        except (subprocess.TimeoutExpired, FileNotFoundError):
-            raise RuntimeError(
-                "Claude CLI not found. Memory extraction requires Claude CLI. "
-                "Install with: npm install -g @anthropic-ai/claude-code"
-            )
-
-        logger.info("[EXTRACTION] Claude Code SDK and CLI verified - ready for extraction")
+    def _get_provider(self):
+        """Get the AI provider based on the configuration."""
+        provider_map = {
+            "claude": ClaudeProvider,
+            "gemini": GeminiProvider,
+            "openai": OpenAIProvider,
+        }
+        provider_class = provider_map.get(self.config.ai_provider)
+        if not provider_class:
+            raise ValueError(f"Unsupported AI provider: {self.config.ai_provider}")
+        return provider_class(self.config)
 
     async def extract_memories(self, text: str, context: dict[str, Any] | None = None) -> list[Memory]:
-        """Extract memories from text using Claude Code SDK
+        """Extract memories from text using the configured AI provider.
 
         Args:
             text: Conversation text to analyze
@@ -70,15 +58,15 @@ class MemoryExtractor:
             List of extracted memories
 
         Raises:
-            RuntimeError: If Claude Code SDK extraction fails
+            RuntimeError: If extraction fails
         """
-        memories = await self._extract_with_claude(text, context)
+        memories = await self.provider.extract_memories(text, context)
         if not memories:
-            raise RuntimeError("Memory extraction failed - Claude Code SDK returned no results")
+            raise RuntimeError("Memory extraction failed - AI provider returned no results")
         return memories
 
     async def extract_from_messages(self, messages: list[dict[str, Any]], context: str | None = None) -> dict[str, Any]:
-        """Extract memories from conversation messages using Claude Code SDK
+        """Extract memories from conversation messages using the configured AI provider.
 
         Args:
             messages: List of conversation messages
@@ -95,16 +83,15 @@ class MemoryExtractor:
         if not messages:
             raise RuntimeError("No messages provided for memory extraction")
 
-        # Format messages for Claude Code SDK extraction
         conversation = self._format_messages(messages)
         if not conversation:
             raise RuntimeError("No valid conversation content found in messages")
 
-        logger.info("[EXTRACTION] Using Claude Code SDK for memory extraction")
-        result = await self._extract_with_claude_full(conversation, context)
+        logger.info(f"[EXTRACTION] Using {self.config.ai_provider} for memory extraction")
+        result = await self.provider.extract_from_messages(conversation, context)
 
         if not result:
-            raise RuntimeError("Memory extraction failed - Claude Code SDK returned no results")
+            raise RuntimeError("Memory extraction failed - AI provider returned no results")
 
         logger.info(f"[EXTRACTION] Extraction completed: {len(result.get('memories', []))} memories")
         return result
@@ -142,171 +129,6 @@ class MemoryExtractor:
 
         logger.info(f"[EXTRACTION] Formatted {len(formatted)} messages for extraction")
         return "\n\n".join(formatted)
-
-    async def _extract_with_claude(self, text: str, context: dict[str, Any] | None) -> list[Memory]:
-        """Extract memories using Claude Code SDK"""
-        prompt = f"""Extract important memories from this conversation.
-
-Categories: learning, decision, issue_solved, preference, pattern
-
-Return ONLY a JSON array of memories:
-[
-    {{
-        "content": "The specific memory",
-        "category": "one of the categories above",
-        "metadata": {{}}
-    }}
-]
-
-Conversation:
-{text}
-
-Context: {json.dumps(context or {})}
-"""
-
-        try:
-            async with asyncio.timeout(self.config.memory_extraction_timeout):
-                async with ClaudeSDKClient(  # type: ignore
-                    options=ClaudeCodeOptions(  # type: ignore
-                        system_prompt="You extract memories from conversations.",
-                        max_turns=1,
-                        model=self.config.memory_extraction_model,
-                    )
-                ) as client:
-                    await client.query(prompt)
-
-                    response = ""
-                    async for message in client.receive_response():
-                        if hasattr(message, "content"):
-                            content = getattr(message, "content", [])
-                            if isinstance(content, list):
-                                for block in content:
-                                    if hasattr(block, "text"):
-                                        response += getattr(block, "text", "")
-
-                    # Clean and parse response
-                    cleaned = response.strip()
-                    if cleaned.startswith("```json"):
-                        cleaned = cleaned[7:]
-                    elif cleaned.startswith("```"):
-                        cleaned = cleaned[3:]
-                    if cleaned.endswith("```"):
-                        cleaned = cleaned[:-3]
-                    cleaned = cleaned.strip()
-
-                    if cleaned:
-                        data = json.loads(cleaned)
-                        return [
-                            Memory(
-                                content=item["content"],
-                                category=item["category"],
-                                metadata={**item.get("metadata", {}), **(context or {})},
-                            )
-                            for item in data
-                        ]
-        except TimeoutError:
-            logger.warning(f"Claude Code SDK timed out after {self.config.memory_extraction_timeout} seconds")
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse extraction response: {e}")
-        except Exception as e:
-            logger.error(f"Claude Code SDK extraction error: {e}")
-
-        return []
-
-    async def _extract_with_claude_full(self, conversation: str, context: str | None) -> dict[str, Any] | None:
-        """Extract using Claude Code SDK with full response format"""
-        from datetime import datetime
-
-        logger.info("[EXTRACTION] Starting Claude Code SDK full extraction")
-
-        context_str = f"\nContext: {context}" if context else ""
-
-        prompt = f"""Extract key memories from this conversation that should be remembered for future interactions.
-{context_str}
-
-Conversation:
-{conversation}
-
-Extract and return as JSON:
-{{
-  "memories": [
-    {{
-      "type": "learning|decision|issue_solved|pattern|preference",
-      "content": "concise memory content",
-      "importance": 0.0-1.0,
-      "tags": ["tag1", "tag2"]
-    }}
-  ],
-  "key_learnings": ["what was learned"],
-  "decisions_made": ["decisions"],
-  "issues_solved": ["problems resolved"]
-}}
-
-Focus on technical decisions, problems solved, user preferences, and important patterns.
-Return ONLY valid JSON."""
-
-        try:
-            logger.info(f"[EXTRACTION] Setting timeout to {self.config.memory_extraction_timeout} seconds")
-            async with asyncio.timeout(self.config.memory_extraction_timeout):
-                logger.info(
-                    f"[EXTRACTION] Creating Claude Code SDK client with model: {self.config.memory_extraction_model}"
-                )
-                async with ClaudeSDKClient(  # type: ignore
-                    options=ClaudeCodeOptions(  # type: ignore
-                        system_prompt="You are a memory extraction expert. Extract key information from conversations.",
-                        max_turns=1,
-                        model=self.config.memory_extraction_model,
-                    )
-                ) as client:
-                    logger.info("[EXTRACTION] Querying Claude Code SDK")
-                    await client.query(prompt)
-
-                    logger.info("[EXTRACTION] Receiving response from Claude Code SDK")
-                    response = ""
-                    async for message in client.receive_response():
-                        if hasattr(message, "content"):
-                            content = getattr(message, "content", [])
-                            if isinstance(content, list):
-                                for block in content:
-                                    if hasattr(block, "text"):
-                                        response += getattr(block, "text", "")
-
-                    logger.info(f"[EXTRACTION] Received response length: {len(response)}")
-
-                    if not response:
-                        logger.warning("[EXTRACTION] Empty response from Claude Code SDK")
-                        return None
-
-                    # Clean and parse JSON
-                    cleaned = response.strip()
-                    if cleaned.startswith("```json"):
-                        cleaned = cleaned[7:]
-                    elif cleaned.startswith("```"):
-                        cleaned = cleaned[3:]
-                    if cleaned.endswith("```"):
-                        cleaned = cleaned[:-3]
-                    cleaned = cleaned.strip()
-
-                    logger.info("[EXTRACTION] Parsing JSON response")
-                    data = json.loads(cleaned)
-                    data["metadata"] = {"extraction_method": "claude_sdk", "timestamp": datetime.now().isoformat()}
-
-                    logger.info(f"[EXTRACTION] Successfully extracted: {len(data.get('memories', []))} memories")
-                    return data
-
-        except TimeoutError:
-            logger.warning(
-                f"[EXTRACTION] Claude Code SDK timed out after {self.config.memory_extraction_timeout} seconds"
-            )
-        except json.JSONDecodeError as e:
-            logger.error(f"[EXTRACTION] Failed to parse extraction response: {e}")
-        except Exception as e:
-            logger.error(f"[EXTRACTION] Claude Code SDK extraction error: {e}")
-            import traceback
-
-            logger.error(f"[EXTRACTION] Traceback: {traceback.format_exc()}")
-
-        return None
 
     def _is_system_message(self, content: str) -> bool:
         """Check if content is a system/hook message that should be filtered"""
