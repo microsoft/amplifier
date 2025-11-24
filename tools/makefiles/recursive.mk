@@ -14,7 +14,8 @@ ifndef IS_RECURSIVE_MAKE
 # make with VERBOSE=1 to print all outputs of recursive makes
 VERBOSE ?= 0
 
-RECURSIVE_TARGETS = clean test check lock install
+# Allow parent Makefiles to override which targets should be recursive
+RECURSIVE_TARGETS ?= clean test check lock install
 
 # You can pass in a list of files or directories to retain when running `clean/git-clean`
 # ex: make clean GIT_CLEAN_RETAIN=".env .data"

@@ -1,5 +1,9 @@
 # Workspace Makefile
 
+# Override RECURSIVE_TARGETS to exclude 'check' and 'install' - we handle them custom
+# MUST be set BEFORE including recursive.mk
+RECURSIVE_TARGETS = clean test lock
+
 # Include the recursive system
 repo_root = $(shell git rev-parse --show-toplevel)
 include $(repo_root)/tools/makefiles/recursive.mk
@@ -141,10 +145,65 @@ help: ## Show ALL available commands
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo ""
 
+# Check for uninitialized git submodules
+.PHONY: check-submodules
+check-submodules:
+	@if [ -f .gitmodules ]; then \
+		echo "Checking git submodules..."; \
+		uninitialized=""; \
+		for path in $$(git config --file .gitmodules --get-regexp path | awk '{print $$2}'); do \
+			if [ ! -f "$$path/.git" ] && [ ! -d "$$path/.git" ]; then \
+				uninitialized="$$uninitialized $$path"; \
+			fi; \
+		done; \
+		if [ -n "$$uninitialized" ]; then \
+			echo ""; \
+			echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; \
+			echo "❌ ERROR: Uninitialized git submodules detected!"; \
+			echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; \
+			echo ""; \
+			echo "The following submodules need to be initialized:"; \
+			for path in $$uninitialized; do \
+				echo "  - $$path"; \
+			done; \
+			echo ""; \
+			echo "Please run:"; \
+			echo "  git submodule update --init --recursive"; \
+			echo ""; \
+			echo "Then run 'make install' again."; \
+			echo ""; \
+			exit 1; \
+		fi; \
+		echo "✅ All submodules initialized"; \
+		echo ""; \
+	fi
+
+# Recursively install all subdirectories with Makefiles
+.PHONY: install-recursive
+install-recursive:
+	@if [ -n "$(MAKE_DIRS)" ]; then \
+		echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; \
+		echo "Installing subdirectories..."; \
+		echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; \
+		echo ""; \
+		for dir in $(MAKE_DIRS); do \
+			if $(MAKE) -C $$dir -n install >/dev/null 2>&1; then \
+				echo "Installing $$dir..."; \
+				VIRTUAL_ENV= $(MAKE) -C $$dir install || { \
+					echo "⚠️  Warning: Failed to install $$dir"; \
+				}; \
+				echo ""; \
+			fi; \
+		done; \
+	fi
+
 # Installation
-install: ## Install all dependencies
+install: check-submodules ## Install all dependencies
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo "Installing workspace dependencies..."
-	uv sync --group dev
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo ""
+	@uv sync --group dev
 	@echo ""
 	@echo "Installing npm packages globally..."
 	@command -v pnpm >/dev/null 2>&1 || { echo "  Installing pnpm..."; npm install -g pnpm; }
@@ -156,7 +215,10 @@ install: ## Install all dependencies
 		exit 1; \
 	}
 	@echo ""
+	@$(MAKE) install-recursive
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo "✅ All dependencies installed!"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo ""
 	@if [ -n "$$VIRTUAL_ENV" ]; then \
 		echo "✓ Virtual environment already active"; \
@@ -167,7 +229,10 @@ install: ## Install all dependencies
 	fi
 
 # Code quality
-check: ## Format, lint, and type-check all code
+.PHONY: check-root check-recursive
+
+# Root-level checks (runs first, always completes)
+check-root:
 	@# Handle worktree virtual environment issues by unsetting mismatched VIRTUAL_ENV
 	@if [ -n "$$VIRTUAL_ENV" ] && [ -d ".venv" ]; then \
 		VENV_DIR=$$(cd "$$VIRTUAL_ENV" 2>/dev/null && pwd) || true; \
@@ -177,6 +242,10 @@ check: ## Format, lint, and type-check all code
 			export VIRTUAL_ENV=; \
 		fi; \
 	fi
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo "Running root project checks..."
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo ""
 	@echo "Formatting code with ruff..."
 	@VIRTUAL_ENV= uv run ruff format .
 	@echo "Linting code with ruff..."
@@ -185,7 +254,36 @@ check: ## Format, lint, and type-check all code
 	@VIRTUAL_ENV= uv run pyright
 	@echo "Checking for stubs and placeholders..."
 	@python tools/check_stubs.py
-	@echo "All checks passed!"
+	@echo ""
+	@echo "✅ Root project checks passed!"
+	@echo ""
+
+# Recursive checks in subdirectories (non-blocking)
+check-recursive: .clean-error-log $(MAKE_DIRS)
+	@# Note: .print-error-log is called separately in main check target
+
+# Main check target: runs root first, then recursive, then reports all errors
+check: ## Format, lint, and type-check all code
+	@echo ""
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo "Running comprehensive code quality checks"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo ""
+	@# Run root checks first (always completes)
+	@$(MAKE) check-root
+	@# Then run recursive checks (continues even on errors)
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo "Running checks in subdirectories..."
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo ""
+	@$(MAKE) check-recursive
+	@# Finally, report any errors from subdirectories
+	@$(MAKE) .print-error-log
+	@echo ""
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo "✅ All checks completed successfully!"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo ""
 
 test: ## Run all tests
 	@echo "Running tests..."
