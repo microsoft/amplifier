@@ -172,6 +172,7 @@
     "upserts",
     "uvicorn",
     "venv",
+    "VLLM",
     "Worktree"
   ],
   "makefile.configureOnOpen": false
