@@ -1,0 +1,113 @@
+{
+  "id": "django-blog",
+  "name": "Django Blog",
+  "created_at": "2025-10-07T15:49:19.974809",
+  "updated_at": "2025-10-07T15:49:19.974843",
+  "tasks": {
+    "setup": {
+      "id": "setup",
+      "title": "Project Setup",
+      "description": "Create Django project and configure settings",
+      "state": "completed",
+      "parent_id": null,
+      "depends_on": [],
+      "assigned_to": null,
+      "created_at": "2025-10-07T15:49:19.974818",
+      "updated_at": "2025-10-07T15:49:19.974819"
+    },
+    "models": {
+      "id": "models",
+      "title": "Database Models",
+      "description": "Create User, Post, Comment models",
+      "state": "completed",
+      "parent_id": null,
+      "depends_on": [
+        "setup"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T15:49:19.974822",
+      "updated_at": "2025-10-07T15:49:19.974822"
+    },
+    "admin": {
+      "id": "admin",
+      "title": "Admin Interface",
+      "description": "Configure Django admin",
+      "state": "completed",
+      "parent_id": null,
+      "depends_on": [
+        "models"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T15:49:19.974824",
+      "updated_at": "2025-10-07T15:49:19.974825"
+    },
+    "views": {
+      "id": "views",
+      "title": "Views",
+      "description": "Create list, detail, create views",
+      "state": "completed",
+      "parent_id": null,
+      "depends_on": [
+        "models"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T15:49:19.974826",
+      "updated_at": "2025-10-07T15:49:19.974827"
+    },
+    "templates": {
+      "id": "templates",
+      "title": "Templates",
+      "description": "Design HTML templates",
+      "state": "completed",
+      "parent_id": null,
+      "depends_on": [
+        "views"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T15:49:19.974828",
+      "updated_at": "2025-10-07T15:49:19.974829"
+    },
+    "urls": {
+      "id": "urls",
+      "title": "URL Configuration",
+      "description": "Set up routing",
+      "state": "completed",
+      "parent_id": null,
+      "depends_on": [
+        "views"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T15:49:19.974830",
+      "updated_at": "2025-10-07T15:49:19.974830"
+    },
+    "tests": {
+      "id": "tests",
+      "title": "Tests",
+      "description": "Write unit tests",
+      "state": "completed",
+      "parent_id": null,
+      "depends_on": [
+        "models",
+        "views"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T15:49:19.974832",
+      "updated_at": "2025-10-07T15:49:19.974832"
+    },
+    "deploy": {
+      "id": "deploy",
+      "title": "Deployment",
+      "description": "Deploy to production",
+      "state": "completed",
+      "parent_id": null,
+      "depends_on": [
+        "templates",
+        "urls",
+        "tests"
+      ],
+      "assigned_to": null,
+      "created_at": "2025-10-07T15:49:19.974834",
+      "updated_at": "2025-10-07T15:49:19.974834"
+    }
+  }
+}
