@@ -2,7 +2,7 @@
   "permissions": {
     "allow": [
       "Bash",
-      "mcp__browser-use",
+      "mcp__playwright",
       "mcp__deepwiki",
       "WebFetch",
       "TodoWrite"
@@ -18,7 +18,7 @@
     ]
   },
   "enableAllProjectMcpServers": false,
-  "enabledMcpjsonServers": ["browser-use", "deepwiki"],
+  "enabledMcpjsonServers": ["playwright", "deepwiki"],
   "hooks": {
     "SessionStart": [
       {

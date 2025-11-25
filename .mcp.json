@@ -1,5 +1,12 @@
 {
   "mcpServers": {
+    "browser-use": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "browser-use"
+      ]
+    },
     "playwright": {
       "command": "npx",
       "args": [
