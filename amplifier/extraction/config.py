@@ -21,16 +21,18 @@ class MemoryExtractionConfig(BaseSettings):
         default=False, description="Enable memory extraction system (must be explicitly set to true)"
     )
 
-    # Model configuration
-    memory_extraction_model: str = Field(
-        default="claude-3-5-haiku-20241022",
-        description="Model for memory extraction (fast, efficient, cost-effective)",
+    # AI Provider Configuration
+    ai_provider: str = Field(
+        default="claude", description="AI provider for memory extraction (claude, gemini, or openai)"
     )
 
+    # Model configuration
+    claude_model: str = Field(default="claude-3-5-sonnet-20240620", description="Model for Claude")
+    gemini_model: str = Field(default="gemini-1.5-flash", description="Model for Gemini")
+    openai_model: str = Field(default="gpt-4", description="Model for OpenAI")
+
     # Extraction configuration
-    memory_extraction_timeout: int = Field(
-        default=120, description="Timeout in seconds for Claude Code SDK extraction operations"
-    )
+    memory_extraction_timeout: int = Field(default=120, description="Timeout in seconds for AI extraction operations")
 
     memory_extraction_max_messages: int = Field(
         default=20, description="Maximum number of recent messages to process for extraction"
@@ -53,6 +55,8 @@ class MemoryExtractionConfig(BaseSettings):
     anthropic_api_key: str | None = Field(
         default=None, description="Anthropic API key (optional, Claude Code SDK may provide)"
     )
+    gemini_api_key: str | None = Field(default=None, description="Gemini API key")
+    openai_api_key: str | None = Field(default=None, description="OpenAI API key")
 
     def ensure_storage_dir(self) -> Path:
         """Ensure storage directory exists and return it"""
