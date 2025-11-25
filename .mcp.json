@@ -1,11 +1,17 @@
 {
   "mcpServers": {
     "browser-use": {
-      "command": "uvx",
-      "args": ["browser-use[cli]==0.5.10", "--mcp"],
-      "env": {
-        "OPENAI_API_KEY": "${OPENAI_API_KEY}"
-      }
+      "command": "npx",
+      "args": [
+        "-y",
+        "browser-use"
+      ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest"
+      ]
     },
     "context7": {
       "command": "npx",
