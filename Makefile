@@ -179,6 +179,8 @@ check-submodules:
 	fi
 
 # Recursively install all subdirectories with Makefiles
+# VIRTUAL_ENV tells uv pip install where to install packages
+# UV_PROJECT_ENVIRONMENT tells uv sync/run where to find the venv
 .PHONY: install-recursive
 install-recursive:
 	@if [ -n "$(MAKE_DIRS)" ]; then \
@@ -189,7 +191,7 @@ install-recursive:
 		for dir in $(MAKE_DIRS); do \
 			if $(MAKE) -C $$dir -n install >/dev/null 2>&1; then \
 				echo "Installing $$dir..."; \
-				VIRTUAL_ENV= $(MAKE) -C $$dir install || { \
+				VIRTUAL_ENV=$(CURDIR)/.venv UV_PROJECT_ENVIRONMENT=$(CURDIR)/.venv $(MAKE) -C $$dir install || { \
 					echo "⚠️  Warning: Failed to install $$dir"; \
 				}; \
 				echo ""; \
