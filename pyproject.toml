@@ -52,7 +52,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["amplifier-dev"]
+testpaths = ["amplifier-dev", "workspace_tests"]
 norecursedirs = [
     "ai_working",
     ".venv",
@@ -61,8 +61,6 @@ norecursedirs = [
     "build",
     "dist",
     ".data",
-    "scenario-tools",   # Scenario tools have their own test environments
-    "amplifier-app-log-viewer",  # Standalone app with own test environment
     "dev_verification", # Standalone verification scripts (not pytest tests)
 ]
 # Use importlib mode to avoid import collisions from duplicate test file names
