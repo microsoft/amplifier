@@ -145,38 +145,45 @@ help: ## Show ALL available commands
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo ""
 
-# Check for uninitialized git submodules
+# Check for uninitialized git submodules (recursively checks nested submodules)
 .PHONY: check-submodules
 check-submodules:
-	@if [ -f .gitmodules ]; then \
-		echo "Checking git submodules..."; \
-		uninitialized=""; \
-		for path in $$(git config --file .gitmodules --get-regexp path | awk '{print $$2}'); do \
-			if [ ! -f "$$path/.git" ] && [ ! -d "$$path/.git" ]; then \
-				uninitialized="$$uninitialized $$path"; \
+	@echo "Checking git submodules (including nested)..."; \
+	uninitialized=""; \
+	for gitmodules_file in $$(find . -name .gitmodules -not -path '*/.git/*' 2>/dev/null); do \
+		parent_dir=$$(dirname "$$gitmodules_file"); \
+		for subpath in $$(git config --file "$$gitmodules_file" --get-regexp path 2>/dev/null | awk '{print $$2}'); do \
+			if [ "$$parent_dir" = "." ]; then \
+				full_path="$$subpath"; \
+			else \
+				full_path="$$parent_dir/$$subpath"; \
+			fi; \
+			full_path=$$(echo "$$full_path" | sed 's|^\./||'); \
+			if [ ! -f "$$full_path/.git" ] && [ ! -d "$$full_path/.git" ]; then \
+				uninitialized="$$uninitialized $$full_path"; \
 			fi; \
 		done; \
-		if [ -n "$$uninitialized" ]; then \
-			echo ""; \
-			echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; \
-			echo "❌ ERROR: Uninitialized git submodules detected!"; \
-			echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; \
-			echo ""; \
-			echo "The following submodules need to be initialized:"; \
-			for path in $$uninitialized; do \
-				echo "  - $$path"; \
-			done; \
-			echo ""; \
-			echo "Please run:"; \
-			echo "  git submodule update --init --recursive"; \
-			echo ""; \
-			echo "Then run 'make install' again."; \
-			echo ""; \
-			exit 1; \
-		fi; \
-		echo "✅ All submodules initialized"; \
+	done; \
+	if [ -n "$$uninitialized" ]; then \
 		echo ""; \
-	fi
+		echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; \
+		echo "❌ ERROR: Uninitialized git submodules detected!"; \
+		echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; \
+		echo ""; \
+		echo "The following submodules need to be initialized:"; \
+		for path in $$uninitialized; do \
+			echo "  - $$path"; \
+		done; \
+		echo ""; \
+		echo "Please run:"; \
+		echo "  git submodule update --init --recursive"; \
+		echo ""; \
+		echo "Then run 'make install' again."; \
+		echo ""; \
+		exit 1; \
+	fi; \
+	echo "✅ All submodules initialized (including nested)"; \
+	echo ""
 
 # Recursively install all subdirectories with Makefiles
 # VIRTUAL_ENV tells uv pip install where to install packages
