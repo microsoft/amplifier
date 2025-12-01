@@ -2,7 +2,7 @@
 
 # Override RECURSIVE_TARGETS to exclude 'check' and 'install' - we handle them custom
 # MUST be set BEFORE including recursive.mk
-RECURSIVE_TARGETS = clean test lock
+RECURSIVE_TARGETS = clean lock
 
 # Include the recursive system
 repo_root = $(shell git rev-parse --show-toplevel)

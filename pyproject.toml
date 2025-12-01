@@ -52,8 +52,8 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["amplifier-dev", "workspace_tests"]
 norecursedirs = [
+    "scenarios",
     "ai_working",
     ".venv",
     "node_modules",
@@ -61,7 +61,6 @@ norecursedirs = [
     "build",
     "dist",
     ".data",
-    "dev_verification", # Standalone verification scripts (not pytest tests)
 ]
 # Use importlib mode to avoid import collisions from duplicate test file names
 addopts = "--import-mode=importlib"
