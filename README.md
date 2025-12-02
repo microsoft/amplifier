@@ -5,6 +5,9 @@
 > [!CAUTION]
 > This project is a research demonstrator. It is in early development and may change significantly. Using permissive AI tools in your repository requires careful attention to security considerations and careful human supervision, and even then things can still go wrong. Use it with caution, and at your own risk. See [Disclaimer](#disclaimer).
 
+> [!CAUTION]
+> There is a newer [next branch](https://github.com/microsoft/amplifier/tree/next) where a lot of development is happening. If you're looking for the bleeding edge, please look there. In particular v-next removes the dependency on Claude code CLI.
+
 Amplifier is a coordinated and accelerated development system that turns your expertise into reusable AI tools without requiring code. Describe the step-by-step thinking process for handling a task—a "metacognitive recipe"—and Amplifier builds a tool that executes it reliably. As you create more tools, they combine and build on each other, transforming individual solutions into a compounding automation system.
 
 ## 🚀 QuickStart
