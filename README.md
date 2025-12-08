@@ -5,6 +5,30 @@
 > [!CAUTION]
 > This project is a research demonstrator. It is in early development and may change significantly. Using permissive AI tools in your repository requires careful attention to security considerations and careful human supervision, and even then things can still go wrong. Use it with caution, and at your own risk. See [Disclaimer](#disclaimer).
 
+> [!NOTE]
+> **This is the Claude Code-based version of Amplifier.** The new modular Amplifier is now in the [`main`](https://github.com/microsoft/amplifier) branch.
+
+### About the New Modular Amplifier
+
+The [`main`](https://github.com/microsoft/amplifier) branch contains the new modular Amplifier, which offers:
+
+- **Provider Independence**: Works with Anthropic Claude, OpenAI, Azure OpenAI, Ollama, and more
+- **Modular Architecture**: Swap AI providers, tools, and behaviors like LEGO bricks
+- **True Extensibility**: Build your own modules, tools, and interfaces
+- **Profile-Based Configuration**: Pre-configured capability sets for different scenarios
+- **Cross-Platform**: Works on macOS, Linux, and WSL
+
+**Install the modular Amplifier:**
+
+```bash
+uv tool install git+https://github.com/microsoft/amplifier
+amplifier init
+```
+
+**Learn more:** [github.com/microsoft/amplifier](https://github.com/microsoft/amplifier)
+
+---
+
 Amplifier is a coordinated and accelerated development system that turns your expertise into reusable AI tools without requiring code. Describe the step-by-step thinking process for handling a task—a "metacognitive recipe"—and Amplifier builds a tool that executes it reliably. As you create more tools, they combine and build on each other, transforming individual solutions into a compounding automation system.
 
 ## 🚀 QuickStart
