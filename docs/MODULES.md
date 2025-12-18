@@ -291,6 +291,27 @@ Built something cool? Share it with the community!
   - Compatible: Amplifier 0.1.x
   - Status: Experimental
 
+
+- **tool-memory** by @michaeljabbour - Persistent memory across sessions backed by SQLite
+  - Repository: https://github.com/michaeljabbour/amplifier-module-tool-memory
+  - Compatible: Amplifier 0.1.x
+  - Status: Active
+
+- **hooks-event-broadcast** by @michaeljabbour - Transport-agnostic event broadcast (e.g. WebSocket/SSE) for streaming UIs
+  - Repository: https://github.com/michaeljabbour/amplifier-module-hooks-event-broadcast
+  - Compatible: Amplifier 0.1.x
+  - Status: Active
+
+### Community-Contributed Bundles
+
+Bundles are composable configuration layers (not Python packages). See https://github.com/microsoft/amplifier-foundation/blob/main/docs/BUNDLE_GUIDE.md.
+
+- **amplifier-desktop** by @michaeljabbour - Desktop app bundle composing foundation with streaming UI + persistent memory
+  - Repository: https://github.com/michaeljabbour/amplifier-desktop
+  - Bundle: https://github.com/michaeljabbour/amplifier-desktop/blob/main/sidecar/bundle.yaml
+  - Compatible: Amplifier 0.1.x
+  - Status: Active
+
 ---
 
 ## Building Your Own Modules
