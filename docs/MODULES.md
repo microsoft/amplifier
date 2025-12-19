@@ -123,6 +123,28 @@ Manage conversation state and history.
 | **context-simple** | In-memory context with automatic compaction | [amplifier-module-context-simple](https://github.com/microsoft/amplifier-module-context-simple) |
 | **context-persistent** | File-backed persistent context across sessions | [amplifier-module-context-persistent](https://github.com/microsoft/amplifier-module-context-persistent) |
 
+### Memory System
+
+Persistent memory and session tracking for AI learning across sessions.
+
+> **Bundling Recommendation**: These three modules work together as a complete memory system. 
+> For best results, bundle all three: **tool-memory** (storage), **hooks-memory-capture** (automatic capture), 
+> and **context-memory** (context injection). They pair well with **context-persistent** for full session continuity.
+
+| Module | Description | Repository |
+|--------|-------------|------------|
+| **tool-memory** | Persistent memory with FTS5 search, observation types, session tracking | [amplifier-module-tool-memory](https://github.com/michaeljabbour/amplifier-module-tool-memory) |
+| **context-memory** | Inject relevant memories at session start using progressive disclosure | [amplifier-module-context-memory](https://github.com/michaeljabbour/amplifier-module-context-memory) |
+| **hooks-memory-capture** | Automatic observation capture from tool outputs via tool:post | [amplifier-module-hooks-memory-capture](https://github.com/michaeljabbour/amplifier-module-hooks-memory-capture) |
+| **hooks-event-broadcast** | Relay kernel events to WebSocket/transport for desktop apps | [amplifier-module-hooks-event-broadcast](https://github.com/michaeljabbour/amplifier-module-hooks-event-broadcast) |
+
+**Memory System Features:**
+- **Observation Types**: bugfix, feature, refactor, change, discovery, decision
+- **Session Tracking**: Track sessions with request/investigated/learned/completed summaries
+- **FTS5 Full-Text Search**: Fast search across all memory content
+- **Progressive Disclosure**: Index view with token estimates, full details on demand
+- **Automatic Capture**: hooks-memory-capture captures learnings from tool outputs
+
 ### Hooks
 
 Extend lifecycle events and observability.
@@ -327,18 +349,19 @@ For technical details, see:
 
 ## Component Summary
 
-**Total Components**: 34
+**Total Components**: 38
 
 - **Core**: 1 (amplifier-core)
 - **Applications**: 3 (amplifier, amplifier-app-cli, amplifier-app-log-viewer)
 - **Libraries**: 4 (profiles, collections, module-resolution, config)
 - **Collections**: 3 (toolkit, design-intelligence, recipes)
-- **Runtime Modules**: 24
+- **Runtime Modules**: 28
   - Orchestrators: 3
   - Providers: 5
-  - Tools: 6
-  - Context: 2
-  - Hooks: 9
+  - Tools: 7 (including tool-memory)
+  - Context: 3 (including context-memory)
+  - Memory: 4 (tool-memory, context-memory, hooks-memory-capture, hooks-event-broadcast)
+  - Hooks: 11 (including memory-capture, event-broadcast)
 
 ---
 
