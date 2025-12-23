@@ -61,9 +61,10 @@ norecursedirs = [
     "build",
     "dist",
     ".data",
-    # Exclude collection-recipes during collection→bundle transition
-    # Tests are identical to bundle-recipes, running both causes plugin conflict
+    # Exclude collection-* during collection→bundle transition
+    # Tests are identical to bundle equivalents, running both causes plugin conflict
     "amplifier-collection-recipes",
+    "amplifier-collection-toolkit",
 ]
 # Use importlib mode to avoid import collisions from duplicate test file names
 addopts = "--import-mode=importlib"
