@@ -64,7 +64,10 @@ norecursedirs = [
     # Exclude collection-* during collection→bundle transition
     # Tests are identical to bundle equivalents, running both causes plugin conflict
     "amplifier-collection-recipes",
-    "amplifier-collection-toolkit",
+    # Exclude nested module test directories that cause plugin name collisions
+    # (they have their own conftest.py that conflicts with parent project conftest.py)
+    "amplifier-bundle-recipes/modules",
+    "amplifier-collection-toolkit/scenario-tools",
 ]
 # Use importlib mode to avoid import collisions from duplicate test file names
 addopts = "--import-mode=importlib"
