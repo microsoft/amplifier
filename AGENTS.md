@@ -62,7 +62,7 @@ If a new agent would help, pause work and create it first. This investment pays 
 
 ### Available Specialized Agents
 
-The project includes specialized agents for various tasks (see `.claude/AGENTS_CATALOG.md` for full details):
+The project includes specialized agents for various tasks (see @.claude/agents/ for full details):
 
 - **Development**: zen-code-architect, architecture-reviewer, bug-hunter, test-coverage, modular-builder, refactor-architect, integration-specialist
 - **Knowledge Synthesis**: triage-specialist, analysis-expert, synthesis-master, content-researcher
@@ -70,6 +70,99 @@ The project includes specialized agents for various tasks (see `.claude/AGENTS_C
 - **Meta**: subagent-architect (creates new agents)
 
 Use these agents proactively when their expertise matches your task.
+
+## Parallel Execution Strategy
+
+**CRITICAL**: Always ask yourself: "What can I do in parallel here?" Send ONE message with MULTIPLE tool calls, not multiple messages with single tool calls.
+
+### When to Parallelize
+
+Parallelize when tasks:
+- Don't depend on each other's output
+- Perform similar operations on different targets
+- Can be delegated to different agents
+- Gather independent information
+
+### Common Patterns
+
+#### Multiple File Edits
+When fixing the same issue across files (e.g., type errors, import updates):
+```
+Single message with multiple Edit/MultiEdit calls:
+- Edit: Fix type error in src/auth.py
+- Edit: Fix type error in src/database.py
+- Edit: Fix type error in src/api.py
+```
+
+#### Batch Type Error Fixes
+When pyright reports multiple type errors:
+```
+Single message addressing all errors:
+- Read: Check current implementation in affected files
+- MultiEdit: Fix all type errors in utils.py
+- MultiEdit: Fix all type errors in models.py
+- Edit: Update type imports in __init__.py
+```
+
+#### Information Gathering
+Before implementing features:
+```
+Single message with parallel reads and searches:
+- Grep: Search for existing patterns
+- Read: Main implementation file
+- Read: Test file
+- Read: Related configuration
+```
+
+#### Multiple Agent Analysis
+For comprehensive review:
+```
+Single message with multiple Task calls:
+- Task zen-architect: "Design approach"
+- Task bug-hunter: "Identify potential issues"
+- Task test-coverage: "Suggest test cases"
+```
+
+### Anti-Patterns to Avoid
+
+**Don't do this:**
+```
+"Let me read the first file"
+[Read file1.py]
+"Now let me read the second file"
+[Read file2.py]
+```
+
+**Do this instead:**
+```
+"I'll examine these files in parallel"
+[Single message: Read file1.py, Read file2.py, Read file3.py]
+```
+
+### Remember
+
+- Parallel execution is the default, not an optimization
+- Sequential execution needs justification (true dependencies)
+- Context is preserved better with parallel operations
+- Users prefer comprehensive results over watching sequential progress
+
+## Human Engagement Points
+
+- **Clarification** - Ask when truly uncertain about direction
+- **Checkpoints** - Surface completed work stages for validation
+- **Proxy decisions** - Answer sub-agent questions when possible, escalate when needed
+- **Learning stance** - Act as skilled new employee learning "our way"
+
+## Document Reference Protocol
+
+When working with documents that contain references:
+
+1. **Always check for references/citations** at the end of documents
+2. **Re-read source materials** when implementing referenced concepts
+3. **Understand the backstory/context** before applying ideas
+4. **Track which articles informed which decisions** for learning
+
+This ensures we build on the full depth of ideas, not just their summaries.
 
 ## Incremental Processing Pattern
 
@@ -196,6 +289,7 @@ We have:
 - "What an excellent point!"
 - "I completely agree!"
 - "That's exactly right!"
+- "The code is production ready!"
 
 **INSTEAD, engage substantively:**
 
