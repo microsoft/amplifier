@@ -33,22 +33,40 @@ The primary library for building applications:
 - Shared utilities
 
 ### Modules
-Swappable capabilities that plug into the kernel:
+Swappable capabilities that plug into the kernel (exactly 5 types):
 
 | Type | Purpose | Examples |
 |------|---------|----------|
 | **Provider** | LLM backends | anthropic, openai, azure, ollama |
-| **Tool** | Agent capabilities | filesystem, bash, web, search, task |
-| **Orchestrator** | Execution strategy | loop-basic, loop-streaming, loop-events |
+| **Tool** | Agent capabilities (LLM-decided) | filesystem, bash, web, search, task |
+| **Orchestrator** | **The main engine** driving sessions | loop-basic, loop-streaming, loop-events |
 | **Context** | Memory management | context-simple, context-persistent |
-| **Hook** | Observability/control | logging, redaction, approval |
+| **Hook** | Lifecycle observers (code-decided) | logging, redaction, approval |
+
+**Orchestrator: The Main Engine** - The orchestrator controls the entire execution loop (LLM → tool calls → response). Swapping orchestrators can radically change agent behavior. It's THE control surface, not just "strategy."
+
+**Tool vs Hook** - Tools are LLM-decided (model chooses to call them). Hooks are code-decided (fire on lifecycle events). Both can use models internally, but the triggering mechanism differs.
 
 ### Bundles
 Composable configuration packages combining:
 - Providers, tools, orchestrators
-- Behaviors (reusable capability sets)
+- Behaviors (reusable capability sets - naming convention, not code)
 - Agents (specialized personas)
 - Context files
+
+### Agents (Built on Bundles, NOT a Module Type)
+
+**Agents ARE bundles.** They use the same file format (markdown + YAML frontmatter) and are loaded via `load_bundle()`. The only difference is frontmatter convention:
+- Bundles use `bundle:` with `name` and `version`
+- Agents use `meta:` with `name` and `description`
+
+When the `task` tool spawns an agent:
+1. Looks up agent config from `coordinator.config["agents"]`
+2. Calls the `session.spawn` capability (app-layer, not kernel)
+3. Creates a new `AmplifierSession` with merged config and `parent_id` linking
+4. Child session runs its own orchestrator loop and returns result
+
+This is a **foundation-layer pattern**. The kernel provides session forking; "agents" are built on top.
 
 ### Recipes (requires recipes bundle)
 Multi-step AI agent orchestration for repeatable workflows:
