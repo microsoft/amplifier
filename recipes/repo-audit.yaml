@@ -224,6 +224,85 @@ steps:
     timeout: 60
 
   # ==========================================================================
+  # STEP 5b: Check for Existing Fix PR (Deduplication)
+  # ==========================================================================
+  - id: "check-existing-pr"
+    condition: "{{create_fix_pr}} == 'true'"
+    type: "bash"
+    parse_json: true
+    command: |
+      REPO="{{repo_owner}}/{{repo_name}}"
+      BRANCH_NAME="fix/compliance-boilerplate-update"
+      
+      # Check for existing open PRs from this branch
+      EXISTING_PR=$(gh pr list -R "$REPO" --head "$BRANCH_NAME" --state open --json number,url,title 2>/dev/null || echo "[]")
+      
+      PR_COUNT=$(echo "$EXISTING_PR" | jq 'length')
+      
+      if [ "$PR_COUNT" -gt 0 ]; then
+        PR_URL=$(echo "$EXISTING_PR" | jq -r '.[0].url')
+        PR_NUMBER=$(echo "$EXISTING_PR" | jq -r '.[0].number')
+        PR_TITLE=$(echo "$EXISTING_PR" | jq -r '.[0].title')
+        jq -n \
+          --argjson existing true \
+          --arg url "$PR_URL" \
+          --argjson num "$PR_NUMBER" \
+          --arg title "$PR_TITLE" \
+          '{
+            existing_pr: $existing,
+            pr_url: $url,
+            pr_number: $num,
+            pr_title: $title,
+            message: "Existing compliance PR found - will skip creation to avoid duplicate"
+          }'
+      else
+        jq -n '{
+          existing_pr: false,
+          pr_url: null,
+          pr_number: null,
+          pr_title: null,
+          message: "No existing PR found - can proceed with creation if issues exist"
+        }'
+      fi
+    output: "existing_pr_check"
+    timeout: 60
+    on_error: "continue"
+
+  - id: "report-existing-pr"
+    condition: "{{create_fix_pr}} == 'true'"
+    type: "bash"
+    command: |
+      # Only report if there's an existing PR (check the output)
+      cat << 'EXISTING_PR_JSON' > /tmp/existing_pr_$$.json
+      {{existing_pr_check}}
+      EXISTING_PR_JSON
+      
+      EXISTING=$(jq -r '.existing_pr // false' /tmp/existing_pr_$$.json)
+      
+      if [ "$EXISTING" = "true" ]; then
+        PR_URL=$(jq -r '.pr_url' /tmp/existing_pr_$$.json)
+        PR_NUM=$(jq -r '.pr_number' /tmp/existing_pr_$$.json)
+        echo "=========================================="
+        echo "EXISTING PR FOUND - WILL SKIP PR CREATION"
+        echo "=========================================="
+        echo ""
+        echo "An open compliance PR already exists for {{repo_owner}}/{{repo_name}}:"
+        echo ""
+        echo "  PR #$PR_NUM"
+        echo "  URL: $PR_URL"
+        echo ""
+        echo "Please review and merge the existing PR before running"
+        echo "the audit again with create_fix_pr enabled."
+        echo "=========================================="
+      else
+        echo "No existing PR found - will proceed with fix creation if issues exist"
+      fi
+      rm -f /tmp/existing_pr_$$.json
+    output: "existing_pr_report"
+    timeout: 30
+    on_error: "continue"
+
+  # ==========================================================================
   # STEP 6: Check README Contributing and Trademarks Sections
   # ==========================================================================
   - id: "check-readme-sections"
@@ -313,6 +392,129 @@ steps:
         }'
     output: "readme_check"
     timeout: 60
+
+  # ==========================================================================
+  # STEP 6b: Check if README Fix is Needed
+  # ==========================================================================
+  - id: "check-readme-fix-needed"
+    condition: "{{create_fix_pr}} == 'true' or {{dry_run}} == 'true'"
+    type: "bash"
+    parse_json: true
+    command: |
+      # Check if README check indicates issues that need fixing
+      cat << 'README_CHECK_EOF' > /tmp/readme_check_$$.json
+      {{readme_check}}
+      README_CHECK_EOF
+      
+      SEVERITY=$(jq -r '.severity // "unknown"' /tmp/readme_check_$$.json)
+      CONTRIB_MATCH=$(jq -r '.contributing_verbatim // false' /tmp/readme_check_$$.json)
+      TRADE_MATCH=$(jq -r '.trademarks_verbatim // false' /tmp/readme_check_$$.json)
+      rm -f /tmp/readme_check_$$.json
+      
+      if [ "$SEVERITY" = "pass" ]; then
+        jq -n '{needs_fix: false, reason: "README sections already match"}'
+      else
+        jq -n --arg sev "$SEVERITY" --argjson contrib "$CONTRIB_MATCH" --argjson trade "$TRADE_MATCH" \
+          '{needs_fix: true, severity: $sev, contributing_ok: $contrib, trademarks_ok: $trade}'
+      fi
+    output: "readme_fix_needed"
+    timeout: 30
+    on_error: "continue"
+
+  # ==========================================================================
+  # STEP 6c: Fix README via Agent (writes directly to file)
+  # ==========================================================================
+  - id: "fix-readme-content"
+    condition: "{{create_fix_pr}} == 'true' or {{dry_run}} == 'true'"
+    agent: "foundation:modular-builder"
+    prompt: |
+      Fix the README.md file for the {{repo_owner}}/{{repo_name}} repository to include correct Contributing and Trademarks sections.
+      
+      ## README Fix Status
+      {{readme_fix_needed}}
+      
+      If "needs_fix" is false, respond with "NO_FIX_NEEDED" and do nothing else.
+      
+      ## Files to Work With
+      
+      1. **Current README**: {{working_dir}}/{{repo_name}}/README.md
+      2. **Reference README**: {{working_dir}}/reference/README.md (contains correct Contributing & Trademarks sections at the end)
+      3. **Output location**: {{working_dir}}/{{repo_name}}/fixes/README.md
+      
+      ## Task
+      
+      1. First, read the reference README.md to see the exact Contributing and Trademarks sections
+      2. Read the current target README.md
+      3. Create a fixed version that:
+         - Keeps ALL existing content up to any existing "## Contributing" or "## Trademarks" section
+         - Removes any existing Contributing and Trademarks sections (and everything after them)
+         - Appends the EXACT Contributing and Trademarks sections from the reference (verbatim, character-for-character)
+      4. Create the fixes directory if needed: {{working_dir}}/{{repo_name}}/fixes/
+      5. Write the fixed README to: {{working_dir}}/{{repo_name}}/fixes/README.md
+      
+      ## Critical Requirements
+      
+      - The Contributing and Trademarks sections MUST be copied EXACTLY from the reference - no modifications
+      - Preserve all project-specific content from the original README
+      - Ensure there's a blank line before the Contributing section
+      - The Contributing section must come before the Trademarks section
+      
+      ## Output
+      
+      After writing the file, confirm what was done. If no fix was needed, just say "NO_FIX_NEEDED".
+    output: "readme_fix_result"
+    timeout: 300
+    on_error: "continue"
+
+  - id: "validate-readme-fix"
+    condition: "{{create_fix_pr}} == 'true' or {{dry_run}} == 'true'"
+    type: "bash"
+    command: |
+      FIXES_DIR="{{working_dir}}/{{repo_name}}/fixes"
+      FIXED_README="$FIXES_DIR/README.md"
+      
+      if [ ! -f "$FIXED_README" ]; then
+        echo "No fixed README generated (may not have been needed)"
+        exit 0
+      fi
+      
+      echo "=== README Fix Validation ==="
+      echo "File: $FIXED_README"
+      echo "Size: $(wc -c < "$FIXED_README") bytes, $(wc -l < "$FIXED_README") lines"
+      echo ""
+      
+      # Validate Contributing section exists
+      if grep -q "^## Contributing" "$FIXED_README"; then
+        echo "✓ Contributing section found"
+      else
+        echo "✗ ERROR: Contributing section missing!"
+        exit 1
+      fi
+      
+      # Validate Trademarks section exists
+      if grep -q "^## Trademarks" "$FIXED_README"; then
+        echo "✓ Trademarks section found"
+      else
+        echo "✗ ERROR: Trademarks section missing!"
+        exit 1
+      fi
+      
+      # Check that Contributing comes before Trademarks
+      CONTRIB_LINE=$(grep -n "^## Contributing" "$FIXED_README" | head -1 | cut -d: -f1)
+      TRADE_LINE=$(grep -n "^## Trademarks" "$FIXED_README" | head -1 | cut -d: -f1)
+      
+      if [ "$CONTRIB_LINE" -lt "$TRADE_LINE" ]; then
+        echo "✓ Section order correct (Contributing at line $CONTRIB_LINE, Trademarks at line $TRADE_LINE)"
+      else
+        echo "✗ ERROR: Sections in wrong order!"
+        exit 1
+      fi
+      
+      echo ""
+      echo "README fix validated successfully"
+    output: "readme_validation_result"
+    timeout: 30
+    on_error: "continue"
 
   # ==========================================================================
   # STEP 7: Check GitHub Issues Status
@@ -495,7 +697,7 @@ steps:
   # STEP 11: Prepare Fix PR (Conditional)
   # ==========================================================================
   - id: "prepare-fixes"
-    condition: "{{create_fix_pr}} == 'true' || {{dry_run}} == 'true'"
+    condition: "{{create_fix_pr}} == 'true' or {{dry_run}} == 'true'"
     agent: "foundation:zen-architect"
     mode: "ARCHITECT"
     prompt: |
@@ -531,7 +733,7 @@ steps:
     on_error: "continue"
 
   - id: "create-fix-instructions"
-    condition: "{{create_fix_pr}} == 'true' || {{dry_run}} == 'true'"
+    condition: "{{create_fix_pr}} == 'true' or {{dry_run}} == 'true'"
     type: "bash"
     command: |
       REPO="{{repo_owner}}/{{repo_name}}"
@@ -542,6 +744,20 @@ steps:
       CREATE_PR="{{create_fix_pr}}"
       
       mkdir -p "$FIXES_DIR"
+      
+      # Check if there's an existing PR (skip if so)
+      cat << 'EXISTING_PR_JSON' > /tmp/existing_pr_$$.json
+      {{existing_pr_check}}
+      EXISTING_PR_JSON
+      
+      EXISTING_PR=$(jq -r '.existing_pr // false' /tmp/existing_pr_$$.json 2>/dev/null || echo "false")
+      rm -f /tmp/existing_pr_$$.json
+      
+      if [ "$EXISTING_PR" = "true" ] && [ "$DRY_RUN" != "true" ]; then
+        echo "Skipping fix preparation - existing PR found"
+        echo "Run with dry_run=true to see what would be fixed"
+        exit 0
+      fi
       
       # Copy non-matching boilerplate files to fixes dir
       BOILERPLATE='{{boilerplate_check}}'
@@ -555,6 +771,14 @@ steps:
         fi
       done
       
+      # Check if README was fixed (file would already be in fixes dir from write-fixed-readme step)
+      README_FIXED="false"
+      if [ -f "$FIXES_DIR/README.md" ]; then
+        README_FIXED="true"
+        FILES_TO_FIX="$FILES_TO_FIX README.md"
+        echo "Prepared fix: README.md (Contributing/Trademarks sections)"
+      fi
+      
       # Create PR instructions/preview
       if [ "$DRY_RUN" = "true" ]; then
         echo ""
@@ -562,8 +786,15 @@ steps:
         echo "DRY-RUN: PR PREVIEW for $REPO"
         echo "========================================"
         echo ""
+        
+        if [ "$EXISTING_PR" = "true" ]; then
+          echo "NOTE: An existing PR was found. If not in dry-run mode,"
+          echo "      PR creation would be skipped to avoid duplicates."
+          echo ""
+        fi
+        
         if [ -z "$FILES_TO_FIX" ]; then
-          echo "✓ No fixes needed - all boilerplate files match"
+          echo "✓ No fixes needed - all checks passed"
         else
           echo "Files that WOULD be fixed:"
           for f in $FILES_TO_FIX; do
@@ -571,10 +802,16 @@ steps:
           done
           echo ""
           echo "PR that WOULD be created:"
-          echo "  Title: fix: Compliance audit fixes for Microsoft OSS standards"
-          echo "  Branch: fix/compliance-audit-fixes"
-          echo "  Body: Fixes identified by Amplifier repo-audit recipe"
+          echo "  Title: fix: Update Microsoft OSS compliance files"
+          echo "  Branch: fix/compliance-boilerplate-update"
+          echo "  Body: Updates compliance files to match Microsoft OSS standards"
           echo ""
+          if [ "$README_FIXED" = "true" ]; then
+            echo "README.md changes:"
+            echo "  - Contributing section: updated to standard template"
+            echo "  - Trademarks section: updated to standard template"
+            echo ""
+          fi
           echo "Fix files prepared at: $FIXES_DIR"
         fi
         echo ""
@@ -586,6 +823,12 @@ steps:
       cat << 'PR_INSTRUCTIONS' > "$TARGET_DIR/pr-instructions.md"
       # Fix PR Instructions for {{repo_owner}}/{{repo_name}}
       
+      ## Files to Update
+      
+      Copy these files from the `fixes/` directory:
+      - Boilerplate: CODE_OF_CONDUCT.md, SECURITY.md, SUPPORT.md, LICENSE (if present)
+      - README.md (if present - includes updated Contributing & Trademarks sections)
+      
       ## Steps to Create Fix PR
       
       1. Clone the repository:
@@ -596,25 +839,40 @@ steps:
       
       2. Create a branch:
          ```bash
-         git checkout -b fix/compliance-audit-fixes
+         git checkout -b fix/compliance-boilerplate-update
          ```
       
-      3. Copy fixed files from: {{working_dir}}/{{repo_name}}/fixes/
+      3. Copy fixed files:
+         ```bash
+         cp {{working_dir}}/{{repo_name}}/fixes/* .
+         ```
       
-      4. Commit and push:
+      4. Review changes (especially README.md):
+         ```bash
+         git diff
+         ```
+      
+      5. Commit and push:
          ```bash
          git add .
-         git commit -m "fix: compliance audit fixes for Microsoft OSS standards"
-         git push origin fix/compliance-audit-fixes
+         git commit -m "fix: Update Microsoft OSS compliance files"
+         git push origin fix/compliance-boilerplate-update
          ```
       
-      5. Create PR via GitHub UI or:
+      6. Create PR:
          ```bash
-         gh pr create --title "fix: Compliance audit fixes" --body "Fixes identified by Amplifier repo-audit recipe"
+         gh pr create \
+           --title "fix: Update Microsoft OSS compliance files" \
+           --body "Updates compliance files to match Microsoft OSS standards.
+      
+      Generated by Amplifier repo-audit recipe."
          ```
       PR_INSTRUCTIONS
       
+      echo ""
       echo "Fix instructions written to: $TARGET_DIR/pr-instructions.md"
+      echo ""
+      echo "Files prepared for PR:"
       ls -la "$FIXES_DIR" 2>/dev/null || echo "No fix files generated (all checks may have passed)"
     output: "pr_creation_result"
     timeout: 120
