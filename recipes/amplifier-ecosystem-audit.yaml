@@ -1,0 +1,584 @@
+name: "amplifier-ecosystem-audit"
+description: "Audit all public Amplifier ecosystem repositories in the Microsoft GitHub organization for compliance with standards and guidelines."
+version: "1.2.0"
+author: "Amplifier Team"
+tags: ["audit", "compliance", "github", "amplifier", "ecosystem", "multi-repo"]
+
+# Amplifier Ecosystem Audit Recipe
+#
+# Discovers all public repositories starting with "amplifier" in the Microsoft
+# GitHub organization and audits each for compliance with:
+# - Listed in MODULES.md for discoverability
+# - Required Microsoft boilerplate files
+# - README.md Contributing and Trademarks sections
+# - GitHub Issues status
+# - Repository activity stats
+#
+# Usage:
+#   # Full ecosystem audit (discovery + audit all repos)
+#   amplifier recipes execute amplifier-ecosystem-audit.yaml
+#
+#   # With fix PR creation enabled
+#   amplifier recipes execute amplifier-ecosystem-audit.yaml --context '{"create_fix_prs": "true"}'
+#
+#   # Audit specific repos only (skip discovery)
+#   amplifier recipes execute amplifier-ecosystem-audit.yaml --context '{
+#     "repos": ["amplifier-core", "amplifier-foundation", "amplifier-app-cli"]
+#   }'
+#
+#   # Include community repos (non-Microsoft)
+#   amplifier recipes execute amplifier-ecosystem-audit.yaml --context '{
+#     "include_community": "true"
+#   }'
+#
+# Requirements:
+#   - gh CLI installed and authenticated
+#   - repo-audit.yaml recipe (in same directory)
+#   - Write access to repos if create_fix_prs is "true"
+
+recursion:
+  max_depth: 4
+  max_total_steps: 500
+
+rate_limiting:
+  max_concurrent_llm: 3
+  min_delay_ms: 500
+
+context:
+  # Option 1: Discover repos automatically (default)
+  # Leave repos empty to auto-discover all amplifier* repos
+  # Format when specified: ["amplifier-core", "amplifier-foundation", ...]
+  repos: []
+  
+  # Include community (non-Microsoft) repos from MODULES.md
+  # Use string "true"/"false" for condition compatibility
+  include_community: "false"
+  
+  # Default empty community repos (populated if include_community is true)
+  community_repos: {"source": "none", "repos": []}
+  
+  # Whether to create PRs for fixable issues
+  create_fix_prs: "false"
+  
+  # Dry-run mode: show what WOULD happen without actually creating PRs
+  # Passes through to individual repo audits
+  dry_run: "false"
+  
+  # Maximum repos to audit (safety limit - stop if exceeded)
+  max_repos: 50
+  
+  # Working directory for intermediate files
+  working_dir: "./ai_working/ecosystem-audit"
+  
+  # Report output filename
+  report_filename: "ecosystem-audit-report.md"
+
+stages:
+  # ==========================================================================
+  # STAGE 1: Discovery and Planning
+  # ==========================================================================
+  - name: "discovery"
+    steps:
+      - id: "setup-working-dir"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          mkdir -p "{{working_dir}}/repos"
+          mkdir -p "{{working_dir}}/reports"
+          date -Iseconds > "{{working_dir}}/audit-started.txt"
+          echo "Working directory created: {{working_dir}}"
+        output: "setup_result"
+        timeout: 30
+
+      - id: "discover-repos"
+        type: "bash"
+        parse_json: true
+        command: |
+          # Check if repos were provided manually
+          MANUAL_REPOS='{{repos}}'
+          
+          if [ "$MANUAL_REPOS" != "[]" ] && [ -n "$MANUAL_REPOS" ] && [ "$MANUAL_REPOS" != "null" ]; then
+            # Use manually provided repos
+            echo "$MANUAL_REPOS" | jq '{
+              source: "manual",
+              repos: [.[] | {owner: "microsoft", name: ., url: ("https://github.com/microsoft/" + .)}]
+            }'
+          else
+            # Discover repos from GitHub using Search API
+            # NOTE: gh repo list is unreliable for large orgs - use search API instead
+            echo "Discovering amplifier* repos in Microsoft org via Search API..." >&2
+            
+            # Use GitHub Search API which reliably finds all matching repos
+            SEARCH_RESULTS=$(gh api "search/repositories?q=amplifier+in:name+org:microsoft+is:public&per_page=100" 2>&1)
+            
+            if echo "$SEARCH_RESULTS" | jq -e '.items' > /dev/null 2>&1; then
+              echo "$SEARCH_RESULTS" | jq '{
+                source: "search_api",
+                repos: [.items[] | select(.archived == false) | {
+                  owner: "microsoft",
+                  name: .name,
+                  url: .html_url,
+                  description: (.description // "")
+                }]
+              }'
+            else
+              echo "Search API failed, falling back to gh repo list..." >&2
+              gh repo list microsoft --visibility=public --json name,url,description,isArchived --limit 500 | \
+                jq '[.[] | select(.name | startswith("amplifier")) | select(.isArchived == false)] | {
+                  source: "discovery_fallback",
+                  repos: [.[] | {owner: "microsoft", name: .name, url: .url, description: (.description // "")}]
+                }'
+            fi
+          fi
+        output: "microsoft_repos"
+        timeout: 180
+        retry:
+          max_attempts: 3
+          backoff: "exponential"
+          initial_delay: 5
+
+      - id: "discover-community-repos"
+        condition: "{{include_community}} == 'true'"
+        type: "bash"
+        parse_json: true
+        command: |
+          # Fetch MODULES.md and extract community repos
+          curl -sL --retry 3 "https://raw.githubusercontent.com/microsoft/amplifier/main/docs/MODULES.md" > "{{working_dir}}/MODULES.md"
+          
+          # Extract community repos from tables (non-microsoft repos)
+          # Look for GitHub URLs that aren't microsoft org
+          COMMUNITY_REPOS=$(grep -oE 'https://github\.com/[^/]+/amplifier[^)"\s]*' "{{working_dir}}/MODULES.md" 2>/dev/null | \
+            grep -v 'microsoft/' | \
+            sort -u | \
+            while read url; do
+              # Clean up URL and extract owner/name
+              clean_url=$(echo "$url" | tr -d ')' | tr -d '"')
+              owner=$(echo "$clean_url" | sed 's|https://github.com/||' | cut -d/ -f1)
+              name=$(echo "$clean_url" | sed 's|https://github.com/||' | cut -d/ -f2)
+              if [ -n "$owner" ] && [ -n "$name" ]; then
+                echo "{\"owner\": \"$owner\", \"name\": \"$name\", \"url\": \"$clean_url\"}"
+              fi
+            done | jq -s '.' || echo "[]")
+          
+          jq -n --argjson repos "$COMMUNITY_REPOS" '{source: "community", repos: $repos}'
+        output: "community_repos"
+        timeout: 60
+        on_error: "continue"
+
+      - id: "merge-repo-lists"
+        type: "bash"
+        parse_json: true
+        command: |
+          INCLUDE_COMMUNITY='{{include_community}}'
+          WORKING_DIR='{{working_dir}}'
+          
+          # Write microsoft_repos to temp file to avoid variable size limits
+          cat << 'MS_REPOS_EOF' > "$WORKING_DIR/microsoft_repos.json"
+          {{microsoft_repos}}
+          MS_REPOS_EOF
+          
+          # Write community_repos to temp file
+          cat << 'COMMUNITY_EOF' > "$WORKING_DIR/community_repos.json"
+          {{community_repos}}
+          COMMUNITY_EOF
+          
+          # Debug: Show what we received
+          echo "DEBUG: microsoft_repos size: $(wc -c < "$WORKING_DIR/microsoft_repos.json") bytes" >&2
+          echo "DEBUG: microsoft_repos repo count: $(jq '.repos | length' "$WORKING_DIR/microsoft_repos.json" 2>/dev/null || echo 'parse error')" >&2
+          
+          if [ "$INCLUDE_COMMUNITY" = "true" ]; then
+            # Merge Microsoft and community repos
+            jq --slurpfile community "$WORKING_DIR/community_repos.json" '
+              .repos += ($community[0].repos // []) |
+              .total = (.repos | length) |
+              .microsoft_count = ([.repos[] | select(.owner == "microsoft")] | length) |
+              .community_count = ([.repos[] | select(.owner != "microsoft")] | length)
+            ' "$WORKING_DIR/microsoft_repos.json" | tee "$WORKING_DIR/all_repos.json"
+          else
+            # Microsoft repos only
+            jq '
+              .total = (.repos | length) |
+              .microsoft_count = .total |
+              .community_count = 0
+            ' "$WORKING_DIR/microsoft_repos.json" | tee "$WORKING_DIR/all_repos.json"
+          fi
+        output: "all_repos"
+        timeout: 30
+
+      - id: "check-repo-limit"
+        type: "bash"
+        parse_json: true
+        command: |
+          MAX_REPOS={{max_repos}}
+          
+          # Debug: Check what we received
+          echo "DEBUG: all_repos variable length: ${#ALL_REPOS_RAW}" >&2
+          
+          # Get total from all_repos - handle empty/malformed gracefully
+          TOTAL=$(echo '{{all_repos}}' | jq -r '.total // 0' 2>/dev/null || echo "0")
+          
+          # Validate TOTAL is a number
+          if ! [[ "$TOTAL" =~ ^[0-9]+$ ]]; then
+            echo "ERROR: Could not parse repo count from all_repos. Got: '$TOTAL'" >&2
+            echo "all_repos content preview: $(echo '{{all_repos}}' | head -c 200)" >&2
+            TOTAL=0
+          fi
+          
+          echo "DEBUG: Parsed TOTAL=$TOTAL, MAX_REPOS=$MAX_REPOS" >&2
+          
+          if [ "$TOTAL" -eq 0 ]; then
+            echo "ERROR: No repositories found or failed to parse repo list" >&2
+            jq -n '{
+              exceeded: false,
+              total: 0,
+              max: '"$MAX_REPOS"',
+              error: "No repositories found"
+            }'
+            exit 1
+          elif [ "$TOTAL" -gt "$MAX_REPOS" ]; then
+            echo "ERROR: Found $TOTAL repos, which exceeds max_repos limit of $MAX_REPOS" >&2
+            echo "This is likely a discovery bug. Please investigate." >&2
+            jq -n --argjson total "$TOTAL" --argjson max "$MAX_REPOS" '{
+              exceeded: true,
+              total: $total,
+              max: $max,
+              error: "Repository count exceeds safety limit"
+            }'
+            exit 1
+          else
+            echo "Repository count ($TOTAL) is within limit ($MAX_REPOS)" >&2
+            jq -n --argjson total "$TOTAL" --argjson max "$MAX_REPOS" '{
+              exceeded: false,
+              total: $total,
+              max: $max
+            }'
+          fi
+        output: "repo_limit_check"
+        timeout: 30
+
+      - id: "create-audit-plan"
+        agent: "foundation:zen-architect"
+        mode: "ANALYZE"
+        prompt: |
+          Create an audit plan summary for review before proceeding. Return ONLY the markdown content.
+          
+          ## Discovered Repositories
+          
+          {{all_repos}}
+          
+          ## Audit Configuration
+          
+          - **Create Fix PRs**: {{create_fix_prs}}
+          - **Dry-Run Mode**: {{dry_run}}
+          - **Include Community Repos**: {{include_community}}
+          - **Max Repos Limit**: {{max_repos}}
+          - **Working Directory**: {{working_dir}}
+          
+          ## Output Required
+          
+          Generate a clear markdown summary:
+          
+          ## Amplifier Ecosystem Audit Plan
+          
+          **Date**: [current date]
+          **Total Repositories**: [count]
+          - Microsoft repos: [count]
+          - Community repos: [count]
+          
+          ### Repositories to Audit
+          
+          #### Microsoft Organization
+          | # | Repository | Description |
+          |---|------------|-------------|
+          | 1 | repo-name | description |
+          | ... | ... | ... |
+          
+          #### Community (if applicable)
+          | # | Repository | Owner | Description |
+          |---|------------|-------|-------------|
+          | 1 | repo-name | owner | description |
+          
+          ### Audit Checks Per Repository
+          
+          1. Listed in MODULES.md
+          2. CODE_OF_CONDUCT.md (verbatim match)
+          3. SECURITY.md (verbatim match)
+          4. SUPPORT.md (verbatim match)
+          5. LICENSE (verbatim match)
+          6. README.md Contributing section
+          7. README.md Trademarks section
+          8. GitHub Issues status
+          9. Open PRs and recent activity
+          
+          ### Estimated Time
+          
+          ~2-3 minutes per repository = ~[total] minutes total
+          
+          ### Fix PRs
+          
+          Fix PR creation: [Enabled/Disabled]
+        output: "audit_plan"
+        timeout: 120
+
+    approval:
+      required: true
+      prompt: |
+        ## Ready for Ecosystem Audit
+        
+        {{audit_plan}}
+        
+        **Approve** to begin auditing all repositories.
+        **Deny** to adjust configuration or repository list.
+      timeout: 0
+      default: "deny"
+
+  # ==========================================================================
+  # STAGE 2: Per-Repository Audits
+  # ==========================================================================
+  - name: "audits"
+    steps:
+      - id: "audit-repos"
+        foreach: "{{all_repos.repos}}"
+        as: "repo"
+        parallel: 2
+        collect: "audit_results"
+        type: "recipe"
+        recipe: "amplifier/recipes/repo-audit.yaml"
+        context:
+          repo_owner: "{{repo.owner}}"
+          repo_name: "{{repo.name}}"
+          create_fix_pr: "{{create_fix_prs}}"
+          dry_run: "{{dry_run}}"
+          working_dir: "{{working_dir}}/repos"
+        output: "single_audit"
+        timeout: 600
+        on_error: "continue"
+
+  # ==========================================================================
+  # STAGE 3: Aggregation and Reporting
+  # ==========================================================================
+  - name: "reporting"
+    steps:
+      - id: "collect-individual-reports"
+        type: "bash"
+        command: |
+          echo "Collecting individual audit reports..."
+          
+          REPORTS_DIR="{{working_dir}}/repos"
+          SUMMARY_FILE="{{working_dir}}/reports/individual-summaries.txt"
+          
+          > "$SUMMARY_FILE"
+          
+          for report in "$REPORTS_DIR"/*/audit-report.md; do
+            if [ -f "$report" ]; then
+              REPO_NAME=$(basename "$(dirname "$report")")
+              echo "=== $REPO_NAME ===" >> "$SUMMARY_FILE"
+              # Extract just the summary table and overall status
+              sed -n '/^## Summary/,/^## Detailed/p' "$report" | head -30 >> "$SUMMARY_FILE"
+              echo "" >> "$SUMMARY_FILE"
+            fi
+          done
+          
+          echo "Collected $(ls -1 "$REPORTS_DIR"/*/audit-report.md 2>/dev/null | wc -l) reports"
+          cat "$SUMMARY_FILE"
+        output: "collected_reports"
+        timeout: 120
+
+      - id: "aggregate-results"
+        type: "bash"
+        parse_json: true
+        command: |
+          REPORTS_DIR="{{working_dir}}/repos"
+          
+          # Initialize counters
+          TOTAL=0
+          PASS=0
+          ATTENTION=0
+          CRITICAL=0
+          
+          # Collect repos by status
+          REPOS_PASS=""
+          REPOS_ATTENTION=""
+          REPOS_CRITICAL=""
+          
+          for report in "$REPORTS_DIR"/*/audit-report.md; do
+            if [ -f "$report" ]; then
+              REPO_NAME=$(basename "$(dirname "$report")")
+              TOTAL=$((TOTAL + 1))
+              
+              # Determine status from report content
+              if grep -q "Overall Status.*PASS" "$report" 2>/dev/null; then
+                PASS=$((PASS + 1))
+                REPOS_PASS="$REPOS_PASS\"$REPO_NAME\","
+              elif grep -q "Overall Status.*CRITICAL" "$report" 2>/dev/null; then
+                CRITICAL=$((CRITICAL + 1))
+                REPOS_CRITICAL="$REPOS_CRITICAL\"$REPO_NAME\","
+              else
+                ATTENTION=$((ATTENTION + 1))
+                REPOS_ATTENTION="$REPOS_ATTENTION\"$REPO_NAME\","
+              fi
+            fi
+          done
+          
+          # Clean up trailing commas and format as JSON arrays
+          REPOS_PASS=$(echo "[$REPOS_PASS]" | sed 's/,]/]/')
+          REPOS_ATTENTION=$(echo "[$REPOS_ATTENTION]" | sed 's/,]/]/')
+          REPOS_CRITICAL=$(echo "[$REPOS_CRITICAL]" | sed 's/,]/]/')
+          
+          jq -n \
+            --argjson total "$TOTAL" \
+            --argjson pass "$PASS" \
+            --argjson attention "$ATTENTION" \
+            --argjson critical "$CRITICAL" \
+            --argjson repos_pass "$REPOS_PASS" \
+            --argjson repos_attention "$REPOS_ATTENTION" \
+            --argjson repos_critical "$REPOS_CRITICAL" \
+            '{
+              total_repos: $total,
+              by_status: {
+                pass: $pass,
+                needs_attention: $attention,
+                critical: $critical
+              },
+              repos_passing: $repos_pass,
+              repos_needing_attention: $repos_attention,
+              repos_critical: $repos_critical
+            }'
+        output: "aggregate_data"
+        timeout: 120
+
+      - id: "generate-ecosystem-report"
+        agent: "foundation:zen-architect"
+        mode: "ARCHITECT"
+        prompt: |
+          Generate the comprehensive ecosystem audit report. Return ONLY the markdown content - do NOT write to files.
+          
+          ## Input Data
+          
+          - **Aggregate Data**: {{aggregate_data}}
+          - **Audit Plan**: {{audit_plan}}
+          - **Individual Report Summaries**: {{collected_reports}}
+          
+          ## Report Structure Required
+          
+          Generate this markdown report:
+          
+          # Amplifier Ecosystem Audit Report
+          
+          **Generated**: [current date/time]
+          **Repositories Audited**: [total count]
+          
+          ## Executive Summary
+          
+          | Status | Count | Percentage |
+          |--------|-------|------------|
+          | PASS | N | X% |
+          | NEEDS ATTENTION | N | X% |
+          | CRITICAL | N | X% |
+          
+          **Key Findings**:
+          - [Top 3-5 most important findings across ecosystem]
+          
+          ## Compliance Overview
+          
+          Based on the individual audit results, provide:
+          - Overall ecosystem health assessment
+          - Common patterns of compliance/non-compliance
+          - Priority areas for improvement
+          
+          ## Repositories by Status
+          
+          ### Passing (N repos)
+          [List repos that passed all checks]
+          
+          ### Needs Attention (N repos)
+          [List repos with warnings or recommendations]
+          
+          ### Critical (N repos)
+          [List repos with critical issues requiring immediate attention]
+          
+          ## Repository Details
+          
+          For each repository, summarize:
+          - Overall status
+          - Key issues found
+          - Recommended actions
+          
+          ## Remediation Priority
+          
+          Prioritized list of actions:
+          1. [Highest priority fixes - critical issues]
+          2. [Medium priority - warnings]
+          3. [Lower priority - recommendations]
+          
+          ## Next Steps
+          
+          1. [Immediate actions]
+          2. [Short-term improvements]
+          3. [Long-term governance recommendations]
+          
+          ---
+          *Generated by Amplifier ecosystem-audit recipe v1.2.0*
+        output: "ecosystem_report_content"
+        timeout: 600
+
+      - id: "write-ecosystem-report"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          REPORT_PATH="{{working_dir}}/reports/{{report_filename}}"
+          mkdir -p "$(dirname "$REPORT_PATH")"
+          
+          cat << 'REPORT_EOF' > "$REPORT_PATH.tmp"
+          {{ecosystem_report_content}}
+          REPORT_EOF
+          
+          mv "$REPORT_PATH.tmp" "$REPORT_PATH"
+          echo "Ecosystem report written: $REPORT_PATH ($(wc -c < "$REPORT_PATH") bytes)"
+        output: "report_write_result"
+        timeout: 30
+
+      - id: "save-aggregate-data"
+        type: "bash"
+        command: |
+          cat << 'JSON_EOF' > "{{working_dir}}/reports/aggregate-data.json"
+          {{aggregate_data}}
+          JSON_EOF
+          
+          echo "Aggregate data saved to: {{working_dir}}/reports/aggregate-data.json"
+        output: "aggregate_save_result"
+        timeout: 30
+
+      - id: "completion-summary"
+        type: "bash"
+        command: |
+          REPORT_PATH="{{working_dir}}/reports/{{report_filename}}"
+          
+          echo "========================================"
+          echo "AMPLIFIER ECOSYSTEM AUDIT COMPLETE"
+          echo "========================================"
+          echo ""
+          echo "Main Report: $(realpath "$REPORT_PATH" 2>/dev/null || echo "$REPORT_PATH")"
+          echo "Aggregate Data: {{working_dir}}/reports/aggregate-data.json"
+          echo ""
+          echo "Individual Reports:"
+          ls -1 "{{working_dir}}/repos"/*/audit-report.md 2>/dev/null | head -20 || echo "  (none found)"
+          echo ""
+          echo "========================================"
+          echo ""
+          
+          # Show summary stats
+          echo "Quick Stats:"
+          cat "{{working_dir}}/reports/aggregate-data.json" 2>/dev/null | jq -r '
+            "  Total repos: \(.total_repos)",
+            "  Passing: \(.by_status.pass)",
+            "  Needs attention: \(.by_status.needs_attention)", 
+            "  Critical: \(.by_status.critical)"
+          ' || echo "  (stats not available)"
+          
+          echo ""
+          echo "Full Report:"
+          echo ""
+          cat "$REPORT_PATH" 2>/dev/null || echo "(Report not found at $REPORT_PATH)"
+        output: "final_output"
+        timeout: 60
