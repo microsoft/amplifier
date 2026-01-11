@@ -1,0 +1,903 @@
+name: "repo-audit"
+description: "Audit a single Amplifier ecosystem repository for compliance with Microsoft standards and Amplifier guidelines."
+version: "1.2.0"
+author: "Amplifier Team"
+tags: ["audit", "compliance", "github", "amplifier"]
+
+# Single Repository Audit Recipe
+#
+# Checks a repository against Amplifier ecosystem standards:
+# - Listed in MODULES.md for discoverability
+# - Required Microsoft boilerplate files (CODE_OF_CONDUCT.md, SECURITY.md, SUPPORT.md, LICENSE)
+# - README.md has Contributing and Trademarks sections (verbatim from template)
+# - GitHub Issues status (recommendation to disable for non-main repos)
+# - Repository stats (open PRs, activity)
+#
+# Usage:
+#   # Basic audit
+#   amplifier recipes execute repo-audit.yaml --context '{"repo_name": "amplifier-core"}'
+#
+#   # Audit with fix PR creation
+#   amplifier recipes execute repo-audit.yaml --context '{
+#     "repo_name": "amplifier-module-tool-web",
+#     "create_fix_pr": "true"
+#   }'
+#
+#   # Audit a non-Microsoft repo
+#   amplifier recipes execute repo-audit.yaml --context '{
+#     "repo_owner": "robotdad",
+#     "repo_name": "amplifier-app-transcribe"
+#   }'
+#
+# Requirements:
+#   - gh CLI installed and authenticated
+#   - Write access to the repo if create_fix_pr is "true"
+
+recursion:
+  max_depth: 2
+  max_total_steps: 50
+
+context:
+  # Repository to audit
+  repo_owner: "microsoft"
+  repo_name: ""
+  
+  # Whether to create PRs for fixable issues (use string "true"/"false" for condition compatibility)
+  create_fix_pr: "false"
+  
+  # Dry-run mode: show what WOULD happen without actually creating PRs
+  # When "true", prepares fixes and shows PR preview but doesn't push/create
+  dry_run: "false"
+  
+  # Working directory for intermediate files
+  working_dir: "./ai_working/repo-audit"
+  
+  # Reference content location (amplifier-core as source of truth)
+  reference_repo: "microsoft/amplifier-core"
+
+steps:
+  # ==========================================================================
+  # STEP 1: Setup and Validate Repository
+  # ==========================================================================
+  - id: "setup"
+    type: "bash"
+    command: |
+      set -euo pipefail
+      mkdir -p "{{working_dir}}/{{repo_name}}"
+      mkdir -p "{{working_dir}}/reference"
+      echo "Working directory created: {{working_dir}}/{{repo_name}}"
+    output: "setup_result"
+    timeout: 30
+
+  - id: "fetch-repo-info"
+    type: "bash"
+    command: |
+      gh repo view "{{repo_owner}}/{{repo_name}}" --json name,owner,description,hasIssuesEnabled,hasWikiEnabled,isArchived,defaultBranchRef,pushedAt,url 2>&1 || echo '{"error": "Repository not found or not accessible"}'
+    output: "repo_info_raw"
+    timeout: 60
+    retry:
+      max_attempts: 3
+      backoff: "exponential"
+      initial_delay: 5
+    on_error: "continue"
+    output_exit_code: "repo_fetch_code"
+
+  - id: "validate-repo"
+    type: "bash"
+    parse_json: true
+    command: |
+      # Check if repo fetch was successful
+      # Use heredoc to safely handle JSON with special characters (quotes, apostrophes)
+      cat << 'REPO_INFO_EOF' > /tmp/repo_info_$$.json
+      {{repo_info_raw}}
+      REPO_INFO_EOF
+      
+      if jq -e '.error' /tmp/repo_info_$$.json > /dev/null 2>&1; then
+        echo '{"valid": false, "error": "Repository not found or not accessible"}'
+      elif jq -e '.isArchived' /tmp/repo_info_$$.json | grep -q 'true'; then
+        echo '{"valid": false, "error": "Repository is archived"}'
+      else
+        jq '{valid: true, name: .name, description: .description, issues_enabled: .hasIssuesEnabled, last_push: .pushedAt}' /tmp/repo_info_$$.json
+      fi
+      rm -f /tmp/repo_info_$$.json
+    output: "repo_validation"
+    timeout: 30
+
+  # ==========================================================================
+  # STEP 2: Check MODULES.md Listing
+  # ==========================================================================
+  - id: "fetch-modules-md"
+    type: "bash"
+    command: |
+      curl -sL --retry 3 --retry-delay 2 "https://raw.githubusercontent.com/microsoft/amplifier/main/docs/MODULES.md" > "{{working_dir}}/MODULES.md"
+      if [ -s "{{working_dir}}/MODULES.md" ]; then
+        echo "Fetched MODULES.md ($(wc -c < "{{working_dir}}/MODULES.md") bytes)"
+      else
+        echo "ERROR: Failed to fetch MODULES.md"
+        exit 1
+      fi
+    output: "modules_fetch_result"
+    timeout: 60
+    retry:
+      max_attempts: 3
+      backoff: "exponential"
+      initial_delay: 5
+
+  - id: "check-modules-listing"
+    type: "bash"
+    parse_json: true
+    command: |
+      REPO_NAME="{{repo_name}}"
+      MODULES_FILE="{{working_dir}}/MODULES.md"
+      
+      # Search for the repo name in MODULES.md
+      if grep -q "$REPO_NAME" "$MODULES_FILE"; then
+        # Check if it's in a table row (proper listing) or a link
+        if grep -E "\|\s*\*\*$REPO_NAME\*\*|\[$REPO_NAME\]|$REPO_NAME\s*\|" "$MODULES_FILE" > /dev/null; then
+          echo '{"listed": true, "finding": "Repository is properly listed in MODULES.md", "severity": "pass"}'
+        else
+          echo '{"listed": true, "finding": "Repository name appears in MODULES.md but may not be properly listed in a table", "severity": "warning"}'
+        fi
+      else
+        echo '{"listed": false, "finding": "Repository is NOT listed in MODULES.md - recommend adding for discoverability", "severity": "recommendation"}'
+      fi
+    output: "modules_listing"
+    timeout: 30
+
+  # ==========================================================================
+  # STEP 3: Fetch Reference Boilerplate Files
+  # ==========================================================================
+  - id: "fetch-reference-files"
+    type: "bash"
+    command: |
+      set -euo pipefail
+      REF_DIR="{{working_dir}}/reference"
+      BASE_URL="https://raw.githubusercontent.com/{{reference_repo}}/main"
+      
+      echo "Fetching reference boilerplate files from {{reference_repo}}..."
+      
+      for file in CODE_OF_CONDUCT.md SECURITY.md SUPPORT.md LICENSE README.md; do
+        curl -sL --retry 3 --retry-delay 2 "$BASE_URL/$file" > "$REF_DIR/$file"
+        if [ -s "$REF_DIR/$file" ]; then
+          echo "$file: fetched ($(wc -c < "$REF_DIR/$file") bytes)"
+        else
+          echo "$file: WARNING - empty or failed"
+        fi
+      done
+      
+      echo "Reference files fetch complete"
+    output: "reference_fetch_result"
+    timeout: 120
+    retry:
+      max_attempts: 2
+      backoff: "linear"
+      initial_delay: 5
+
+  # ==========================================================================
+  # STEP 4: Fetch Target Repository Files
+  # ==========================================================================
+  - id: "fetch-target-files"
+    type: "bash"
+    command: |
+      TARGET_DIR="{{working_dir}}/{{repo_name}}"
+      BASE_URL="https://raw.githubusercontent.com/{{repo_owner}}/{{repo_name}}/main"
+      
+      echo "Fetching files from {{repo_owner}}/{{repo_name}}..."
+      
+      for file in CODE_OF_CONDUCT.md SECURITY.md SUPPORT.md LICENSE README.md; do
+        HTTP_CODE=$(curl -sL --retry 2 -w "%{http_code}" -o "$TARGET_DIR/$file" "$BASE_URL/$file")
+        if [ "$HTTP_CODE" = "200" ] && [ -s "$TARGET_DIR/$file" ]; then
+          echo "$file: found ($(wc -c < "$TARGET_DIR/$file") bytes)"
+        else
+          echo "$file: NOT FOUND (HTTP $HTTP_CODE)"
+          rm -f "$TARGET_DIR/$file"
+        fi
+      done
+    output: "target_fetch_result"
+    timeout: 120
+
+  # ==========================================================================
+  # STEP 5: Compare Boilerplate Files
+  # ==========================================================================
+  - id: "compare-boilerplate"
+    type: "bash"
+    parse_json: true
+    command: |
+      REF_DIR="{{working_dir}}/reference"
+      TARGET_DIR="{{working_dir}}/{{repo_name}}"
+      
+      # Initialize results
+      results='{"files": [], "all_pass": true}'
+      
+      for file in CODE_OF_CONDUCT.md SECURITY.md SUPPORT.md LICENSE; do
+        if [ ! -f "$TARGET_DIR/$file" ]; then
+          results=$(echo "$results" | jq --arg file "$file" '.files += [{"name": $file, "status": "missing", "match": false, "severity": "error"}] | .all_pass = false')
+        elif diff -q "$REF_DIR/$file" "$TARGET_DIR/$file" > /dev/null 2>&1; then
+          results=$(echo "$results" | jq --arg file "$file" '.files += [{"name": $file, "status": "present", "match": true, "severity": "pass"}]')
+        else
+          results=$(echo "$results" | jq --arg file "$file" '.files += [{"name": $file, "status": "present", "match": false, "severity": "error"}] | .all_pass = false')
+        fi
+      done
+      
+      echo "$results"
+    output: "boilerplate_check"
+    timeout: 60
+
+  # ==========================================================================
+  # STEP 5b: Check for Existing Fix PR (Deduplication)
+  # ==========================================================================
+  - id: "check-existing-pr"
+    condition: "{{create_fix_pr}} == 'true'"
+    type: "bash"
+    parse_json: true
+    command: |
+      REPO="{{repo_owner}}/{{repo_name}}"
+      BRANCH_NAME="fix/compliance-boilerplate-update"
+      
+      # Check for existing open PRs from this branch
+      EXISTING_PR=$(gh pr list -R "$REPO" --head "$BRANCH_NAME" --state open --json number,url,title 2>/dev/null || echo "[]")
+      
+      PR_COUNT=$(echo "$EXISTING_PR" | jq 'length')
+      
+      if [ "$PR_COUNT" -gt 0 ]; then
+        PR_URL=$(echo "$EXISTING_PR" | jq -r '.[0].url')
+        PR_NUMBER=$(echo "$EXISTING_PR" | jq -r '.[0].number')
+        PR_TITLE=$(echo "$EXISTING_PR" | jq -r '.[0].title')
+        jq -n \
+          --argjson existing true \
+          --arg url "$PR_URL" \
+          --argjson num "$PR_NUMBER" \
+          --arg title "$PR_TITLE" \
+          '{
+            existing_pr: $existing,
+            pr_url: $url,
+            pr_number: $num,
+            pr_title: $title,
+            message: "Existing compliance PR found - will skip creation to avoid duplicate"
+          }'
+      else
+        jq -n '{
+          existing_pr: false,
+          pr_url: null,
+          pr_number: null,
+          pr_title: null,
+          message: "No existing PR found - can proceed with creation if issues exist"
+        }'
+      fi
+    output: "existing_pr_check"
+    timeout: 60
+    on_error: "continue"
+
+  - id: "report-existing-pr"
+    condition: "{{create_fix_pr}} == 'true'"
+    type: "bash"
+    command: |
+      # Only report if there's an existing PR (check the output)
+      cat << 'EXISTING_PR_JSON' > /tmp/existing_pr_$$.json
+      {{existing_pr_check}}
+      EXISTING_PR_JSON
+      
+      EXISTING=$(jq -r '.existing_pr // false' /tmp/existing_pr_$$.json)
+      
+      if [ "$EXISTING" = "true" ]; then
+        PR_URL=$(jq -r '.pr_url' /tmp/existing_pr_$$.json)
+        PR_NUM=$(jq -r '.pr_number' /tmp/existing_pr_$$.json)
+        echo "=========================================="
+        echo "EXISTING PR FOUND - WILL SKIP PR CREATION"
+        echo "=========================================="
+        echo ""
+        echo "An open compliance PR already exists for {{repo_owner}}/{{repo_name}}:"
+        echo ""
+        echo "  PR #$PR_NUM"
+        echo "  URL: $PR_URL"
+        echo ""
+        echo "Please review and merge the existing PR before running"
+        echo "the audit again with create_fix_pr enabled."
+        echo "=========================================="
+      else
+        echo "No existing PR found - will proceed with fix creation if issues exist"
+      fi
+      rm -f /tmp/existing_pr_$$.json
+    output: "existing_pr_report"
+    timeout: 30
+    on_error: "continue"
+
+  # ==========================================================================
+  # STEP 6: Check README Contributing and Trademarks Sections
+  # ==========================================================================
+  - id: "check-readme-sections"
+    type: "bash"
+    parse_json: true
+    command: |
+      REF_DIR="{{working_dir}}/reference"
+      TARGET_DIR="{{working_dir}}/{{repo_name}}"
+      TARGET_README="$TARGET_DIR/README.md"
+      REF_README="$REF_DIR/README.md"
+      
+      # Check if README exists
+      if [ ! -f "$TARGET_README" ]; then
+        echo '{"readme_exists": false, "contributing_section": false, "trademarks_section": false, "contributing_verbatim": false, "trademarks_verbatim": false, "severity": "error", "finding": "README.md is missing"}'
+        exit 0
+      fi
+      
+      # Get line numbers for sections in reference
+      CONTRIB_START=$(grep -n "^## Contributing" "$REF_README" | head -1 | cut -d: -f1 || echo "")
+      TRADE_START=$(grep -n "^## Trademarks" "$REF_README" | head -1 | cut -d: -f1 || echo "")
+      
+      # Check if target has the sections
+      HAS_CONTRIB=$(grep -c "^## Contributing" "$TARGET_README" 2>/dev/null || echo "0")
+      HAS_TRADE=$(grep -c "^## Trademarks" "$TARGET_README" 2>/dev/null || echo "0")
+      
+      CONTRIB_MATCH="false"
+      TRADE_MATCH="false"
+      
+      # Compare Contributing sections
+      if [ "$HAS_CONTRIB" -gt 0 ] && [ -n "$CONTRIB_START" ] && [ -n "$TRADE_START" ]; then
+        sed -n "${CONTRIB_START},$((TRADE_START-1))p" "$REF_README" > /tmp/ref_contrib.txt
+        
+        TARGET_CONTRIB_START=$(grep -n "^## Contributing" "$TARGET_README" | head -1 | cut -d: -f1)
+        TARGET_NEXT=$(tail -n +$((TARGET_CONTRIB_START+1)) "$TARGET_README" | grep -n "^## " | head -1 | cut -d: -f1 || echo "")
+        
+        if [ -n "$TARGET_NEXT" ]; then
+          sed -n "${TARGET_CONTRIB_START},$((TARGET_CONTRIB_START+TARGET_NEXT-1))p" "$TARGET_README" > /tmp/target_contrib.txt
+        else
+          tail -n +$TARGET_CONTRIB_START "$TARGET_README" > /tmp/target_contrib.txt
+        fi
+        
+        if diff -q /tmp/ref_contrib.txt /tmp/target_contrib.txt > /dev/null 2>&1; then
+          CONTRIB_MATCH="true"
+        fi
+      fi
+      
+      # Compare Trademarks sections
+      if [ "$HAS_TRADE" -gt 0 ] && [ -n "$TRADE_START" ]; then
+        tail -n +$TRADE_START "$REF_README" > /tmp/ref_trade.txt
+        
+        TARGET_TRADE_START=$(grep -n "^## Trademarks" "$TARGET_README" | head -1 | cut -d: -f1)
+        tail -n +$TARGET_TRADE_START "$TARGET_README" > /tmp/target_trade.txt
+        
+        if diff -q /tmp/ref_trade.txt /tmp/target_trade.txt > /dev/null 2>&1; then
+          TRADE_MATCH="true"
+        fi
+      fi
+      
+      # Determine overall severity
+      if [ "$HAS_CONTRIB" -eq 0 ] || [ "$HAS_TRADE" -eq 0 ]; then
+        SEVERITY="error"
+        FINDING="README.md is missing required sections"
+      elif [ "$CONTRIB_MATCH" = "false" ] || [ "$TRADE_MATCH" = "false" ]; then
+        SEVERITY="warning"
+        FINDING="README.md sections exist but content differs from template"
+      else
+        SEVERITY="pass"
+        FINDING="README.md has correct Contributing and Trademarks sections"
+      fi
+      
+      jq -n \
+        --argjson readme_exists true \
+        --argjson has_contrib "$([ "$HAS_CONTRIB" -gt 0 ] && echo true || echo false)" \
+        --argjson has_trade "$([ "$HAS_TRADE" -gt 0 ] && echo true || echo false)" \
+        --argjson contrib_match "$CONTRIB_MATCH" \
+        --argjson trade_match "$TRADE_MATCH" \
+        --arg severity "$SEVERITY" \
+        --arg finding "$FINDING" \
+        '{
+          readme_exists: $readme_exists,
+          contributing_section: $has_contrib,
+          trademarks_section: $has_trade,
+          contributing_verbatim: $contrib_match,
+          trademarks_verbatim: $trade_match,
+          severity: $severity,
+          finding: $finding
+        }'
+    output: "readme_check"
+    timeout: 60
+
+  # ==========================================================================
+  # STEP 6b: Check if README Fix is Needed
+  # ==========================================================================
+  - id: "check-readme-fix-needed"
+    condition: "{{create_fix_pr}} == 'true' or {{dry_run}} == 'true'"
+    type: "bash"
+    parse_json: true
+    command: |
+      # Check if README check indicates issues that need fixing
+      cat << 'README_CHECK_EOF' > /tmp/readme_check_$$.json
+      {{readme_check}}
+      README_CHECK_EOF
+      
+      SEVERITY=$(jq -r '.severity // "unknown"' /tmp/readme_check_$$.json)
+      CONTRIB_MATCH=$(jq -r '.contributing_verbatim // false' /tmp/readme_check_$$.json)
+      TRADE_MATCH=$(jq -r '.trademarks_verbatim // false' /tmp/readme_check_$$.json)
+      rm -f /tmp/readme_check_$$.json
+      
+      if [ "$SEVERITY" = "pass" ]; then
+        jq -n '{needs_fix: false, reason: "README sections already match"}'
+      else
+        jq -n --arg sev "$SEVERITY" --argjson contrib "$CONTRIB_MATCH" --argjson trade "$TRADE_MATCH" \
+          '{needs_fix: true, severity: $sev, contributing_ok: $contrib, trademarks_ok: $trade}'
+      fi
+    output: "readme_fix_needed"
+    timeout: 30
+    on_error: "continue"
+
+  # ==========================================================================
+  # STEP 6c: Fix README via Agent (writes directly to file)
+  # ==========================================================================
+  - id: "fix-readme-content"
+    condition: "{{create_fix_pr}} == 'true' or {{dry_run}} == 'true'"
+    agent: "foundation:modular-builder"
+    prompt: |
+      Fix the README.md file for the {{repo_owner}}/{{repo_name}} repository to include correct Contributing and Trademarks sections.
+      
+      ## README Fix Status
+      {{readme_fix_needed}}
+      
+      If "needs_fix" is false, respond with "NO_FIX_NEEDED" and do nothing else.
+      
+      ## Files to Work With
+      
+      1. **Current README**: {{working_dir}}/{{repo_name}}/README.md
+      2. **Reference README**: {{working_dir}}/reference/README.md (contains correct Contributing & Trademarks sections at the end)
+      3. **Output location**: {{working_dir}}/{{repo_name}}/fixes/README.md
+      
+      ## Task
+      
+      1. First, read the reference README.md to see the exact Contributing and Trademarks sections
+      2. Read the current target README.md
+      3. Create a fixed version that:
+         - Keeps ALL existing content up to any existing "## Contributing" or "## Trademarks" section
+         - Removes any existing Contributing and Trademarks sections (and everything after them)
+         - Appends the EXACT Contributing and Trademarks sections from the reference (verbatim, character-for-character)
+      4. Create the fixes directory if needed: {{working_dir}}/{{repo_name}}/fixes/
+      5. Write the fixed README to: {{working_dir}}/{{repo_name}}/fixes/README.md
+      
+      ## Critical Requirements
+      
+      - The Contributing and Trademarks sections MUST be copied EXACTLY from the reference - no modifications
+      - Preserve all project-specific content from the original README
+      - Ensure there's a blank line before the Contributing section
+      - The Contributing section must come before the Trademarks section
+      
+      ## Output
+      
+      After writing the file, confirm what was done. If no fix was needed, just say "NO_FIX_NEEDED".
+    output: "readme_fix_result"
+    timeout: 300
+    on_error: "continue"
+
+  - id: "validate-readme-fix"
+    condition: "{{create_fix_pr}} == 'true' or {{dry_run}} == 'true'"
+    type: "bash"
+    command: |
+      FIXES_DIR="{{working_dir}}/{{repo_name}}/fixes"
+      FIXED_README="$FIXES_DIR/README.md"
+      
+      if [ ! -f "$FIXED_README" ]; then
+        echo "No fixed README generated (may not have been needed)"
+        exit 0
+      fi
+      
+      echo "=== README Fix Validation ==="
+      echo "File: $FIXED_README"
+      echo "Size: $(wc -c < "$FIXED_README") bytes, $(wc -l < "$FIXED_README") lines"
+      echo ""
+      
+      # Validate Contributing section exists
+      if grep -q "^## Contributing" "$FIXED_README"; then
+        echo "✓ Contributing section found"
+      else
+        echo "✗ ERROR: Contributing section missing!"
+        exit 1
+      fi
+      
+      # Validate Trademarks section exists
+      if grep -q "^## Trademarks" "$FIXED_README"; then
+        echo "✓ Trademarks section found"
+      else
+        echo "✗ ERROR: Trademarks section missing!"
+        exit 1
+      fi
+      
+      # Check that Contributing comes before Trademarks
+      CONTRIB_LINE=$(grep -n "^## Contributing" "$FIXED_README" | head -1 | cut -d: -f1)
+      TRADE_LINE=$(grep -n "^## Trademarks" "$FIXED_README" | head -1 | cut -d: -f1)
+      
+      if [ "$CONTRIB_LINE" -lt "$TRADE_LINE" ]; then
+        echo "✓ Section order correct (Contributing at line $CONTRIB_LINE, Trademarks at line $TRADE_LINE)"
+      else
+        echo "✗ ERROR: Sections in wrong order!"
+        exit 1
+      fi
+      
+      echo ""
+      echo "README fix validated successfully"
+    output: "readme_validation_result"
+    timeout: 30
+    on_error: "continue"
+
+  # ==========================================================================
+  # STEP 7: Check GitHub Issues Status
+  # ==========================================================================
+  - id: "check-issues-status"
+    type: "bash"
+    parse_json: true
+    command: |
+      # Get issues enabled status from repo validation
+      # Use heredoc to safely handle JSON with special characters
+      cat << 'REPO_JSON_EOF' > /tmp/repo_issues_$$.json
+      {{repo_info_raw}}
+      REPO_JSON_EOF
+      
+      # NOTE: Use 'has()' check + 'tostring' because jq '//' operator treats false as falsy
+      ISSUES_ENABLED=$(jq -r 'if has("hasIssuesEnabled") then (.hasIssuesEnabled | tostring) else "unknown" end' /tmp/repo_issues_$$.json)
+      rm -f /tmp/repo_issues_$$.json
+      
+      # Special case: main amplifier repo SHOULD have issues enabled
+      if [ "{{repo_name}}" = "amplifier" ] && [ "{{repo_owner}}" = "microsoft" ]; then
+        if [ "$ISSUES_ENABLED" = "true" ]; then
+          jq -n '{issues_enabled: true, severity: "pass", finding: "GitHub Issues are enabled (correct for main amplifier repo)"}'
+        else
+          jq -n '{issues_enabled: false, severity: "warning", finding: "GitHub Issues are disabled - main amplifier repo should have issues enabled"}'
+        fi
+      else
+        # Other repos: recommend disabling issues
+        if [ "$ISSUES_ENABLED" = "false" ]; then
+          jq -n '{issues_enabled: false, severity: "pass", finding: "GitHub Issues are disabled (recommended for non-main repos)"}'
+        elif [ "$ISSUES_ENABLED" = "true" ]; then
+          jq -n '{issues_enabled: true, severity: "recommendation", finding: "GitHub Issues are enabled - recommend disabling to funnel issues to main amplifier repo"}'
+        else
+          jq -n --arg status "$ISSUES_ENABLED" '{issues_enabled: null, severity: "unknown", finding: ("Unable to determine issues status: " + $status)}'
+        fi
+      fi
+    output: "issues_check"
+    timeout: 30
+
+  # ==========================================================================
+  # STEP 8: Get Repository Stats
+  # ==========================================================================
+  - id: "get-repo-stats"
+    type: "bash"
+    parse_json: true
+    command: |
+      REPO="{{repo_owner}}/{{repo_name}}"
+      
+      # Get open PRs
+      OPEN_PRS=$(gh pr list -R "$REPO" --state open --json number,title,author,createdAt,url 2>/dev/null || echo "[]")
+      PR_COUNT=$(echo "$OPEN_PRS" | jq 'length')
+      
+      # Get recent commits (last 7 days) - handle both Linux and macOS date
+      SINCE_DATE=$(date -d '7 days ago' -Iseconds 2>/dev/null || date -v-7d +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "2024-01-01T00:00:00Z")
+      RECENT_COMMITS=$(gh api "repos/$REPO/commits?since=$SINCE_DATE" 2>/dev/null | jq 'length' || echo "0")
+      
+      # Get last push date - use heredoc to handle special characters
+      cat << 'REPO_PUSH_EOF' > /tmp/repo_push_$$.json
+      {{repo_info_raw}}
+      REPO_PUSH_EOF
+      LAST_PUSH=$(jq -r '.pushedAt // "unknown"' /tmp/repo_push_$$.json)
+      rm -f /tmp/repo_push_$$.json
+      
+      jq -n \
+        --argjson open_prs "$PR_COUNT" \
+        --argjson recent_commits "${RECENT_COMMITS:-0}" \
+        --arg last_push "$LAST_PUSH" \
+        --argjson pr_details "$OPEN_PRS" \
+        '{
+          open_prs: $open_prs,
+          recent_commits_7d: $recent_commits,
+          last_push: $last_push,
+          pr_details: $pr_details
+        }'
+    output: "repo_stats"
+    timeout: 120
+    retry:
+      max_attempts: 2
+      backoff: "linear"
+      initial_delay: 3
+
+  # ==========================================================================
+  # STEP 9: Generate Audit Report (LLM generates content only)
+  # ==========================================================================
+  - id: "generate-report"
+    agent: "foundation:zen-architect"
+    mode: "ANALYZE"
+    prompt: |
+      Generate a comprehensive audit report for the repository. Return ONLY the markdown report content - do NOT write to any files.
+      
+      ## Repository Information
+      
+      - **Repository**: {{repo_owner}}/{{repo_name}}
+      - **Validation**: {{repo_validation}}
+      
+      ## Audit Results
+      
+      ### 1. MODULES.md Listing
+      {{modules_listing}}
+      
+      ### 2. Boilerplate Files Check
+      {{boilerplate_check}}
+      
+      ### 3. README.md Sections Check
+      {{readme_check}}
+      
+      ### 4. GitHub Issues Status
+      {{issues_check}}
+      
+      ### 5. Repository Stats
+      {{repo_stats}}
+      
+      ## Report Format
+      
+      Generate a markdown report following this structure:
+      
+      # Repository Audit Report: {{repo_owner}}/{{repo_name}}
+      
+      **Audit Date**: [use current date]
+      **Repository URL**: https://github.com/{{repo_owner}}/{{repo_name}}
+      
+      ## Summary
+      
+      | Check | Status | Severity |
+      |-------|--------|----------|
+      | Listed in MODULES.md | [Pass/Fail/Recommendation] | [pass/warning/error/recommendation] |
+      | CODE_OF_CONDUCT.md | [Match/Mismatch/Missing] | [pass/error] |
+      | SECURITY.md | [Match/Mismatch/Missing] | [pass/error] |
+      | SUPPORT.md | [Match/Mismatch/Missing] | [pass/error] |
+      | LICENSE | [Match/Mismatch/Missing] | [pass/error] |
+      | README Contributing | [Match/Mismatch/Missing] | [pass/warning/error] |
+      | README Trademarks | [Match/Mismatch/Missing] | [pass/warning/error] |
+      | GitHub Issues | [Disabled/Enabled] | [pass/recommendation] |
+      
+      **Overall Status**: [PASS / NEEDS ATTENTION / CRITICAL]
+      - Critical issues (errors): N
+      - Warnings: N  
+      - Recommendations: N
+      
+      ## Detailed Findings
+      
+      [Provide details for each check, explaining what was found]
+      
+      ## Repository Activity
+      
+      - **Open PRs**: N
+      - **Recent commits (7d)**: N
+      - **Last push**: [date]
+      
+      [If there are open PRs, list them with titles and links]
+      
+      ## Remediation Steps
+      
+      [For each non-passing issue, provide specific steps to fix]
+      
+      ---
+      *Generated by Amplifier repo-audit recipe v1.2.0*
+    output: "audit_report_content"
+    timeout: 300
+
+  # ==========================================================================
+  # STEP 10: Write Report to File (Bash - reliable file write)
+  # ==========================================================================
+  - id: "write-report"
+    type: "bash"
+    command: |
+      set -euo pipefail
+      REPORT_PATH="{{working_dir}}/{{repo_name}}/audit-report.md"
+      mkdir -p "$(dirname "$REPORT_PATH")"
+      
+      cat << 'REPORT_CONTENT_EOF' > "$REPORT_PATH.tmp"
+      {{audit_report_content}}
+      REPORT_CONTENT_EOF
+      
+      mv "$REPORT_PATH.tmp" "$REPORT_PATH"
+      echo "Report written: $REPORT_PATH ($(wc -c < "$REPORT_PATH") bytes)"
+    output: "report_write_result"
+    timeout: 30
+
+  # ==========================================================================
+  # STEP 11: Prepare Fix PR (Conditional)
+  # ==========================================================================
+  - id: "prepare-fixes"
+    condition: "{{create_fix_pr}} == 'true' or {{dry_run}} == 'true'"
+    agent: "foundation:zen-architect"
+    mode: "ARCHITECT"
+    prompt: |
+      Analyze the audit findings and prepare fix recommendations. Return ONLY text output - do NOT write files.
+      
+      ## Audit Results
+      
+      Boilerplate check: {{boilerplate_check}}
+      README check: {{readme_check}}
+      
+      ## Reference Files Location
+      
+      Reference files are available at: {{working_dir}}/reference/
+      
+      ## Tasks
+      
+      1. Identify which files need to be fixed based on the audit results
+      
+      2. For boilerplate files (CODE_OF_CONDUCT.md, SECURITY.md, SUPPORT.md, LICENSE):
+         - List which ones need to be copied from reference
+      
+      3. For README.md sections:
+         - Describe what sections need to be updated
+         - Note that README content varies so manual integration is needed
+      
+      4. Create a PR description summarizing what needs to be fixed
+      
+      5. Provide shell commands that could be used to prepare the fixes
+      
+      Output a structured summary of what needs to be fixed and how.
+    output: "fix_preparation"
+    timeout: 300
+    on_error: "continue"
+
+  - id: "create-fix-instructions"
+    condition: "{{create_fix_pr}} == 'true' or {{dry_run}} == 'true'"
+    type: "bash"
+    command: |
+      REPO="{{repo_owner}}/{{repo_name}}"
+      TARGET_DIR="{{working_dir}}/{{repo_name}}"
+      REF_DIR="{{working_dir}}/reference"
+      FIXES_DIR="$TARGET_DIR/fixes"
+      DRY_RUN="{{dry_run}}"
+      CREATE_PR="{{create_fix_pr}}"
+      
+      mkdir -p "$FIXES_DIR"
+      
+      # Check if there's an existing PR (skip if so)
+      cat << 'EXISTING_PR_JSON' > /tmp/existing_pr_$$.json
+      {{existing_pr_check}}
+      EXISTING_PR_JSON
+      
+      EXISTING_PR=$(jq -r '.existing_pr // false' /tmp/existing_pr_$$.json 2>/dev/null || echo "false")
+      rm -f /tmp/existing_pr_$$.json
+      
+      if [ "$EXISTING_PR" = "true" ] && [ "$DRY_RUN" != "true" ]; then
+        echo "Skipping fix preparation - existing PR found"
+        echo "Run with dry_run=true to see what would be fixed"
+        exit 0
+      fi
+      
+      # Copy non-matching boilerplate files to fixes dir
+      BOILERPLATE='{{boilerplate_check}}'
+      FILES_TO_FIX=""
+      for file in CODE_OF_CONDUCT.md SECURITY.md SUPPORT.md LICENSE; do
+        STATUS=$(echo "$BOILERPLATE" | jq -r --arg f "$file" '.files[] | select(.name == $f) | .severity')
+        if [ "$STATUS" = "error" ]; then
+          cp "$REF_DIR/$file" "$FIXES_DIR/$file"
+          FILES_TO_FIX="$FILES_TO_FIX $file"
+          echo "Prepared fix: $file"
+        fi
+      done
+      
+      # Check if README was fixed (file would already be in fixes dir from write-fixed-readme step)
+      README_FIXED="false"
+      if [ -f "$FIXES_DIR/README.md" ]; then
+        README_FIXED="true"
+        FILES_TO_FIX="$FILES_TO_FIX README.md"
+        echo "Prepared fix: README.md (Contributing/Trademarks sections)"
+      fi
+      
+      # Create PR instructions/preview
+      if [ "$DRY_RUN" = "true" ]; then
+        echo ""
+        echo "========================================"
+        echo "DRY-RUN: PR PREVIEW for $REPO"
+        echo "========================================"
+        echo ""
+        
+        if [ "$EXISTING_PR" = "true" ]; then
+          echo "NOTE: An existing PR was found. If not in dry-run mode,"
+          echo "      PR creation would be skipped to avoid duplicates."
+          echo ""
+        fi
+        
+        if [ -z "$FILES_TO_FIX" ]; then
+          echo "✓ No fixes needed - all checks passed"
+        else
+          echo "Files that WOULD be fixed:"
+          for f in $FILES_TO_FIX; do
+            echo "  - $f"
+          done
+          echo ""
+          echo "PR that WOULD be created:"
+          echo "  Title: fix: Update Microsoft OSS compliance files"
+          echo "  Branch: fix/compliance-boilerplate-update"
+          echo "  Body: Updates compliance files to match Microsoft OSS standards"
+          echo ""
+          if [ "$README_FIXED" = "true" ]; then
+            echo "README.md changes:"
+            echo "  - Contributing section: updated to standard template"
+            echo "  - Trademarks section: updated to standard template"
+            echo ""
+          fi
+          echo "Fix files prepared at: $FIXES_DIR"
+        fi
+        echo ""
+        echo "[DRY-RUN MODE - No PR was created]"
+        echo "========================================"
+      fi
+      
+      # Create PR instructions file
+      cat << 'PR_INSTRUCTIONS' > "$TARGET_DIR/pr-instructions.md"
+      # Fix PR Instructions for {{repo_owner}}/{{repo_name}}
+      
+      ## Files to Update
+      
+      Copy these files from the `fixes/` directory:
+      - Boilerplate: CODE_OF_CONDUCT.md, SECURITY.md, SUPPORT.md, LICENSE (if present)
+      - README.md (if present - includes updated Contributing & Trademarks sections)
+      
+      ## Steps to Create Fix PR
+      
+      1. Clone the repository:
+         ```bash
+         git clone https://github.com/{{repo_owner}}/{{repo_name}}.git
+         cd {{repo_name}}
+         ```
+      
+      2. Create a branch:
+         ```bash
+         git checkout -b fix/compliance-boilerplate-update
+         ```
+      
+      3. Copy fixed files:
+         ```bash
+         cp {{working_dir}}/{{repo_name}}/fixes/* .
+         ```
+      
+      4. Review changes (especially README.md):
+         ```bash
+         git diff
+         ```
+      
+      5. Commit and push:
+         ```bash
+         git add .
+         git commit -m "fix: Update Microsoft OSS compliance files"
+         git push origin fix/compliance-boilerplate-update
+         ```
+      
+      6. Create PR:
+         ```bash
+         gh pr create \
+           --title "fix: Update Microsoft OSS compliance files" \
+           --body "Updates compliance files to match Microsoft OSS standards.
+      
+      Generated by Amplifier repo-audit recipe."
+         ```
+      PR_INSTRUCTIONS
+      
+      echo ""
+      echo "Fix instructions written to: $TARGET_DIR/pr-instructions.md"
+      echo ""
+      echo "Files prepared for PR:"
+      ls -la "$FIXES_DIR" 2>/dev/null || echo "No fix files generated (all checks may have passed)"
+    output: "pr_creation_result"
+    timeout: 120
+    on_error: "continue"
+
+  # ==========================================================================
+  # STEP 12: Final Summary
+  # ==========================================================================
+  - id: "final-summary"
+    type: "bash"
+    command: |
+      REPORT_PATH="{{working_dir}}/{{repo_name}}/audit-report.md"
+      
+      echo "========================================"
+      echo "AUDIT COMPLETE: {{repo_owner}}/{{repo_name}}"
+      echo "========================================"
+      echo ""
+      echo "Report: $REPORT_PATH"
+      echo ""
+      
+      if [ -f "$REPORT_PATH" ]; then
+        cat "$REPORT_PATH"
+      else
+        echo "ERROR: Report file not found"
+        exit 1
+      fi
+    output: "final_output"
+    timeout: 30
