@@ -216,6 +216,7 @@ Bundles built by the community.
 | Bundle | Description | Author | Repository |
 |--------|-------------|--------|------------|
 | **expert-cookbook** | Achieve the State of the Art with Microsoft Amplifier | [@DavidKoleczek](https://github.com/DavidKoleczek) | [amplifier-expert-cookbook](https://github.com/DavidKoleczek/amplifier-expert-cookbook) |
+| **memory** | Persistent memory system with automatic capture, progressive disclosure context injection, and event broadcasting | [@michaeljabbour](https://github.com/michaeljabbour) | [amplifier-bundle-memory](https://github.com/michaeljabbour/amplifier-bundle-memory) |
 
 **Want to share your bundle?** Submit a PR to add your Amplifier bundle to this list!
 
