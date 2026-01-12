@@ -2,6 +2,21 @@
 
 This guide explains how to use the generic recipes from the `recipes` bundle for Amplifier ecosystem-specific workflows.
 
+## How to Run Recipes
+
+**In a session (recommended):** Just ask naturally:
+```
+"run repo-activity-analysis for this repo"
+"analyze ecosystem activity since yesterday"
+```
+
+**From CLI:** Use `amplifier tool invoke recipes`:
+```bash
+amplifier tool invoke recipes operation=execute recipe_path=<recipe> context='{"key": "value"}'
+```
+
+> **Note**: There is no `amplifier recipes` CLI command. Recipes are invoked via the `recipes` tool.
+
 ## Prerequisites
 
 Ensure the `recipes` bundle is loaded. The recipes bundle provides the `tool-recipes` module and generic recipe examples.
@@ -19,13 +34,22 @@ The recipes bundle includes these generic recipes in `recipes:examples/`:
 
 The simplest use case - analyze the repo you're currently in:
 
+**In a session:**
+```
+"analyze this repo's activity since yesterday"
+"run repo-activity-analysis for the last 7 days"
+```
+
+**From CLI:**
 ```bash
 # Analyze current repo since yesterday
-amplifier recipes execute recipes:examples/repo-activity-analysis.yaml
+amplifier tool invoke recipes operation=execute \
+  recipe_path=recipes:examples/repo-activity-analysis.yaml
 
 # Analyze with custom date range
-amplifier recipes execute recipes:examples/repo-activity-analysis.yaml \
-  --context '{"date_range": "last 7 days"}'
+amplifier tool invoke recipes operation=execute \
+  recipe_path=recipes:examples/repo-activity-analysis.yaml \
+  context='{"date_range": "last 7 days"}'
 ```
 
 ## Amplifier Ecosystem: Analyze Repos from MODULES.md
@@ -71,22 +95,24 @@ jq '[.[] | select(.name | test("amplifier-core|amplifier-foundation"))]' repos-m
 
 ### Step 3: Run Multi-Repo Analysis
 
+**In a session:**
+```
+"run multi-repo-activity-report using repos-manifest.json since yesterday"
+```
+
+**From CLI:**
 ```bash
-amplifier recipes execute recipes:examples/multi-repo-activity-report.yaml \
-  --context '{"repos_manifest": "./repos-manifest.json", "date_range": "since yesterday"}'
+amplifier tool invoke recipes operation=execute \
+  recipe_path=recipes:examples/multi-repo-activity-report.yaml \
+  context='{"repos_manifest": "./repos-manifest.json", "date_range": "since yesterday"}'
 ```
 
 Or with an inline repos array:
 
 ```bash
-amplifier recipes execute recipes:examples/multi-repo-activity-report.yaml \
-  --context '{
-    "repos": [
-      {"owner": "microsoft", "name": "amplifier-core"},
-      {"owner": "microsoft", "name": "amplifier-foundation"}
-    ],
-    "date_range": "last 7 days"
-  }'
+amplifier tool invoke recipes operation=execute \
+  recipe_path=recipes:examples/multi-repo-activity-report.yaml \
+  context='{"repos": [{"owner": "microsoft", "name": "amplifier-core"}, {"owner": "microsoft", "name": "amplifier-foundation"}], "date_range": "last 7 days"}'
 ```
 
 ## Example: Full Ecosystem Activity Report
@@ -106,8 +132,9 @@ grep -oE 'https://github.com/microsoft/[^)>\s"]+' amplifier/docs/MODULES.md | \
   > amplifier-repos.json
 
 # 3. Run the multi-repo analysis
-amplifier recipes execute recipes:examples/multi-repo-activity-report.yaml \
-  --context '{"repos_manifest": "./amplifier-repos.json", "date_range": "since yesterday"}'
+amplifier tool invoke recipes operation=execute \
+  recipe_path=recipes:examples/multi-repo-activity-report.yaml \
+  context='{"repos_manifest": "./amplifier-repos.json", "date_range": "since yesterday"}'
 
 # 4. Find the report
 cat ./ai_working/reports/activity-report.md

@@ -44,18 +44,22 @@ tags: ["github", "analysis", "commits", "prs", "git", "activity"]
 # v1.1.0: Converted bash-heavy steps to type: "bash" for efficiency
 #         (no LLM overhead for deterministic shell commands)
 #
-# Usage (defaults - analyze current repo since yesterday):
-#   amplifier recipes execute repo-activity-analysis.yaml
+# Usage (in a session - recommended):
+#   "run repo-activity-analysis"
+#   "analyze this repo's activity for the last week"
 #
-# Usage (explicit repo):
-#   amplifier recipes execute repo-activity-analysis.yaml --context '{
-#     "repo_url": "https://github.com/microsoft/amplifier-core"
-#   }'
+# Usage (CLI - defaults, analyze current repo since yesterday):
+#   amplifier tool invoke recipes operation=execute recipe_path=repo-activity-analysis.yaml
 #
-# Usage (custom date range):
-#   amplifier recipes execute repo-activity-analysis.yaml --context '{
-#     "date_range": "last 7 days"
-#   }'
+# Usage (CLI - explicit repo):
+#   amplifier tool invoke recipes operation=execute \
+#     recipe_path=repo-activity-analysis.yaml \
+#     context='{"repo_url": "https://github.com/microsoft/amplifier-core"}'
+#
+# Usage (CLI - custom date range):
+#   amplifier tool invoke recipes operation=execute \
+#     recipe_path=repo-activity-analysis.yaml \
+#     context='{"date_range": "last 7 days"}'
 #
 # Requirements:
 #   - gh CLI installed and authenticated
