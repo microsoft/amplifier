@@ -244,6 +244,7 @@ Modules built by the community.
 | **module-image-generation** | Multi-provider AI image generation with DALL-E, Imagen, and GPT-Image-1 | [@robotdad](https://github.com/robotdad) | [amplifier-module-image-generation](https://github.com/robotdad/amplifier-module-image-generation) |
 | **module-style-extraction** | Extract and apply writing style from text samples | [@robotdad](https://github.com/robotdad) | [amplifier-module-style-extraction](https://github.com/robotdad/amplifier-module-style-extraction) |
 | **module-markdown-utils** | Markdown parsing, injection, and metadata extraction utilities | [@robotdad](https://github.com/robotdad) | [amplifier-module-markdown-utils](https://github.com/robotdad/amplifier-module-markdown-utils) |
+| **module-deepresearch** | Multi-provider deep research with OpenAI (o3/o4-mini) and Anthropic Claude for automated research workflows | [@michaeljabbour](https://github.com/michaeljabbour) | [amplifier-module-deepresearch](https://github.com/michaeljabbour/amplifier-module-deepresearch) |
 
 ### Hooks
 
