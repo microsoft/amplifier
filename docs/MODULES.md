@@ -233,6 +233,7 @@ Modules built by the community.
 |--------|-------------|--------|------------|
 | **provider-bedrock** | AWS Bedrock integration with cross-region inference support for Claude models | [@brycecutt-msft](https://github.com/brycecutt-msft) | [amplifier-module-provider-bedrock](https://github.com/brycecutt-msft/amplifier-module-provider-bedrock) |
 | **provider-openai-realtime** | OpenAI Realtime API for native speech-to-speech interactions | [@robotdad](https://github.com/robotdad) | [amplifier-module-provider-openai-realtime](https://github.com/robotdad/amplifier-module-provider-openai-realtime) |
+| **deepresearch** | Multi-provider deep research module with automated research orchestration using OpenAI and Anthropic | [@michaeljabbour](https://github.com/michaeljabbour) | [amplifier-module-deepresearch](https://github.com/michaeljabbour/amplifier-module-deepresearch) |
 
 ### Tools
 
