@@ -233,7 +233,6 @@ Modules built by the community.
 |--------|-------------|--------|------------|
 | **provider-bedrock** | AWS Bedrock integration with cross-region inference support for Claude models | [@brycecutt-msft](https://github.com/brycecutt-msft) | [amplifier-module-provider-bedrock](https://github.com/brycecutt-msft/amplifier-module-provider-bedrock) |
 | **provider-openai-realtime** | OpenAI Realtime API for native speech-to-speech interactions | [@robotdad](https://github.com/robotdad) | [amplifier-module-provider-openai-realtime](https://github.com/robotdad/amplifier-module-provider-openai-realtime) |
-| **deepresearch** | Multi-provider deep research module with automated research orchestration using OpenAI and Anthropic | [@michaeljabbour](https://github.com/michaeljabbour) | [amplifier-module-deepresearch](https://github.com/michaeljabbour/amplifier-module-deepresearch) |
 
 ### Tools
 
@@ -245,6 +244,7 @@ Modules built by the community.
 | **module-image-generation** | Multi-provider AI image generation with DALL-E, Imagen, and GPT-Image-1 | [@robotdad](https://github.com/robotdad) | [amplifier-module-image-generation](https://github.com/robotdad/amplifier-module-image-generation) |
 | **module-style-extraction** | Extract and apply writing style from text samples | [@robotdad](https://github.com/robotdad) | [amplifier-module-style-extraction](https://github.com/robotdad/amplifier-module-style-extraction) |
 | **module-markdown-utils** | Markdown parsing, injection, and metadata extraction utilities | [@robotdad](https://github.com/robotdad) | [amplifier-module-markdown-utils](https://github.com/robotdad/amplifier-module-markdown-utils) |
+| **tool-deepresearch** | Deep research tool with multi-provider support (OpenAI/Anthropic) for comprehensive web research and report generation | [@michaeljabbour](https://github.com/michaeljabbour) | [amplifier-module-deepresearch](https://github.com/michaeljabbour/amplifier-module-deepresearch) |
 
 ### Hooks
 
