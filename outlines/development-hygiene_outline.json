@@ -1,0 +1,281 @@
+{
+  "_meta": {
+    "name": "development-hygiene-outline",
+    "document_type": "synthesized",
+    "document_instruction": "Synthesize development hygiene guidelines and best practices from across the Amplifier ecosystem, combining module resolution, installation procedures, settings configuration, and development workflow information into a cohesive reference document.",
+    "model": "claude-sonnet-4-20250514",
+    "max_response_tokens": 8000,
+    "temperature": 0.2,
+    "source_repo": "amplifier",
+    "target_path": "context/development-hygiene.md",
+    "allowed_source_repos": [
+      "amplifier",
+      "amplifier-core",
+      "amplifier-foundation",
+      "amplifier-app-cli",
+      "amplifier-app-log-viewer",
+      "amplifier-app-benchmarks",
+      "amplifier-bundle-recipes",
+      "amplifier-bundle-design-intelligence",
+      "amplifier-bundle-issues",
+      "amplifier-bundle-lsp",
+      "amplifier-bundle-lsp-python",
+      "amplifier-bundle-lsp-typescript",
+      "amplifier-bundle-shadow",
+      "amplifier-bundle-python-dev",
+      "amplifier-bundle-ts-dev",
+      "amplifier-bundle-notify",
+      "amplifier-module-loop-basic",
+      "amplifier-module-loop-streaming",
+      "amplifier-module-loop-events",
+      "amplifier-module-provider-anthropic",
+      "amplifier-module-provider-openai",
+      "amplifier-module-provider-azure-openai",
+      "amplifier-module-provider-gemini",
+      "amplifier-module-provider-vllm",
+      "amplifier-module-provider-ollama",
+      "amplifier-module-provider-mock",
+      "amplifier-module-tool-filesystem",
+      "amplifier-module-tool-bash",
+      "amplifier-module-tool-web",
+      "amplifier-module-tool-search",
+      "amplifier-module-tool-task",
+      "amplifier-module-tool-todo",
+      "amplifier-module-tool-skills",
+      "amplifier-module-tool-mcp",
+      "amplifier-module-tool-slash-command",
+      "amplifier-module-context-simple",
+      "amplifier-module-context-persistent",
+      "amplifier-module-hooks-logging",
+      "amplifier-module-hooks-redaction",
+      "amplifier-module-hooks-approval",
+      "amplifier-module-hooks-backup",
+      "amplifier-module-hooks-explanatory",
+      "amplifier-module-hooks-streaming-ui",
+      "amplifier-module-hooks-status-context",
+      "amplifier-module-hooks-todo-reminder",
+      "amplifier-module-hooks-scheduler-cost-aware",
+      "amplifier-module-hooks-scheduler-heuristic",
+      "amplifier-module-hook-shell"
+    ],
+    "consumers_excluded": [],
+    "regeneration_notes": "Synthesized document consolidating development hygiene practices across the Amplifier ecosystem. No consumer files reference this target. Sources include module resolution logic, installation procedures, and settings configuration from amplifier-core, amplifier-foundation, and related packages. Regeneration should gather authoritative sources on development workflows, testing practices, and code quality standards."
+  },
+  "document": {
+    "title": "# Amplifier CLI Installation Architecture & Development Hygiene",
+    "output": "context/development-hygiene.md",
+    "sections": [
+      {
+        "heading": "# Amplifier CLI Installation Architecture & Development Hygiene",
+        "level": 1,
+        "prompt": "Write a brief introductory paragraph (2-3 sentences) establishing the document's purpose: to explain how Amplifier CLI is installed, why proper cache management matters, and recommended development patterns. Set the tone as authoritative technical guidance for developers working with the Amplifier ecosystem.",
+        "sources": [
+          {
+            "file_path": "docs/LOCAL_DEVELOPMENT.md",
+            "contribution": "Provides foundational development concepts and patterns that frame the overall document purpose",
+            "relevance": "medium"
+          }
+        ],
+        "sections": [
+          {
+            "heading": "## How Amplifier is Installed",
+            "level": 2,
+            "prompt": "Write a brief introduction (2-3 sentences) explaining that Amplifier uses uv tool install for global CLI installation, and that understanding this architecture is essential for safe development practices. This section introduces the installation flow, runtime behavior, and directory structure subsections.",
+            "sources": [
+              {
+                "file_path": "README.md",
+                "contribution": "Provides canonical installation command entry point",
+                "relevance": "high"
+              },
+              {
+                "file_path": "docs/LOCAL_DEVELOPMENT.md",
+                "contribution": "Provides technical details about cache structure and editable installs",
+                "relevance": "medium"
+              }
+            ],
+            "sections": [
+              {
+                "heading": "### Installation Flow",
+                "level": 3,
+                "prompt": "Document the 4-step installation flow: 1) User runs `uv tool install git+https://github.com/anthropics/amplifier`, 2) uv creates tool directory at ~/.local/share/uv/tools/amplifier/, 3) amplifier creates cache directory at ~/.amplifier/cache/, 4) For editable installs, site-packages contains links to source locations. Include the canonical install command from README.md and explain what each step accomplishes.",
+                "sources": [
+                  {
+                    "file_path": "README.md",
+                    "contribution": "Canonical installation command: 'uv tool install git+https://github.com/anthropics/amplifier'",
+                    "relevance": "high"
+                  },
+                  {
+                    "file_path": "docs/LOCAL_DEVELOPMENT.md",
+                    "contribution": "Technical details about tool directory, cache directory creation, and editable install mechanism",
+                    "relevance": "high"
+                  }
+                ],
+                "sections": []
+              },
+              {
+                "heading": "### Runtime Behavior",
+                "level": 3,
+                "prompt": "Explain what happens at runtime: 1) Well-known providers are installed automatically, 2) Bundles and modules are downloaded on-demand when first referenced, 3) The cache directory (~/.amplifier/cache/) contains the actual running code. Emphasize that the cache is not just temporary files—it's where Amplifier's operational code lives.",
+                "sources": [
+                  {
+                    "file_path": "docs/LOCAL_DEVELOPMENT.md",
+                    "contribution": "Explains how well-known providers are installed, how bundles/modules are downloaded on demand, and that running code lives in cache",
+                    "relevance": "high"
+                  }
+                ],
+                "sections": []
+              },
+              {
+                "heading": "### Directory Structure",
+                "level": 3,
+                "prompt": "Present a clear directory tree visualization showing both key locations: 1) ~/.local/share/uv/tools/amplifier/ (the uv tool directory with venv), and 2) ~/.amplifier/ hierarchy including cache/, registry.json, settings.yaml, keys.env, and projects/. Use ASCII tree format and briefly annotate what each key file/directory contains.",
+                "sources": [
+                  {
+                    "file_path": "docs/LOCAL_DEVELOPMENT.md",
+                    "contribution": "Authoritative source for directory tree structure including ~/.local/share/uv/tools/amplifier/ and ~/.amplifier/ hierarchy",
+                    "relevance": "high"
+                  }
+                ],
+                "sections": []
+              }
+            ]
+          },
+          {
+            "heading": "## CRITICAL: Never Delete the Cache Directly",
+            "level": 2,
+            "prompt": "Write an urgent warning section explaining WHY deleting ~/.amplifier/cache/ directly breaks Amplifier: the uv tool's site-packages contains symlinks/references to locations inside the cache. When the cache is deleted, these links become broken, leaving the CLI in an unusable state that requires manual reinstallation. Use strong cautionary language.",
+            "sources": [
+              {
+                "file_path": "docs/LOCAL_DEVELOPMENT.md",
+                "contribution": "Authoritative cache warning (line 336) explaining why direct deletion breaks Amplifier and the recovery requirements",
+                "relevance": "high"
+              }
+            ],
+            "sections": [
+              {
+                "heading": "### The Right Way: `amplifier reset`",
+                "level": 3,
+                "prompt": "Document the safe way to reset Amplifier state using `amplifier reset`. Include: 1) Basic usage with interactive mode, 2) --dry-run flag to preview what would be removed, 3) --full flag for complete reset. Show example commands and explain the safe cleanup workflow that properly handles the cache-to-tool-directory relationship.",
+                "sources": [
+                  {
+                    "file_path": "docs/LOCAL_DEVELOPMENT.md",
+                    "contribution": "Documents the amplifier reset command options and safe cleanup workflow",
+                    "relevance": "high"
+                  }
+                ],
+                "sections": []
+              }
+            ]
+          },
+          {
+            "heading": "## Development Patterns",
+            "level": 2,
+            "prompt": "Write a brief introduction (2-3 sentences) explaining that this section covers best practices for developing with and on Amplifier. Mention that developers should use proper isolation techniques rather than modifying the global cache, and preview the subsections covering anti-patterns, source overrides, settings hierarchy, shadow environments, and virtual environments.",
+            "sources": [
+              {
+                "file_path": "docs/LOCAL_DEVELOPMENT.md",
+                "contribution": "Primary source for development best practices and anti-patterns",
+                "relevance": "high"
+              },
+              {
+                "file_path": "docs/USER_ONBOARDING.md",
+                "contribution": "Configuration scope information for settings hierarchy",
+                "relevance": "medium"
+              }
+            ],
+            "sections": [
+              {
+                "heading": "### Don't Modify ~/.amplifier/cache/ for Development",
+                "level": 3,
+                "prompt": "Document the anti-patterns to avoid: editing files in ~/.amplifier/cache/, manually adding packages there, or using it as a development workspace. Explain the correct alternatives: clone repositories to your own workspace, use git submodules for multi-repo work, and use source overrides to point to local paths.",
+                "sources": [
+                  {
+                    "file_path": "docs/LOCAL_DEVELOPMENT.md",
+                    "contribution": "Defines anti-patterns for cache usage and proper alternatives (clone repos, use submodules)",
+                    "relevance": "high"
+                  }
+                ],
+                "sections": []
+              },
+              {
+                "heading": "### Project-Local Source Overrides",
+                "level": 3,
+                "prompt": "Explain how to use .amplifier/settings.yaml in a project directory to override bundle sources with local paths. Show a YAML configuration example with the 'sources' key, demonstrating how to set 'type: local' and 'path: /path/to/local/bundle'. Explain that this allows testing local changes without modifying the global cache.",
+                "sources": [
+                  {
+                    "file_path": "docs/LOCAL_DEVELOPMENT.md",
+                    "contribution": "Documents the .amplifier/settings.yaml sources configuration for local path overrides",
+                    "relevance": "high"
+                  }
+                ],
+                "sections": []
+              },
+              {
+                "heading": "### Settings Scope Hierarchy",
+                "level": 3,
+                "prompt": "Present a table showing the settings scope hierarchy with columns: Scope, Location, Precedence. Include: 1) Local (.amplifier/settings.yaml in current dir), 2) Project (.amplifier/settings.yaml in project root), 3) Global (~/.amplifier/settings.yaml). Also document the module resolution order (6 levels) with 'first match wins' semantics, including environment variables and workspace conventions.",
+                "sources": [
+                  {
+                    "file_path": "docs/USER_ONBOARDING.md",
+                    "contribution": "Authoritative Configuration Scopes table (lines 614-620) with Scope, Flag, Where Stored, Who It Affects columns; target's 4-column table is condensed derivative",
+                    "relevance": "high"
+                  },
+                  {
+                    "file_path": "docs/LOCAL_DEVELOPMENT.md",
+                    "contribution": "Module Resolution Layers (lines 127-138) providing the 6-level precedence order with 'First match wins' commentary",
+                    "relevance": "high"
+                  }
+                ],
+                "sections": []
+              },
+              {
+                "heading": "### Shadow Environments (Recommended for Testing)",
+                "level": 3,
+                "prompt": "Introduce shadow environments as the recommended approach for testing Amplifier changes in isolation. Explain key features: containerized isolation, local source snapshots, embedded Gitea for serving local repos. Show a basic usage example with `amplifier-shadow create` and mention that full documentation is available in @shadow:context/shadow-instructions.md.",
+                "sources": [
+                  {
+                    "file_path": "docs/LOCAL_DEVELOPMENT.md",
+                    "contribution": "References shadow environments as recommended testing pattern with basic usage guidance",
+                    "relevance": "medium"
+                  }
+                ],
+                "sections": []
+              },
+              {
+                "heading": "### Project-Local Virtual Environments",
+                "level": 3,
+                "prompt": "Document the standard Python virtual environment workflow for Amplifier ecosystem development: 1) Create venv with `python -m venv .venv`, 2) Activate it, 3) Install packages in editable mode with `pip install -e .`. Explain benefits: matches CI environments, provides isolated development, and avoids polluting global state.",
+                "sources": [
+                  {
+                    "file_path": "docs/LOCAL_DEVELOPMENT.md",
+                    "contribution": "Standard venv workflow for Amplifier ecosystem development",
+                    "relevance": "high"
+                  }
+                ],
+                "sections": []
+              }
+            ]
+          },
+          {
+            "heading": "## Summary: Where Things Belong",
+            "level": 2,
+            "prompt": "Create a summary reference table with columns: Task, Location/Approach. Cover key scenarios: cache management (use `amplifier reset`), source overrides (project .amplifier/settings.yaml), testing changes (shadow environments), development work (local venv + editable install), and configuration (appropriate scope in settings hierarchy). Keep it concise and actionable.",
+            "sources": [
+              {
+                "file_path": "docs/LOCAL_DEVELOPMENT.md",
+                "contribution": "Source for all development pattern recommendations summarized in the table",
+                "relevance": "high"
+              },
+              {
+                "file_path": "docs/USER_ONBOARDING.md",
+                "contribution": "Configuration location guidance for settings overrides",
+                "relevance": "medium"
+              }
+            ],
+            "sections": []
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,2471 @@
+# =============================================================================
+# Document Generation from Outline
+# =============================================================================
+#
+# A multi-stage recipe for generating documentation from a structured outline.
+# Implements BFS (breadth-first) traversal, ordered validation, and version saves.
+#
+# Design Principles:
+#   - BASH for: File ops, JSON read/write via jq, simple checks
+#   - AGENT for: Parsing, understanding, reasoning, content generation
+#   - jq for JSON: Clean, readable JSON manipulation in bash steps
+#   - Granular steps: Each step does ONE thing
+#   - BFS traversal: Complete each level before going deeper
+#   - Per-section state: Update tracker immediately after each section
+#   - Accumulated context: Each section sees what previous sections generated
+#   - Version saves: After each stage completes
+#   - Resumability: Check for existing state, skip completed work
+#   - FILE-BASED DATA: Complex JSON passed via files, not template variables
+#   - AGENT-WRITES-FILE: Agents write document content directly to files
+#   - ROBUST FALLBACKS: Three-way logic handles agent failures gracefully
+#
+# Data Flow Architecture:
+#   - Simple scalars (paths, timestamps, IDs): Use template variables
+#   - Complex JSON objects: Save to files, read from files
+#   - Document content: Agents write directly, bash uses file copy
+#   - File locations:
+#       {{working_dir}}/state/outline.json           - Raw outline
+#       {{working_dir}}/state/parsed_outline.json    - Parsed structure from agent
+#       {{working_dir}}/state/source_manifest.json   - Sources to fetch
+#       {{working_dir}}/state/structure.json         - Section relationships, BFS order
+#       {{working_dir}}/state/tracker.json           - Main state tracker
+#       {{working_dir}}/state/sources_result.json    - Result of source fetching
+#
+# Source Files:
+#   - Outline uses relative file paths (e.g., `docs/LOCAL_DEVELOPMENT.md`)
+#   - Sources are read from filesystem relative to repo root (parent of outlines/)
+#
+# Usage:
+#   # Basic: outputs to temp/<filename> for easy comparison with original
+#   amplifier run "execute document-generation.yaml with outline_path=./outline.json"
+#
+#   # Custom output path: write directly to specific location
+#   amplifier run "execute document-generation.yaml with outline_path=./outline.json output_path=./docs/output.md"
+#
+# Output Path Behavior:
+#   - Default: temp/<filename> (e.g., temp/development-hygiene.md)
+#   - This allows side-by-side comparison: original vs generated
+#   - Use output_path to write directly to the target location
+#
+# Typical runtime: 20-45 minutes depending on outline complexity and validation fixes
+#
+# Requirements:
+#   - foundation bundle (provides zen-architect, explorer, modular-builder agents)
+#   - Python 3 installed
+#   - Write access to working directory
+#
+# =============================================================================
+
+# =============================================================================
+# CHANGELOG
+# =============================================================================
+#
+# v6.1.1 (2026-01-21):
+#   - BUGFIX: Tracker state persistence in save-vN steps
+#     * ROOT CAUSE: Template variables like {{structural_issues.passed}} resolve
+#       to Python booleans (True/False with capital letters), but jq's --argjson
+#       flag expects JSON booleans (true/false lowercase)
+#     * SYMPTOM: Tracker only recorded v0 and v_final; validation_results empty
+#     * FIX: Added explicit boolean conversion in all 9 save steps:
+#       if [ "{{xxx_issues.passed}}" = "true" ] || [ "..." = "True" ]; then
+#         passed_json="true"
+#       else
+#         passed_json="false"
+#       fi
+#     * All version_history entries and validation_results now persist correctly
+#
+# v6.1.0 (2026-01-21):
+#   - REFACTOR: Replaced all Python inline JSON manipulation with jq
+#     * 20+ Python blocks converted to clean jq expressions
+#     * More readable, follows recipe-author best practices
+#     * Consistent pattern: jq '...' file.json > file.json.tmp && mv ...
+#   - Design principle updated: "jq for JSON" replaces "No jq"
+#
+# v6.0.2 (2026-01-21):
+#   - IMPROVEMENT: Default output path changed to temp/<filename>
+#     * Enables easy side-by-side comparison between original and generated docs
+#     * Example: outline with target "context/foo.md" now outputs to "temp/foo.md"
+#   - User can still specify explicit output_path to write directly to target location
+#   - Updated documentation and usage examples to clarify output path behavior
+#
+# v6.0.0 (2026-01-20):
+#   - MERGED: Combined best practices from v4.1.0 and v5.0.0 branches
+#   - Agent-writes-file pattern: All document content written directly by agents
+#   - Three-way fallback logic: Handles unreliable agent file writing gracefully
+#   - File-based reads: Agents read documents from file paths, not template vars
+#   - Verification steps: Check agent actually wrote expected files
+#   - File copy for final save: No heredoc template variable issues
+#   - Consistent JSON schema: All validation outputs include issue_count field
+#   - Comprehensive documentation: Runtime estimates, requirements, root causes
+#
+#   Improvements from outline-generation recipe patterns (v6.0.1):
+#   - JSON helper utility: Added clean_json_control_chars() and safe_parse_json()
+#     for robust JSON parsing with 3 fallback extraction methods
+#   - Retry logic: Added exponential backoff retries on critical agent steps
+#   - File size validation: Save steps now detect truncated files (<50% of original)
+#     and fall back to previous version instead of using corrupted output
+#   - printf '%s': Replaced echo with printf for template variable outputs
+#     to avoid trailing newline issues
+#   - sections/ directory: Added for future per-section content storage
+#
+# v5.0.0 (2026-01-16) [Branch B]:
+#   - CRITICAL FIX: File-based data passing for all complex JSON objects
+#     * ROOT CAUSE: Embedding JSON via template variables ({{outline}}, {{structure}})
+#       into Python code caused parsing failures due to:
+#       - Template substitution using Python repr() instead of json.dumps()
+#       - Control characters and newlines breaking string literals
+#       - Large objects causing truncation and parse errors
+#     * SOLUTION: Save all complex data to files, have steps read from files
+#
+#   - CRITICAL FIX: Newline handling in bash outputs
+#     * ROOT CAUSE: Bash commands output trailing newlines, which when embedded
+#       in Python string literals via templates caused syntax errors
+#     * SOLUTION: Use `printf '%s'` instead of `echo` for all outputs used in templates
+#
+#   - CRITICAL FIX: Source path resolution
+#     * ROOT CAUSE: Sources in outlines are relative to repo root, but recipe
+#       was resolving them relative to outline directory (outlines/)
+#     * FIX: get-outline-directory now computes repo root (parent of outlines/)
+#
+#   - IMPROVEMENT: Robust fallbacks for validation stages
+#     * Three-way logic in save steps:
+#       1. If validation passed → copy previous version (no changes needed)
+#       2. If validation failed AND agent wrote file → use agent's fixed version
+#       3. If validation failed BUT agent didn't write → fallback to previous version
+#
+# v4.1.0 (2026-01-16) [Branch A]:
+#   - BUGFIX: Undefined variable errors when validation stages pass
+#     * Root cause: Template variables are resolved BEFORE bash command execution,
+#       so `{{fixed_document_X}}` was evaluated even inside if/else branches that
+#       wouldn't execute.
+#     * Note: v6.0.0 solves this differently via agent-writes-file pattern
+#
+#   - BUGFIX: Bash syntax errors when fixed content contains special characters
+#     * Root cause: Using `echo '{{content}}'` breaks when content contains
+#       single quotes, pipes (|), or other bash metacharacters.
+#     * Note: v6.0.0 solves this by having agents write files directly
+#
+#   - BUGFIX: Python syntax errors in finalization stage due to trailing newlines
+#     * Root cause: `echo` and `print()` add trailing newlines that break strings
+#     * Fix: Use `printf '%s'` and `print(..., end='')` (retained in v6.0.0)
+#
+# v4.0.0 (2026-01-15):
+#   - Initial multi-stage implementation with BFS traversal
+#   - 12 stages: initialization, generation, 8 validation stages, finalization
+#   - Approval gates between stages for human-in-loop control
+#   - Per-section state tracking with checkpoints
+#   - Version saves after each validation stage (v0-v9)
+#
+# v3.0.0 (2026-01-15):
+#   - Complete rewrite based on conversation-driven design
+#   - Implemented BFS traversal for section generation
+#   - Added 9-stage validation pipeline
+#
+# v2.0.0 (2026-01-15):
+#   - Added context relationships for section generation
+#   - Implemented per-section state tracking
+#   - Added metadata extraction (definitions, examples introduced)
+#
+# v1.0.0 (2026-01-14):
+#   - Initial recipe structure from conversation design
+#
+# =============================================================================
+
+name: "document-generation"
+description: "Generate documentation from an outline with BFS traversal and ordered validation"
+version: "6.1.1"
+author: "Amplifier Recipes Collection"
+tags: ["documentation", "generation", "outline", "bfs", "validation", "staged", "resumable"]
+
+context:
+  # Required: Path to the outline JSON file
+  outline_path: ""
+  
+  # Optional: Output path for the generated document
+  # - If specified: Document is written to this exact path
+  # - If empty (default): Document is written to temp/<filename> where filename
+  #   comes from the outline's document.output field (e.g., temp/development-hygiene.md)
+  # 
+  # This temp/ default enables easy side-by-side comparison between the original
+  # document and the newly generated version before replacing it.
+  output_path: ""
+  
+  # Optional: Working directory for state and versions
+  working_dir: "./.docgen"
+  
+  # Optional: Skip approval gates (for automated runs)
+  auto_approve: false
+
+# Rate limiting for LLM calls
+rate_limiting:
+  max_concurrent_llm: 3
+  min_delay_ms: 500
+  backoff:
+    enabled: true
+    initial_delay_ms: 2000
+    max_delay_ms: 60000
+
+# Recursion limits for safety
+recursion:
+  max_depth: 5
+  max_total_steps: 1000
+
+stages:
+  # ==========================================================================
+  # STAGE 1: INITIALIZATION
+  # Setup workspace, check resume state, read outline, fetch sources,
+  # compute structure, initialize tracker
+  # ==========================================================================
+  - name: "initialization"
+    steps:
+      # ---- WORKSPACE SETUP ----
+      
+      - id: "create-directories"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          mkdir -p "{{working_dir}}/versions"
+          mkdir -p "{{working_dir}}/sources"
+          mkdir -p "{{working_dir}}/state"
+          mkdir -p "{{working_dir}}/sections"
+          echo "Directories created at {{working_dir}}"
+        output: "dirs_created"
+
+      # ---- JSON HELPER SETUP ----
+      # Battle-tested JSON parsing utility from outline-generation recipe.
+      # Handles LLM quirks: literal newlines in strings, unescaped quotes, etc.
+      
+      - id: "setup-json-helper"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          cat > "{{working_dir}}/state/json_helper.py" << 'HELPER_EOF'
+          import json
+          import re
+          import sys
+
+          def clean_json_control_chars(json_str):
+              """
+              Clean control characters inside JSON string values.
+              
+              LLMs often output JSON with literal newlines/tabs inside string values,
+              which breaks JSON parsing. This function escapes those characters while
+              preserving structural newlines outside of strings.
+              
+              Uses lookahead heuristic to distinguish string terminators from data quotes.
+              """
+              if not json_str:
+                  return json_str
+              
+              result = []
+              in_string = False
+              i = 0
+              n = len(json_str)
+              
+              while i < n:
+                  c = json_str[i]
+                  
+                  if in_string:
+                      if c == '\\' and i + 1 < n:
+                          # Escape sequence - keep as-is and skip next char
+                          result.append(c)
+                          result.append(json_str[i + 1])
+                          i += 2
+                          continue
+                      elif c == '"':
+                          # Lookahead heuristic: is this end of string or data?
+                          j = i + 1
+                          while j < n and json_str[j] in ' \t\n\r':
+                              j += 1
+                          next_char = json_str[j] if j < n else ''
+                          
+                          if next_char in ':,}]' or next_char == '':
+                              in_string = False
+                              result.append(c)
+                          else:
+                              # Quote is data - escape it
+                              result.append('\\"')
+                      elif c == '\n':
+                          result.append('\\n')
+                      elif c == '\r':
+                          result.append('\\r')
+                      elif c == '\t':
+                          result.append('\\t')
+                      elif ord(c) < 32:
+                          result.append(f'\\u{ord(c):04x}')
+                      else:
+                          result.append(c)
+                  else:
+                      if c == '"':
+                          in_string = True
+                      result.append(c)
+                  
+                  i += 1
+              
+              return ''.join(result)
+
+          def safe_parse_json(json_str, name="input"):
+              """Parse JSON with error recovery for common LLM issues."""
+              if not json_str or json_str.strip() == '':
+                  raise ValueError(f"{name} is empty")
+              
+              if isinstance(json_str, dict):
+                  return json_str
+              
+              # Clean and try direct parse
+              cleaned = clean_json_control_chars(json_str)
+              try:
+                  return json.loads(cleaned)
+              except json.JSONDecodeError as e:
+                  pass  # Fall through to fallback methods
+              
+              # Method 1: Extract from markdown code blocks
+              code_match = re.search(r'```(?:json)?\s*\n(.*?)\n```', json_str, re.DOTALL)
+              if code_match:
+                  try:
+                      return json.loads(clean_json_control_chars(code_match.group(1).strip()))
+                  except json.JSONDecodeError:
+                      pass
+              
+              # Method 2: Find ```json marker and extract
+              json_start = json_str.find('```json')
+              if json_start >= 0:
+                  after = json_str[json_start:].split('\n', 1)
+                  if len(after) > 1:
+                      content = after[1]
+                      end = content.rfind('\n```')
+                      if end >= 0:
+                          content = content[:end]
+                      try:
+                          return json.loads(clean_json_control_chars(content))
+                      except json.JSONDecodeError:
+                          pass
+              
+              # Method 3: Find first { and extract balanced JSON
+              first_brace = json_str.find('{')
+              if first_brace >= 0:
+                  potential = json_str[first_brace:]
+                  depth = 0
+                  in_str = False
+                  escape_next = False
+                  for i, c in enumerate(potential):
+                      if escape_next:
+                          escape_next = False
+                          continue
+                      if c == '\\':
+                          escape_next = True
+                          continue
+                      if c == '"' and not escape_next:
+                          in_str = not in_str
+                      if not in_str:
+                          if c == '{': depth += 1
+                          elif c == '}': depth -= 1
+                          if depth == 0:
+                              try:
+                                  return json.loads(clean_json_control_chars(potential[:i+1]))
+                              except json.JSONDecodeError:
+                                  break
+              
+              raise ValueError(f"Could not parse {name} as JSON. Preview: {json_str[:200]}")
+          HELPER_EOF
+          
+          echo "JSON helper installed at {{working_dir}}/state/json_helper.py"
+        output: "json_helper_ready"
+
+      - id: "record-start-time"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          date -Iseconds > "{{working_dir}}/state/started_at"
+          # Output without trailing newline
+          printf '%s' "$(cat "{{working_dir}}/state/started_at")"
+        output: "start_time"
+
+      # ---- RESUME STATE CHECK ----
+      
+      - id: "check-tracker-exists"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          tracker_file="{{working_dir}}/state/tracker.json"
+          if [ -f "$tracker_file" ]; then
+            printf '%s' "true"
+          else
+            printf '%s' "false"
+          fi
+        output: "tracker_exists"
+
+      - id: "read-resume-info"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          if [ "{{tracker_exists}}" = "true" ]; then
+            jq '{
+              resuming: true,
+              status: (.status // "unknown"),
+              current_stage: (.current_stage // "unknown"),
+              sections_completed: (.sections_completed // [] | length),
+              sections_pending: (.sections_pending // [] | length),
+              last_completed_section: (if (.sections_completed // [] | length) > 0 then .sections_completed[-1] else "none" end),
+              tracker_exists: true
+            }' "{{working_dir}}/state/tracker.json"
+          else
+            echo '{"resuming": false, "status": "new", "current_stage": "initialization", "sections_completed": 0, "sections_pending": 0, "last_completed_section": "none", "tracker_exists": false}'
+          fi
+        output: "resume_state"
+        parse_json: true
+
+      # ---- READ AND VALIDATE OUTLINE ----
+      
+      - id: "check-outline-exists"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          if [ -f "{{outline_path}}" ]; then
+            echo "true"
+          else
+            echo "ERROR: Outline file not found at {{outline_path}}" >&2
+            exit 1
+          fi
+        output: "outline_exists"
+
+      - id: "read-outline-raw"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          # Copy outline to state directory for consistent access
+          cp "{{outline_path}}" "{{working_dir}}/state/outline.json"
+          echo "Outline saved to {{working_dir}}/state/outline.json"
+        output: "outline_saved"
+
+      - id: "parse-outline-structure"
+        agent: "foundation:explorer"
+        prompt: |
+          Parse the outline JSON file and extract its structure.
+          
+          Read the outline from: {{working_dir}}/state/outline.json
+          
+          Return a JSON object with:
+          1. **meta**: All metadata fields (purpose, audience, style, etc.)
+          2. **document**: Document-level info (title, output path, etc.)
+          3. **sections**: The full section tree structure
+          4. **section_count**: Total number of sections (including nested)
+          5. **max_depth**: Maximum nesting depth found
+          
+          Validate that:
+          - Required fields are present (meta, document, sections)
+          - Each section has at least: heading, prompt
+          
+          IMPORTANT: Save your parsed result to: {{working_dir}}/state/parsed_outline.json
+          
+          After saving, return a brief confirmation message with the section_count and max_depth.
+        output: "outline_parsed_status"
+        timeout: 120
+        retry:
+          max_attempts: 3
+          backoff: "exponential"
+          initial_delay: 2
+
+      # ---- EXTRACT AND RESOLVE SOURCE PATHS ----
+      
+      - id: "get-outline-directory"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          # Get the repo root (parent of outlines directory)
+          # Sources in outlines are relative to repo root, not outline directory
+          outline_full_path="$(realpath "{{outline_path}}")"
+          outline_dir="$(dirname "$outline_full_path")"
+          # Go up one level to repo root (outlines/ -> repo root)
+          repo_root="$(dirname "$outline_dir")"
+          printf '%s' "$repo_root"
+        output: "outline_dir"
+
+      - id: "extract-source-paths"
+        agent: "foundation:explorer"
+        prompt: |
+          Extract ALL unique source file references from the parsed outline.
+          
+          Read the parsed outline from: {{working_dir}}/state/parsed_outline.json
+          
+          Sources in the outline are relative file paths (e.g., "docs/LOCAL_DEVELOPMENT.md").
+          
+          For each source found, extract:
+          - file_path: The relative path as specified in the outline
+          - sections: List of section IDs that reference this source
+          
+          Create a JSON manifest with this structure:
+          {
+            "sources": [
+              {
+                "file_path": "docs/LOCAL_DEVELOPMENT.md",
+                "sections": ["1", "1.1", "2.3"]
+              }
+            ],
+            "total_sources": number,
+            "sections_with_sources": number,
+            "sections_without_sources": number
+          }
+          
+          IMPORTANT: Save this manifest to: {{working_dir}}/state/source_manifest.json
+          
+          Include ALL sources found in the outline.
+          After saving, return a confirmation with the total_sources count.
+        output: "source_manifest_status"
+        timeout: 120
+        retry:
+          max_attempts: 3
+          backoff: "exponential"
+          initial_delay: 2
+
+      # ---- FETCH LOCAL SOURCES ----
+      
+      - id: "fetch-local-sources"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          outline_dir="{{outline_dir}}"
+          sources_dir="{{working_dir}}/sources"
+          manifest_file="{{working_dir}}/state/source_manifest.json"
+          result_file="{{working_dir}}/state/sources_result.json"
+          
+          # Initialize result arrays
+          fetched_json="[]"
+          failed_json="[]"
+          
+          # Process each source from manifest
+          while IFS= read -r file_path; do
+            [ -z "$file_path" ] && continue
+            
+            # Resolve to absolute path relative to outline directory
+            abs_path="$outline_dir/$file_path"
+            
+            # Sanitize filename for storage
+            safe_name=$(echo "$file_path" | tr '/' '_' | tr '\\' '_')
+            dest_path="$sources_dir/$safe_name"
+            
+            if [ -f "$abs_path" ]; then
+              # Copy file and get stats
+              cp -p "$abs_path" "$dest_path" 2>/dev/null && {
+                size_bytes=$(wc -c < "$dest_path")
+                line_count=$(wc -l < "$dest_path")
+                fetched_json=$(echo "$fetched_json" | jq --arg src "$file_path" \
+                  --arg lp "$dest_path" --argjson sz "$size_bytes" --argjson lc "$line_count" \
+                  '. + [{"source": $src, "local_path": $lp, "size_bytes": $sz, "line_count": $lc}]')
+              } || {
+                failed_json=$(echo "$failed_json" | jq --arg src "$file_path" \
+                  --arg err "Copy failed: $abs_path" \
+                  '. + [{"source": $src, "error": $err}]')
+              }
+            else
+              failed_json=$(echo "$failed_json" | jq --arg src "$file_path" \
+                --arg err "File not found: $abs_path" \
+                '. + [{"source": $src, "error": $err}]')
+            fi
+          done < <(jq -r '.sources[]?.file_path // empty' "$manifest_file")
+          
+          # Build final result
+          total_fetched=$(echo "$fetched_json" | jq 'length')
+          total_failed=$(echo "$failed_json" | jq 'length')
+          
+          jq -n --argjson fetched "$fetched_json" --argjson failed "$failed_json" \
+            --argjson tf "$total_fetched" --argjson tfl "$total_failed" '{
+              fetched: $fetched,
+              failed: $failed,
+              success: ($tfl == 0),
+              total_fetched: $tf,
+              total_failed: $tfl
+            }' > "$result_file"
+          
+          cat "$result_file"
+        output: "sources_result"
+        parse_json: true
+
+      - id: "verify-all-sources-fetched"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          # Check the fetched/failed counts from the sources directory
+          fetched_count=$(ls -1 "{{working_dir}}/sources/" 2>/dev/null | wc -l)
+          
+          if [ "$fetched_count" -eq 0 ]; then
+              echo "ERROR: No source files were fetched" >&2
+              exit 1
+          fi
+          
+          echo "Successfully fetched $fetched_count source files"
+          ls -la "{{working_dir}}/sources/"
+        output: "sources_verified"
+
+      # ---- COMPUTE STRUCTURAL CONTEXT ----
+      
+      - id: "compute-section-relationships"
+        agent: "foundation:zen-architect"
+        mode: "ANALYZE"
+        prompt: |
+          Analyze the outline structure and compute traversal context for ALL sections.
+          
+          Read the parsed outline from: {{working_dir}}/state/parsed_outline.json
+          Read the source manifest from: {{working_dir}}/state/source_manifest.json
+          
+          For EACH section (including nested), compute:
+          
+          1. **id**: Unique identifier (e.g., "1", "1.1", "1.1.1")
+          2. **heading**: The section heading
+          3. **depth**: Nesting level (1 for top-level, 2 for children, etc.)
+          4. **parent_id**: ID of parent section (null for top-level)
+          5. **ancestor_ids**: FULL ancestor chain from root
+          6. **children_ids**: Direct child section IDs
+          7. **sibling_ids**: Sibling section IDs
+          8. **prompt**: The section's generation instruction
+          9. **source_files**: List of source file paths for this section
+          
+          Also compute:
+          - **bfs_order**: Section IDs in BFS traversal order (all level 1, then level 2, etc.)
+          - **levels**: Sections grouped by depth level
+          - **full_outline**: Text representation of ALL headings showing structure
+          - **source_sharing**: Map of which sources are shared between sections
+          - **max_depth**: Maximum nesting depth
+          - **document_purpose**: Extracted from meta
+          
+          Create a JSON structure with:
+          {
+            "sections": { "1": {...}, "1.1": {...}, ... },
+            "bfs_order": ["1", "2", "1.1", "1.2", "2.1", ...],
+            "levels": { "1": ["1", "2"], "2": ["1.1", "1.2", "2.1"], ... },
+            "full_outline": "1. Intro\n   1.1 Background\n...",
+            "source_sharing": { "path/file.md": ["1", "1.1"] },
+            "max_depth": 3,
+            "document_purpose": "..."
+          }
+          
+          IMPORTANT: Save this structure to: {{working_dir}}/state/structure.json
+          
+          After saving, return a confirmation with bfs_order length and max_depth.
+        output: "structure_status"
+        timeout: 300
+        retry:
+          max_attempts: 3
+          backoff: "exponential"
+          initial_delay: 2
+
+      # ---- INITIALIZE TRACKER ----
+      
+      - id: "create-tracker-file"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          tracker_file="{{working_dir}}/state/tracker.json"
+          
+          if [ "{{resume_state.resuming}}" = "true" ]; then
+            echo "Resuming from existing tracker - skipping creation"
+          else
+            # Create fresh tracker - read structure from file
+            jq --arg start_time "{{start_time}}" '{
+              status: "initialized",
+              started_at: ($start_time | gsub("^\\s+|\\s+$"; "")),
+              current_stage: "initialization",
+              sections_completed: [],
+              sections_pending: (.bfs_order // []),
+              generated_content: {},
+              content_summaries: {},
+              examples_introduced: [],
+              definitions_established: [],
+              source_extractions: {},
+              validation_results: {},
+              version_history: []
+            }' "{{working_dir}}/state/structure.json" > "{{working_dir}}/state/tracker.json"
+            
+            sections=$(jq '.sections_pending | length' "{{working_dir}}/state/tracker.json")
+            echo "Tracker initialized with $sections sections"
+          fi
+        output: "tracker_created"
+
+      - id: "update-tracker-bfs-order"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          # Update BFS order in tracker (handles both fresh and resume cases)
+          # Read bfs_order from structure and filter out completed sections
+          jq --slurpfile structure "{{working_dir}}/state/structure.json" '
+            ($structure[0].bfs_order // []) as $bfs_order |
+            (.sections_completed // []) as $completed |
+            .sections_pending = [$bfs_order[] | select(. as $s | $completed | index($s) | not)]
+          ' "{{working_dir}}/state/tracker.json" > "{{working_dir}}/state/tracker.json.tmp" \
+            && mv "{{working_dir}}/state/tracker.json.tmp" "{{working_dir}}/state/tracker.json"
+          
+          completed=$(jq '.sections_completed | length' "{{working_dir}}/state/tracker.json")
+          pending=$(jq '.sections_pending | length' "{{working_dir}}/state/tracker.json")
+          echo "BFS order set: $completed completed, $pending pending"
+        output: "tracker_bfs_set"
+
+      - id: "set-tracker-status-ready"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          jq '.status = "ready_for_generation" | .current_stage = "initialization_complete"' \
+            "{{working_dir}}/state/tracker.json" > "{{working_dir}}/state/tracker.json.tmp" \
+            && mv "{{working_dir}}/state/tracker.json.tmp" "{{working_dir}}/state/tracker.json"
+          echo "Tracker status set to ready_for_generation"
+        output: "tracker_ready"
+
+      # ---- READ BFS ORDER FOR FOREACH ----
+      # Extract bfs_order as a simple list for the foreach loop
+      
+      - id: "get-bfs-order"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          jq '.bfs_order // []' "{{working_dir}}/state/structure.json"
+        output: "bfs_order"
+        parse_json: true
+
+  # ==========================================================================
+  # STAGE 2: GENERATION
+  # For each section in BFS order: read state, build context, generate,
+  # extract metadata, update tracker, checkpoint
+  # ==========================================================================
+  - name: "generation"
+    approval:
+      required: true
+      prompt: |
+        INITIALIZATION COMPLETE
+        
+        Resume state: {{resume_state}}
+        Sources fetched: {{sources_result.total_fetched}} files
+        BFS order: Ready for generation
+        
+        Generation will proceed in BFS order (all level 1 first, then level 2, etc.).
+        Each section will:
+        1. Read accumulated context from tracker
+        2. Generate section content
+        3. Extract definitions and examples
+        4. Update tracker immediately
+        5. Checkpoint state
+        
+        Approve to begin section generation.
+      timeout: 0
+      default: "deny"
+    
+    steps:
+      # ---- FOR EACH SECTION IN BFS ORDER ----
+      # This foreach uses a SINGLE agent step that handles ALL per-section logic internally.
+      # The agent reads state, checks completion, builds context, generates, extracts metadata,
+      # updates tracker, and saves checkpoint - all within one step execution.
+      
+      - id: "generate-section"
+        foreach: "{{bfs_order}}"
+        as: "section_id"
+        agent: "foundation:zen-architect"
+        prompt: |
+          ## SECTION GENERATION: {{section_id}}
+          
+          You are generating content for section "{{section_id}}" of the document.
+          This is a multi-step process that you must complete entirely.
+          
+          Working directory: {{working_dir}}
+          
+          ---
+          
+          ### STEP 1: Read Current State
+          
+          Read the following files:
+          - Tracker: {{working_dir}}/state/tracker.json
+          - Structure: {{working_dir}}/state/structure.json
+          - Parsed outline: {{working_dir}}/state/parsed_outline.json
+          
+          The tracker contains:
+          - sections_completed: List of already-done sections
+          - sections_pending: Sections still to do
+          - generated_content: Map of section_id -> content
+          - content_summaries: Map of section_id -> summary
+          - definitions_established: List of definitions introduced so far
+          - examples_introduced: List of examples shown so far
+          
+          ---
+          
+          ### STEP 2: Check If Already Done
+          
+          If "{{section_id}}" is already in sections_completed, then this section was
+          previously generated (likely in a resumed run). In that case:
+          
+          Return ONLY this JSON and stop:
+          ```json
+          {"status": "skipped", "reason": "already_complete", "section_id": "{{section_id}}"}
+          ```
+          
+          Otherwise, continue with the remaining steps.
+          
+          ---
+          
+          ### STEP 3: Build Context
+          
+          From the structure.json file, look up section "{{section_id}}" to get:
+          - heading: The section heading
+          - depth: Nesting level (1=top, 2=child, etc.)
+          - parent_id: Parent section ID
+          - ancestor_ids: Full ancestor chain
+          - sibling_ids: Sibling sections
+          - prompt: Generation instruction
+          - source_files: Source file paths for this section
+          
+          Also from structure.json get:
+          - document_purpose
+          - full_outline
+          
+          **Build context by extracting from tracker:**
+          - Ancestor content: For each ancestor_id, get generated_content[id] or content_summaries[id]
+          - Sibling summaries: For completed siblings, get content_summaries[id]
+          - Established definitions: The full definitions_established list
+          - Introduced examples: The full examples_introduced list
+          
+          **Read source files:**
+          Source files are stored in: {{working_dir}}/sources/
+          Files are named with sanitized paths (/ replaced with _).
+          Read the source files listed for this section and extract relevant content.
+          
+          ---
+          
+          ### STEP 4: Generate Content
+          
+          Write the section content following these guidelines:
+          
+          **Depth-appropriate detail:**
+          - Level 1: High-level overview, introduce key concepts
+          - Level 2: More detail, explain mechanisms
+          - Level 3+: Deep dive, specific examples, implementation details
+          
+          **Accumulated context awareness:**
+          - Reference established definitions, DON'T redefine them
+          - Build upon introduced examples, DON'T repeat them
+          - Ensure content flows from ancestor sections
+          - Avoid overlap with sibling sections
+          
+          **Source integration:**
+          - Extract relevant information from source files
+          - Cite sources appropriately
+          - Don't hallucinate - only include what's in sources or logically derived
+          
+          **Format:**
+          - Start with the section heading (use appropriate # level for depth)
+          - Write clear, well-structured markdown
+          - Include code examples where appropriate
+          
+          ---
+          
+          ### STEP 5: Extract Metadata
+          
+          From the content you generated, identify:
+          
+          **New definitions:**
+          Terms or concepts you explained/defined that weren't already established.
+          Format: [{"term": "name", "definition": "brief definition"}, ...]
+          
+          **New examples:**
+          Concrete illustrations, code snippets, or scenarios you introduced.
+          Format: [{"name": "example name", "description": "what it demonstrates"}, ...]
+          
+          **Content summary:**
+          A 2-3 sentence summary of what this section covers.
+          
+          ---
+          
+          ### STEP 6: Update Tracker
+          
+          Update the tracker file at {{working_dir}}/state/tracker.json:
+          
+          1. Add "{{section_id}}" to sections_completed
+          2. Remove "{{section_id}}" from sections_pending
+          3. Store the generated content in generated_content["{{section_id}}"]
+          4. Store the summary in content_summaries["{{section_id}}"]
+          5. Append new definitions to definitions_established
+          6. Append new examples to examples_introduced
+          7. Set status = "generating"
+          8. Set current_stage = "generation"
+          9. Set last_completed_section = "{{section_id}}"
+          
+          Write the updated tracker back to the file.
+          
+          ---
+          
+          ### STEP 7: Save Checkpoint
+          
+          Copy the tracker to a checkpoint file:
+          cp {{working_dir}}/state/tracker.json {{working_dir}}/state/tracker_checkpoint.json
+          
+          ---
+          
+          ### STEP 8: Return Result
+          
+          Return a JSON object with the generation results:
+          
+          ```json
+          {
+            "status": "generated",
+            "section_id": "{{section_id}}",
+            "heading": "<the section heading>",
+            "depth": <depth level>,
+            "content": "<the full generated markdown content>",
+            "summary": "<2-3 sentence summary>",
+            "new_definitions": [{"term": "...", "definition": "..."}],
+            "new_examples": [{"name": "...", "description": "..."}],
+            "tracker_updated": true,
+            "checkpoint_saved": true
+          }
+          ```
+          
+          Execute all steps in order. The tracker updates are critical for subsequent
+          sections to have proper context.
+        output: "section_result"
+        parse_json: true
+        timeout: 600
+        retry:
+          max_attempts: 2
+          backoff: "exponential"
+          initial_delay: 3
+        collect: "all_section_results"
+
+      # ---- FINALIZE GENERATION ----
+      
+      - id: "set-generation-complete-status"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          timestamp=$(date -Iseconds)
+          jq --arg ts "$timestamp" '
+            .status = "generation_complete" |
+            .current_stage = "generation" |
+            .generation_completed_at = $ts
+          ' "{{working_dir}}/state/tracker.json" > "{{working_dir}}/state/tracker.json.tmp" \
+            && mv "{{working_dir}}/state/tracker.json.tmp" "{{working_dir}}/state/tracker.json"
+          
+          sections=$(jq '.sections_completed | length' "{{working_dir}}/state/tracker.json")
+          echo "Generation complete: $sections sections"
+        output: "generation_status_set"
+
+      - id: "assemble-document-from-tracker"
+        agent: "foundation:zen-architect"
+        mode: "ARCHITECT"
+        prompt: |
+          Assemble the complete document from all generated sections.
+          
+          Read the following files:
+          - Tracker: {{working_dir}}/state/tracker.json
+          - Structure: {{working_dir}}/state/structure.json
+          - Parsed outline: {{working_dir}}/state/parsed_outline.json
+          
+          The tracker contains:
+          - generated_content: Map of section_id to markdown content
+          - sections were generated in BFS order
+          
+          The parsed_outline contains document metadata.
+          
+          Tasks:
+          1. Extract content for each section from tracker's generated_content
+          2. Arrange sections in proper HIERARCHICAL order (not BFS order)
+          3. Add document title from metadata
+          4. Ensure heading levels are consistent
+          5. Add transitions between major sections if needed
+          
+          IMPORTANT: Write the complete assembled document directly to:
+          {{working_dir}}/versions/v0_generated.md
+          
+          After writing the file, return ONLY this JSON:
+          {"assembled": true, "output_file": "v0_generated.md", "sections_included": <count>}
+        output: "assemble_result"
+        parse_json: true
+        timeout: 300
+        retry:
+          max_attempts: 2
+          backoff: "exponential"
+          initial_delay: 3
+
+      - id: "save-v0-generated"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          version_file="{{working_dir}}/versions/v0_generated.md"
+          
+          # Verify file was written by agent
+          if [ ! -f "$version_file" ]; then
+            echo "ERROR: Agent failed to write v0_generated.md" >&2
+            exit 1
+          fi
+          
+          # Update tracker with version info
+          timestamp=$(date -Iseconds)
+          jq --arg ts "$timestamp" --arg file "{{working_dir}}/versions/v0_generated.md" '
+            .version_history += [{
+              "version": "v0_generated",
+              "stage": "generation",
+              "timestamp": $ts,
+              "file": $file
+            }]
+          ' "{{working_dir}}/state/tracker.json" > "{{working_dir}}/state/tracker.json.tmp" \
+            && mv "{{working_dir}}/state/tracker.json.tmp" "{{working_dir}}/state/tracker.json"
+          
+          bytes=$(wc -c < "$version_file")
+          lines=$(wc -l < "$version_file")
+          echo "Saved v0_generated: $bytes bytes, $lines lines"
+        output: "v0_saved"
+
+  # ==========================================================================
+  # STAGE 3: VALIDATION - STRUCTURAL INTEGRITY
+  # ==========================================================================
+  - name: "validation-structural"
+    approval:
+      required: true
+      prompt: |
+        GENERATION COMPLETE - v0_generated saved
+        
+        {{v0_saved}}
+        
+        Ready for STRUCTURAL INTEGRITY validation:
+        - All sections from outline present
+        - Headings match specification
+        - Hierarchy is correct
+        
+        Approve to run structural validation.
+      timeout: 0
+      default: "deny"
+    
+    steps:
+      - id: "check-structural-issues"
+        agent: "foundation:zen-architect"
+        mode: "REVIEW"
+        prompt: |
+          Check the document for STRUCTURAL issues.
+          
+          Read the document from: {{working_dir}}/versions/v0_generated.md
+          Read the expected structure from: {{working_dir}}/state/structure.json
+          
+          Check for:
+          1. Missing sections (in outline but not in document)
+          2. Wrong headings (text doesn't match outline)
+          3. Wrong hierarchy (section at wrong nesting level)
+          4. Extra sections (in document but not in outline)
+          
+          Return ONLY this JSON:
+          {
+            "issues": [
+              {
+                "type": "missing_section|wrong_heading|wrong_hierarchy|extra_section",
+                "section_id": "...",
+                "expected": "...",
+                "found": "...",
+                "severity": "critical|major|minor"
+              }
+            ],
+            "issue_count": <number>,
+            "passed": true/false
+          }
+        output: "structural_issues"
+        parse_json: true
+        timeout: 300
+
+      - id: "fix-structural-issues"
+        condition: "{{structural_issues.passed}} == false"
+        agent: "foundation:zen-architect"
+        mode: "ARCHITECT"
+        prompt: |
+          Fix STRUCTURAL issues in the document.
+          
+          Read the current document from: {{working_dir}}/versions/v0_generated.md
+          Read the expected structure from: {{working_dir}}/state/structure.json
+          
+          Issues to fix:
+          {{structural_issues.issues}}
+          
+          Fix all structural issues.
+          
+          IMPORTANT: Write the fixed document directly to:
+          {{working_dir}}/versions/v1_structural.md
+          
+          After writing the file, return ONLY this JSON:
+          {"fixed": true, "issues_fixed": <count>, "output_file": "v1_structural.md"}
+        output: "structural_fix_result"
+        parse_json: true
+        timeout: 600
+
+      - id: "save-v1-structural"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          version_file="{{working_dir}}/versions/v1_structural.md"
+          prev_version="{{working_dir}}/versions/v0_generated.md"
+          
+          # Three-way logic with size validation:
+          # 1. If validation passed → copy previous version
+          # 2. If failed AND agent wrote file → verify size, then use agent's version
+          # 3. If failed BUT agent didn't write (or truncated) → fallback to previous version
+          if [ "{{structural_issues.passed}}" = "true" ]; then
+            cp "$prev_version" "$version_file"
+            echo "Validation passed - copied previous version"
+          elif [ -f "$version_file" ]; then
+            # Verify agent wrote valid content (not truncated)
+            file_size=$(wc -c < "$version_file")
+            prev_size=$(wc -c < "$prev_version")
+            min_expected=$((prev_size / 2))
+            
+            if [ "$file_size" -lt "$min_expected" ]; then
+              echo "WARNING: Agent wrote suspiciously small file ($file_size < $min_expected bytes)" >&2
+              echo "Falling back to previous version" >&2
+              cp "$prev_version" "$version_file"
+            else
+              echo "Agent wrote fixed version ($file_size bytes)"
+            fi
+          else
+            echo "WARNING: Agent did not write fixed file, using previous version" >&2
+            cp "$prev_version" "$version_file"
+          fi
+          
+          # Update tracker
+          timestamp=$(date -Iseconds)
+          # Convert template value to JSON boolean (handles True/true/False/false)
+          if [ "{{structural_issues.passed}}" = "true" ] || [ "{{structural_issues.passed}}" = "True" ]; then
+            passed_json="true"
+          else
+            passed_json="false"
+          fi
+          jq --arg ts "$timestamp" --arg file "{{working_dir}}/versions/v1_structural.md" --argjson passed "$passed_json" '
+            .version_history += [{
+              "version": "v1_structural",
+              "stage": "validation-structural",
+              "timestamp": $ts,
+              "validation_passed": $passed,
+              "file": $file
+            }] |
+            .validation_results.structural = $passed
+          ' "{{working_dir}}/state/tracker.json" > "{{working_dir}}/state/tracker.json.tmp" \
+            && mv "{{working_dir}}/state/tracker.json.tmp" "{{working_dir}}/state/tracker.json"
+          
+          echo "Saved v1_structural (passed: $passed_json)"
+        output: "v1_saved"
+
+  # ==========================================================================
+  # STAGE 4: VALIDATION - ACCURACY
+  # ==========================================================================
+  - name: "validation-accuracy"
+    approval:
+      required: true
+      prompt: |
+        STRUCTURAL VALIDATION COMPLETE
+        
+        {{v1_saved}}
+        
+        Next: ACCURACY validation
+        - All claims traceable to sources
+        - No hallucinated content
+        
+        Approve to run accuracy validation.
+      timeout: 0
+      default: "deny"
+    
+    steps:
+      - id: "check-accuracy-issues"
+        agent: "foundation:zen-architect"
+        mode: "REVIEW"
+        prompt: |
+          Verify ACCURACY of the document against sources.
+          
+          Read the document from: {{working_dir}}/versions/v1_structural.md
+          Read sources from: {{working_dir}}/sources/
+          Read source manifest from: {{working_dir}}/state/source_manifest.json
+          
+          For each factual claim, code example, or technical detail:
+          1. Verify it can be traced to a source file
+          2. Check it accurately represents the source
+          3. Flag hallucinated or inaccurate content
+          
+          Return ONLY this JSON:
+          {
+            "issues": [
+              {
+                "location": "section description",
+                "claim": "the problematic content",
+                "problem": "hallucinated|inaccurate|unsupported",
+                "source_checked": "which source",
+                "severity": "critical|major|minor"
+              }
+            ],
+            "verified_claims": <number>,
+            "issue_count": <number>,
+            "passed": true/false
+          }
+        output: "accuracy_issues"
+        parse_json: true
+        timeout: 600
+
+      - id: "fix-accuracy-issues"
+        condition: "{{accuracy_issues.passed}} == false"
+        agent: "foundation:zen-architect"
+        mode: "ARCHITECT"
+        prompt: |
+          Fix ACCURACY issues in the document.
+          
+          Read the current document from: {{working_dir}}/versions/v1_structural.md
+          Read sources from: {{working_dir}}/sources/
+          
+          Issues to fix:
+          {{accuracy_issues.issues}}
+          
+          Remove or correct inaccurate content based on sources.
+          
+          IMPORTANT: Write the fixed document directly to:
+          {{working_dir}}/versions/v2_accuracy.md
+          
+          After writing the file, return ONLY this JSON:
+          {"fixed": true, "issues_fixed": <count>, "output_file": "v2_accuracy.md"}
+        output: "accuracy_fix_result"
+        parse_json: true
+        timeout: 900
+
+      - id: "save-v2-accuracy"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          version_file="{{working_dir}}/versions/v2_accuracy.md"
+          prev_version="{{working_dir}}/versions/v1_structural.md"
+          
+          # Three-way logic with size validation
+          if [ "{{accuracy_issues.passed}}" = "true" ]; then
+            cp "$prev_version" "$version_file"
+            echo "Validation passed - copied previous version"
+          elif [ -f "$version_file" ]; then
+            # Verify agent wrote valid content (not truncated)
+            file_size=$(wc -c < "$version_file")
+            prev_size=$(wc -c < "$prev_version")
+            min_expected=$((prev_size / 2))
+            
+            if [ "$file_size" -lt "$min_expected" ]; then
+              echo "WARNING: Agent wrote suspiciously small file ($file_size < $min_expected bytes)" >&2
+              echo "Falling back to previous version" >&2
+              cp "$prev_version" "$version_file"
+            else
+              echo "Agent wrote fixed version ($file_size bytes)"
+            fi
+          else
+            echo "WARNING: Agent did not write fixed file, using previous version" >&2
+            cp "$prev_version" "$version_file"
+          fi
+          
+          # Update tracker
+          timestamp=$(date -Iseconds)
+          # Convert template value to JSON boolean (handles True/true/False/false)
+          if [ "{{accuracy_issues.passed}}" = "true" ] || [ "{{accuracy_issues.passed}}" = "True" ]; then
+            passed_json="true"
+          else
+            passed_json="false"
+          fi
+          jq --arg ts "$timestamp" --arg file "{{working_dir}}/versions/v2_accuracy.md" --argjson passed "$passed_json" '
+            .version_history += [{
+              "version": "v2_accuracy",
+              "stage": "validation-accuracy",
+              "timestamp": $ts,
+              "validation_passed": $passed,
+              "file": $file
+            }] |
+            .validation_results.accuracy = $passed
+          ' "{{working_dir}}/state/tracker.json" > "{{working_dir}}/state/tracker.json.tmp" \
+            && mv "{{working_dir}}/state/tracker.json.tmp" "{{working_dir}}/state/tracker.json"
+          
+          echo "Saved v2_accuracy (passed: $passed_json)"
+        output: "v2_saved"
+
+  # ==========================================================================
+  # STAGE 5: VALIDATION - COMPLETENESS
+  # ==========================================================================
+  - name: "validation-completeness"
+    approval:
+      required: true
+      prompt: |
+        ACCURACY VALIDATION COMPLETE
+        
+        {{v2_saved}}
+        
+        Next: COMPLETENESS validation
+        - All prompts fully addressed
+        - No significant omissions
+        
+        Approve to run completeness validation.
+      timeout: 0
+      default: "deny"
+    
+    steps:
+      - id: "check-completeness-issues"
+        agent: "foundation:zen-architect"
+        mode: "REVIEW"
+        prompt: |
+          Check COMPLETENESS of each section.
+          
+          Read the document from: {{working_dir}}/versions/v2_accuracy.md
+          Read section details from: {{working_dir}}/state/structure.json
+          Read sources from: {{working_dir}}/sources/
+          
+          For each section verify:
+          1. Section prompt was fully addressed
+          2. Relevant source info was included
+          3. No significant concepts omitted
+          
+          Return ONLY this JSON:
+          {
+            "issues": [
+              {
+                "section_id": "...",
+                "omission": "what was left out",
+                "source": "where it should come from",
+                "importance": "critical|important|minor"
+              }
+            ],
+            "completeness_score": "<percentage>",
+            "issue_count": <number>,
+            "passed": true/false
+          }
+        output: "completeness_issues"
+        parse_json: true
+        timeout: 600
+
+      - id: "fix-completeness-issues"
+        condition: "{{completeness_issues.passed}} == false"
+        agent: "foundation:zen-architect"
+        mode: "ARCHITECT"
+        prompt: |
+          Fix COMPLETENESS issues by adding missing content.
+          
+          Read the current document from: {{working_dir}}/versions/v2_accuracy.md
+          Read sources from: {{working_dir}}/sources/
+          Read section prompts from: {{working_dir}}/state/structure.json
+          
+          Issues to fix:
+          {{completeness_issues.issues}}
+          
+          Add the missing content.
+          
+          IMPORTANT: Write the fixed document directly to:
+          {{working_dir}}/versions/v3_completeness.md
+          
+          After writing the file, return ONLY this JSON:
+          {"fixed": true, "issues_fixed": <count>, "output_file": "v3_completeness.md"}
+        output: "completeness_fix_result"
+        parse_json: true
+        timeout: 900
+
+      - id: "save-v3-completeness"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          version_file="{{working_dir}}/versions/v3_completeness.md"
+          prev_version="{{working_dir}}/versions/v2_accuracy.md"
+          
+          # Three-way logic with size validation
+          if [ "{{completeness_issues.passed}}" = "true" ]; then
+            cp "$prev_version" "$version_file"
+            echo "Validation passed - copied previous version"
+          elif [ -f "$version_file" ]; then
+            # Verify agent wrote valid content (not truncated)
+            file_size=$(wc -c < "$version_file")
+            prev_size=$(wc -c < "$prev_version")
+            min_expected=$((prev_size / 2))
+            
+            if [ "$file_size" -lt "$min_expected" ]; then
+              echo "WARNING: Agent wrote suspiciously small file ($file_size < $min_expected bytes)" >&2
+              echo "Falling back to previous version" >&2
+              cp "$prev_version" "$version_file"
+            else
+              echo "Agent wrote fixed version ($file_size bytes)"
+            fi
+          else
+            echo "WARNING: Agent did not write fixed file, using previous version" >&2
+            cp "$prev_version" "$version_file"
+          fi
+          
+          # Update tracker
+          timestamp=$(date -Iseconds)
+          # Convert template value to JSON boolean (handles True/true/False/false)
+          if [ "{{completeness_issues.passed}}" = "true" ] || [ "{{completeness_issues.passed}}" = "True" ]; then
+            passed_json="true"
+          else
+            passed_json="false"
+          fi
+          jq --arg ts "$timestamp" --arg file "{{working_dir}}/versions/v3_completeness.md" --argjson passed "$passed_json" '
+            .version_history += [{
+              "version": "v3_completeness",
+              "stage": "validation-completeness",
+              "timestamp": $ts,
+              "validation_passed": $passed,
+              "file": $file
+            }] |
+            .validation_results.completeness = $passed
+          ' "{{working_dir}}/state/tracker.json" > "{{working_dir}}/state/tracker.json.tmp" \
+            && mv "{{working_dir}}/state/tracker.json.tmp" "{{working_dir}}/state/tracker.json"
+          
+          echo "Saved v3_completeness (passed: $passed_json)"
+        output: "v3_saved"
+
+  # ==========================================================================
+  # STAGE 6: VALIDATION - INSTRUCTION FOLLOWING
+  # ==========================================================================
+  - name: "validation-instructions"
+    approval:
+      required: true
+      prompt: |
+        COMPLETENESS VALIDATION COMPLETE
+        
+        {{v3_saved}}
+        
+        Next: INSTRUCTION FOLLOWING validation
+        - Each section followed its prompt
+        - Templates and formats used correctly
+        
+        Approve to run instruction validation.
+      timeout: 0
+      default: "deny"
+    
+    steps:
+      - id: "check-instruction-issues"
+        agent: "foundation:zen-architect"
+        mode: "REVIEW"
+        prompt: |
+          Check each section followed its INSTRUCTION.
+          
+          Read the document from: {{working_dir}}/versions/v3_completeness.md
+          Read section details from: {{working_dir}}/state/structure.json
+          
+          Verify each section:
+          1. Followed its specific prompt/instruction
+          2. Used specified templates/formats
+          3. Contains required elements
+          
+          Return ONLY this JSON:
+          {
+            "issues": [
+              {
+                "section_id": "...",
+                "instruction": "what was asked",
+                "violation": "how it wasn't followed",
+                "severity": "major|minor"
+              }
+            ],
+            "sections_compliant": <number>,
+            "sections_total": <number>,
+            "issue_count": <number>,
+            "passed": true/false
+          }
+        output: "instruction_issues"
+        parse_json: true
+        timeout: 600
+
+      - id: "fix-instruction-issues"
+        condition: "{{instruction_issues.passed}} == false"
+        agent: "foundation:zen-architect"
+        mode: "ARCHITECT"
+        prompt: |
+          Fix sections to follow their INSTRUCTIONS.
+          
+          Read the current document from: {{working_dir}}/versions/v3_completeness.md
+          Read section details from: {{working_dir}}/state/structure.json
+          
+          Issues to fix:
+          {{instruction_issues.issues}}
+          
+          Revise sections to comply with instructions.
+          
+          IMPORTANT: Write the fixed document directly to:
+          {{working_dir}}/versions/v4_instructions.md
+          
+          After writing the file, return ONLY this JSON:
+          {"fixed": true, "issues_fixed": <count>, "output_file": "v4_instructions.md"}
+        output: "instruction_fix_result"
+        parse_json: true
+        timeout: 600
+
+      - id: "save-v4-instructions"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          version_file="{{working_dir}}/versions/v4_instructions.md"
+          prev_version="{{working_dir}}/versions/v3_completeness.md"
+          
+          # Three-way logic with size validation
+          if [ "{{instruction_issues.passed}}" = "true" ]; then
+            cp "$prev_version" "$version_file"
+            echo "Validation passed - copied previous version"
+          elif [ -f "$version_file" ]; then
+            # Verify agent wrote valid content (not truncated)
+            file_size=$(wc -c < "$version_file")
+            prev_size=$(wc -c < "$prev_version")
+            min_expected=$((prev_size / 2))
+            
+            if [ "$file_size" -lt "$min_expected" ]; then
+              echo "WARNING: Agent wrote suspiciously small file ($file_size < $min_expected bytes)" >&2
+              echo "Falling back to previous version" >&2
+              cp "$prev_version" "$version_file"
+            else
+              echo "Agent wrote fixed version ($file_size bytes)"
+            fi
+          else
+            echo "WARNING: Agent did not write fixed file, using previous version" >&2
+            cp "$prev_version" "$version_file"
+          fi
+          
+          # Update tracker
+          timestamp=$(date -Iseconds)
+          # Convert template value to JSON boolean (handles True/true/False/false)
+          if [ "{{instruction_issues.passed}}" = "true" ] || [ "{{instruction_issues.passed}}" = "True" ]; then
+            passed_json="true"
+          else
+            passed_json="false"
+          fi
+          jq --arg ts "$timestamp" --arg file "{{working_dir}}/versions/v4_instructions.md" --argjson passed "$passed_json" '
+            .version_history += [{
+              "version": "v4_instructions",
+              "stage": "validation-instructions",
+              "timestamp": $ts,
+              "validation_passed": $passed,
+              "file": $file
+            }] |
+            .validation_results.instructions = $passed
+          ' "{{working_dir}}/state/tracker.json" > "{{working_dir}}/state/tracker.json.tmp" \
+            && mv "{{working_dir}}/state/tracker.json.tmp" "{{working_dir}}/state/tracker.json"
+          
+          echo "Saved v4_instructions (passed: $passed_json)"
+        output: "v4_saved"
+
+  # ==========================================================================
+  # STAGE 7: VALIDATION - DEPTH APPROPRIATE
+  # ==========================================================================
+  - name: "validation-depth"
+    approval:
+      required: true
+      prompt: |
+        INSTRUCTION VALIDATION COMPLETE
+        
+        {{v4_saved}}
+        
+        Next: DEPTH APPROPRIATE validation
+        - Level 1 sections broad
+        - Deeper sections detailed
+        
+        Approve to run depth validation.
+      timeout: 0
+      default: "deny"
+    
+    steps:
+      - id: "check-depth-issues"
+        agent: "foundation:zen-architect"
+        mode: "REVIEW"
+        prompt: |
+          Check DEPTH appropriateness of each section.
+          
+          Read the document from: {{working_dir}}/versions/v4_instructions.md
+          Read section details and levels from: {{working_dir}}/state/structure.json
+          
+          Verify:
+          - Level 1: High-level overview
+          - Level 2: More detail
+          - Level 3+: Deep dive, specific examples
+          
+          Check for:
+          - Shallow leaf sections (deep nesting but little content)
+          - Overly-deep intro sections (too much detail at level 1)
+          
+          Return ONLY this JSON:
+          {
+            "issues": [
+              {
+                "section_id": "...",
+                "depth_level": <number>,
+                "problem": "too_shallow|too_deep|inconsistent",
+                "description": "..."
+              }
+            ],
+            "depth_distribution": {...},
+            "issue_count": <number>,
+            "passed": true/false
+          }
+        output: "depth_issues"
+        parse_json: true
+        timeout: 600
+
+      - id: "fix-depth-issues"
+        condition: "{{depth_issues.passed}} == false"
+        agent: "foundation:zen-architect"
+        mode: "ARCHITECT"
+        prompt: |
+          Fix DEPTH issues in the document.
+          
+          Read the current document from: {{working_dir}}/versions/v4_instructions.md
+          
+          Issues to fix:
+          {{depth_issues.issues}}
+          
+          Expand shallow sections or summarize deep ones.
+          
+          IMPORTANT: Write the fixed document directly to:
+          {{working_dir}}/versions/v5_depth.md
+          
+          After writing the file, return ONLY this JSON:
+          {"fixed": true, "issues_fixed": <count>, "output_file": "v5_depth.md"}
+        output: "depth_fix_result"
+        parse_json: true
+        timeout: 600
+
+      - id: "save-v5-depth"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          version_file="{{working_dir}}/versions/v5_depth.md"
+          prev_version="{{working_dir}}/versions/v4_instructions.md"
+          
+          # Three-way logic with size validation
+          if [ "{{depth_issues.passed}}" = "true" ]; then
+            cp "$prev_version" "$version_file"
+            echo "Validation passed - copied previous version"
+          elif [ -f "$version_file" ]; then
+            # Verify agent wrote valid content (not truncated)
+            file_size=$(wc -c < "$version_file")
+            prev_size=$(wc -c < "$prev_version")
+            min_expected=$((prev_size / 2))
+            
+            if [ "$file_size" -lt "$min_expected" ]; then
+              echo "WARNING: Agent wrote suspiciously small file ($file_size < $min_expected bytes)" >&2
+              echo "Falling back to previous version" >&2
+              cp "$prev_version" "$version_file"
+            else
+              echo "Agent wrote fixed version ($file_size bytes)"
+            fi
+          else
+            echo "WARNING: Agent did not write fixed file, using previous version" >&2
+            cp "$prev_version" "$version_file"
+          fi
+          
+          # Update tracker
+          timestamp=$(date -Iseconds)
+          # Convert template value to JSON boolean (handles True/true/False/false)
+          if [ "{{depth_issues.passed}}" = "true" ] || [ "{{depth_issues.passed}}" = "True" ]; then
+            passed_json="true"
+          else
+            passed_json="false"
+          fi
+          jq --arg ts "$timestamp" --arg file "{{working_dir}}/versions/v5_depth.md" --argjson passed "$passed_json" '
+            .version_history += [{
+              "version": "v5_depth",
+              "stage": "validation-depth",
+              "timestamp": $ts,
+              "validation_passed": $passed,
+              "file": $file
+            }] |
+            .validation_results.depth = $passed
+          ' "{{working_dir}}/state/tracker.json" > "{{working_dir}}/state/tracker.json.tmp" \
+            && mv "{{working_dir}}/state/tracker.json.tmp" "{{working_dir}}/state/tracker.json"
+          
+          echo "Saved v5_depth (passed: $passed_json)"
+        output: "v5_saved"
+
+  # ==========================================================================
+  # STAGE 8: VALIDATION - COHERENCE
+  # ==========================================================================
+  - name: "validation-coherence"
+    approval:
+      required: true
+      prompt: |
+        DEPTH VALIDATION COMPLETE
+        
+        {{v5_saved}}
+        
+        Next: COHERENCE validation
+        - Document flows well
+        - No unnecessary duplication
+        
+        Approve to run coherence validation.
+      timeout: 0
+      default: "deny"
+    
+    steps:
+      - id: "check-coherence-issues"
+        agent: "foundation:zen-architect"
+        mode: "REVIEW"
+        prompt: |
+          Check COHERENCE of the document.
+          
+          Read the document from: {{working_dir}}/versions/v5_depth.md
+          
+          Check for:
+          1. Flow - does it read well start to finish?
+          2. Transitions - smooth between sections?
+          3. Duplication - same content repeated?
+          4. Gaps - missing logical bridges?
+          5. Order - information builds logically?
+          
+          Return ONLY this JSON:
+          {
+            "issues": [
+              {
+                "type": "poor_flow|missing_transition|duplication|gap|bad_order",
+                "location": "...",
+                "description": "..."
+              }
+            ],
+            "coherence_score": "<1-10>",
+            "issue_count": <number>,
+            "passed": true/false
+          }
+        output: "coherence_issues"
+        parse_json: true
+        timeout: 600
+
+      - id: "fix-coherence-issues"
+        condition: "{{coherence_issues.passed}} == false"
+        agent: "foundation:zen-architect"
+        mode: "ARCHITECT"
+        prompt: |
+          Fix COHERENCE issues in the document.
+          
+          Read the current document from: {{working_dir}}/versions/v5_depth.md
+          
+          Issues to fix:
+          {{coherence_issues.issues}}
+          
+          Improve flow, add transitions, remove duplication.
+          
+          IMPORTANT: Write the fixed document directly to:
+          {{working_dir}}/versions/v6_coherence.md
+          
+          After writing the file, return ONLY this JSON:
+          {"fixed": true, "issues_fixed": <count>, "output_file": "v6_coherence.md"}
+        output: "coherence_fix_result"
+        parse_json: true
+        timeout: 600
+
+      - id: "save-v6-coherence"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          version_file="{{working_dir}}/versions/v6_coherence.md"
+          prev_version="{{working_dir}}/versions/v5_depth.md"
+          
+          # Three-way logic with size validation
+          if [ "{{coherence_issues.passed}}" = "true" ]; then
+            cp "$prev_version" "$version_file"
+            echo "Validation passed - copied previous version"
+          elif [ -f "$version_file" ]; then
+            # Verify agent wrote valid content (not truncated)
+            file_size=$(wc -c < "$version_file")
+            prev_size=$(wc -c < "$prev_version")
+            min_expected=$((prev_size / 2))
+            
+            if [ "$file_size" -lt "$min_expected" ]; then
+              echo "WARNING: Agent wrote suspiciously small file ($file_size < $min_expected bytes)" >&2
+              echo "Falling back to previous version" >&2
+              cp "$prev_version" "$version_file"
+            else
+              echo "Agent wrote fixed version ($file_size bytes)"
+            fi
+          else
+            echo "WARNING: Agent did not write fixed file, using previous version" >&2
+            cp "$prev_version" "$version_file"
+          fi
+          
+          # Update tracker
+          timestamp=$(date -Iseconds)
+          # Convert template value to JSON boolean (handles True/true/False/false)
+          if [ "{{coherence_issues.passed}}" = "true" ] || [ "{{coherence_issues.passed}}" = "True" ]; then
+            passed_json="true"
+          else
+            passed_json="false"
+          fi
+          jq --arg ts "$timestamp" --arg file "{{working_dir}}/versions/v6_coherence.md" --argjson passed "$passed_json" '
+            .version_history += [{
+              "version": "v6_coherence",
+              "stage": "validation-coherence",
+              "timestamp": $ts,
+              "validation_passed": $passed,
+              "file": $file
+            }] |
+            .validation_results.coherence = $passed
+          ' "{{working_dir}}/state/tracker.json" > "{{working_dir}}/state/tracker.json.tmp" \
+            && mv "{{working_dir}}/state/tracker.json.tmp" "{{working_dir}}/state/tracker.json"
+          
+          echo "Saved v6_coherence (passed: $passed_json)"
+        output: "v6_saved"
+
+  # ==========================================================================
+  # STAGE 9: VALIDATION - CROSS-REFERENCES
+  # ==========================================================================
+  - name: "validation-crossrefs"
+    approval:
+      required: true
+      prompt: |
+        COHERENCE VALIDATION COMPLETE
+        
+        {{v6_saved}}
+        
+        Next: CROSS-REFERENCE validation
+        - Internal references are accurate
+        - Referenced sections exist
+        
+        Approve to run cross-reference validation.
+      timeout: 0
+      default: "deny"
+    
+    steps:
+      - id: "check-crossref-issues"
+        agent: "foundation:zen-architect"
+        mode: "REVIEW"
+        prompt: |
+          Check CROSS-REFERENCES in the document.
+          
+          Read the document from: {{working_dir}}/versions/v6_coherence.md
+          
+          Find all internal references:
+          - "as described in Section X"
+          - "see the Y section"
+          - "mentioned above/below"
+          - Links to other sections
+          
+          For each, verify:
+          1. Referenced section exists
+          2. It actually says what's claimed
+          
+          Return ONLY this JSON:
+          {
+            "issues": [
+              {
+                "reference_text": "...",
+                "location": "section containing reference",
+                "target_section": "referenced section",
+                "problem": "section_not_found|content_mismatch|ambiguous"
+              }
+            ],
+            "references_found": <number>,
+            "references_valid": <number>,
+            "issue_count": <number>,
+            "passed": true/false
+          }
+        output: "crossref_issues"
+        parse_json: true
+        timeout: 600
+
+      - id: "fix-crossref-issues"
+        condition: "{{crossref_issues.passed}} == false"
+        agent: "foundation:zen-architect"
+        mode: "ARCHITECT"
+        prompt: |
+          Fix CROSS-REFERENCE issues in the document.
+          
+          Read the current document from: {{working_dir}}/versions/v6_coherence.md
+          
+          Issues to fix:
+          {{crossref_issues.issues}}
+          
+          Correct references or update content to match.
+          
+          IMPORTANT: Write the fixed document directly to:
+          {{working_dir}}/versions/v7_crossrefs.md
+          
+          After writing the file, return ONLY this JSON:
+          {"fixed": true, "issues_fixed": <count>, "output_file": "v7_crossrefs.md"}
+        output: "crossref_fix_result"
+        parse_json: true
+        timeout: 600
+
+      - id: "save-v7-crossrefs"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          version_file="{{working_dir}}/versions/v7_crossrefs.md"
+          prev_version="{{working_dir}}/versions/v6_coherence.md"
+          
+          # Three-way logic with size validation
+          if [ "{{crossref_issues.passed}}" = "true" ]; then
+            cp "$prev_version" "$version_file"
+            echo "Validation passed - copied previous version"
+          elif [ -f "$version_file" ]; then
+            # Verify agent wrote valid content (not truncated)
+            file_size=$(wc -c < "$version_file")
+            prev_size=$(wc -c < "$prev_version")
+            min_expected=$((prev_size / 2))
+            
+            if [ "$file_size" -lt "$min_expected" ]; then
+              echo "WARNING: Agent wrote suspiciously small file ($file_size < $min_expected bytes)" >&2
+              echo "Falling back to previous version" >&2
+              cp "$prev_version" "$version_file"
+            else
+              echo "Agent wrote fixed version ($file_size bytes)"
+            fi
+          else
+            echo "WARNING: Agent did not write fixed file, using previous version" >&2
+            cp "$prev_version" "$version_file"
+          fi
+          
+          # Update tracker
+          timestamp=$(date -Iseconds)
+          # Convert template value to JSON boolean (handles True/true/False/false)
+          if [ "{{crossref_issues.passed}}" = "true" ] || [ "{{crossref_issues.passed}}" = "True" ]; then
+            passed_json="true"
+          else
+            passed_json="false"
+          fi
+          jq --arg ts "$timestamp" --arg file "{{working_dir}}/versions/v7_crossrefs.md" --argjson passed "$passed_json" '
+            .version_history += [{
+              "version": "v7_crossrefs",
+              "stage": "validation-crossrefs",
+              "timestamp": $ts,
+              "validation_passed": $passed,
+              "file": $file
+            }] |
+            .validation_results.crossrefs = $passed
+          ' "{{working_dir}}/state/tracker.json" > "{{working_dir}}/state/tracker.json.tmp" \
+            && mv "{{working_dir}}/state/tracker.json.tmp" "{{working_dir}}/state/tracker.json"
+          
+          echo "Saved v7_crossrefs (passed: $passed_json)"
+        output: "v7_saved"
+
+  # ==========================================================================
+  # STAGE 10: VALIDATION - CONSISTENCY
+  # ==========================================================================
+  - name: "validation-consistency"
+    approval:
+      required: true
+      prompt: |
+        CROSS-REFERENCE VALIDATION COMPLETE
+        
+        {{v7_saved}}
+        
+        Next: CONSISTENCY validation
+        - Terminology uniform
+        - Style consistent
+        - Formatting uniform
+        
+        Approve to run consistency validation.
+      timeout: 0
+      default: "deny"
+    
+    steps:
+      - id: "check-consistency-issues"
+        agent: "foundation:zen-architect"
+        mode: "REVIEW"
+        prompt: |
+          Check CONSISTENCY throughout the document.
+          
+          Read the document from: {{working_dir}}/versions/v7_crossrefs.md
+          
+          Check for:
+          1. Terminology - same concepts same names
+          2. Style - consistent voice
+          3. Formatting - code blocks, lists, headings uniform
+          4. Naming - capitalization of proper nouns
+          5. Abbreviations - defined and used consistently
+          
+          Return ONLY this JSON:
+          {
+            "issues": [
+              {
+                "type": "terminology|style|formatting|naming|abbreviation",
+                "examples": ["instance 1", "instance 2"],
+                "inconsistency": "what varies",
+                "suggested_standard": "what it should be"
+              }
+            ],
+            "issue_count": <number>,
+            "passed": true/false
+          }
+        output: "consistency_issues"
+        parse_json: true
+        timeout: 600
+
+      - id: "fix-consistency-issues"
+        condition: "{{consistency_issues.passed}} == false"
+        agent: "foundation:zen-architect"
+        mode: "ARCHITECT"
+        prompt: |
+          Fix CONSISTENCY issues in the document.
+          
+          Read the current document from: {{working_dir}}/versions/v7_crossrefs.md
+          
+          Issues to fix:
+          {{consistency_issues.issues}}
+          
+          Apply consistent standards throughout.
+          
+          IMPORTANT: Write the fixed document directly to:
+          {{working_dir}}/versions/v8_consistency.md
+          
+          After writing the file, return ONLY this JSON:
+          {"fixed": true, "issues_fixed": <count>, "output_file": "v8_consistency.md"}
+        output: "consistency_fix_result"
+        parse_json: true
+        timeout: 600
+
+      - id: "save-v8-consistency"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          version_file="{{working_dir}}/versions/v8_consistency.md"
+          prev_version="{{working_dir}}/versions/v7_crossrefs.md"
+          
+          # Three-way logic with size validation
+          if [ "{{consistency_issues.passed}}" = "true" ]; then
+            cp "$prev_version" "$version_file"
+            echo "Validation passed - copied previous version"
+          elif [ -f "$version_file" ]; then
+            # Verify agent wrote valid content (not truncated)
+            file_size=$(wc -c < "$version_file")
+            prev_size=$(wc -c < "$prev_version")
+            min_expected=$((prev_size / 2))
+            
+            if [ "$file_size" -lt "$min_expected" ]; then
+              echo "WARNING: Agent wrote suspiciously small file ($file_size < $min_expected bytes)" >&2
+              echo "Falling back to previous version" >&2
+              cp "$prev_version" "$version_file"
+            else
+              echo "Agent wrote fixed version ($file_size bytes)"
+            fi
+          else
+            echo "WARNING: Agent did not write fixed file, using previous version" >&2
+            cp "$prev_version" "$version_file"
+          fi
+          
+          # Update tracker
+          timestamp=$(date -Iseconds)
+          # Convert template value to JSON boolean (handles True/true/False/false)
+          if [ "{{consistency_issues.passed}}" = "true" ] || [ "{{consistency_issues.passed}}" = "True" ]; then
+            passed_json="true"
+          else
+            passed_json="false"
+          fi
+          jq --arg ts "$timestamp" --arg file "{{working_dir}}/versions/v8_consistency.md" --argjson passed "$passed_json" '
+            .version_history += [{
+              "version": "v8_consistency",
+              "stage": "validation-consistency",
+              "timestamp": $ts,
+              "validation_passed": $passed,
+              "file": $file
+            }] |
+            .validation_results.consistency = $passed
+          ' "{{working_dir}}/state/tracker.json" > "{{working_dir}}/state/tracker.json.tmp" \
+            && mv "{{working_dir}}/state/tracker.json.tmp" "{{working_dir}}/state/tracker.json"
+          
+          echo "Saved v8_consistency (passed: $passed_json)"
+        output: "v8_saved"
+
+  # ==========================================================================
+  # STAGE 11: VALIDATION - TONE
+  # ==========================================================================
+  - name: "validation-tone"
+    approval:
+      required: true
+      prompt: |
+        CONSISTENCY VALIDATION COMPLETE
+        
+        {{v8_saved}}
+        
+        Final validation: TONE ALIGNMENT
+        - Matches intended audience
+        - Matches document purpose
+        
+        Approve to run tone validation.
+      timeout: 0
+      default: "deny"
+    
+    steps:
+      - id: "check-tone-issues"
+        agent: "foundation:zen-architect"
+        mode: "REVIEW"
+        prompt: |
+          Check TONE alignment with audience/purpose.
+          
+          Read the document from: {{working_dir}}/versions/v8_consistency.md
+          Read metadata from: {{working_dir}}/state/parsed_outline.json
+          (Look at the "meta" field for audience, purpose, style info)
+          
+          Check:
+          1. Audience fit - language appropriate?
+          2. Purpose fit - tone matches intent?
+          3. Style compliance - follows guidelines?
+          4. Consistency - tone uniform throughout?
+          
+          Return ONLY this JSON:
+          {
+            "issues": [
+              {
+                "section": "...",
+                "problem": "too_technical|too_casual|too_formal|inconsistent",
+                "example": "example text",
+                "suggested_tone": "what it should be"
+              }
+            ],
+            "tone_assessment": {
+              "formality": "<1-5>",
+              "technicality": "<1-5>",
+              "audience_fit": "<1-5>"
+            },
+            "issue_count": <number>,
+            "passed": true/false
+          }
+        output: "tone_issues"
+        parse_json: true
+        timeout: 600
+
+      - id: "fix-tone-issues"
+        condition: "{{tone_issues.passed}} == false"
+        agent: "foundation:zen-architect"
+        mode: "ARCHITECT"
+        prompt: |
+          Fix TONE issues in the document.
+          
+          Read the current document from: {{working_dir}}/versions/v8_consistency.md
+          Read metadata from: {{working_dir}}/state/parsed_outline.json
+          
+          Issues to fix:
+          {{tone_issues.issues}}
+          
+          Adjust tone to match audience and purpose.
+          
+          IMPORTANT: Write the fixed document directly to:
+          {{working_dir}}/versions/v9_tone.md
+          
+          After writing the file, return ONLY this JSON:
+          {"fixed": true, "issues_fixed": <count>, "output_file": "v9_tone.md"}
+        output: "tone_fix_result"
+        parse_json: true
+        timeout: 600
+
+      - id: "save-v9-tone"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          version_file="{{working_dir}}/versions/v9_tone.md"
+          prev_version="{{working_dir}}/versions/v8_consistency.md"
+          
+          # Three-way logic with size validation
+          if [ "{{tone_issues.passed}}" = "true" ]; then
+            cp "$prev_version" "$version_file"
+            echo "Validation passed - copied previous version"
+          elif [ -f "$version_file" ]; then
+            # Verify agent wrote valid content (not truncated)
+            file_size=$(wc -c < "$version_file")
+            prev_size=$(wc -c < "$prev_version")
+            min_expected=$((prev_size / 2))
+            
+            if [ "$file_size" -lt "$min_expected" ]; then
+              echo "WARNING: Agent wrote suspiciously small file ($file_size < $min_expected bytes)" >&2
+              echo "Falling back to previous version" >&2
+              cp "$prev_version" "$version_file"
+            else
+              echo "Agent wrote fixed version ($file_size bytes)"
+            fi
+          else
+            echo "WARNING: Agent did not write fixed file, using previous version" >&2
+            cp "$prev_version" "$version_file"
+          fi
+          
+          # Update tracker
+          timestamp=$(date -Iseconds)
+          # Convert template value to JSON boolean (handles True/true/False/false)
+          if [ "{{tone_issues.passed}}" = "true" ] || [ "{{tone_issues.passed}}" = "True" ]; then
+            passed_json="true"
+          else
+            passed_json="false"
+          fi
+          jq --arg ts "$timestamp" --arg file "{{working_dir}}/versions/v9_tone.md" --argjson passed "$passed_json" '
+            .version_history += [{
+              "version": "v9_tone",
+              "stage": "validation-tone",
+              "timestamp": $ts,
+              "validation_passed": $passed,
+              "file": $file
+            }] |
+            .validation_results.tone = $passed
+          ' "{{working_dir}}/state/tracker.json" > "{{working_dir}}/state/tracker.json.tmp" \
+            && mv "{{working_dir}}/state/tracker.json.tmp" "{{working_dir}}/state/tracker.json"
+          
+          echo "Saved v9_tone (passed: $passed_json)"
+        output: "v9_saved"
+
+  # ==========================================================================
+  # STAGE 12: FINALIZATION
+  # ==========================================================================
+  - name: "finalization"
+    approval:
+      required: true
+      prompt: |
+        ALL VALIDATIONS COMPLETE
+        
+        {{v9_saved}}
+        
+        Ready to finalize:
+        1. Final verification pass
+        2. Save to output path
+        3. Generate summary report
+        
+        Approve to finalize and save.
+      timeout: 0
+      default: "deny"
+    
+    steps:
+      # ---- FINAL VERIFICATION ----
+      
+      - id: "final-quality-check"
+        agent: "foundation:zen-architect"
+        mode: "REVIEW"
+        prompt: |
+          FINAL VERIFICATION of the document.
+          
+          Read the document from: {{working_dir}}/versions/v9_tone.md
+          
+          Do a complete read-through and verify:
+          1. All validations addressed
+          2. Ready for intended audience
+          3. No obvious errors remain
+          
+          Return ONLY this JSON:
+          {
+            "ready": true/false,
+            "final_issues": ["any remaining issues"],
+            "quality_assessment": {
+              "overall_score": "<1-10>",
+              "strengths": ["..."],
+              "areas_for_improvement": ["..."]
+            },
+            "recommendation": "publish|needs_more_work|major_revision_needed"
+          }
+        output: "final_check"
+        parse_json: true
+        timeout: 300
+
+      # ---- DETERMINE OUTPUT PATH ----
+      
+      - id: "determine-output-path"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          # Output without trailing newline for clean template substitution
+          if [ -n "{{output_path}}" ]; then
+            # User specified explicit output path
+            printf '%s' "{{output_path}}"
+          else
+            # Default: temp/<filename> for easy side-by-side comparison
+            # Extract just the filename from the outline's target path
+            target_path=$(jq -r '.document.output // "output.md"' "{{working_dir}}/state/parsed_outline.json")
+            filename=$(basename "$target_path")
+            printf '%s' "temp/$filename"
+          fi
+        output: "final_output_path"
+
+      # ---- SAVE FINAL DOCUMENT ----
+      
+      - id: "create-output-directory"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          mkdir -p "$(dirname "{{final_output_path}}")"
+          echo "Output directory ready"
+        output: "output_dir_ready"
+
+      - id: "save-final-document"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          # Copy from v9_tone to final output path (no template variable for content)
+          cp "{{working_dir}}/versions/v9_tone.md" "{{final_output_path}}"
+          
+          echo "Final document saved to {{final_output_path}}"
+        output: "final_doc_saved"
+
+      - id: "save-v-final-version"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          cp "{{final_output_path}}" "{{working_dir}}/versions/v_final.md"
+          echo "v_final saved to {{working_dir}}/versions/v_final.md"
+        output: "v_final_saved"
+
+      - id: "update-tracker-complete"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          timestamp=$(date -Iseconds)
+          jq --arg ts "$timestamp" \
+             --arg output_path "{{final_output_path}}" \
+             --arg file "{{working_dir}}/versions/v_final.md" '
+            .status = "complete" |
+            .completed_at = $ts |
+            .current_stage = "finalization" |
+            .output_path = $output_path |
+            .version_history += [{
+              "version": "v_final",
+              "stage": "finalization",
+              "timestamp": $ts,
+              "file": $file,
+              "output_path": $output_path
+            }]
+          ' "{{working_dir}}/state/tracker.json" > "{{working_dir}}/state/tracker.json.tmp" \
+            && mv "{{working_dir}}/state/tracker.json.tmp" "{{working_dir}}/state/tracker.json"
+          
+          echo "Tracker updated: status=complete"
+        output: "tracker_complete"
+
+      # ---- GENERATE REPORT ----
+      
+      - id: "read-final-tracker"
+        type: "bash"
+        command: |
+          cat "{{working_dir}}/state/tracker.json"
+        output: "final_tracker"
+        parse_json: true
+
+      - id: "generate-summary-report"
+        agent: "foundation:zen-architect"
+        mode: "ANALYZE"
+        prompt: |
+          Generate a summary report of the document generation process.
+          
+          Read the following for context:
+          - Tracker: {{working_dir}}/state/tracker.json
+          - Parsed outline: {{working_dir}}/state/parsed_outline.json
+          
+          Final quality check results:
+          - Ready: {{final_check.ready}}
+          - Recommendation: {{final_check.recommendation}}
+          - Score: {{final_check.quality_assessment.overall_score}}
+          
+          Output path: {{final_output_path}}
+          
+          Include:
+          
+          1. **Document Generated**
+             - Title, sections, output path
+          
+          2. **Process Summary**
+             - Time taken
+             - Sources fetched
+             - Stages completed
+          
+          3. **Validation Results**
+             - Which passed/failed
+             - Issues found and fixed
+          
+          4. **Accumulated State**
+             - Definitions established
+             - Examples introduced
+          
+          5. **Version History**
+             - All saved versions
+          
+          6. **Quality Assessment**
+             - Overall score
+             - Strengths and improvements
+          
+          IMPORTANT: Write the report directly to:
+          {{working_dir}}/generation_report.md
+          
+          After writing the file, return ONLY this JSON:
+          {"report_saved": true, "output_file": "generation_report.md"}
+        output: "report_result"
+        parse_json: true
+        timeout: 180
+
+      - id: "verify-summary-report"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          if [ ! -f "{{working_dir}}/generation_report.md" ]; then
+            echo "ERROR: Agent failed to write generation_report.md" >&2
+            exit 1
+          fi
+          
+          echo "Summary report saved to {{working_dir}}/generation_report.md"
+        output: "report_saved"
+
+      - id: "print-completion-summary"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          
+          echo ""
+          echo "=== DOCUMENT GENERATION COMPLETE ==="
+          echo ""
+          echo "Output: {{final_output_path}}"
+          echo "Report: {{working_dir}}/generation_report.md"
+          echo ""
+          
+          jq -r '"Sections: \(.sections_completed | length)\nVersions: \(.version_history | length)\nStarted: \(.started_at // "unknown")\nCompleted: \(.completed_at // "unknown")"' \
+            "{{working_dir}}/state/tracker.json"
+          
+          echo ""
+          cat "{{working_dir}}/generation_report.md"
+        output: "completion_message"
+
+# ==========================================================================
+# OUTPUT SUMMARY
+# ==========================================================================
+#
+# After successful execution:
+#
+# Working directory ({{working_dir}}):
+#   state/
+#     outline.json              - Raw outline (copied from input)
+#     parsed_outline.json       - Parsed structure from agent
+#     source_manifest.json      - Sources to fetch
+#     structure.json            - Section relationships, BFS order
+#     sources_result.json       - Result of source fetching
+#     tracker.json              - Full state (supports resumability)
+#     tracker_checkpoint.json   - Checkpoint after each section
+#     started_at                - Start timestamp
+#   sources/
+#     <files>                   - Fetched source files
+#   versions/
+#     v0_generated.md           - Initial generation
+#     v1_structural.md          - After structural validation
+#     v2_accuracy.md            - After accuracy validation
+#     v3_completeness.md
+#     v4_instructions.md
+#     v5_depth.md
+#     v6_coherence.md
+#     v7_crossrefs.md
+#     v8_consistency.md
+#     v9_tone.md
+#     v_final.md                - Final version
+#   generation_report.md        - Summary report
+#
+# Output:
+#   <output_path> or <outline.document.output> - Final document
+#
+# Resumability:
+#   If interrupted, re-run same command. The recipe will:
+#   - Detect existing tracker.json
+#   - Skip completed sections
+#   - Resume from last incomplete section
+#
+# Data Flow (File-Based):
+#   - Complex JSON is saved to files by agent steps
+#   - Bash steps read JSON from files, not template variables
+#   - Simple scalars (paths, timestamps, IDs) still use templates
+#   - Document content: Agents write directly, bash uses file copy
+#   - Three-way fallback in save steps handles unreliable agent writes
+#
+# ==========================================================================

@@ -1,0 +1,2277 @@
+# =============================================================================
+# Outline Generation from Existing Document
+# =============================================================================
+# 
+# This recipe generates structured outlines from existing documents by:
+# 1. Analyzing governance rules and ecosystem structure
+# 2. Identifying source documents through multi-pass analysis
+# 3. Classifying documents as "synthesized" or "original"
+# 4. Generating appropriate prompting strategies
+# 5. Creating structured outline files (YAML and JSON)
+#
+# Usage:
+#   amplifier recipes execute outline-generation-from-document.yaml \
+#     --context '{"target_repo_url": "https://github.com/myorg/myrepo", "target_document_path": "docs/DESIGN.md"}'
+#
+# Typical runtime: 15-30 minutes depending on document complexity
+# 
+# Requirements:
+#   - foundation bundle (provides zen-architect, explorer agents)
+#   - Git CLI installed and configured
+#   - Python 3 with pyyaml installed
+#   - Write access to working directory
+#
+# =============================================================================
+
+name: "outline-generation-from-document"
+description: "Generate structured outlines from existing documents with source identification, directionality detection, and classification"
+version: "1.6.1"
+author: "Recipe Author Agent"
+tags: ["documentation", "outline", "analysis", "source-identification", "directionality", "authority-detection"]
+
+# =============================================================================
+# CHANGELOG
+# =============================================================================
+# v1.6.1 (2026-01-15):
+#   - BUGFIX: JSON parsing failures when LLM outputs unescaped quotes in prompt strings
+#     * Root cause: Code examples inside prompts had quotes like "~/repos/foo" that
+#       weren't escaped, causing JSON parse errors at position ~11466
+#     * Fix: Added lookahead heuristic in clean_json_control_chars() to detect quotes
+#       that are data (followed by non-structural chars) vs. string terminators
+#   - BUGFIX: Code block comments incorrectly parsed as document headings
+#     * Root cause: Heading extractor didn't track fenced code block state
+#     * Fix: Added in_code_block tracking to skip # lines inside ``` blocks
+#     * Result: 14 correct sections (was 23 with 9 bogus bash/yaml comment "headings")
+#   - BUGFIX: Classification logic too permissive for "original" documents
+#     * Root cause: is_likely_original allowed docs with outbound refs if authority >= 3
+#     * Fix: Added is_likely_synthesized signal; stricter rules (only 0-1 refs = original)
+#     * Updated agent prompt to check is_likely_synthesized FIRST
+#   - IMPROVEMENT: Better JSON extraction with 3 fallback methods and diagnostic output
+#     * Method 1: Regex with closing backticks (greedy match)
+#     * Method 2: Find ```json anywhere and extract (handles LLM preamble text)
+#     * Method 3: Find first { and extract JSON object directly
+#     * All methods now log actual JSONDecodeError with position context
+#
+# v1.6.0 (2026-01-14):
+#   - CRITICAL FIX: Added OUTBOUND CITATION CHECK as PRIMARY classification signal
+#   - ROOT CAUSE: v1.5.0 still misclassified ORIGINAL docs as "synthesized" because it
+#     relied on content overlap detection. Just because doc A shares content with doc B
+#     does NOT mean A is derived from B - must check if A actually CITES B.
+#   - THE KEY INSIGHT:
+#     * A document with ZERO outbound citations CANNOT be synthesized
+#     * If it doesn't cite anything, it doesn't derive from anything
+#     * It DEFINES content authoritatively = ORIGINAL
+#   - NEW FEATURES:
+#     * Step 3.0: check-outbound-citations (bash/Python step)
+#       - Counts markdown links to .md files
+#       - Counts @mentions pointing to files
+#       - Counts "See X" / "refer to X" patterns
+#       - Calculates authority indicators (has principles, philosophy sections, etc.)
+#     * Classification now uses evidence hierarchy:
+#       1. Zero outbound citations = ORIGINAL (100% confidence)
+#       2. Few outbound + high authority = ORIGINAL (high confidence)
+#       3. Many outbound + confirmed sources = SYNTHESIZED
+#       4. Content overlap alone = INSUFFICIENT
+#
+# v1.5.0 (2026-01-14):
+#   - CRITICAL FIX: Added source directionality detection to fix incorrect source identification
+#   - ROOT CAUSE: Previous versions found textual similarity but didn't check DIRECTION
+#     of relationships. Files that REFERENCE the target were incorrectly identified as sources.
+#   - THE FIX:
+#     * Pass 3 now detects WHO REFERENCES WHOM to determine relationship direction
+#     * If a "source" REFERENCES the target → it's actually a CONSUMER (excluded)
+#     * Added abstraction hierarchy model (top/mid/leaf levels)
+#     * Added reclassification logic: if most "sources" reference target → target is ORIGINAL
+#   - NEW FEATURES:
+#     * Step 2.4.5: File Verification Gate - reads each file to verify existence
+#     * Enhanced Pass 3: Directionality & Circular Reference Detection
+#     * Enhanced Classification: Uses reclassification_signal from directionality analysis
+#     * consumers_not_sources tracking: Files that reference target (excluded)
+#     * hierarchy_analysis: Determines where target sits in abstraction hierarchy
+#   - IMPROVEMENTS FROM PRIOR RECIPE:
+#     * 4-pass source discovery with verification
+#     * Abstraction hierarchy model for determining document relationships
+#     * Reclassification logic for detecting ORIGINAL/AUTHORITATIVE documents
+#     * File verification gate to prevent missing file errors
+#
+# v1.4.0 (2026-01-14):
+#   - BULLETPROOF FIX: Switched to FILE PATH REFERENCE approach
+#   - ROOT CAUSE: Recipe engine cannot reliably capture large stdout content
+#     in variables - large documents would become [] regardless of escaping.
+#   - SOLUTION: Store FILE PATH in variable, not content. Agents read file directly.
+#   - CHANGES:
+#     * Step 1.6 now outputs file path (target_document_content_file), not content
+#     * Step 1.6b validates the file path and file content (simpler, more robust)
+#     * All downstream agent prompts now tell agent to read from the file path
+#     * Agents use their native read_file tool to get content (no variable limits)
+#   - WHY THIS WORKS:
+#     * File paths are small strings (no capture issues)
+#     * Agents have native file reading capability
+#     * Completely avoids recipe engine stdout limitations
+#     * Content stays in files where it belongs
+#
+# v1.3.0 (2026-01-14):
+#   - ATTEMPTED FIX: target_document_content showing as [] (empty array)
+#   - Tried: escaping template patterns, cat from file, variable validation
+#   - RESULT: Still failed - the issue was stdout capture itself, not escaping
+#
+# v1.2.0 (2026-01-14):
+#   - FIXED: LLM truncation issues with large JSON output in build-outline-structure
+#   - Refactored step 5.4 into three smaller, more reliable steps:
+#     * 5.4a (generate-meta-section): Generates _meta section only (small output)
+#     * 5.4b (generate-flat-sections): Generates flat section list (no nesting)
+#     * 5.4c (assemble-outline-structure): Programmatically assembles nested structure
+#   - Added retry logic with exponential backoff to JSON generation steps
+#   - Added robust JSON parsing with recovery for common LLM output issues
+#   - Simplified validation and file writing steps
+# 
+# v1.1.0: Initial multi-pass source identification with circular reference detection
+# =============================================================================
+
+context:
+  # Required inputs
+  target_repo_url: ""                    # GitHub URL of repo containing target document
+  target_document_path: ""               # Path to document within repo (e.g., "docs/DESIGN.md")
+  
+  # Optional inputs with defaults
+  landing_repo_url: "https://github.com/microsoft/amplifier"  # Landing repo with governance rules
+  working_dir: "./outline_working"       # Working directory for cloned repos and outputs
+  output_dir: "./outlines"               # Directory for final outline files
+  
+  # LLM configuration for regeneration (stored in outline metadata)
+  model: "claude-sonnet-4-20250514"
+  max_response_tokens: 8000
+  temperature: 0.2
+
+# =============================================================================
+# PHASE 1: SETUP & PREREQUISITES
+# =============================================================================
+
+steps:
+  # -------------------------------------------------------------------------
+  # Step 1.1: Setup working directory and extract repo names
+  # -------------------------------------------------------------------------
+  - id: "setup-working-dir"
+    type: "bash"
+    command: |
+      set -euo pipefail
+      
+      # Create working directories
+      mkdir -p "{{working_dir}}/repos"
+      mkdir -p "{{output_dir}}"
+      
+      # Extract repo names from URLs and output JSON using Python
+      python3 << 'PYEOF'
+      import json
+      import os
+      
+      landing_url = "{{landing_repo_url}}"
+      target_url = "{{target_repo_url}}"
+      doc_path = "{{target_document_path}}"
+      working_dir = "{{working_dir}}"
+      output_dir = "{{output_dir}}"
+      
+      # Extract repo names from URLs
+      landing_name = os.path.basename(landing_url.rstrip('/').replace('.git', ''))
+      target_name = os.path.basename(target_url.rstrip('/').replace('.git', ''))
+      
+      # Extract document name without extension
+      doc_name = os.path.basename(doc_path)
+      if doc_name.lower().endswith('.md'):
+          doc_name = doc_name[:-3]
+      
+      result = {
+          "landing_repo_name": landing_name,
+          "target_repo_name": target_name,
+          "document_name": doc_name,
+          "working_dir": working_dir,
+          "output_dir": output_dir
+      }
+      
+      print(json.dumps(result))
+      PYEOF
+    output: "setup_info"
+    parse_json: true
+    timeout: 60
+
+  # -------------------------------------------------------------------------
+  # Step 1.2: Clone the landing repository (governance rules)
+  # -------------------------------------------------------------------------
+  - id: "clone-landing-repo"
+    type: "bash"
+    command: |
+      set -euo pipefail
+      
+      landing_dir="{{working_dir}}/repos/{{setup_info.landing_repo_name}}"
+      
+      if [ -d "$landing_dir/.git" ]; then
+        echo "Landing repo already cloned, updating..." >&2
+        cd "$landing_dir"
+        git fetch --quiet >&2
+        git reset --hard origin/main >&2 2>/dev/null || git reset --hard origin/master >&2
+      else
+        echo "Cloning landing repo: {{landing_repo_url}}" >&2
+        rm -rf "$landing_dir"
+        git clone --depth 1 "{{landing_repo_url}}" "$landing_dir" >&2
+      fi
+      
+      printf '%s' "$landing_dir"
+    output: "landing_repo_path"
+    timeout: 300
+    retry:
+      max_attempts: 3
+      backoff: "exponential"
+      initial_delay: 5
+
+  # -------------------------------------------------------------------------
+  # Step 1.3: Clone the target repository
+  # -------------------------------------------------------------------------
+  - id: "clone-target-repo"
+    type: "bash"
+    command: |
+      set -euo pipefail
+      
+      target_dir="{{working_dir}}/repos/{{setup_info.target_repo_name}}"
+      
+      if [ -d "$target_dir/.git" ]; then
+        echo "Target repo already cloned, updating..." >&2
+        cd "$target_dir"
+        git fetch --quiet >&2
+        git reset --hard origin/main >&2 2>/dev/null || git reset --hard origin/master >&2
+      else
+        echo "Cloning target repo: {{target_repo_url}}" >&2
+        rm -rf "$target_dir"
+        git clone --depth 1 "{{target_repo_url}}" "$target_dir" >&2
+      fi
+      
+      printf '%s' "$target_dir"
+    output: "target_repo_path"
+    timeout: 300
+    retry:
+      max_attempts: 3
+      backoff: "exponential"
+      initial_delay: 5
+
+  # -------------------------------------------------------------------------
+  # Step 1.4: Read REPOSITORY_RULES.md for dependency governance
+  # -------------------------------------------------------------------------
+  - id: "read-repository-rules"
+    type: "bash"
+    command: |
+      set -euo pipefail
+      
+      rules_file="{{landing_repo_path}}/docs/REPOSITORY_RULES.md"
+      
+      if [ -f "$rules_file" ]; then
+        cat "$rules_file"
+      else
+        # Try alternative locations
+        alt_file="{{landing_repo_path}}/REPOSITORY_RULES.md"
+        if [ -f "$alt_file" ]; then
+          cat "$alt_file"
+        else
+          echo "WARNING: REPOSITORY_RULES.md not found. Using empty rules." >&2
+          echo "# No repository rules found"
+        fi
+      fi
+    output: "repository_rules_content"
+    timeout: 60
+    on_error: "continue"
+
+  # -------------------------------------------------------------------------
+  # Step 1.5: Read MODULES.md for ecosystem repository list
+  # -------------------------------------------------------------------------
+  - id: "read-modules-list"
+    type: "bash"
+    command: |
+      set -euo pipefail
+      
+      modules_file="{{landing_repo_path}}/docs/MODULES.md"
+      
+      if [ -f "$modules_file" ]; then
+        cat "$modules_file"
+      else
+        # Try alternative locations
+        alt_file="{{landing_repo_path}}/MODULES.md"
+        if [ -f "$alt_file" ]; then
+          cat "$alt_file"
+        else
+          echo "WARNING: MODULES.md not found." >&2
+          echo "# No modules list found"
+        fi
+      fi
+    output: "modules_list_content"
+    timeout: 60
+    on_error: "continue"
+
+  # -------------------------------------------------------------------------
+  # Step 1.6: Read the target document fully (BULLETPROOF VERSION)
+  # -------------------------------------------------------------------------
+  # CRITICAL FIX (2026-01-14): Previous version had a bug where the variable
+  # target_document_content would become [] (empty array) due to:
+  # 1. Python print() output containing characters that break bash capture
+  # 2. Recipe engine defaulting empty/failed outputs to []
+  # 3. Validation checking the FILE but not the VARIABLE
+  #
+  # NEW APPROACH:
+  # 1. Write escaped content to a temp file (avoids stdout capture issues)
+  # 2. Use cat to output from file (reliable, handles any content)
+  # 3. Validate the variable immediately after (fail fast)
+  #
+  # WHY ESCAPING IS NEEDED:
+  # If the document contains {{variable}} patterns (common in Amplifier docs),
+  # the recipe template engine will try to substitute them, causing failures
+  # or empty content. By escaping {{ to { { (with space), we prevent this.
+  # -------------------------------------------------------------------------
+  - id: "read-target-document"
+    type: "bash"
+    command: |
+      set -euo pipefail
+      
+      doc_path="{{target_repo_path}}/{{target_document_path}}"
+      raw_content_file="{{working_dir}}/target_document_content.md"
+      escaped_content_file="{{working_dir}}/target_document_escaped.md"
+      
+      if [ ! -f "$doc_path" ]; then
+        echo "========================================" >&2
+        echo "CRITICAL ERROR: Target document not found" >&2
+        echo "========================================" >&2
+        echo "Attempted path: $doc_path" >&2
+        ls -la "$(dirname "$doc_path")" >&2 2>/dev/null || echo "Parent directory does not exist" >&2
+        exit 1
+      fi
+      
+      # Copy raw content to temp file (for validation and reference)
+      cp "$doc_path" "$raw_content_file"
+      
+      # Verify the copy worked
+      if [ ! -s "$raw_content_file" ]; then
+        echo "ERROR: Failed to copy document or document is empty" >&2
+        exit 1
+      fi
+      
+      # Read, ESCAPE, and write to a separate file
+      # This avoids any stdout capture issues with special characters
+      python3 << 'ESCAPE_CONTENT_EOF'
+      import sys
+      import os
+      
+      doc_path = "{{target_repo_path}}/{{target_document_path}}"
+      escaped_file = "{{working_dir}}/target_document_escaped.md"
+      
+      try:
+          with open(doc_path, 'r', encoding='utf-8', errors='replace') as f:
+              content = f.read()
+      except Exception as e:
+          print(f"ERROR: Failed to read document: {e}", file=sys.stderr)
+          sys.exit(1)
+      
+      if not content:
+          print("ERROR: Document is empty", file=sys.stderr)
+          sys.exit(1)
+      
+      # Count original template patterns for logging
+      original_patterns = content.count('{{')
+      
+      if original_patterns > 0:
+          print(f"NOTE: Escaping {original_patterns} template patterns to prevent substitution issues", file=sys.stderr)
+      
+      # Escape template patterns: {{ becomes { { and }} becomes } }
+      # This prevents the recipe engine from trying to substitute them
+      escaped = content.replace('{{', '{ {').replace('}}', '} }')
+      
+      # Also escape any stray single braces that might cause issues
+      # But only if they're not part of code blocks (heuristic: don't touch if inside ```)
+      
+      # Write to file instead of stdout (avoids capture issues)
+      try:
+          with open(escaped_file, 'w', encoding='utf-8') as f:
+              f.write(escaped)
+      except Exception as e:
+          print(f"ERROR: Failed to write escaped content: {e}", file=sys.stderr)
+          sys.exit(1)
+      
+      print(f"Document processed: {len(content)} chars, {original_patterns} template patterns escaped", file=sys.stderr)
+      ESCAPE_CONTENT_EOF
+      
+      # Verify the escaped file was created and has content
+      if [ ! -s "$escaped_content_file" ]; then
+        echo "ERROR: Escaped content file is empty or not created" >&2
+        exit 1
+      fi
+      
+      # =====================================================================
+      # FILE PATH REFERENCE APPROACH (solves stdout capture issues)
+      # =====================================================================
+      # Instead of outputting the content (which fails for large documents),
+      # we output just the FILE PATH. Downstream agent steps will READ from
+      # this file directly using their read_file tool.
+      #
+      # Why this works:
+      # - File paths are small strings (no capture issues)
+      # - Agents have native file reading capability
+      # - Completely avoids recipe engine stdout limitations
+      # - Content stays in files where it belongs
+      # =====================================================================
+      
+      # Output the file path (NOT the content)
+      printf '%s' "$escaped_content_file"
+    output: "target_document_content_file"
+    timeout: 120
+
+  # -------------------------------------------------------------------------
+  # Step 1.6b: VALIDATE the file path variable and file content
+  # -------------------------------------------------------------------------
+  # With the FILE PATH REFERENCE approach, we validate:
+  # 1. The variable contains a valid file path (not [] or empty)
+  # 2. The file at that path exists and has content
+  # This is MUCH more robust than trying to capture large content in variables.
+  # -------------------------------------------------------------------------
+  - id: "validate-content-file"
+    type: "bash"
+    command: |
+      set -euo pipefail
+      
+      # Get the file path from the variable
+      content_file="{{target_document_content_file}}"
+      raw_content_file="{{working_dir}}/target_document_content.md"
+      
+      echo "Validating file path reference approach..." >&2
+      echo "  - File path variable: '$content_file'" >&2
+      
+      # Check 1: Variable is not empty or malformed
+      if [ -z "$content_file" ] || [ "$content_file" = "[]" ] || [ "$content_file" = "[ ]" ]; then
+        echo "========================================" >&2
+        echo "CRITICAL ERROR: File path variable is empty/malformed" >&2
+        echo "========================================" >&2
+        echo "Got: '$content_file'" >&2
+        exit 1
+      fi
+      
+      # Check 2: File exists
+      if [ ! -f "$content_file" ]; then
+        echo "========================================" >&2
+        echo "CRITICAL ERROR: Content file not found" >&2
+        echo "========================================" >&2
+        echo "Path: $content_file" >&2
+        exit 1
+      fi
+      
+      # Check 3: File has content
+      if [ ! -s "$content_file" ]; then
+        echo "========================================" >&2
+        echo "CRITICAL ERROR: Content file is empty" >&2
+        echo "========================================" >&2
+        echo "Path: $content_file" >&2
+        exit 1
+      fi
+      
+      # Get file stats
+      file_size=$(stat -c%s "$content_file" 2>/dev/null || stat -f%z "$content_file")
+      file_lines=$(wc -l < "$content_file")
+      
+      echo "✓ File path validation PASSED" >&2
+      echo "  - File size: $file_size bytes" >&2
+      echo "  - File lines: $file_lines lines" >&2
+      
+      # Output validation result as JSON
+      python3 << PYEOF
+      import json
+      import sys
+      
+      content_file = "$content_file"
+      raw_file = "$raw_content_file"
+      
+      try:
+          with open(content_file, 'r', encoding='utf-8') as f:
+              content = f.read()
+      except Exception as e:
+          print(f"ERROR: Failed to read content file: {e}", file=sys.stderr)
+          sys.exit(1)
+      
+      char_count = len(content)
+      line_count = content.count('\n') + 1
+      
+      # Count template patterns (should be escaped as "{ {")
+      escaped_patterns = content.count('{ {')
+      
+      print(f"Document validated: {char_count} chars, {line_count} lines", file=sys.stderr)
+      if escaped_patterns > 0:
+          print(f"INFO: {escaped_patterns} template patterns were escaped", file=sys.stderr)
+      
+      result = {
+          "valid": True,
+          "char_count": char_count,
+          "line_count": line_count,
+          "content_file_path": content_file,
+          "raw_file_path": raw_file,
+          "file_size_bytes": $file_size,
+          "escaped_pattern_count": escaped_patterns
+      }
+      print(json.dumps(result))
+      PYEOF
+    output: "document_validation"
+    parse_json: true
+    timeout: 60
+    on_error: "fail"
+
+# =============================================================================
+# PHASE 2: SOURCE IDENTIFICATION (MULTI-PASS)
+# =============================================================================
+
+  # -------------------------------------------------------------------------
+  # Step 2.1: Determine allowed source repositories
+  # -------------------------------------------------------------------------
+  - id: "determine-allowed-sources"
+    agent: "foundation:zen-architect"
+    mode: "ANALYZE"
+    prompt: |
+      Analyze the repository governance rules to determine which repositories can be sources for the target repository.
+      
+      ## Repository Rules
+      {{repository_rules_content}}
+      
+      ## Ecosystem Modules
+      {{modules_list_content}}
+      
+      ## Target Repository
+      Name: {{setup_info.target_repo_name}}
+      URL: {{target_repo_url}}
+      
+      ## Task
+      Based on the REPOSITORY_RULES.md governance:
+      1. Identify the dependency direction rules (what can depend on what)
+      2. Determine which EXTERNAL repositories are ALLOWED to be sources for {{setup_info.target_repo_name}}
+      3. A repo can be a "source" if the target repo is allowed to depend on/reference it
+      4. CRITICAL: The target repository ({{setup_info.target_repo_name}}) MUST ALWAYS be included in allowed_source_repos - documents within the same repo are always valid internal sources
+      
+      Return your analysis as JSON:
+      ```json
+      {
+        "target_repo": "{{setup_info.target_repo_name}}",
+        "dependency_direction": "description of the rules",
+        "allowed_source_repos": ["repo1", "repo2"],
+        "excluded_repos": ["repo3", "repo4"],
+        "reasoning": "explanation of why these repos are allowed/excluded"
+      }
+      ```
+    output: "allowed_sources_analysis"
+    parse_json: true
+    timeout: 300
+
+  # -------------------------------------------------------------------------
+  # Step 2.2: Scan allowed repositories for relevant files
+  # -------------------------------------------------------------------------
+  - id: "scan-allowed-repos"
+    agent: "foundation:explorer"
+    prompt: |
+      Scan the available repositories to list all relevant documentation files that could potentially be sources.
+      
+      ## Allowed Source Repositories
+      {{allowed_sources_analysis}}
+      
+      ## Landing Repository Path
+      {{landing_repo_path}}
+      
+      ## Target Repository Path  
+      {{target_repo_path}}
+      
+      ## Task
+      For each allowed source repository:
+      1. List all relevant files: *.md, docs/*, context/*, specs/*, *.yaml in relevant directories
+      2. Include file paths relative to the repository root
+      3. Note the repository each file belongs to
+      
+      Focus on documentation, specifications, and context files that could serve as sources.
+      
+      Return as JSON:
+      ```json
+      {
+        "scanned_repos": ["repo1", "repo2"],
+        "files_by_repo": {
+          "repo1": ["docs/FILE1.md", "context/FILE2.md"],
+          "repo2": ["specs/FILE3.md"]
+        },
+        "total_files_found": 15
+      }
+      ```
+    output: "scanned_files"
+    parse_json: true
+    timeout: 600
+
+  # -------------------------------------------------------------------------
+  # Step 2.3: Pass 1 - Broad potential source identification (INCLUSIVE)
+  # -------------------------------------------------------------------------
+  - id: "pass1-broad-identification"
+    agent: "foundation:zen-architect"
+    mode: "ANALYZE"
+    prompt: |
+      ## PASS 1: BROAD SOURCE IDENTIFICATION (Be INCLUSIVE)
+      
+      Analyze whether any of the scanned files could potentially be sources for the target document.
+      
+      ## Target Document
+      Path: {{target_document_path}}
+      
+      **IMPORTANT**: Read the target document content from this file using read_file tool:
+      {{target_document_content_file}}
+      
+      ## Available Source Files
+      {{scanned_files}}
+      
+      ## Analysis Approach (Be INCLUSIVE)
+      For each file in the scanned list, ask: "Could this POSSIBLY be a source?"
+      
+      Use these detection methods:
+      1. **Inverse Synthesis Logic**: If the target document could have been created by synthesizing/referencing this file
+      2. **Keyword Detection**: Shared terminology, concepts, or technical terms
+      3. **Conceptual Alignment**: Similar themes, goals, or subject matter
+      4. **Structural Similarity**: Similar section organization or content patterns
+      
+      At this stage, be INCLUSIVE - include anything that might be related.
+      
+      Return as JSON:
+      ```json
+      {
+        "pass": 1,
+        "approach": "inclusive",
+        "potential_sources": [
+          {
+            "file_path": "repo/path/to/file.md",
+            "repository": "repo-name",
+            "relevance_signals": ["keyword match: X", "conceptual alignment: Y"],
+            "confidence": "high|medium|low",
+            "reasoning": "Why this might be a source"
+          }
+        ],
+        "excluded_files": [
+          {
+            "file_path": "path/to/file.md",
+            "reason": "No apparent connection to target document"
+          }
+        ],
+        "summary": "Found N potential sources out of M scanned files"
+      }
+      ```
+    output: "pass1_potential_sources"
+    parse_json: true
+    timeout: 600
+
+  # -------------------------------------------------------------------------
+  # Step 2.4: Pass 2 - Refine to confirmed sources (SELECTIVE)
+  # -------------------------------------------------------------------------
+  - id: "pass2-refine-sources"
+    agent: "foundation:zen-architect"
+    mode: "ANALYZE"
+    prompt: |
+      ## PASS 2: REFINE TO CONFIRMED SOURCES (Be SELECTIVE)
+      
+      Review the potential sources from Pass 1 and refine to only CONFIRMED sources.
+      
+      ## Target Document
+      Path: {{target_document_path}}
+      
+      **IMPORTANT**: Read the target document content from this file using read_file tool:
+      {{target_document_content_file}}
+      
+      ## Pass 1 Potential Sources
+      {{pass1_potential_sources}}
+      
+      ## Refinement Criteria (Be SELECTIVE)
+      A source is CONFIRMED only if there is SPECIFIC EVIDENCE:
+      
+      1. **Text Matches**: Direct quotes, paraphrases, or clear rewording
+      2. **Conceptual Content**: The target document clearly builds on/uses concepts defined in the source
+      3. **Specifications Cited**: Technical specs, APIs, or schemas that the target implements or references
+      4. **Explicit References**: The target document explicitly mentions or links to the source
+      
+      Require at least one strong piece of evidence to confirm a source.
+      
+      Return as JSON:
+      ```json
+      {
+        "pass": 2,
+        "approach": "selective",
+        "confirmed_sources": [
+          {
+            "file_path": "repo/path/to/file.md",
+            "repository": "repo-name",
+            "evidence_type": "text_match|conceptual|specification|explicit_reference",
+            "specific_evidence": "Quote or description of the evidence",
+            "target_sections_using_source": ["Section 1", "Section 3"],
+            "confidence": "high|medium",
+            "reasoning": "Detailed explanation of why this is a confirmed source"
+          }
+        ],
+        "demoted_to_potential": [
+          {
+            "file_path": "path/to/file.md",
+            "reason": "Insufficient specific evidence"
+          }
+        ],
+        "summary": "Confirmed N sources from M potential sources"
+      }
+      ```
+    output: "pass2_confirmed_sources"
+    parse_json: true
+    timeout: 600
+
+  # -------------------------------------------------------------------------
+  # Step 2.4.5: File Verification Gate (NEW in v1.5.0)
+  # -------------------------------------------------------------------------
+  # CRITICAL: Actually READ each potential source file to verify it exists
+  # before including it in downstream analysis. This prevents:
+  # - Missing file errors in final output
+  # - Hallucinated file paths
+  # - Broken references in the outline
+  # -------------------------------------------------------------------------
+  - id: "file-verification-gate"
+    agent: "foundation:zen-architect"
+    mode: "ANALYZE"
+    prompt: |
+      ## FILE VERIFICATION GATE
+      
+      **CRITICAL TASK**: Verify that EVERY confirmed source file actually exists by READING it.
+      
+      This step gates all subsequent analysis - only verified files proceed to Pass 3.
+      
+      ## Confirmed Sources from Pass 2
+      {{pass2_confirmed_sources}}
+      
+      ## Verification Process
+      
+      For EACH file in `confirmed_sources`:
+      
+      1. **Attempt to read the file** using read_file tool
+         - For current repo files: read directly from working directory
+         - For external repo files: read from the cached location
+      
+      2. **Record verification result**:
+         - If file exists and is readable → "verified"
+         - If file not found or error → "missing"
+      
+      3. **Extract file metadata** for verified files:
+         - File size (line count)
+         - First few lines (to confirm content matches expectations)
+         - Any obvious indicators of file type
+      
+      ## Working Directory Context
+      
+      Setup info: {{setup_info}}
+      
+      Current repo files are at: {{setup_info.working_dir}}/repos/{{setup_info.target_repo_name}}/
+      External repo files are at: {{setup_info.working_dir}}/repos/{external_repo_name}/
+      
+      ## Output Requirements
+      
+      **CRITICAL**: Only files with `verification_status: "verified"` proceed to Pass 3.
+      Files with `verification_status: "missing"` are excluded with documented reason.
+      
+      Return as JSON:
+      ```json
+      {
+        "verification_summary": {
+          "total_files_checked": N,
+          "verified_count": M,
+          "missing_count": K,
+          "verification_rate": "M/N (percentage)"
+        },
+        
+        "verified_sources": [
+          {
+            "file_path": "docs/file.md",
+            "repository": "repo-name",
+            "verification_status": "verified",
+            "file_size_lines": 150,
+            "content_preview": "First 3 lines of file...",
+            "evidence_type": "from Pass 2",
+            "specific_evidence": "from Pass 2",
+            "confidence": "from Pass 2"
+          }
+        ],
+        
+        "missing_files": [
+          {
+            "file_path": "docs/missing.md",
+            "repository": "repo-name",
+            "verification_status": "missing",
+            "error": "File not found at expected path",
+            "attempted_paths": ["path1", "path2"],
+            "exclusion_reason": "File does not exist - cannot be used as source"
+          }
+        ],
+        
+        "verification_notes": "Any issues encountered during verification"
+      }
+      ```
+    output: "file_verification_results"
+    parse_json: true
+    timeout: 600
+
+  # -------------------------------------------------------------------------
+  # Step 2.5: Pass 3 - Directionality & Circular Reference Detection
+  # -------------------------------------------------------------------------
+  # CRITICAL FIX (v1.5.0): This step now detects DIRECTION of relationships.
+  # 
+  # THE CORE INSIGHT:
+  # If file A and file B have shared content, there are TWO possible relationships:
+  #   1. A is a SOURCE for B (A was used to create/inform B)
+  #   2. B is a SOURCE for A (B was used to create/inform A)
+  #
+  # The KEY SIGNAL for direction is: WHO REFERENCES WHOM?
+  #   - If A contains a link/mention pointing TO B → A is DERIVED FROM B (A consumes B)
+  #   - If B contains a link/mention pointing TO A → B is DERIVED FROM A (B consumes A)
+  #
+  # For our analysis:
+  #   - If a "potential source" REFERENCES the target → it's actually a CONSUMER
+  #   - The potential source is HIGHER in the abstraction hierarchy (summarizes/references)
+  #   - The target document is the actual ORIGINAL/AUTHORITATIVE source
+  #   - These "sources" must be EXCLUDED and the target may need reclassification
+  # -------------------------------------------------------------------------
+  - id: "pass3-directionality-detection"
+    agent: "foundation:zen-architect"
+    mode: "ANALYZE"
+    prompt: |
+      ## PASS 3: DIRECTIONALITY & CIRCULAR REFERENCE DETECTION
+      
+      **CRITICAL TASK**: Determine the DIRECTION of relationships between potential sources and target.
+      
+      ## The Core Problem
+      
+      Finding textual similarity between documents is NOT enough to determine source relationships.
+      We must determine WHO REFERENCES WHOM to understand the direction:
+      
+      ```
+      If file A references file B:
+        → A is a CONSUMER of B (A uses/cites B)
+        → B is the SOURCE (B provides content to A)
+        → A is HIGHER in abstraction hierarchy (overview, summary)
+        → B is LOWER in abstraction hierarchy (detailed, foundational)
+      ```
+      
+      ## Abstraction Hierarchy Model
+      
+      ```
+      TOP LEVEL: READMEs, overviews, getting-started guides
+          ↓ reference/summarize/link to
+      MID LEVEL: Explanatory docs, architecture docs, synthesis documents  
+          ↓ reference/derive from
+      LEAF LEVEL: Specs, contracts, philosophy docs, foundational definitions
+      ```
+      
+      **Rule**: Higher-level docs CANNOT be sources for lower-level docs.
+      If a document links TO the target, that document is HIGHER and should be EXCLUDED as a source.
+      
+      ## Target Document
+      Path: {{target_document_path}}
+      Repository: {{setup_info.target_repo_name}}
+      
+      **IMPORTANT**: Read the target document content from this file using read_file tool:
+      {{target_document_content_file}}
+      
+      ## Verified Sources (from File Verification Gate)
+      {{file_verification_results}}
+      
+      **IMPORTANT**: Use ONLY files from `verified_sources` array above.
+      Files in `missing_files` have already been excluded.
+      
+      ## Detection Process
+      
+      For EACH file in `verified_sources` from the file verification gate:
+      
+      **Step 1: Check if source REFERENCES the target**
+      Read the source file and search for:
+      - Markdown links: `[text](path/to/{{target_document_path}})`
+      - Markdown links: `[text](../{{target_document_path}})`
+      - File mentions: "See {{setup_info.document_name}}" or "refer to {{setup_info.document_name}}"
+      - URL references to the target document
+      - @mentions pointing to target
+      - Import/include statements referencing target
+      
+      Use grep or read_file to check each source for these patterns.
+      
+      **Step 2: Determine hierarchy position**
+      Based on file characteristics:
+      - Is it a README or index file? → Likely TOP level (consumer, not source)
+      - Is it an overview or getting-started? → Likely TOP level
+      - Does it summarize multiple documents? → Likely MID level (may be consumer)
+      - Is it a spec, contract, or philosophy doc? → Likely LEAF level (could be source)
+      
+      **Step 3: Make direction determination**
+      For each potential source:
+      - If it REFERENCES the target → EXCLUDE (it's a consumer, not a source)
+      - If target REFERENCES it → KEEP (it's a valid source)
+      - If no explicit references either way → Use hierarchy position and content analysis
+      
+      ## Evidence Types for Direction
+      
+      **Evidence that file is a CONSUMER (exclude as source):**
+      - Contains explicit link/reference TO the target document
+      - Is a README, overview, or index file that links to target
+      - Summarizes or abstracts content FROM the target
+      - Higher in directory hierarchy with links pointing down
+      
+      **Evidence that file is a valid SOURCE (keep):**
+      - Target document contains explicit references TO this file
+      - Contains foundational definitions that target builds upon
+      - Is a spec/contract that target implements
+      - Lower in abstraction hierarchy with detailed content
+      
+      ## Output Requirements
+      
+      **CRITICAL**: 
+      - `consumers_not_sources` contains files that REFERENCE the target (direction: consumer)
+      - `final_confirmed_sources` contains only files where direction analysis confirms they are sources
+      - `reclassification_signal` indicates if evidence suggests target is ORIGINAL
+      
+      PATH FORMAT: Use REPO-RELATIVE paths only (e.g., "README.md", "docs/file.md").
+      Do NOT include working directory prefixes like "outline_working/repos/repo-name/".
+      
+      Return as JSON:
+      ```json
+      {
+        "pass": 3,
+        "analysis_type": "directionality_detection",
+        
+        "consumers_not_sources": [
+          {
+            "file_path": "docs/example.md",
+            "repository": "repo-name",
+            "direction": "consumer",
+            "evidence": {
+              "references_target": true,
+              "reference_found": "[Design](../docs/DESIGN.md)",
+              "hierarchy_position": "top-level-overview",
+              "explanation": "This file links TO the target, making it a consumer/referencer, not a source"
+            },
+            "exclusion_reason": "File references target document - it's a consumer, not a source"
+          }
+        ],
+        
+        "final_confirmed_sources": [
+          {
+            "file_path": "specs/kernel-contract.md",
+            "repository": "repo-name",
+            "direction": "source",
+            "evidence": {
+              "references_target": false,
+              "target_references_this": true,
+              "hierarchy_position": "leaf-level-spec",
+              "explanation": "Target document builds upon concepts defined here"
+            },
+            "evidence_type": "specification",
+            "specific_evidence": "Target implements patterns defined in this spec",
+            "confidence": "high"
+          }
+        ],
+        
+        "reclassification_signal": {
+          "should_reclassify": true,
+          "reason": "Most 'potential sources' actually REFERENCE the target, suggesting target is the ORIGINAL authoritative document",
+          "consumer_count": 5,
+          "valid_source_count": 0,
+          "recommendation": "Reclassify as 'original' - this appears to be a foundational document that others reference"
+        },
+        
+        "hierarchy_analysis": {
+          "target_position": "leaf-level-foundational",
+          "evidence": "Multiple higher-level docs reference this target, but target references few/no other docs",
+          "documents_referencing_target": ["README.md", "docs/overview.md"],
+          "documents_target_references": []
+        },
+        
+        "source_count": 1,
+        "excluded_count": 5,
+        "summary": "After directionality analysis: N files were consumers (excluded), M files confirmed as sources"
+      }
+      ```
+    output: "pass3_final_sources"
+    parse_json: true
+    timeout: 900
+
+# =============================================================================
+# PHASE 3: DOCUMENT TYPE CLASSIFICATION
+# =============================================================================
+
+  # -------------------------------------------------------------------------
+  # Step 3.0: Check Target Document's Outbound Citations (NEW in v1.6.0)
+  # -------------------------------------------------------------------------
+  # CRITICAL FIX: If the target document has ZERO outbound references,
+  # it cannot be "synthesized" - it's an ORIGINAL document that defines content.
+  # This check MUST happen BEFORE classification to override false positives.
+  # -------------------------------------------------------------------------
+  - id: "check-outbound-citations"
+    type: "bash"
+    command: |
+      set -euo pipefail
+      
+      # Read the target document and count outbound references
+      doc_file="{{target_repo_path}}/{{target_document_path}}"
+      
+      python3 << 'CITATION_CHECK_EOF'
+      import json
+      import re
+      import sys
+      
+      doc_path = "{{target_repo_path}}/{{target_document_path}}"
+      
+      try:
+          with open(doc_path, 'r', encoding='utf-8') as f:
+              content = f.read()
+      except Exception as e:
+          print(f"ERROR: Failed to read document: {e}", file=sys.stderr)
+          sys.exit(1)
+      
+      # Count different types of outbound references
+      
+      # 1. Markdown links to .md files: [text](path.md) or [text](../path.md)
+      md_links = re.findall(r'\[([^\]]+)\]\(([^)]*\.md[^)]*)\)', content)
+      md_link_count = len(md_links)
+      
+      # 2. @mentions pointing to files: @repo:path or @path
+      at_mentions = re.findall(r'@[\w-]+:[^\s\)]+|@\./[^\s\)]+', content)
+      at_mention_count = len(at_mentions)
+      
+      # 3. "See X" or "refer to X" patterns pointing to documents
+      see_refs = re.findall(r'(?:see|refer to|defined in|described in)\s+[`"\']?([A-Z_]+\.md|[\w/-]+\.md)', content, re.IGNORECASE)
+      see_ref_count = len(see_refs)
+      
+      # 4. Import/include statements
+      imports = re.findall(r'(?:from|import)\s+[\w.]+', content)
+      import_count = len(imports)
+      
+      total_outbound = md_link_count + at_mention_count + see_ref_count
+      
+      # Document characteristics
+      line_count = content.count('\n') + 1
+      char_count = len(content)
+      
+      # Check for authority indicators (suggests ORIGINAL)
+      authority_indicators = {
+          "has_principles_section": bool(re.search(r'#+\s*(Core\s+)?Principles?', content, re.IGNORECASE)),
+          "has_philosophy_section": bool(re.search(r'#+\s*Philosophy', content, re.IGNORECASE)),
+          "defines_concepts": bool(re.search(r'#+\s*(What|Definition|Overview|Purpose)', content, re.IGNORECASE)),
+          "has_decision_framework": bool(re.search(r'#+\s*(Decision|Framework|Guidelines)', content, re.IGNORECASE)),
+          "is_comprehensive": line_count > 200,  # Long docs tend to be authoritative
+          "has_examples": bool(re.search(r'#+\s*Examples?', content, re.IGNORECASE)),
+      }
+      
+      authority_score = sum(1 for v in authority_indicators.values() if v)
+      
+      # Determine if document is likely ORIGINAL based on citation analysis
+      # FIXED (v1.6.1): Stricter logic - any outbound reference suggests synthesis
+      is_likely_original = (
+          total_outbound == 0 or  # ONLY zero refs = definitely original
+          (total_outbound == 1 and authority_score >= 4)  # Single ref + very high authority
+      )
+      
+      # NEW: Explicit signal for synthesized documents
+      is_likely_synthesized = (
+          total_outbound >= 1 and authority_score < 3  # Has refs + low authority = synthesized
+      )
+      
+      result = {
+          "outbound_citations": {
+              "markdown_links": md_link_count,
+              "markdown_link_targets": [link[1] for link in md_links[:10]],  # First 10
+              "at_mentions": at_mention_count,
+              "see_references": see_ref_count,
+              "total_outbound": total_outbound
+          },
+          "document_characteristics": {
+              "line_count": line_count,
+              "char_count": char_count,
+              "authority_indicators": authority_indicators,
+              "authority_score": authority_score
+          },
+          "classification_signal": {
+              "is_likely_original": is_likely_original,
+              "is_likely_synthesized": is_likely_synthesized,
+              "confidence": "high" if (total_outbound == 0) else "high" if is_likely_synthesized else "medium",
+              "reasoning": (
+                  f"Document has {total_outbound} outbound references and authority score {authority_score}/6. " +
+                  ("ZERO outbound refs = ORIGINAL (defines content, doesn't cite sources). " if total_outbound == 0 else "") +
+                  (f"Has {total_outbound} outbound ref(s) with low authority ({authority_score}/6) = SYNTHESIZED. " if is_likely_synthesized else "") +
+                  (f"High authority indicators ({authority_score}/6) suggest foundational document." if authority_score >= 4 else "")
+              )
+          }
+      }
+      
+      print(json.dumps(result))
+      CITATION_CHECK_EOF
+    output: "outbound_citation_analysis"
+    parse_json: true
+    timeout: 120
+
+  # -------------------------------------------------------------------------
+  # Step 3.1: Classify document type based on ALL evidence
+  # -------------------------------------------------------------------------
+  # ENHANCED (v1.6.0): Now uses OUTBOUND CITATION CHECK as primary signal.
+  # If target has zero outbound references, it's ORIGINAL regardless of
+  # what content overlap was found with other documents.
+  # -------------------------------------------------------------------------
+  - id: "classify-document-type"
+    agent: "foundation:zen-architect"
+    mode: "ANALYZE"
+    prompt: |
+      ## DOCUMENT TYPE CLASSIFICATION (Enhanced with Outbound Citation Analysis)
+      
+      Classify the target document using ALL available evidence, with outbound citations as PRIMARY signal.
+      
+      ## Target Document
+      Path: {{target_document_path}}
+      Repository: {{setup_info.target_repo_name}}
+      
+      ## CRITICAL: Outbound Citation Analysis (PRIMARY SIGNAL)
+      {{outbound_citation_analysis}}
+      
+      **THE KEY INSIGHT**: 
+      - A document that CITES other documents = SYNTHESIZED (derives from sources)
+      - A document that DOES NOT cite others = ORIGINAL (defines content authoritatively)
+      - Content overlap alone does NOT prove synthesis - must check citation direction
+      
+      ## Source Identification Results (SECONDARY SIGNAL)
+      {{pass3_final_sources}}
+      
+      ## Classification Rules (SIMPLE AND DETERMINISTIC)
+      
+      **The programmatic analysis in step 3.0 has done the hard work. Follow these signals:**
+      
+      **RULE 1: Check `is_likely_synthesized` FIRST (NEW in v1.6.1)**
+      If `outbound_citation_analysis.classification_signal.is_likely_synthesized` is true:
+      - Document Type: "synthesized"
+      - Reason: Document has outbound references with low authority score = derives from sources
+      - This is the PRIMARY signal for synthesized classification
+      
+      **RULE 2: Check for zero outbound references**
+      If `outbound_citation_analysis.outbound_citations.total_outbound` == 0:
+      - Document Type: "original" (MANDATORY)
+      - Reason: A document with ZERO outbound citations cannot be synthesized
+      - This is the strongest signal for ORIGINAL classification
+      
+      **RULE 3: Check `is_likely_original`**
+      If `outbound_citation_analysis.classification_signal.is_likely_original` is true:
+      - Document Type: "original"
+      - Reason: Document has very few refs with high authority
+      
+      **RULE 4: Default case**
+      If neither signal is set clearly:
+      - Document Type: "synthesized" if total_outbound >= 1
+      - Document Type: "original" if total_outbound == 0
+      
+      **CRITICAL: Do NOT override these programmatic signals with your own judgment.**
+      
+      ## Evidence Hierarchy
+      
+      ```
+      STRONGEST → WEAKEST:
+      1. is_likely_synthesized = true → SYNTHESIZED (high confidence)
+      2. total_outbound == 0 → ORIGINAL (100% confidence)
+      3. is_likely_original = true → ORIGINAL (high confidence)
+      4. total_outbound >= 1 with low authority → SYNTHESIZED (default)
+      ```
+      
+      ## Task
+      Classify the document using the evidence hierarchy above.
+      
+      Return as JSON:
+      ```json
+      {
+        "document_type": "original" or "synthesized",
+        "classification_method": "zero_outbound_citations" or "low_outbound_high_authority" or "reclassification_signal" or "confirmed_synthesis",
+        "primary_evidence": {
+          "outbound_citation_count": N,
+          "authority_score": M,
+          "is_likely_original_signal": true/false
+        },
+        "secondary_evidence": {
+          "source_count": N,
+          "consumer_count": M,
+          "reclassification_signal": true/false
+        },
+        "confidence": "high|medium|low",
+        "reasoning": "Detailed explanation of classification decision",
+        "directionality_summary": {
+          "files_referencing_target": ["list of consumers that cite this target"],
+          "files_target_references": ["list of files this target cites (should be empty/few for ORIGINAL)"],
+          "hierarchy_position": "leaf-foundational|mid-level|top-level",
+          "is_authoritative_source": true or false
+        },
+        "implications": {
+          "prompting_strategy": "concept-focused" or "instruction-focused",
+          "sources_handling": "Description of how sources will be used (empty for original)",
+          "key_characteristics": ["characteristic1", "characteristic2"]
+        }
+      }
+      ```
+    output: "document_classification"
+    parse_json: true
+    timeout: 300
+
+# =============================================================================
+# PHASE 4: PROMPTING STRATEGY SELECTION
+# =============================================================================
+
+  # -------------------------------------------------------------------------
+  # Step 4.1: Select and define prompting strategy
+  # -------------------------------------------------------------------------
+  - id: "select-prompting-strategy"
+    agent: "foundation:zen-architect"
+    mode: "ARCHITECT"
+    prompt: |
+      ## PROMPTING STRATEGY SELECTION
+      
+      Based on the document classification, define the prompting strategy for outline generation.
+      
+      ## Document Classification
+      {{document_classification}}
+      
+      ## Target Document
+      **IMPORTANT**: Read the target document content from this file using read_file tool:
+      {{target_document_content_file}}
+      
+      ## Strategy Definitions
+      
+      ### For "original" documents:
+      - **Approach**: Concept-focused prompts
+      - **Goal**: Capture essence, key arguments, voice/tone without dictating exact wording
+      - **Sources**: Empty array (no source files)
+      - **Prompt Style**: "What is the core message of this section?" / "What concepts should be conveyed?"
+      - **Key Fields**: Populate `key_concepts`, `voice_tone`, `essential_arguments`
+      
+      ### For "synthesized" documents:
+      - **Approach**: Instruction-focused prompts
+      - **Goal**: Guide HOW to synthesize content from identified sources
+      - **Sources**: Populated array with file URLs, reasoning, commits
+      - **Prompt Style**: "Synthesize X from sources A and B" / "Extract and combine..."
+      - **Key Fields**: Populate `sources` array with full metadata
+      
+      ## Task
+      Define the complete prompting strategy including:
+      1. Overall approach and goals
+      2. Section-level prompt templates
+      3. Source handling instructions
+      4. Quality criteria for generated prompts
+      
+      Return as JSON:
+      ```json
+      {
+        "strategy_type": "concept-focused" or "instruction-focused",
+        "document_type": "original" or "synthesized",
+        "overall_approach": "Description of the prompting approach",
+        "prompt_templates": {
+          "section_intro": "Template for section introduction prompts",
+          "section_content": "Template for section content prompts",
+          "section_synthesis": "Template for synthesis prompts (synthesized only)"
+        },
+        "source_handling": {
+          "include_sources": true or false,
+          "source_format": "Description of source metadata format",
+          "citation_style": "How sources should be referenced in prompts"
+        },
+        "quality_criteria": [
+          "criterion1",
+          "criterion2"
+        ],
+        "special_instructions": "Any document-specific instructions"
+      }
+      ```
+    output: "prompting_strategy"
+    parse_json: true
+    timeout: 300
+
+# =============================================================================
+# PHASE 5: OUTLINE GENERATION
+# =============================================================================
+
+  # -------------------------------------------------------------------------
+  # Step 5.1: Extract heading structure from target document
+  # -------------------------------------------------------------------------
+  - id: "extract-heading-structure"
+    type: "bash"
+    command: |
+      set -euo pipefail
+      
+      doc_file="{{target_repo_path}}/{{target_document_path}}"
+      
+      # Use Python to extract headings - more reliable than agent for this task
+      python3 << 'PYTHON_EOF'
+      import json
+      import sys
+      import re
+      
+      doc_path = "{{target_repo_path}}/{{target_document_path}}"
+      
+      try:
+          with open(doc_path, 'r') as f:
+              lines = f.readlines()
+      except FileNotFoundError:
+          print(f"ERROR: Document not found at {doc_path}", file=sys.stderr)
+          sys.exit(1)
+      
+      headings = []
+      parent_stack = []  # Stack of (level, index) for tracking hierarchy
+      in_code_block = False  # Track if we're inside a fenced code block
+      
+      for line_num, line in enumerate(lines, start=1):
+          stripped = line.strip()
+          
+          # Track code block boundaries (``` or ~~~)
+          if stripped.startswith('```') or stripped.startswith('~~~'):
+              in_code_block = not in_code_block
+              continue
+          
+          # Skip lines inside code blocks - they might have # comments
+          if in_code_block:
+              continue
+          
+          # Match markdown headings (# at start of line)
+          match = re.match(r'^(#{1,6})\s+(.+)$', stripped)
+          if match:
+              hashes = match.group(1)
+              text = match.group(2).strip()
+              level = len(hashes)
+              
+              # Determine parent
+              while parent_stack and parent_stack[-1][0] >= level:
+                  parent_stack.pop()
+              
+              parent_index = parent_stack[-1][1] if parent_stack else None
+              
+              heading_entry = {
+                  "level": level,
+                  "text": text,
+                  "heading": f"{hashes} {text}",
+                  "line_number": line_num,
+                  "parent_index": parent_index,
+                  "section_id": f"section-{len(headings)}"
+              }
+              
+              headings.append(heading_entry)
+              parent_stack.append((level, len(headings) - 1))
+      
+      # Count top-level and subsections
+      top_level = sum(1 for h in headings if h["level"] <= 2)
+      subsections = sum(1 for h in headings if h["level"] > 2)
+      
+      result = {
+          "document_path": "{{target_document_path}}",
+          "heading_count": len(headings),
+          "headings": headings,
+          "structure_summary": f"Document has {top_level} top-level sections with {subsections} subsections"
+      }
+      
+      print(json.dumps(result))
+      PYTHON_EOF
+    output: "heading_structure"
+    parse_json: true
+    timeout: 60
+
+  # -------------------------------------------------------------------------
+  # Step 5.1b: Validate heading extraction
+  # -------------------------------------------------------------------------
+  - id: "validate-heading-extraction"
+    type: "bash"
+    command: |
+      set -euo pipefail
+      
+      heading_count="{{heading_structure.heading_count}}"
+      
+      if [ "$heading_count" -eq 0 ]; then
+        echo "ERROR: No headings extracted from document" >&2
+        echo "Document path: {{target_repo_path}}/{{target_document_path}}" >&2
+        exit 1
+      fi
+      
+      echo "Validated: $heading_count headings found" >&2
+      echo "$heading_count"
+    output: "validated_heading_count"
+    timeout: 30
+
+  # -------------------------------------------------------------------------
+  # Step 5.2: Map sections to sources (for synthesized documents)
+  # -------------------------------------------------------------------------
+  - id: "map-sections-to-sources"
+    agent: "foundation:zen-architect"
+    mode: "ANALYZE"
+    prompt: |
+      ## MAP SECTIONS TO SOURCES
+      
+      For each section in the document, identify which sources contribute to it.
+      
+      ## Document Classification
+      {{document_classification}}
+      
+      ## Prompting Strategy
+      {{prompting_strategy}}
+      
+      ## Heading Structure
+      {{heading_structure}}
+      
+      ## Final Sources (from Pass 3)
+      {{pass3_final_sources}}
+      
+      ## Target Document
+      **IMPORTANT**: Read the target document content from this file using read_file tool:
+      {{target_document_content_file}}
+      
+      ## Task
+      For SYNTHESIZED documents:
+      - Map each section to its contributing sources
+      - Identify which concepts/content from each source appear in each section
+      
+      For ORIGINAL documents:
+      - Return empty source mappings
+      - Focus on identifying key concepts per section instead
+      
+      Return as JSON:
+      ```json
+      {
+        "document_type": "synthesized" or "original",
+        "section_mappings": [
+          {
+            "section_id": "section-1",
+            "section_title": "First Section",
+            "sources": [
+              {
+                "file_path": "path/to/source.md",
+                "contribution": "Description of what this source contributes to this section",
+                "relevance": "high|medium|low"
+              }
+            ],
+            "key_concepts": ["concept1", "concept2"],
+            "synthesis_notes": "How sources should be combined for this section"
+          }
+        ],
+        "unmapped_sections": ["section-ids with no clear sources"],
+        "source_coverage_summary": "X of Y sections have identified sources"
+      }
+      ```
+    output: "section_source_mapping"
+    parse_json: true
+    timeout: 600
+
+  # -------------------------------------------------------------------------
+  # Step 5.3: Generate section prompts
+  # -------------------------------------------------------------------------
+  - id: "generate-section-prompts"
+    agent: "foundation:zen-architect"
+    mode: "ARCHITECT"
+    prompt: |
+      ## GENERATE SECTION PROMPTS
+      
+      Create prompts for each section based on the selected strategy.
+      
+      ## Prompting Strategy
+      {{prompting_strategy}}
+      
+      ## Document Classification
+      {{document_classification}}
+      
+      ## Heading Structure
+      {{heading_structure}}
+      
+      ## Section-Source Mapping
+      {{section_source_mapping}}
+      
+      ## Target Document
+      **IMPORTANT**: Read the target document content from this file using read_file tool:
+      {{target_document_content_file}}
+      
+      ## Task
+      Generate a prompt for each section that will guide recreation of that section's content.
+      
+      **For ORIGINAL (concept-focused):**
+      - Capture the essence and key arguments
+      - Describe the voice/tone to use
+      - DO NOT dictate exact wording
+      - Focus on WHAT should be communicated, not HOW
+      
+      **For SYNTHESIZED (instruction-focused):**
+      - Guide HOW to synthesize from the identified sources
+      - Reference specific source files
+      - Provide clear instructions for combining content
+      
+      Return as JSON:
+      ```json
+      {
+        "strategy_applied": "concept-focused" or "instruction-focused",
+        "section_prompts": [
+          {
+            "section_id": "section-1",
+            "section_title": "Section Title",
+            "heading": "## Section Title",
+            "heading_level": 2,
+            "prompt": "The full prompt text for this section",
+            "prompt_type": "concept" or "instruction",
+            "key_concepts": ["for original documents"],
+            "voice_tone": "for original documents",
+            "source_references": ["for synthesized documents"],
+            "expected_length": "approximate word count or description"
+          }
+        ],
+        "generation_notes": "Any notes about the prompt generation process"
+      }
+      ```
+    output: "section_prompts"
+    parse_json: true
+    timeout: 600
+
+  # -------------------------------------------------------------------------
+  # Step 5.4a: Generate _meta section (small, focused output)
+  # -------------------------------------------------------------------------
+  # REFACTORED: Breaking large JSON generation into smaller, reliable steps
+  # This addresses LLM truncation issues with large nested JSON structures
+  # -------------------------------------------------------------------------
+  - id: "generate-meta-section"
+    agent: "foundation:zen-architect"
+    mode: "ARCHITECT"
+    prompt: |
+      ## GENERATE OUTLINE _META SECTION
+      
+      Create ONLY the _meta section for the outline. Keep this focused and concise.
+      
+      ## Inputs
+      
+      Document Type: {{document_classification.document_type}}
+      Document Name: {{setup_info.document_name}}
+      Target Repo: {{setup_info.target_repo_name}}
+      Target Path: {{target_document_path}}
+      
+      Allowed Source Repos: {{allowed_sources_analysis.allowed_source_repos}}
+      
+      Consumers (files that reference target - excluded as sources): {{pass3_final_sources.consumers_not_sources}}
+      
+      Reclassification Signal: {{pass3_final_sources.reclassification_signal}}
+      
+      LLM Config:
+      - Model: {{model}}
+      - Max Response Tokens: {{max_response_tokens}}
+      - Temperature: {{temperature}}
+      
+      Strategy: {{prompting_strategy.strategy_type}}
+      
+      ## Task
+      
+      Generate the _meta object with these exact fields:
+      - name: "{{setup_info.document_name}}-outline" (lowercase with dashes)
+      - document_type: "{{document_classification.document_type}}"
+      - document_instruction: A 1-2 sentence description of how to regenerate this document
+      - model: "{{model}}"
+      - max_response_tokens: {{max_response_tokens}}
+      - temperature: {{temperature}}
+      - source_repo: "{{setup_info.target_repo_name}}"
+      - target_path: "{{target_document_path}}"
+      - allowed_source_repos: Extract the array from the allowed sources analysis
+      - consumers_excluded: Extract file_path values from consumers_not_sources (files that reference target, excluded because they are consumers not sources). Use repo-relative paths only.
+      - regeneration_notes: Brief notes about the document type, directionality findings, and regeneration approach
+      
+      Return ONLY the JSON object (no markdown code blocks):
+      {"name": "...", "document_type": "...", ...}
+    output: "outline_meta"
+    # NOTE: parse_json: false - let assemble-outline-structure handle parsing
+    # so clean_json_control_chars() can fix literal newlines in JSON strings
+    parse_json: false
+    timeout: 300
+    retry:
+      max_attempts: 3
+      backoff: "exponential"
+      initial_delay: 2
+
+  # -------------------------------------------------------------------------
+  # Step 5.4b: Generate FLAT section list (LLM doesn't need to handle nesting)
+  # -------------------------------------------------------------------------
+  - id: "generate-flat-sections"
+    agent: "foundation:zen-architect"
+    mode: "ARCHITECT"
+    prompt: |
+      ## GENERATE FLAT SECTION LIST
+      
+      Create a FLAT array of sections. Do NOT nest them - just list each section with its parent reference.
+      The nesting will be handled programmatically later.
+      
+      ## Heading Structure (from document)
+      {{heading_structure}}
+      
+      ## Section Prompts (already generated)
+      {{section_prompts}}
+      
+      ## Section-Source Mapping
+      {{section_source_mapping}}
+      
+      ## Document Type
+      {{document_classification.document_type}}
+      
+      ## Task
+      
+      For EACH heading in the heading structure, create a section entry with:
+      - section_id: from heading structure (e.g., "section-0", "section-1")
+      - heading: the full markdown heading (e.g., "## Overview")
+      - level: the numeric level (1, 2, 3, etc.)
+      - parent_index: from heading structure (null for top-level, or index of parent)
+      - prompt: the prompt from section_prompts for this section
+      - sources: array of source references (empty for "original" documents)
+      
+      IMPORTANT:
+      - Include ALL sections from the heading structure
+      - Keep the same order as the heading structure
+      - Do NOT nest sections - keep the list flat
+      - Each section should reference its parent by parent_index
+      
+      Return a JSON object with this structure:
+      {
+        "document_title": "# The H1 Title",
+        "sections": [
+          {
+            "section_id": "section-0",
+            "heading": "# Document Title",
+            "level": 1,
+            "parent_index": null,
+            "prompt": "The prompt for this section...",
+            "sources": []
+          },
+          {
+            "section_id": "section-1", 
+            "heading": "## First Section",
+            "level": 2,
+            "parent_index": 0,
+            "prompt": "The prompt...",
+            "sources": []
+          }
+        ]
+      }
+    output: "flat_sections"
+    # NOTE: parse_json: false - let assemble-outline-structure handle parsing
+    # so clean_json_control_chars() can fix literal newlines in JSON strings
+    parse_json: false
+    timeout: 600
+    retry:
+      max_attempts: 3
+      backoff: "exponential"
+      initial_delay: 2
+
+  # -------------------------------------------------------------------------
+  # Step 5.4c: Assemble nested structure programmatically (reliable, no LLM)
+  # -------------------------------------------------------------------------
+  - id: "assemble-outline-structure"
+    type: "bash"
+    command: |
+      set -euo pipefail
+      
+      # Use Python to assemble the nested structure from flat sections
+      python3 << 'ASSEMBLE_EOF'
+      import json
+      import sys
+      
+      # Parse the inputs - these come as JSON strings from previous steps
+      meta_json = '''{{outline_meta}}'''
+      flat_json = '''{{flat_sections}}'''
+      target_path = "{{target_document_path}}"
+      
+      def clean_json_control_chars(json_str):
+          """
+          Clean control characters inside JSON string values.
+          
+          LLMs often output JSON with literal newlines/tabs inside string values,
+          which breaks JSON parsing. This function escapes those characters while
+          preserving structural newlines outside of strings.
+          
+          Approach: Parse character-by-character, tracking whether we're inside
+          a quoted string. Only escape control chars when inside strings.
+          """
+          if not json_str:
+              return json_str
+          
+          result = []
+          in_string = False
+          i = 0
+          n = len(json_str)
+          
+          while i < n:
+              c = json_str[i]
+              
+              if in_string:
+                  # We're inside a quoted string
+                  if c == '\\' and i + 1 < n:
+                      # Escape sequence - keep as-is and skip next char
+                      result.append(c)
+                      result.append(json_str[i + 1])
+                      i += 2
+                      continue
+                  elif c == '"':
+                      # Is this the end of the string, or an unescaped quote inside?
+                      # Look ahead to see what follows
+                      j = i + 1
+                      while j < n and json_str[j] in ' \t\n\r':
+                          j += 1
+                      next_char = json_str[j] if j < n else ''
+                      
+                      # If next meaningful char is JSON structural, this ends the string
+                      if next_char in ':,}]' or next_char == '':
+                          in_string = False
+                          result.append(c)
+                      else:
+                          # This quote is likely data inside the string - escape it
+                          result.append('\\"')
+                  elif c == '\n':
+                      # Literal newline inside string - escape it
+                      result.append('\\n')
+                  elif c == '\r':
+                      # Literal carriage return inside string - escape it
+                      result.append('\\r')
+                  elif c == '\t':
+                      # Literal tab inside string - escape it
+                      result.append('\\t')
+                  elif ord(c) < 32:
+                      # Other control characters - escape as unicode
+                      result.append(f'\\u{ord(c):04x}')
+                  else:
+                      result.append(c)
+              else:
+                  # We're outside a string
+                  if c == '"':
+                      # Start of string
+                      in_string = True
+                      result.append(c)
+                  else:
+                      # Keep structural characters (including newlines) as-is
+                      result.append(c)
+              
+              i += 1
+          
+          return ''.join(result)
+      
+      def safe_parse_json(json_str, name):
+          """Parse JSON with error recovery for common LLM issues."""
+          if not json_str or json_str.strip() == '':
+              print(f"ERROR: {name} is empty", file=sys.stderr)
+              sys.exit(1)
+          
+          # If it's already a dict (from parse_json: true), just return it
+          if isinstance(json_str, dict):
+              return json_str
+          
+          # First, clean control characters inside strings
+          cleaned = clean_json_control_chars(json_str)
+          
+          # Try direct parse with cleaned JSON
+          try:
+              return json.loads(cleaned)
+          except json.JSONDecodeError as e:
+              print(f"Direct parse of {name} failed after cleaning: {e}", file=sys.stderr)
+          
+          # Try to extract from markdown code blocks
+          import re
+          
+          # Method 1: Try regex with closing backticks (greedy, find largest block)
+          code_match = re.search(r'```(?:json)?\s*\n(.*)\n```', json_str, re.DOTALL)
+          if code_match:
+              try:
+                  extracted = code_match.group(1).strip()
+                  cleaned_extracted = clean_json_control_chars(extracted)
+                  return json.loads(cleaned_extracted)
+              except json.JSONDecodeError as e:
+                  print(f"Method 1 (regex) extracted but failed to parse: {e}", file=sys.stderr)
+                  # Show context around error position
+                  pos = e.pos if hasattr(e, 'pos') else 0
+                  print(f"  Error at position {pos}: ...{cleaned_extracted[max(0,pos-50):pos+50]}...", file=sys.stderr)
+          
+          # Method 2: Find ```json anywhere in content and extract everything after
+          # Handles case where LLM outputs explanation text before the JSON block
+          json_block_start = json_str.find('```json')
+          if json_block_start == -1:
+              json_block_start = json_str.find('```\n{')  # Also try ``` followed by {
+          if json_block_start >= 0:
+              # Find the line after ```json
+              after_marker = json_str[json_block_start:]
+              lines = after_marker.split('\n', 1)
+              if len(lines) > 1:
+                  content = lines[1]
+                  # Find closing ``` and remove everything after
+                  closing_pos = content.rfind('\n```')
+                  if closing_pos >= 0:
+                      content = content[:closing_pos]
+                  try:
+                      cleaned_content = clean_json_control_chars(content)
+                      return json.loads(cleaned_content)
+                  except json.JSONDecodeError as e:
+                      print(f"Method 2 (find ```json) extracted but failed to parse: {e}", file=sys.stderr)
+                      pos = e.pos if hasattr(e, 'pos') else 0
+                      print(f"  Error at position {pos}: ...{cleaned_content[max(0,pos-50):pos+50]}...", file=sys.stderr)
+          
+          # Method 3: Find first { and extract JSON object directly
+          first_brace = json_str.find('{')
+          if first_brace >= 0:
+              potential_json = json_str[first_brace:]
+              # Find matching closing brace
+              depth = 0
+              in_str = False
+              escape_next = False
+              for i, c in enumerate(potential_json):
+                  if escape_next:
+                      escape_next = False
+                      continue
+                  if c == '\\':
+                      escape_next = True
+                      continue
+                  if c == '"' and not escape_next:
+                      in_str = not in_str
+                  if not in_str:
+                      if c == '{': depth += 1
+                      elif c == '}': depth -= 1
+                      if depth == 0:
+                          try:
+                              json_content = potential_json[:i+1]
+                              cleaned_json = clean_json_control_chars(json_content)
+                              return json.loads(cleaned_json)
+                          except json.JSONDecodeError as e:
+                              print(f"Method 3 (find braces) extracted but failed to parse: {e}", file=sys.stderr)
+                              pos = e.pos if hasattr(e, 'pos') else 0
+                              print(f"  Error at position {pos}: ...{cleaned_json[max(0,pos-50):pos+50]}...", file=sys.stderr)
+                          break
+          
+          # Try to find JSON object/array boundaries
+          cleaned = cleaned.strip()
+          if cleaned.startswith('{'):
+              # Find matching closing brace
+              depth = 0
+              in_str = False
+              for i, c in enumerate(cleaned):
+                  if c == '"' and (i == 0 or cleaned[i-1] != '\\'):
+                      in_str = not in_str
+                  if not in_str:
+                      if c == '{': depth += 1
+                      elif c == '}': depth -= 1
+                      if depth == 0:
+                          try:
+                              return json.loads(cleaned[:i+1])
+                          except json.JSONDecodeError:
+                              break
+          
+          print(f"ERROR: Could not parse {name} as JSON", file=sys.stderr)
+          print(f"Content preview: {json_str[:500]}", file=sys.stderr)
+          sys.exit(1)
+      
+      # Parse inputs
+      meta = safe_parse_json(meta_json, "outline_meta")
+      flat = safe_parse_json(flat_json, "flat_sections")
+      
+      # Validate flat sections
+      if "sections" not in flat or not isinstance(flat["sections"], list):
+          print("ERROR: flat_sections missing 'sections' array", file=sys.stderr)
+          sys.exit(1)
+      
+      sections = flat["sections"]
+      if len(sections) == 0:
+          print("ERROR: No sections found in flat_sections", file=sys.stderr)
+          sys.exit(1)
+      
+      print(f"Assembling {len(sections)} sections into nested structure...", file=sys.stderr)
+      
+      # Build nested structure from flat list
+      def build_nested_sections(flat_sections):
+          """Convert flat section list with parent_index to nested structure."""
+          # Create section objects with empty children arrays
+          section_objects = []
+          for s in flat_sections:
+              section_objects.append({
+                  "heading": s.get("heading", ""),
+                  "level": s.get("level", 1),
+                  "prompt": s.get("prompt", ""),
+                  "sources": s.get("sources", []),
+                  "sections": []  # Will be populated with children
+              })
+          
+          # Build tree by linking children to parents
+          root_sections = []
+          for i, s in enumerate(flat_sections):
+              parent_idx = s.get("parent_index")
+              if parent_idx is None:
+                  # Top-level section
+                  root_sections.append(section_objects[i])
+              else:
+                  # Child section - add to parent's sections array
+                  try:
+                      parent_idx = int(parent_idx)
+                      if 0 <= parent_idx < len(section_objects):
+                          section_objects[parent_idx]["sections"].append(section_objects[i])
+                      else:
+                          # Invalid parent, add to root
+                          print(f"Warning: Section {i} has invalid parent_index {parent_idx}, adding to root", file=sys.stderr)
+                          root_sections.append(section_objects[i])
+                  except (ValueError, TypeError):
+                      # Invalid parent, add to root
+                      root_sections.append(section_objects[i])
+          
+          return root_sections
+      
+      nested_sections = build_nested_sections(sections)
+      
+      # Get document title
+      doc_title = flat.get("document_title", "# Document")
+      if not doc_title.startswith("#"):
+          doc_title = "# " + doc_title
+      
+      # Assemble final structure
+      complete_outline = {
+          "_meta": meta,
+          "document": {
+              "title": doc_title,
+              "output": target_path,
+              "sections": nested_sections
+          }
+      }
+      
+      # Validate the assembled structure
+      def count_sections(sections):
+          count = len(sections)
+          for s in sections:
+              count += count_sections(s.get("sections", []))
+          return count
+      
+      total_sections = count_sections(nested_sections)
+      print(f"Assembled outline with {total_sections} total sections ({len(nested_sections)} top-level)", file=sys.stderr)
+      
+      # Output the complete JSON
+      print(json.dumps(complete_outline, indent=2, ensure_ascii=False))
+      ASSEMBLE_EOF
+    output: "complete_outline"
+    timeout: 120
+    on_error: "fail"
+
+# =============================================================================
+# PHASE 6: OUTPUT GENERATION
+# =============================================================================
+
+  # -------------------------------------------------------------------------
+  # Step 6.0: Validate assembled outline before file writing
+  # -------------------------------------------------------------------------
+  # NOTE: Since we now assemble the outline programmatically in step 5.4c,
+  # this validation is simpler - we just need to verify JSON validity
+  # -------------------------------------------------------------------------
+  - id: "validate-assembled-outline"
+    type: "bash"
+    command: |
+      set -euo pipefail
+      
+      temp_check="{{working_dir}}/assembled_outline_check.json"
+      
+      # Save the assembled outline to a temp file
+      cat > "$temp_check" << 'CHECK_EOF'
+      {{complete_outline}}
+      CHECK_EOF
+      
+      # Validate with Python (more robust than shell checks)
+      python3 << 'VALIDATE_EOF'
+      import json
+      import sys
+      import os
+      
+      temp_file = "{{working_dir}}/assembled_outline_check.json"
+      
+      try:
+          with open(temp_file, 'r') as f:
+              content = f.read()
+      except FileNotFoundError:
+          print("ERROR: Temp file not found", file=sys.stderr)
+          sys.exit(1)
+      
+      # Check size
+      size = len(content)
+      if size < 100:
+          print(f"ERROR: Outline too small ({size} bytes). Expected valid JSON outline.", file=sys.stderr)
+          print(f"Content: {content}", file=sys.stderr)
+          sys.exit(1)
+      
+      # Parse JSON
+      try:
+          data = json.loads(content)
+      except json.JSONDecodeError as e:
+          print(f"ERROR: Invalid JSON in assembled outline: {e}", file=sys.stderr)
+          print(f"Content preview: {content[:500]}", file=sys.stderr)
+          sys.exit(1)
+      
+      # Validate structure
+      errors = []
+      
+      if "_meta" not in data:
+          errors.append("Missing _meta section")
+      else:
+          meta = data["_meta"]
+          required_meta = ["name", "document_type", "model"]
+          for field in required_meta:
+              if field not in meta:
+                  errors.append(f"Missing _meta.{field}")
+      
+      if "document" not in data:
+          errors.append("Missing document section")
+      else:
+          doc = data["document"]
+          if "sections" not in doc:
+              errors.append("Missing document.sections")
+          elif not isinstance(doc["sections"], list):
+              errors.append("document.sections is not a list")
+          elif len(doc["sections"]) == 0:
+              errors.append("document.sections is empty")
+      
+      if errors:
+          for err in errors:
+              print(f"ERROR: {err}", file=sys.stderr)
+          sys.exit(1)
+      
+      # Count sections recursively
+      def count_sections(sections):
+          count = len(sections)
+          for s in sections:
+              count += count_sections(s.get("sections", []))
+          return count
+      
+      section_count = count_sections(data["document"]["sections"])
+      
+      print(f"Validation PASSED: {size} bytes, {section_count} sections", file=sys.stderr)
+      print(json.dumps({"size": size, "section_count": section_count, "valid": True}))
+      
+      # Cleanup
+      os.remove(temp_file)
+      VALIDATE_EOF
+    output: "validation_result"
+    parse_json: true
+    timeout: 60
+
+  # -------------------------------------------------------------------------
+  # Step 6.1: Write both output files (YAML and JSON)
+  # -------------------------------------------------------------------------
+  # NOTE: Since complete_outline now comes from programmatic assembly (step 5.4c),
+  # it should already be valid JSON. Simplified from original version.
+  # -------------------------------------------------------------------------
+  - id: "write-outline-files"
+    type: "bash"
+    command: |
+      set -euo pipefail
+      
+      yaml_file="{{output_dir}}/{{setup_info.document_name}}_outline.yaml"
+      json_file="{{output_dir}}/{{setup_info.document_name}}_outline.json"
+      temp_file="{{working_dir}}/temp_outline_assembled.json"
+      
+      # Save the assembled outline to a temp file
+      cat > "$temp_file" << 'OUTLINE_EOF'
+      {{complete_outline}}
+      OUTLINE_EOF
+      
+      # Process with Python - simpler now since input is already valid JSON
+      python3 << PYTHON_EOF
+      import json
+      import yaml
+      import sys
+      import os
+      
+      temp_file = "$temp_file"
+      yaml_file = "$yaml_file"
+      json_file = "$json_file"
+      
+      # Read assembled outline from temp file
+      with open(temp_file, 'r') as f:
+          content = f.read()
+      
+      # Check if empty
+      if not content or content.strip() == '':
+          print("ERROR: complete_outline is empty", file=sys.stderr)
+          sys.exit(1)
+      
+      # Parse JSON (should be valid since it came from programmatic assembly)
+      try:
+          data = json.loads(content)
+      except json.JSONDecodeError as e:
+          print(f"ERROR: Failed to parse assembled outline: {e}", file=sys.stderr)
+          print(f"Content preview: {content[:500]}", file=sys.stderr)
+          sys.exit(1)
+      
+      if not isinstance(data, dict):
+          print(f"ERROR: Parsed data is not a dict, got {type(data)}", file=sys.stderr)
+          sys.exit(1)
+      
+      # Validate required fields
+      if "_meta" not in data:
+          print("ERROR: Missing _meta section", file=sys.stderr)
+          sys.exit(1)
+      if "document" not in data:
+          print("ERROR: Missing document section", file=sys.stderr)
+          sys.exit(1)
+      
+      # Write YAML file
+      with open(yaml_file, 'w') as f:
+          yaml.dump(data, f, default_flow_style=False, sort_keys=False, allow_unicode=True, width=120)
+      print(f"Written YAML: {yaml_file}", file=sys.stderr)
+      
+      # Write JSON file (pretty-printed)
+      with open(json_file, 'w') as f:
+          json.dump(data, f, indent=2, ensure_ascii=False)
+      print(f"Written JSON: {json_file}", file=sys.stderr)
+      
+      # Output paths as JSON for next steps
+      print(json.dumps({"yaml_file": yaml_file, "json_file": json_file}))
+      
+      # Cleanup temp file
+      os.remove(temp_file)
+      PYTHON_EOF
+    output: "output_files"
+    parse_json: true
+    timeout: 180
+    on_error: "fail"
+
+  # -------------------------------------------------------------------------
+  # Step 6.2: Verify output files
+  # -------------------------------------------------------------------------
+  - id: "verify-outputs"
+    type: "bash"
+    command: |
+      set -euo pipefail
+      
+      yaml_file="{{output_files.yaml_file}}"
+      json_file="{{output_files.json_file}}"
+      
+      echo "=== Output Verification ===" >&2
+      
+      # Check YAML file
+      if [ -s "$yaml_file" ]; then
+        yaml_size=$(wc -c < "$yaml_file")
+        yaml_lines=$(wc -l < "$yaml_file")
+        echo "YAML: $yaml_file ($yaml_size bytes, $yaml_lines lines)" >&2
+      else
+        echo "ERROR: YAML file is empty or missing" >&2
+        exit 1
+      fi
+      
+      # Check JSON file
+      if [ -s "$json_file" ]; then
+        json_size=$(wc -c < "$json_file")
+        json_lines=$(wc -l < "$json_file")
+        echo "JSON: $json_file ($json_size bytes, $json_lines lines)" >&2
+      else
+        echo "ERROR: JSON file is empty or missing" >&2
+        exit 1
+      fi
+      
+      # Validate JSON structure
+      if python3 -c "import json; json.load(open('$json_file'))"; then
+        echo "JSON validation: PASSED" >&2
+      else
+        echo "ERROR: JSON validation failed" >&2
+        exit 1
+      fi
+      
+      # Check for required fields
+      python3 << VERIFY_EOF
+      import json
+      import sys
+      
+      with open("$json_file") as f:
+          data = json.load(f)
+      
+      errors = []
+      
+      # Check _meta exists
+      if "_meta" not in data:
+          errors.append("Missing _meta section")
+      else:
+          meta = data["_meta"]
+          required_meta = ["name", "document_type", "model", "allowed_source_repos"]
+          for field in required_meta:
+              if field not in meta:
+                  errors.append(f"Missing _meta.{field}")
+      
+      # Check document exists
+      if "document" not in data:
+          errors.append("Missing document section")
+      else:
+          doc = data["document"]
+          if "sections" not in doc:
+              errors.append("Missing document.sections")
+          elif not isinstance(doc["sections"], list):
+              errors.append("document.sections is not a list")
+      
+      if errors:
+          for e in errors:
+              print(f"ERROR: {e}", file=sys.stderr)
+          sys.exit(1)
+      else:
+          print("Structure validation: PASSED", file=sys.stderr)
+      VERIFY_EOF
+      
+      # Output summary as JSON using Python
+      python3 << SUMMARY_EOF
+      import json
+      print(json.dumps({
+          "yaml_file": "$yaml_file",
+          "json_file": "$json_file",
+          "yaml_bytes": $yaml_size,
+          "json_bytes": $json_size,
+          "validation": "passed"
+      }))
+      SUMMARY_EOF
+    output: "verification_result"
+    parse_json: true
+    timeout: 60
+
+  # -------------------------------------------------------------------------
+  # Step 6.4: Generate final summary
+  # -------------------------------------------------------------------------
+  - id: "generate-summary"
+    agent: "foundation:zen-architect"
+    mode: "ANALYZE"
+    prompt: |
+      ## GENERATE EXECUTION SUMMARY
+      
+      Create a summary of the outline generation process.
+      
+      ## Results
+      
+      ### Document Classification
+      {{document_classification}}
+      
+      ### Sources Identified
+      {{pass3_final_sources}}
+      
+      ### Output Files
+      {{verification_result}}
+      
+      ### Outline Statistics
+      - Heading count: (from {{heading_structure}})
+      - Source count: (from {{pass3_final_sources}})
+      - Circular references excluded: (from {{pass3_final_sources}})
+      
+      ## Task
+      Create a human-readable summary of:
+      1. What was analyzed
+      2. Document classification and reasoning
+      3. Sources identified (if any)
+      4. Circular references that were excluded
+      5. Output files generated
+      6. Recommendations for using the outline
+      
+      Format as a clear, concise report.
+    output: "final_summary"
+    timeout: 300
+
+  # -------------------------------------------------------------------------
+  # Step 6.5: Display completion message
+  # -------------------------------------------------------------------------
+  - id: "cleanup"
+    type: "bash"
+    command: |
+      echo ""
+      echo "=== Outline Generation Complete ==="
+      echo ""
+      echo "Document: {{target_document_path}}"
+      echo "Type: {{document_classification.document_type}}"
+      echo ""
+      echo "Output files:"
+      echo "  - YAML: {{output_files.yaml_file}}"
+      echo "  - JSON: {{output_files.json_file}}"
+      echo ""
+      echo "Working directory preserved at: {{working_dir}}"
+      echo "To clean up: rm -rf {{working_dir}}"
+      echo ""
+      echo "Done."
+    timeout: 30
+    on_error: "continue"
