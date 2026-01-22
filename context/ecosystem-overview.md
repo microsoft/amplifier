@@ -75,30 +75,6 @@ Multi-step AI agent orchestration for repeatable workflows:
 - Approval gates for human-in-loop checkpoints
 - Resumability after interruption
 
-## Ecosystem Conventions
-
-### Bundle Directory Structure
-
-All bundles follow consistent directory conventions:
-
-| Directory | Purpose |
-|-----------|---------|
-| `context/` | Context files loaded into agent memory |
-| `agents/` | Agent definitions (specialized personas) |
-| `behaviors/` | Reusable behavior configurations |
-| `recipes/` | Recipe YAML files for this bundle |
-| `modules/` | Module implementations |
-| `skills/` | Skill definitions |
-
-### Recipe Location Convention
-
-**All bundles with recipes store them in `recipes/`.** This enables ecosystem-wide recipe discovery:
-
-- Bundle recipes: `@<bundle>:recipes/*.yaml`
-- Local project recipes: `./recipes/*.yaml`
-
-When your environment context shows "Loaded bundles: ...", you can discover recipes by checking each bundle's `recipes/` directory.
-
 ## Ecosystem Activity Report
 
 **Want to know what's been happening across the Amplifier ecosystem?** Use the ecosystem activity report recipe:
