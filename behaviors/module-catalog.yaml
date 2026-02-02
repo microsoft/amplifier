@@ -1,0 +1,15 @@
+# Behavior: Module Catalog Expert
+# Provides focused expertise on available Amplifier modules
+# Use when checking what already exists before building new functionality
+#
+# NOTE: MODULES.md is @mentioned in the agent body, NOT in context.include
+# This ensures it loads only when the agent runs, not during bundle composition
+
+bundle:
+  name: module-catalog-behavior
+  version: 1.0.0
+  description: Expert on available Amplifier modules - consult before building new functionality
+
+agents:
+  include:
+    - amplifier:module-catalog
