@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run $CLAUDE_PROJECT_DIR/.claude/tools/hook_session_start.py",
+            "command": "uv run .claude/tools/hook_session_start.py",
             "timeout": 10000
           }
         ]
@@ -36,7 +36,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run $CLAUDE_PROJECT_DIR/.claude/tools/hook_stop.py"
+            "command": "uv run .claude/tools/hook_stop.py"
           }
         ]
       }
@@ -46,7 +46,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run $CLAUDE_PROJECT_DIR/.claude/tools/hook_stop.py"
+            "command": "uv run .claude/tools/hook_stop.py"
           }
         ]
       }
@@ -57,7 +57,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run $CLAUDE_PROJECT_DIR/.claude/tools/subagent-logger.py"
+            "command": "uv run .claude/tools/subagent-logger.py"
           }
         ]
       }
@@ -68,7 +68,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash $CLAUDE_PROJECT_DIR/.claude/tools/on_code_change_hook.sh"
+            "command": "bash .claude/tools/on_code_change_hook.sh"
           }
         ]
       },
@@ -77,7 +77,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run $CLAUDE_PROJECT_DIR/.claude/tools/hook_post_tool_use.py"
+            "command": "uv run .claude/tools/hook_post_tool_use.py"
           }
         ]
       }
@@ -87,7 +87,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run $CLAUDE_PROJECT_DIR/.claude/tools/on_notification_hook.py"
+            "command": "uv run .claude/tools/on_notification_hook.py"
           }
         ]
       }
@@ -98,7 +98,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run $CLAUDE_PROJECT_DIR/.claude/tools/hook_precompact.py",
+            "command": "uv run .claude/tools/hook_precompact.py",
             "timeout": 30000
           }
         ]
