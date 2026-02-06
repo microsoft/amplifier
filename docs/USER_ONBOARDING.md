@@ -82,7 +82,7 @@ API key: ••••••••
   Get one: https://console.anthropic.com/settings/keys
 ✓ Saved to ~/.amplifier/keys.env
 
-Model? [1] claude-sonnet-4-5 [2] claude-opus-4-5 [3] custom: 1
+Model? [1] claude-sonnet-4-5 [2] claude-opus-4-6 [3] custom: 1
 ✓ Using claude-sonnet-4-5
 
 Step 2: Bundle

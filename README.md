@@ -77,7 +77,7 @@ API key: ••••••••
   Get one: https://console.anthropic.com/settings/keys
 ✓ Saved
 
-Model? [1] claude-sonnet-4-5 [2] claude-opus-4-5 [3] custom: 1
+Model? [1] claude-sonnet-4-5 [2] claude-opus-4-6 [3] custom: 1
 ✓ Using claude-sonnet-4-5
 
 Ready! Starting chat...
@@ -184,7 +184,7 @@ amplifier-log-viewer
 
 Amplifier works with multiple AI providers:
 
-- **Anthropic Claude** - Recommended, most tested (Sonnet 4.5, Opus 4.5, Haiku 4.5)
+- **Anthropic Claude** - Recommended, most tested (Sonnet 4.5, Opus 4.6, Haiku 4.5)
 - **OpenAI** - Good alternative (GPT-5.2, GPT-5.2-Pro, GPT-5.1-Codex)
 - **Azure OpenAI** - Enterprise users with Azure subscriptions (supports managed identity)
 - **Ollama** - Local, free, no API key needed (llama3, codellama, etc.)
@@ -196,7 +196,7 @@ Switch providers anytime:
 amplifier provider use openai
 
 # Or explicit
-amplifier provider use anthropic --model claude-opus-4-5
+amplifier provider use anthropic --model claude-opus-4-6
 amplifier provider use azure-openai --deployment gpt-5.2
 ```
 
@@ -326,7 +326,7 @@ Sessions are project-scoped—when you're in `/home/user/myapp`, you see only `m
 amplifier provider use openai
 
 # Or explicit
-amplifier provider use anthropic --model claude-opus-4-5
+amplifier provider use anthropic --model claude-opus-4-6
 
 # Azure OpenAI (needs endpoint + deployment)
 amplifier provider use azure-openai
@@ -336,7 +336,7 @@ amplifier provider use azure-openai
 
 # Configure where to save
 amplifier provider use openai --model gpt-5.2 --local      # Just you
-amplifier provider use anthropic --model claude-opus-4-5 --project  # Team
+amplifier provider use anthropic --model claude-opus-4-6 --project  # Team
 
 # See what's active
 amplifier provider current
