@@ -317,6 +317,16 @@ Built something cool? Share it with the community!
   - Compatible: Amplifier 0.1.x
   - Status: Experimental
 
+- **bundle-loop-safety** by @michaeljabbour - Loop detection and safe orchestration with automatic circuit-breaking to prevent runaway agent loops
+  - Repository: https://github.com/michaeljabbour/amplifier-bundle-loop-safety
+  - Compatible: Amplifier 0.1.x
+  - Status: Active
+
+- **hooks-insight-blocks** by @michaeljabbour - Generate structured insight blocks that inject contextual knowledge and explanations into agent responses
+  - Repository: https://github.com/michaeljabbour/amplifier-module-hooks-insight-blocks
+  - Compatible: Amplifier 0.1.x
+  - Status: Active
+
 ---
 
 ## Building Your Own Modules
