@@ -1,12 +1,13 @@
-# Amplifier
+# Amplifier (Claude Code Integration)
 
-**AI-powered modular development assistant - currently in early preview.**
-
-> [!CAUTION]
-> This project is a research demonstrator. It is in early development and may change significantly. Using permissive AI tools on your computer requires careful attention to security considerations and careful human supervision, and even then things can still go wrong. Use it with caution, and at your own risk, we have NOT built in the safety systems yet. We are performing our _active exploration_ in the open for others to join in the conversation and exploration, not as a product or "official release".
+**AI-powered modular development assistant - Claude Code integrated branch.**
 
 > [!NOTE]
-> **Looking for the earlier Claude Code-based version?** The previous version of Amplifier, built on top of Claude Code, has been moved to the [`amplifier-claude`](https://github.com/microsoft/amplifier/tree/amplifier-claude) branch.
+> **This is the `amplifier-claude-v2` branch** - a unified integration of Amplifier v2 (from `main`) with our Claude Code customizations (from `amplifier-claude`). It uses Claude Code as the agent runtime while adopting v2's improved agent definitions, recipes, and organizational patterns.
+>
+> **What's here**: 30 specialized agents, 19 slash commands, 7 hooks, 4 MCP servers (playwright, context7, deepwiki, repomix), 6 YAML recipes, design philosophy docs, and full v2 ecosystem context.
+>
+> For the standalone Amplifier CLI, see the [`main`](https://github.com/microsoft/amplifier/tree/main) branch.
 
 ---
 
