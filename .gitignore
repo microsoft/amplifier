@@ -65,6 +65,27 @@ next-steps.md
 # Amplifier specific ignores #
 ##############################
 
+# Windows reserved names (CRITICAL - can corrupt NTFS)
+nul
+con
+prn
+aux
+
+# Security audit artifacts
+*.jfm
+*.sdb
+
+# Screenshots and images (don't track in repo)
+*.png
+
+# Playwright MCP auto-generated
+.playwright-mcp/
+
+# Session continuation files
+2026-*.txt
+
+# Local session data
+.data/
 
 # Working folders
 ai_working/tmp
