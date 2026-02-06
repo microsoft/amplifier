@@ -1,6 +1,13 @@
 ---
 name: content-researcher
-description: Use this agent when you need to research and analyze content files for a specific task or project. Examples: <example>Context: User is working on implementing a new authentication system and wants to research best practices from their content collection. user: 'I need to implement OAuth 2.0 authentication for my web app. Can you research relevant content and provide recommendations?' assistant: 'I'll use the content-researcher agent to analyze the content files in our collection and find relevant authentication and OAuth documentation.' <commentary>Since the user needs research from content files for a specific implementation task, use the content-researcher agent to analyze the content collection and provide targeted recommendations.</commentary></example> <example>Context: User is designing a new API architecture and wants insights from their content collection. user: 'I'm designing a REST API for a microservices architecture. What insights can we gather from our content collection?' assistant: 'Let me use the content-researcher agent to analyze our content files for API design and microservices architecture insights.' <commentary>The user needs research from the content collection for API design, so use the content-researcher agent to find and analyze relevant content.</commentary></example>
+description: |
+  Research analyst specializing in extracting actionable insights from
+  content file collections for specific tasks and projects.
+
+  Deploy for:
+  - Researching best practices from content collections
+  - Finding relevant documentation for implementation tasks
+  - Analyzing content files for API design or architecture insights
 tools: Glob, Grep, LS, Read, WebFetch, TodoWrite, WebSearch, BashOutput, KillBash, Bash
 model: inherit
 ---

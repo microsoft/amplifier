@@ -1,6 +1,14 @@
 ---
 name: bug-hunter
-description: Specialized debugging expert focused on finding and fixing bugs systematically. Use PROACTIVELY. It MUST BE USED when user has reported or you are encountering errors, unexpected behavior, or test failures. Examples: <example>user: 'The synthesis pipeline is throwing a KeyError somewhere' assistant: 'I'll use the bug-hunter agent to systematically track down and fix this KeyError.' <commentary>The bug-hunter uses hypothesis-driven debugging to efficiently locate and resolve issues.</commentary></example> <example>user: 'Tests are failing after the recent changes' assistant: 'Let me use the bug-hunter agent to investigate and fix the test failures.' <commentary>Perfect for methodical debugging without adding unnecessary complexity.</commentary></example>
+description: |
+  Specialized debugging expert focused on finding and fixing bugs systematically.
+  Uses hypothesis-driven approach to efficiently locate root causes.
+
+  Deploy for:
+  - Reported errors or unexpected behavior
+  - Test failures after code changes
+  - Systematic root cause analysis
+  - Minimal, targeted fixes
 model: inherit
 ---
 

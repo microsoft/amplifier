@@ -1,6 +1,14 @@
 ---
 name: amplifier-cli-architect
-description: Expert knowledge provider for Amplifier CLI Tools - hybrid code/AI architectures that combine reliable code structure with AI intelligence. Use PROACTIVELY throughout the entire lifecycle: CONTEXTUALIZE mode when starting work involving hybrid tools,GUIDE mode when planning implementations, and VALIDATE mode when reviewing amplifier tools. This agent injects critical context,patterns, and expertise that other agents need but won't discover on their own.\n**What are Amplifier CLI Tools?**\nTools that embody "code for structure, AI for intelligence" - using Python CLIs invoked via make commands to provide reliable iteration and state management, while delegating complex reasoning to Claude Code SDK. Essential for tasks that would be unreliable with pure AI or inefficient with pure code.\nExamples:\n\n<example>\nContext: Task involves processing many items with AI\nuser: "Extract insights from all our documentation files"\nassistant: "I'll use amplifier-cli-architect in CONTEXTUALIZE mode to understand if this needs the amplifier pattern"\n<commentary>\nLarge-scale processing with AI analysis per item triggers contextualization.\n</commentary>\n</example>\n\n<example>\nContext: Planning a hybrid tool implementation\nuser: "Design the knowledge extraction pipeline"\nassistant: "Using amplifier-cli-architect in GUIDE mode to provide implementation patterns"\n<commentary>\nPlanning phase needs expert guidance on patterns and pitfalls.\n</commentary>\n</example>\n\n<example>\nContext: Reviewing an amplifier tool\nuser: "Check if this CLI tool follows our patterns correctly"\nassistant: "Deploying amplifier-cli-architect in VALIDATE mode to review pattern compliance"\n<commentary>\nValidation ensures tools follow proven patterns and avoid known issues.\n</commentary>\n</example>
+description: |
+  Expert knowledge provider for Amplifier CLI Tools - hybrid code/AI
+  architectures combining reliable code structure with AI intelligence.
+
+  Deploy for:
+  - CONTEXTUALIZE mode when starting work involving hybrid tools
+  - GUIDE mode when planning implementations
+  - VALIDATE mode when reviewing amplifier tools
+  - Understanding code-for-structure/AI-for-intelligence patterns
 tools: Glob, Grep, Read, WebFetch, TodoWrite, WebSearch, BashOutput, KillBash
 model: inherit
 ---

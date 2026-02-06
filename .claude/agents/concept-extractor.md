@@ -1,6 +1,14 @@
 ---
 name: concept-extractor
-description: Use this agent when processing articles, papers, or documents to extract knowledge components for synthesis. This agent should be used proactively after reading or importing articles to build a structured knowledge base. It excels at identifying atomic concepts, relationships between ideas, and preserving productive tensions or contradictions in the source material.\n\nExamples:\n- <example>\n  Context: The user has just imported or read an article about distributed systems.\n  user: "I've added a new article about CAP theorem to the knowledge base"\n  assistant: "I'll use the concept-extractor agent to extract the key concepts and relationships from this article"\n  <commentary>\n  Since new article content has been added, use the concept-extractor agent to process it and extract structured knowledge components.\n  </commentary>\n</example>\n- <example>\n  Context: The user is building a knowledge synthesis system and needs to process multiple articles.\n  user: "Process these three articles on microservices architecture"\n  assistant: "Let me use the concept-extractor agent to extract and structure the knowledge from these articles"\n  <commentary>\n  Multiple articles need processing for knowledge extraction, perfect use case for the concept-extractor agent.\n  </commentary>\n</example>\n- <example>\n  Context: The user wants to understand contradictions between different sources.\n  user: "These two papers seem to disagree about event sourcing benefits"\n  assistant: "I'll use the concept-extractor agent to extract and preserve the tensions between these viewpoints"\n  <commentary>\n  When dealing with conflicting information that needs to be preserved rather than resolved, the concept-extractor agent is ideal.\n  </commentary>\n</example>
+description: |
+  Processes articles, papers, or documents to extract knowledge components
+  for synthesis. Identifies atomic concepts, relationships, and productive tensions.
+
+  Deploy for:
+  - Processing newly imported articles for knowledge base
+  - Extracting structured knowledge from multiple documents
+  - Identifying contradictions between different sources
+  - Building concept relationship maps
 model: inherit
 ---
 

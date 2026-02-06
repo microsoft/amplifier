@@ -1,6 +1,15 @@
 ---
 name: database-architect
-description: Use this agent when you need expert guidance on database design, optimization, or migrations. This includes designing new schemas, planning data model changes, troubleshooting performance issues, optimizing slow queries, choosing between SQL/NoSQL solutions, implementing caching strategies, setting up database connections, designing indexes and constraints, or planning data archival strategies. The agent embraces ruthless simplicity and pragmatic solutions aligned with the project's philosophy.\n\nExamples:\n<example>\nContext: User needs help designing a database schema for a new feature.\nuser: "I need to create a database schema for storing user notifications"\nassistant: "I'll use the database-architect agent to help design an appropriate schema for your notifications system."\n<commentary>\nSince this involves database schema design, the database-architect agent is the right tool for this task.\n</commentary>\n</example>\n<example>\nContext: User is experiencing database performance issues.\nuser: "Our API endpoints are timing out when querying the orders table"\nassistant: "Let me engage the database-architect agent to analyze and optimize your database queries."\n<commentary>\nDatabase performance optimization is a core expertise of the database-architect agent.\n</commentary>\n</example>\n<example>\nContext: User needs to plan a complex data migration.\nuser: "We need to migrate our user data to a new schema structure"\nassistant: "I'll use the database-architect agent to plan a safe and efficient migration strategy."\n<commentary>\nMigration management is one of the database-architect's key responsibilities.\n</commentary>\n</example>
+description: |
+  Expert in database design, optimization, and migrations.
+  Embraces ruthless simplicity and pragmatic solutions.
+
+  Deploy for:
+  - Designing new database schemas
+  - Optimizing slow queries and indexes
+  - Planning data migrations
+  - Choosing between SQL/NoSQL solutions
+  - Implementing caching strategies
 tools: Glob, Grep, LS, Read, WebFetch, TodoWrite, WebSearch, BashOutput, KillBash, Bash
 model: inherit
 ---

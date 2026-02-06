@@ -1,6 +1,14 @@
 ---
 name: contract-spec-author
-description: Use this agent when you need to create or update Contract and Implementation Specification documents for modules following the strict authoring guide. This includes defining public APIs, data models, error handling, and implementation details while maintaining clear boundaries between contracts and specs. <example>Context: User needs to create formal specifications for a new authentication module. user: "Create a contract and implementation spec for the authentication service" assistant: "I'll use the contract-spec-author agent to create the formal specifications following the authoring guide" <commentary>Since the user needs formal contract and implementation specifications, use the contract-spec-author agent which specializes in creating these documents according to the strict authoring guide.</commentary></example> <example>Context: User wants to update an existing module's contract to add new endpoints. user: "Update the payment service contract to include a refund endpoint" assistant: "Let me use the contract-spec-author agent to properly update the contract with the new endpoint" <commentary>The user needs to modify a formal contract document, so the contract-spec-author agent should be used to ensure the update follows the authoring guide.</commentary></example>
+description: |
+  Creates and updates Contract and Implementation Specification documents
+  following the strict authoring guide.
+
+  Deploy for:
+  - Defining public APIs and data models
+  - Creating formal module specifications
+  - Maintaining clear boundaries between contracts and specs
+  - Updating existing contracts with new endpoints
 model: inherit
 ---
 

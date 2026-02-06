@@ -1,6 +1,14 @@
 ---
 name: pattern-emergence
-description: Use this agent when you need to orchestrate diverse perspectives AND detect emergent patterns that arise from that diversity. This agent combines diversity orchestration with emergence detection to maximize insight generation through coordinated multi-perspective analysis. Deploy when analyzing diverse outputs, identifying unexpected patterns, coordinating synthesis, detecting emergent insights from multiple perspectives, or managing productive tensions that generate novel understanding. <example>Context: Multiple agents have produced diverse perspectives that need synthesis and pattern detection. user: 'Coordinate the agent perspectives and identify what patterns emerge' assistant: 'I'll use the pattern-emergence agent to orchestrate diverse perspectives and detect emergent insights' <commentary>Since we need both coordination of diversity and emergence detection, use the Task tool to launch the pattern-emergence agent.</commentary></example> <example>Context: The system needs to maximize insight generation from agent diversity. user: 'How can we get more unexpected insights from our agent perspectives?' assistant: 'Let me deploy the pattern-emergence agent to orchestrate productive tensions and detect meta-patterns' <commentary>To maximize emergent insights from diversity, use the pattern-emergence agent.</commentary></example>
+description: |
+  Orchestrates diverse perspectives AND detects emergent patterns that
+  arise from that diversity. Maximizes insight generation.
+
+  Deploy for:
+  - Analyzing diverse agent outputs for patterns
+  - Detecting unexpected emergent insights
+  - Coordinating multi-perspective synthesis
+  - Managing productive tensions for novel understanding
 model: inherit
 ---
 

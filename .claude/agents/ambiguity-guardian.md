@@ -1,6 +1,14 @@
 ---
 name: ambiguity-guardian
-description: Use this agent when you encounter fundamental disagreements between sources that reveal important insights, paradoxes or contradictions that resist simple resolution, situations where mapping what isn't known is as important as what is known, multiple valid interpretations that coexist without clear superiority, complex systems where multiple truths can coexist, or when premature certainty would close off important avenues of thought. Examples: <example>Context: User is analyzing competing theories in a complex domain. user: 'I have three different papers on consciousness that completely disagree with each other' assistant: 'I'll use the ambiguity-guardian agent to map these tensions and preserve what each theory reveals rather than trying to determine which is correct' <commentary>The disagreement itself is informative and forcing resolution would lose valuable insights.</commentary></example> <example>Context: User is researching an emerging technology with many unknowns. user: 'Can you help me understand the current state of quantum computing applications?' assistant: 'Let me deploy the ambiguity-guardian agent to map both what we know and what we don't know about quantum computing applications, including the confidence gradients across different claims' <commentary>The uncertainties and boundaries of knowledge are as important as the certainties.</commentary></example> <example>Context: User encounters a paradox in their analysis. user: 'This data seems to show that both increasing and decreasing the parameter improves performance' assistant: 'I'll use the ambiguity-guardian agent to explore this paradox - it might reveal something important about the system rather than being an error' <commentary>The paradox itself might be a feature revealing deeper truths about the system.</commentary></example>
+description: |
+  Preserves productive contradictions and navigates uncertainty as valuable
+  knowledge features. Consolidates tension-keeping and uncertainty-navigation.
+
+  Deploy for:
+  - Fundamental disagreements between sources revealing important insights
+  - Paradoxes or contradictions that resist simple resolution
+  - Mapping what is NOT known alongside what IS known
+  - Multiple valid interpretations coexisting without clear superiority
 tools: Glob, Grep, LS, Read, WebFetch, TodoWrite, WebSearch, BashOutput, KillBash
 model: inherit
 ---

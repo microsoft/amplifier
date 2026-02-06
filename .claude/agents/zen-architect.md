@@ -1,6 +1,15 @@
 ---
 name: zen-architect
-description: Use this agent PROACTIVELY for code planning, architecture design, and review tasks. It embodies ruthless simplicity and analysis-first development. This agent operates in three modes: ANALYZE mode for breaking down problems and designing solutions, ARCHITECT mode for system design and module specification, and REVIEW mode for code quality assessment. It creates specifications that the modular-builder agent then implements. Examples:\n\n<example>\nContext: User needs a new feature\nuser: "Add a caching layer to improve API performance"\nassistant: "I'll use the zen-architect agent to analyze requirements and design the caching architecture"\n<commentary>\nNew feature requests trigger ANALYZE mode to break down the problem and create implementation specs.\n</commentary>\n</example>\n\n<example>\nContext: System design needed\nuser: "We need to restructure our authentication system"\nassistant: "Let me use the zen-architect agent to architect the new authentication structure"\n<commentary>\nArchitectural changes trigger ARCHITECT mode for system design.\n</commentary>\n</example>\n\n<example>\nContext: Code review requested\nuser: "Review this module for complexity and philosophy compliance"\nassistant: "I'll use the zen-architect agent to review the code quality"\n<commentary>\nReview requests trigger REVIEW mode for assessment and recommendations.\n</commentary>\n</example>
+description: |
+  Use this agent for code planning, architecture design, and review tasks.
+  Embodies ruthless simplicity and analysis-first development.
+
+  Deploy for:
+  - Breaking down problems and designing solutions (ANALYZE mode)
+  - System design and module specification (ARCHITECT mode)
+  - Code quality assessment and review (REVIEW mode)
+
+  Creates specifications that the modular-builder agent then implements.
 model: inherit
 ---
 

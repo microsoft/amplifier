@@ -1,6 +1,13 @@
 ---
 name: subagent-architect
-description: Use PROACTIVELY. It MUST BE USED when you have a task that does not yet have an appropriate subagent to delegate the work to. This agent evaluates requirements, determines the optimal agent configuration, and generates properly formatted agent definitions following Claude Code's subagent standards. Ideal for expanding your agent ecosystem when encountering tasks that would benefit from specialized expertise.\n\nExamples:\n- <example>\n  Context: The user needs help with database optimization but no existing agent specializes in this.\n  user: "I need to optimize my PostgreSQL queries for better performance"\n  assistant: "I notice this requires specialized database optimization expertise. Let me use the subagent-architect to define a dedicated database optimization agent."\n  <commentary>\n  Since there's no existing database optimization agent and this is a specialized task, use the subagent-architect to define one.\n  </commentary>\n</example>\n- <example>\n  Context: The user is working on a complex refactoring that requires multiple specialized perspectives.\n  user: "I need to refactor this monolithic service into microservices"\n  assistant: "This complex refactoring would benefit from a specialized agent. I'll use the subagent-architect to define a microservices-migration agent."\n  <commentary>\n  Complex architectural changes benefit from specialized agents, so use subagent-architect to define the appropriate expert.\n  </commentary>\n</example>\n- <example>\n  Context: A recurring task pattern emerges that could be automated with a dedicated agent.\n  user: "Can you review this API documentation for completeness and accuracy?"\n  assistant: "API documentation review is a specialized task. Let me use the subagent-architect to define a dedicated api-docs-reviewer agent for this."\n  <commentary>\n  Recognizing a pattern that would benefit from a specialized agent, use subagent-architect to define it.\n  </commentary>\n</example>
+description: |
+  Designs and creates new specialized agents when no existing agent
+  fits the task. Generates properly formatted agent definitions.
+
+  Deploy for:
+  - Creating new specialized agents for uncovered tasks
+  - Evaluating requirements for optimal agent configuration
+  - Expanding the agent ecosystem with targeted expertise
 model: inherit
 ---
 

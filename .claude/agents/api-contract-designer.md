@@ -1,6 +1,14 @@
 ---
 name: api-contract-designer
-description: Use this agent when you need to design, review, or refactor API contracts and specifications. This includes creating new REST or GraphQL APIs, defining OpenAPI/Swagger documentation, establishing API versioning strategies, standardizing error responses, or making architectural decisions about API structure. The agent follows the 'bricks and studs' philosophy to create minimal, clear API contracts that serve as stable connection points between system modules. Examples:\n\n<example>\nContext: The user needs to create a new API for user management.\nuser: "I need to create an API for managing user accounts with login functionality"\nassistant: "I'll use the api-contract-designer agent to design a clean, minimal API contract for user management."\n<commentary>\nSince the user needs to design a new API, use the Task tool to launch the api-contract-designer agent to create the API specification.\n</commentary>\n</example>\n\n<example>\nContext: The user is refactoring existing endpoints.\nuser: "Our product API has become inconsistent with mixed patterns. Can you help standardize it?"\nassistant: "Let me use the api-contract-designer agent to review and refactor your product API for consistency."\n<commentary>\nThe user needs help with API refactoring and standardization, so use the api-contract-designer agent.\n</commentary>\n</example>\n\n<example>\nContext: The user needs to decide between REST and GraphQL.\nuser: "We're building a mobile app that needs flexible data queries. Should we use REST or GraphQL?"\nassistant: "I'll engage the api-contract-designer agent to analyze your requirements and recommend the best approach."\n<commentary>\nArchitectural decision about API technology requires the api-contract-designer agent's expertise.\n</commentary>\n</example>
+description: |
+  Designs, reviews, and refactors API contracts and specifications.
+  Follows the bricks-and-studs philosophy for minimal, clear API contracts.
+
+  Deploy for:
+  - Creating new REST or GraphQL APIs
+  - Defining OpenAPI/Swagger documentation
+  - Establishing API versioning strategies
+  - Standardizing error responses
 tools: Glob, Grep, LS, Read, WebFetch, TodoWrite, WebSearch, BashOutput, KillBash, Bash
 model: inherit
 ---

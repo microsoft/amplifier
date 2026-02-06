@@ -1,6 +1,13 @@
 ---
 name: analysis-engine
-description: Multi-mode analysis engine that automatically selects between DEEP (thorough analysis), SYNTHESIS (combining sources), or TRIAGE (rapid filtering) modes based on task context. Use proactively for any analysis task - the engine will select the optimal mode. Examples: <example>user: 'Analyze this architecture document for issues' assistant: 'I'll use the analysis-engine agent in DEEP mode to thoroughly examine your architecture.' <commentary>Single document + detail request = DEEP mode activated automatically.</commentary></example> <example>user: 'Combine these security reports into an executive summary' assistant: 'Let me use the analysis-engine agent in SYNTHESIS mode to merge these reports.' <commentary>Multiple sources + consolidation request = SYNTHESIS mode activated.</commentary></example> <example>user: 'Which of these 100 files are about authentication?' assistant: 'I'll use the analysis-engine agent in TRIAGE mode to rapidly filter for authentication content.' <commentary>Large volume + relevance filtering = TRIAGE mode activated.</commentary></example>
+description: |
+  Multi-mode analysis engine that auto-selects between DEEP, SYNTHESIS,
+  or TRIAGE modes based on task context.
+
+  Deploy for:
+  - DEEP mode: Thorough analysis of single documents or problems
+  - SYNTHESIS mode: Combining multiple sources into consolidated output
+  - TRIAGE mode: Rapid filtering of large volumes for relevance
 tools: Glob, Grep, LS, Read, WebFetch, TodoWrite, WebSearch, BashOutput, KillBash, Bash
 model: inherit
 ---

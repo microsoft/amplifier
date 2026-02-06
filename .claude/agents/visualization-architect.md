@@ -1,6 +1,14 @@
 ---
 name: visualization-architect
-description: Use this agent when you need to transform abstract data, knowledge structures, or complex relationships into visual representations. This includes creating interactive graphs, network diagrams, concept maps, knowledge landscapes, or any situation where visual exploration would reveal patterns not apparent in text. The agent excels at designing appropriate visualizations, selecting layout algorithms, creating visual metaphors, and specifying interactive elements that make complex information explorable and understandable.\n\nExamples:\n<example>\nContext: User wants to visualize the relationships between concepts in their knowledge base.\nuser: "I have a collection of interconnected concepts and I'd like to see how they relate to each other visually"\nassistant: "I'll use the visualization-architect agent to design an appropriate visual representation of your concept relationships."\n<commentary>\nSince the user wants to visualize relationships between concepts, the visualization-architect agent is perfect for designing an interactive knowledge graph or concept map.\n</commentary>\n</example>\n<example>\nContext: User has complex data that needs visual exploration.\nuser: "I need to understand the patterns in this network of dependencies"\nassistant: "Let me engage the visualization-architect agent to create an explorable visualization of your dependency network."\n<commentary>\nThe user needs to understand patterns in network data, which is exactly what the visualization-architect specializes in - making patterns visible through appropriate visual design.\n</commentary>\n</example>\n<example>\nContext: User wants to track evolution of ideas over time.\nuser: "Show me how these concepts have evolved and branched over the past year"\nassistant: "I'll use the visualization-architect agent to design a temporal visualization showing the evolution and branching of your concepts."\n<commentary>\nTemporal data and evolution patterns require specialized visualization techniques that the visualization-architect can provide.\n</commentary>\n</example>
+description: |
+  Transforms abstract data, knowledge structures, and complex relationships
+  into visual representations for pattern discovery.
+
+  Deploy for:
+  - Creating interactive graphs and network diagrams
+  - Designing concept maps and knowledge landscapes
+  - Selecting appropriate layout algorithms
+  - Making complex information explorable through visuals
 model: inherit
 ---
 

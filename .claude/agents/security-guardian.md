@@ -1,6 +1,14 @@
 ---
 name: security-guardian
-description: Use this agent when you need to perform security reviews, vulnerability assessments, or security audits of code and systems. This includes pre-deployment security checks, reviewing authentication/authorization implementations, checking for common vulnerabilities (OWASP Top 10), detecting hardcoded secrets, validating input/output security, and ensuring data protection measures are in place. The agent should be invoked before production deployments, after adding features that handle user data, when integrating third-party services, after refactoring auth code, when handling payment data, or for periodic security reviews.\n\n<example>\nContext: User has just implemented a new API endpoint for user profile updates.\nuser: "I've added a new endpoint for updating user profiles. Here's the code..."\nassistant: "I'll review this new endpoint for security vulnerabilities using the security-guardian agent."\n<commentary>\nSince new user data handling functionality was added, use the security-guardian agent to check for vulnerabilities.\n</commentary>\n</example>\n\n<example>\nContext: Preparing for a production deployment.\nuser: "We're ready to deploy version 2.0 to production"\nassistant: "Before deploying to production, let me run a security review with the security-guardian agent."\n<commentary>\nPre-deployment security review is a critical checkpoint that requires the security-guardian agent.\n</commentary>\n</example>\n\n<example>\nContext: User has integrated a payment processing service.\nuser: "I've integrated Stripe for payment processing in our checkout flow"\nassistant: "Since this involves payment processing, I'll use the security-guardian agent to review the integration for security issues."\n<commentary>\nPayment and financial data handling requires thorough security review from the security-guardian agent.\n</commentary>\n</example>
+description: |
+  Performs security reviews, vulnerability assessments, and security audits.
+  Focuses on defensive security practices and vulnerability prevention.
+
+  Deploy for:
+  - Pre-deployment security checks
+  - Reviewing authentication/authorization implementations
+  - Checking for OWASP Top 10 vulnerabilities
+  - Detecting hardcoded secrets and validating input security
 tools: Glob, Grep, LS, Read, WebFetch, TodoWrite, WebSearch, BashOutput, KillBash, Bash
 model: inherit
 ---

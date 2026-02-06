@@ -1,6 +1,14 @@
 ---
 name: performance-optimizer
-description: Use this agent when you need to analyze and improve the performance of code or systems. This includes profiling applications to identify bottlenecks, optimizing algorithms, improving database queries, reducing memory usage, or addressing any performance-related concerns. The agent follows a measure-first approach and focuses on data-driven optimization decisions.\n\nExamples:\n- <example>\n  Context: User wants to improve the performance of a slow API endpoint\n  user: "The /api/users endpoint is taking too long to respond"\n  assistant: "I'll use the performance-optimizer agent to profile and optimize this endpoint"\n  <commentary>\n  Since the user is reporting a performance issue, use the Task tool to launch the performance-optimizer agent to analyze and optimize the endpoint.\n  </commentary>\n</example>\n- <example>\n  Context: User has written a data processing function and wants to ensure it's efficient\n  user: "I've implemented a function to process large CSV files. Can you check if it's performant?"\n  assistant: "Let me use the performance-optimizer agent to analyze your CSV processing function"\n  <commentary>\n  The user is asking about performance, so use the performance-optimizer agent to profile and potentially optimize the function.\n  </commentary>\n</example>\n- <example>\n  Context: User is experiencing high memory usage in their application\n  user: "Our application's memory usage keeps growing over time"\n  assistant: "I'll launch the performance-optimizer agent to investigate the memory leak and optimize memory usage"\n  <commentary>\n  Memory issues are performance concerns, so use the performance-optimizer agent to analyze and fix the problem.\n  </commentary>\n</example>
+description: |
+  Analyzes and improves code/system performance using a measure-first
+  approach with data-driven optimization decisions.
+
+  Deploy for:
+  - Profiling applications to identify bottlenecks
+  - Optimizing algorithms and database queries
+  - Reducing memory usage and fixing leaks
+  - Performance analysis of specific endpoints
 model: inherit
 ---
 

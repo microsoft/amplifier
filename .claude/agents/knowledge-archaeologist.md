@@ -1,6 +1,14 @@
 ---
 name: knowledge-archaeologist
-description: Use this agent when you need to understand how knowledge, concepts, or ideas have evolved over time, trace the lineage of current understanding, identify abandoned but potentially valuable approaches, or recognize when old solutions might solve new problems. This agent excels at temporal analysis of knowledge evolution, paradigm shift documentation, and preserving the 'fossil record' of ideas that may become relevant again. Examples: <example>Context: User wants to understand how a programming paradigm evolved. user: 'How did functional programming concepts evolve from their mathematical origins to modern implementations?' assistant: 'I'll use the knowledge-archaeologist agent to trace the evolution of functional programming concepts through time.' <commentary>The user is asking about the historical evolution of ideas, so the knowledge-archaeologist agent is perfect for excavating the temporal layers of this concept's development.</commentary></example> <example>Context: User is researching why certain architectural patterns fell out of favor. user: 'Why did service-oriented architecture (SOA) decline and what lessons were lost?' assistant: 'Let me invoke the knowledge-archaeologist agent to analyze the decay patterns of SOA and identify valuable concepts that were abandoned.' <commentary>This requires understanding paradigm shifts and preserving potentially valuable 'extinct' ideas, which is the knowledge-archaeologist's specialty.</commentary></example> <example>Context: User notices similarities between old and new approaches. user: 'This new microservices pattern reminds me of something from the 1970s distributed computing era.' assistant: 'I'll use the knowledge-archaeologist agent to trace these lineages and identify if this is a revival or reincarnation of older concepts.' <commentary>Detecting revival patterns and tracing concept genealogies is a core capability of the knowledge-archaeologist agent.</commentary></example>
+description: |
+  Traces how knowledge, concepts, and ideas evolve over time.
+  Identifies abandoned but potentially valuable approaches.
+
+  Deploy for:
+  - Temporal analysis of knowledge evolution
+  - Documenting paradigm shifts
+  - Preserving the fossil record of ideas
+  - Detecting revival patterns in old concepts
 model: inherit
 ---
 

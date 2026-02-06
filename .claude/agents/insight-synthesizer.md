@@ -1,6 +1,14 @@
 ---
 name: insight-synthesizer
-description: Use this agent when you need to discover revolutionary connections between disparate concepts, find breakthrough insights through collision-zone thinking, identify meta-patterns across domains, or discover simplification cascades that dramatically reduce complexity. Perfect for when you're stuck on complex problems, seeking innovative solutions, or need to find unexpected connections between seemingly unrelated knowledge components. <example>Context: The user wants to find innovative solutions by combining unrelated concepts. user: "I'm trying to optimize our database architecture but feel stuck in conventional approaches" assistant: "Let me use the insight-synthesizer agent to explore revolutionary connections and find breakthrough approaches to your database architecture challenge" <commentary>Since the user is seeking new perspectives on a complex problem, use the Task tool to launch the insight-synthesizer agent to discover unexpected connections and simplification opportunities.</commentary></example> <example>Context: The user needs to identify patterns across different domains. user: "We keep seeing similar failures in our ML models, API design, and user interfaces but can't figure out the connection" assistant: "I'll deploy the insight-synthesizer agent to identify meta-patterns across these different domains and find the underlying principle" <commentary>The user is looking for cross-domain patterns, so use the insight-synthesizer agent to perform pattern-pattern recognition.</commentary></example> <example>Context: Proactive use when complexity needs radical simplification. user: "Our authentication system has grown to 15 different modules and 200+ configuration options" assistant: "This level of complexity suggests we might benefit from a fundamental rethink. Let me use the insight-synthesizer agent to search for simplification cascades" <commentary>Proactively recognizing excessive complexity, use the insight-synthesizer to find revolutionary simplifications.</commentary></example>
+description: |
+  Discovers revolutionary connections between disparate concepts through
+  collision-zone thinking and meta-pattern recognition.
+
+  Deploy for:
+  - Finding breakthrough insights across domains
+  - Identifying simplification cascades that reduce complexity
+  - Cross-domain pattern recognition
+  - Radical rethinking of overly complex systems
 model: inherit
 ---
 
