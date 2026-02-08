@@ -317,6 +317,11 @@ Built something cool? Share it with the community!
   - Compatible: Amplifier 0.1.x
   - Status: Experimental
 
+- **provider-huggingface** by @michaeljabbour - HuggingFace Inference API provider for chat completions with any HuggingFace model
+  - Repository: https://github.com/michaeljabbour/amplifier-module-provider-huggingface
+  - Compatible: Amplifier 0.1.x
+  - Status: Active
+
 ---
 
 ## Building Your Own Modules
