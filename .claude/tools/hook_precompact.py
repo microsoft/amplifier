@@ -180,7 +180,7 @@ def export_transcript(transcript_path: str, trigger: str, session_id: str, custo
 
         # Parse JSONL and extract all conversation entries
         entries = []
-        with open(transcript_file) as f:
+        with open(transcript_file, encoding="utf-8") as f:
             for line_num, line in enumerate(f, 1):
                 line = line.strip()
                 if not line:
@@ -299,6 +299,45 @@ def export_transcript(transcript_path: str, trigger: str, session_id: str, custo
         return ""
 
 
+def push_memory_notes():
+    """Push git notes to origin before compaction."""
+    import os
+
+    superpowers_dir = os.path.expanduser(
+        "~/.claude/plugins/cache/superpowers-marketplace/superpowers"
+    )
+    if not os.path.isdir(superpowers_dir):
+        superpowers_dir = "C:/claude/superpowers"
+
+    if not os.path.isdir(superpowers_dir):
+        logger.info("Superpowers directory not found, skipping memory push")
+        return
+
+    git_dir = os.path.join(superpowers_dir, ".git")
+    if not os.path.isdir(git_dir):
+        logger.info("Not a git repo, skipping memory push")
+        return
+
+    try:
+        import subprocess
+
+        result = subprocess.run(
+            ["git", "push", "origin", "refs/notes/superpowers"],
+            cwd=superpowers_dir,
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        if result.returncode == 0:
+            logger.info(f"Git notes pushed to origin: {result.stderr.strip() or 'ok'}")
+        else:
+            logger.warning(f"Git notes push failed (non-critical): {result.stderr.strip()}")
+    except subprocess.TimeoutExpired:
+        logger.warning("Git notes push timed out (non-critical)")
+    except Exception as e:
+        logger.warning(f"Git notes push error (non-critical): {e}")
+
+
 def main():
     """Main hook entry point"""
     try:
@@ -322,6 +361,12 @@ def main():
         logger.info(f"Session ID: {session_id}")
         if custom_instructions:
             logger.info(f"Custom instructions: {custom_instructions[:100]}...")
+
+        # Push git-notes memory to origin before compaction
+        try:
+            push_memory_notes()
+        except Exception as e:
+            logger.warning(f"Memory push failed (non-critical): {e}")
 
         # Export the transcript
         exported_path = ""
