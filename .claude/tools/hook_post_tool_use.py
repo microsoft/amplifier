@@ -4,43 +4,40 @@ Claude Code hook for PostToolUse events - minimal wrapper for claim validation.
 Reads JSON from stdin, calls amplifier modules, writes JSON to stdout.
 """
 
-import asyncio
 import json
+import os
 import sys
+
+# Early exit if memory system is disabled (default) - avoids import errors
+memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "false").lower() in ["true", "1", "yes"]
+if not memory_enabled:
+    json.dump({}, sys.stdout)
+    sys.exit(0)
+
+import asyncio
 from pathlib import Path
 
 # Add amplifier to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-# Import logger from the same directory
+try:
+    from amplifier.memory import MemoryStore
+    from amplifier.validation import ClaimValidator
+except ImportError:
+    # Modules not yet implemented - exit silently
+    json.dump({}, sys.stdout)
+    sys.exit(0)
+
+# Import logger only after confirming modules exist (logger writes to stderr)
 sys.path.insert(0, str(Path(__file__).parent))
 from hook_logger import HookLogger
 
 logger = HookLogger("post_tool_use")
 
-try:
-    from amplifier.memory import MemoryStore
-    from amplifier.validation import ClaimValidator
-except ImportError as e:
-    logger.error(f"Failed to import amplifier modules: {e}")
-    # Exit gracefully to not break hook chain
-    json.dump({}, sys.stdout)
-    sys.exit(0)
-
 
 async def main():
     """Read input, validate claims, return warnings if contradictions found"""
     try:
-        # Check if memory system is enabled
-        import os
-
-        memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "false").lower() in ["true", "1", "yes"]
-        if not memory_enabled:
-            logger.info("Memory system disabled via MEMORY_SYSTEM_ENABLED env var")
-            # Return empty response and exit gracefully
-            json.dump({}, sys.stdout)
-            return
-
         logger.info("Starting claim validation")
         logger.cleanup_old_logs()  # Clean up old logs on each run
 
