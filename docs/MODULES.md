@@ -268,6 +268,7 @@ Modules built by the community.
 | Module | Description | Author | Repository |
 |--------|-------------|--------|------------|
 | **hooks-event-broadcast** | Transport-agnostic event broadcasting for streaming UI applications | [@michaeljabbour](https://github.com/michaeljabbour) | [amplifier-module-hooks-event-broadcast](https://github.com/michaeljabbour/amplifier-module-hooks-event-broadcast) |
+| **hooks-ui-bridge** | Universal event bridge for any UI system (Textual, Tauri, Web, VS Code) | [@michaeljabbour](https://github.com/michaeljabbour) | [amplifier-module-hooks-ui-bridge](https://github.com/michaeljabbour/amplifier-module-hooks-ui-bridge) |
 
 ### Contributing Your Modules
 
