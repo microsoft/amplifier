@@ -30,7 +30,7 @@
           },
           {
             "type": "command",
-            "command": "powershell -ExecutionPolicy Bypass -File C:/claude/scripts/Sync-SuperpowersPlugin.ps1",
+            "command": "powershell -ExecutionPolicy Bypass -File C:/Przemek/scripts/Sync-SuperpowersPlugin.ps1",
             "timeout": 10000
           },
           {
