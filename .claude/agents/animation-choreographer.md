@@ -678,6 +678,14 @@ The artifact is the container. The motion is the language. The experience is the
 Animate with purpose. Ship with care.
 
 
+## Required Context
+
+Before starting work, read these design philosophy files for project design guidelines:
+- `ai_context/DESIGN-PHILOSOPHY.md`
+- `ai_context/DESIGN-PRINCIPLES.md`
+- `ai_context/design/DESIGN-FRAMEWORK.md`
+- `ai_context/design/DESIGN-VISION.md`
+
 ## Context Budget
 
 - **File reads**: Max 15 per invocation. If you need more, summarize findings so far and return with a note on what remains.

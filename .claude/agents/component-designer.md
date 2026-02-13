@@ -784,6 +784,14 @@ Every button, every input, every animation is a promise about how the system beh
 The artifact is the container. The experience is the product. Design for humans, not screens.
 
 
+## Required Context
+
+Before starting work, read these design philosophy files for project design guidelines:
+- `ai_context/DESIGN-PHILOSOPHY.md`
+- `ai_context/DESIGN-PRINCIPLES.md`
+- `ai_context/design/DESIGN-FRAMEWORK.md`
+- `ai_context/design/DESIGN-VISION.md`
+
 ## Context Budget
 
 - **File reads**: Max 15 per invocation. If you need more, summarize findings so far and return with a note on what remains.
