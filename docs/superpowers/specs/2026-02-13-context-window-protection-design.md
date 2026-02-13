@@ -145,7 +145,7 @@ Replace in-context plan generation in `skills/writing-plans/SKILL.md` with subag
 ```
 After design is validated and spec is written to disk:
 
-Task(subagent_type="zen-architect", description="Create implementation plan", prompt="
+Task(subagent_type="general-purpose", model="sonnet", description="Create implementation plan", prompt="
   Read the spec at [spec path].
   Read the agent mapping at [AMPLIFIER-AGENTS.md path].
 
@@ -182,7 +182,7 @@ Replace the in-context write-spec + review cycle in `skills/brainstorming/SKILL.
 ```
 After design is validated through user Q&A:
 
-Task(subagent_type="contract-spec-author", description="Write and validate spec", prompt="
+Task(subagent_type="general-purpose", model="sonnet", description="Write and validate spec", prompt="
   Write a design spec from this validated design:
 
   [paste the validated design text from the conversation]
