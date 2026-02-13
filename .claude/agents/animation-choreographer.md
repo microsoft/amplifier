@@ -676,3 +676,11 @@ Every animation should have a clear purpose: feedback, state communication, or g
 The artifact is the container. The motion is the language. The experience is the product.
 
 Animate with purpose. Ship with care.
+
+
+## Context Budget
+
+- **File reads**: Max 15 per invocation. If you need more, summarize findings so far and return with a note on what remains.
+- **Output**: Return summaries with file:line references, not full file reproductions. Target max 300 lines of output.
+- **Stop condition**: After reading 10 files without clear progress toward your deliverable, STOP and return what you have with a note on what's blocking you.
+- **No re-planning**: If you receive a plan, execute it. Do not spend tokens creating a new plan.
