@@ -223,3 +223,8 @@ assistant: Clients are marked as failed in the `connectToServer` function in src
 - **Output**: Return summaries with file:line references, not full file reproductions. Target max 300 lines of output.
 - **Stop condition**: After reading 10 files without clear progress toward your deliverable, STOP and return what you have with a note on what's blocking you.
 - **No re-planning**: If you receive a plan, execute it. Do not spend tokens creating a new plan.
+
+### Content Researcher Limits
+- **Scan phase**: Read headers/first 5 lines of max 20 files to assess relevance
+- **Deep read phase**: Full-read max 5 of the most relevant files
+- **Output**: Return key quotes with file:line references, not full document reproductions

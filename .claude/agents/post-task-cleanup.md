@@ -375,3 +375,8 @@ assistant: Clients are marked as failed in the `connectToServer` function in src
 - **Output**: Return summaries with file:line references, not full file reproductions. Target max 300 lines of output.
 - **Stop condition**: After reading 10 files without clear progress toward your deliverable, STOP and return what you have with a note on what's blocking you.
 - **No re-planning**: If you receive a plan, execute it. Do not spend tokens creating a new plan.
+
+### Post-Task Cleanup Limits
+- **Large changesets**: If >15 files touched, do summary-level review (check file names, commit messages, obvious issues)
+- **Deep review**: Max 10 files for detailed philosophy compliance checking
+- **Report**: Brief format when <5 issues found (skip verbose template sections)
