@@ -4,6 +4,32 @@ This file documents non-obvious problems, solutions, and patterns discovered dur
 
 Archived entries (no longer actively relevant) are in DISCOVERIES-archive.md.
 
+## Subagent Context Exhaustion (2026-02-14)
+
+### Issue
+
+Subagents launched via the Task tool cut off work in high token usage situations. Two failure modes observed:
+
+1. **Abrupt stop** — Agent returns partial results mid-task without finishing
+2. **Summary mode fallback** — Agent shifts to describing what it would do instead of doing the work
+
+### Root Cause
+
+Subagents have their own context windows that fill up from incoming content: large file reads, verbose tool results, and tasks that are too big for one agent pass. The existing context budget guardrails (added 2026-02-06) help agents avoid *generating* excessive context but don't protect against *incoming* pressure. When context pressure builds, the model either hits hard limits (abrupt stop) or enters a "conservation instinct" where it summarizes instead of executing (summary mode).
+
+### Solution
+
+**max_turns + Resume pattern:** Set `max_turns` on every Task dispatch to stop agents before context pressure builds. When an agent returns incomplete work, use `resume` with the agent's ID to continue with preserved context. Limit to 3 resume cycles before escalating to the user. See the "Subagent Resilience Protocol" section in AGENTS.md for turn budget values and the full protocol.
+
+**Task decomposition:** Right-size tasks before dispatch: 3-5 files to read, 1-3 files to modify, 1 objective per agent. Decompose large tasks into focused subtasks. See AGENTS.md for sizing guidelines.
+
+### Prevention
+
+- Always include `max_turns` in Task dispatches (never leave it unlimited)
+- Break large tasks into agent-sized pieces before dispatching
+- When a task is indivisible, use generous `max_turns` and rely on the resume protocol
+- Monitor agent completion rates and tune turn budgets based on observation
+
 ## Tool Generation Pattern Failures (2025-01-23)
 
 ### Issue
