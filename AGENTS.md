@@ -98,10 +98,10 @@ When an agent returns, the orchestrator evaluates completeness and resumes if ne
 3. **Evaluate** completeness:
    - **Complete**: Files written, conclusions stated, explicit "done" markers → use the result
    - **Incomplete**: Trailing "I'll now...", partial lists, no conclusion, mid-sentence stops → resume
-4. **Resume** with `resume=agent_id` and prompt: "Continue your work. You were stopped due to turn limits. Focus on completing the remaining items."
+4. **Resume** using the Task tool's `resume` parameter with the returned agent ID, and prompt: "Continue your work. You were stopped due to turn limits. Focus on completing the remaining items."
 5. **Limit** to 3 resume cycles maximum, then escalate to the user
 
-The agent does not need to know about this pattern. It gets stopped, gets resumed with full prior context, and continues. Each resume gets a fresh output budget.
+The agent does not need to know about this pattern. It gets stopped, gets resumed with full prior context via the Task tool's built-in resume capability, and continues. Each resume gets a fresh output budget.
 
 ### Task Decomposition Guidelines
 
@@ -121,10 +121,9 @@ Right-size tasks before dispatch to prevent context exhaustion upstream:
 **Indivisible tasks** (single large file, atomic refactor): Accept them with generous `max_turns` and rely on the resume protocol.
 
 **Where these rules apply:**
-- `writing-plans` skill — each plan step must pass the sizing test
-- `subagent-driven-development` — validate sizing before dispatch
-- `dispatching-parallel-agents` — each parallel agent gets one focused task
-- Any manual Task dispatch from the main conversation
+- All Task dispatches from the main conversation
+- Superpowers plugin skills that dispatch agents: `writing-plans`, `subagent-driven-development`, `dispatching-parallel-agents`
+- Any skill or workflow that creates Task calls with agent delegation
 
 ## Incremental Processing Pattern
 
