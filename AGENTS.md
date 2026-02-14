@@ -71,6 +71,61 @@ The project includes specialized agents for various tasks (see `.claude/AGENTS_C
 
 Use these agents proactively when their expertise matches your task.
 
+## Subagent Resilience Protocol
+
+Subagents launched via the Task tool have their own context windows that can fill up during execution. When this happens, agents either stop abruptly with partial results or shift into "summary mode" instead of completing actual work. This protocol prevents both failure modes.
+
+### Turn Budgets
+
+Every Task dispatch must include a `max_turns` parameter. Use these starting values:
+
+| Agent Role | max_turns | Examples |
+|------------|-----------|----------|
+| Quick tasks | 5-8 | Haiku scouts, context gathering, file searches |
+| Research / exploration | 8-10 | Codebase exploration, documentation lookup |
+| Review | 10-12 | test-coverage, security-guardian, code review |
+| Analysis | 12-15 | zen-architect, bug-hunter, design analysis |
+| Implementation | 15-20 | modular-builder, file creation and editing |
+
+These values are tuned through observation. If an agent consistently needs resume cycles, increase its budget. If it finishes well under budget, decrease it.
+
+### Resume Protocol
+
+When an agent returns, the orchestrator evaluates completeness and resumes if needed:
+
+1. **Dispatch** the agent with `max_turns=N`
+2. **Receive** the result and `agent_id`
+3. **Evaluate** completeness:
+   - **Complete**: Files written, conclusions stated, explicit "done" markers → use the result
+   - **Incomplete**: Trailing "I'll now...", partial lists, no conclusion, mid-sentence stops → resume
+4. **Resume** with `resume=agent_id` and prompt: "Continue your work. You were stopped due to turn limits. Focus on completing the remaining items."
+5. **Limit** to 3 resume cycles maximum, then escalate to the user
+
+The agent does not need to know about this pattern. It gets stopped, gets resumed with full prior context, and continues. Each resume gets a fresh output budget.
+
+### Task Decomposition Guidelines
+
+Right-size tasks before dispatch to prevent context exhaustion upstream:
+
+| Dimension | Guideline |
+|-----------|-----------|
+| Files to read | 3-5 per agent |
+| Files to modify | 1-3 per agent |
+| Objectives | 1 per agent — single clear deliverable |
+| Output scope | One component, module, or focused concern |
+
+**Decompose large tasks:**
+- "Implement the authentication system" → 4 agents: token generation, middleware, login endpoint, session storage
+- "Review all changed files" → 2 agents by concern: "review auth changes", "review API changes"
+
+**Indivisible tasks** (single large file, atomic refactor): Accept them with generous `max_turns` and rely on the resume protocol.
+
+**Where these rules apply:**
+- `writing-plans` skill — each plan step must pass the sizing test
+- `subagent-driven-development` — validate sizing before dispatch
+- `dispatching-parallel-agents` — each parallel agent gets one focused task
+- Any manual Task dispatch from the main conversation
+
 ## Incremental Processing Pattern
 
 When building batch processing systems, always save progress after every item processed:
