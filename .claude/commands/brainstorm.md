@@ -140,7 +140,7 @@ Task(subagent_type="general-purpose", model="sonnet", description="Write and val
 - Use `/worktree` to create isolated workspace
 - **REQUIRED:** Use `/create-plan` to create detailed implementation plan (it will use the Agent Allocation to assign agents per task)
   - Do NOT use platform planning features (e.g., EnterPlanMode, plan mode)
-  - Do NOT start implementing directly - the `/create-plan` skill comes first
+  - Do NOT start implementing directly - `/create-plan` comes first
 
 ## Key Principles
 

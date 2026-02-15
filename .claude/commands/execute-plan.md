@@ -79,6 +79,6 @@ After all tasks complete and verified:
 
 **Required workflow skills:**
 - `/worktree` - REQUIRED: Set up isolated workspace before starting
-- `/create-plan` - Creates the plan this skill executes
+- `/create-plan` - Creates the plan this command executes
 - `/finish-branch` - Complete development after all tasks
 - `/verify` - Verification before completion

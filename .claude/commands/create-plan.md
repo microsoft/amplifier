@@ -101,7 +101,7 @@ Task(subagent_type="general-purpose", model="sonnet", description="Generate impl
   Read the agent mapping at: .claude/AGENTS_CATALOG.md
 
   ## Plan Template
-  [paste the full plan document header template and task structure template from this skill]
+  [paste the full plan document header template and task structure template from this command]
 
   ## Requirements
   1. Create a task for each change in the spec's 'Files Changed' section
