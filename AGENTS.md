@@ -122,7 +122,7 @@ Right-size tasks before dispatch to prevent context exhaustion upstream:
 
 **Where these rules apply:**
 - All Task dispatches from the main conversation
-- Superpowers plugin skills that dispatch agents: `writing-plans`, `subagent-driven-development`, `dispatching-parallel-agents`
+- Amplifier commands that dispatch agents: `/create-plan`, `/subagent-dev`, `/parallel-agents`
 - Any skill or workflow that creates Task calls with agent delegation
 
 ## Incremental Processing Pattern
