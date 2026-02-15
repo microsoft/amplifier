@@ -14,6 +14,7 @@ from pathlib import Path
 # Add parent directory for logger import
 sys.path.insert(0, str(Path(__file__).parent))
 from hook_logger import HookLogger
+from platform_detect import SUPERPOWERS_FALLBACK
 
 logger = HookLogger("precompact_export")
 
@@ -307,7 +308,7 @@ def push_memory_notes():
         "~/.claude/plugins/cache/superpowers-marketplace/superpowers"
     )
     if not os.path.isdir(superpowers_dir):
-        superpowers_dir = "C:/claude/superpowers"
+        superpowers_dir = SUPERPOWERS_FALLBACK
 
     if not os.path.isdir(superpowers_dir):
         logger.info("Superpowers directory not found, skipping memory push")

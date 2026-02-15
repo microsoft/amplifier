@@ -16,6 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from hook_logger import HookLogger
+from platform_detect import SUPERPOWERS_FALLBACK
 
 logger = HookLogger("memory_wrapper")
 
@@ -41,7 +42,7 @@ def find_superpowers_dir():
         if os.path.isfile(os.path.join(cache_base, "commands", "recall.js")):
             return cache_base
 
-    local_dir = "C:/claude/superpowers"
+    local_dir = SUPERPOWERS_FALLBACK
     if os.path.isdir(local_dir) and os.path.isfile(
         os.path.join(local_dir, "commands", "recall.js")
     ):
