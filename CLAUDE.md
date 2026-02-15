@@ -231,3 +231,44 @@ When working with documents that contain references:
 4. **Track which articles informed which decisions** for learning
 
 This ensures we build on the full depth of ideas, not just their summaries.
+
+## Amplifier Commands
+
+Amplifier provides native commands in `.claude/commands/` invoked via `/command-name` using the Skill tool. Before starting work, check if an applicable command exists for the task.
+
+### Command Priority
+
+When approaching work, follow this order:
+
+1. **Brainstorm first** for new work — `/brainstorm` to explore the problem space
+2. **Plan next** — `/create-plan` to design the approach, `/execute-plan` to run it
+3. **Process commands** for specific situations — `/debug`, `/request-review`, `/tdd`
+4. **Implementation commands** last — `/subagent-dev`, `/parallel-agents`
+
+### When to Use Which Command
+
+| Situation | Command |
+|-----------|---------|
+| "Let's build X" | `/brainstorm` → `/create-plan` → `/subagent-dev` |
+| "Fix this bug" | `/debug` → `/parallel-agents` if multiple issues |
+| "Review this code" | `/request-review` |
+| "Address review feedback" | `/receive-review` |
+| "Add tests for X" | `/tdd` |
+| "Verify this works" | `/verify` |
+| "Work on a separate branch" | `/worktree` → `/finish-branch` when done |
+| "Document this skill" | `/write-skill` |
+
+### Available Commands
+
+`/brainstorm`, `/create-plan`, `/execute-plan`, `/subagent-dev`, `/parallel-agents`, `/debug`, `/tdd`, `/verify`, `/worktree`, `/finish-branch`, `/request-review`, `/receive-review`, `/write-skill`
+
+### Rigid vs Flexible Commands
+
+- **Rigid** (follow exactly): `/tdd`, `/debug`, `/verify` — these encode specific methodologies
+- **Flexible** (adapt to context): `/brainstorm`, `/create-plan`, `/parallel-agents` — adapt the pattern to the situation
+
+### Token Efficiency
+
+- Be concise when invoking commands — they contain their own detailed methodology
+- Batch operations where possible
+- The command index in the system prompt lists all available commands
