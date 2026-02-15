@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """SessionStart hook: Sync git-notes memory from origin."""
+
 import json
 import subprocess
 import sys
@@ -11,9 +12,11 @@ from hook_logger import HookLogger
 
 logger = HookLogger("memory_sync")
 
-SUPERPOWERS_DIR = os.path.expanduser("~/.claude/plugins/cache/superpowers-marketplace/superpowers")
+SUPERPOWERS_DIR = os.path.expanduser(
+    "~/.claude/plugins/cache/superpowers-marketplace/superpowers"
+)
 if not os.path.isdir(os.path.join(SUPERPOWERS_DIR, ".git")):
-    SUPERPOWERS_DIR = "C:/claude/superpowers"
+    SUPERPOWERS_DIR = "C:/Przemek/superpowers"
 
 NOTES_REF = "refs/notes/superpowers"
 
@@ -25,7 +28,11 @@ def run(cmd, cwd=None):
             cmd, capture_output=True, text=True, cwd=cwd, timeout=15
         )
         return result.stdout.strip()
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError) as e:
+    except (
+        subprocess.CalledProcessError,
+        subprocess.TimeoutExpired,
+        FileNotFoundError,
+    ) as e:
         logger.warning(f"Command failed: {' '.join(cmd)}: {e}")
         return ""
 
@@ -51,14 +58,12 @@ def main():
 
         logger.info("Fetching git notes from origin...")
         fetch_result = run(
-            ["git", "fetch", "origin", f"{NOTES_REF}:{NOTES_REF}"],
-            cwd=SUPERPOWERS_DIR
+            ["git", "fetch", "origin", f"{NOTES_REF}:{NOTES_REF}"], cwd=SUPERPOWERS_DIR
         )
         logger.info(f"Fetch result: {fetch_result or '(empty - may be up to date)'}")
 
         state_json = run(
-            ["git", "notes", "--ref", NOTES_REF, "show"],
-            cwd=SUPERPOWERS_DIR
+            ["git", "notes", "--ref", NOTES_REF, "show"], cwd=SUPERPOWERS_DIR
         )
 
         if not state_json:

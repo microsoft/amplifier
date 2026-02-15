@@ -8,6 +8,7 @@ Usage:
     python memory.py memorize <section> <value>     - Store value in memory
     python memory.py snapshot                       - Generate markdown snapshot
 """
+
 import json
 import os
 import subprocess
@@ -28,7 +29,8 @@ def find_superpowers_dir():
     if os.path.isdir(cache_base):
         try:
             versions = [
-                d for d in os.listdir(cache_base)
+                d
+                for d in os.listdir(cache_base)
                 if os.path.isdir(os.path.join(cache_base, d))
                 and os.path.isfile(os.path.join(cache_base, d, "commands", "recall.js"))
             ]
@@ -41,7 +43,7 @@ def find_superpowers_dir():
         if os.path.isfile(os.path.join(cache_base, "commands", "recall.js")):
             return cache_base
 
-    local_dir = "C:/claude/superpowers"
+    local_dir = "C:/Przemek/superpowers"
     if os.path.isdir(local_dir) and os.path.isfile(
         os.path.join(local_dir, "commands", "recall.js")
     ):
@@ -85,8 +87,10 @@ def memorize(section, value):
     cmd = [
         "node",
         os.path.join(sp_dir, "commands", "memorize.js"),
-        "--section", section,
-        "--value", value,
+        "--section",
+        section,
+        "--value",
+        value,
     ]
     logger.info(f"Running memorize for section: {section}")
 
@@ -138,6 +142,8 @@ if __name__ == "__main__":
         print(snapshot())
     else:
         print("Usage:")
-        print("  memory.py recall <path>              - Query memory (e.g. 'knowledge_base.decisions')")
+        print(
+            "  memory.py recall <path>              - Query memory (e.g. 'knowledge_base.decisions')"
+        )
         print("  memory.py memorize <section> <value>  - Store value")
         print("  memory.py snapshot                    - Generate markdown snapshot")
