@@ -6,7 +6,10 @@ Reads JSON from stdin, calls amplifier modules, writes JSON to stdout.
 
 import asyncio
 import json
+import os
+import platform
 import sys
+from datetime import datetime
 from pathlib import Path
 
 # Add amplifier to path
@@ -34,7 +37,11 @@ async def main():
         # Check if memory system is enabled
         import os
 
-        memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "false").lower() in ["true", "1", "yes"]
+        memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "false").lower() in [
+            "true",
+            "1",
+            "yes",
+        ]
         if not memory_enabled:
             logger.info("Memory system disabled via MEMORY_SYSTEM_ENABLED env var")
             # Return empty response and exit gracefully
@@ -83,10 +90,15 @@ async def main():
         recent = store.search_recent(limit=3)
         logger.info(f"Found {len(recent)} recent memories")
 
-        # Format context
+        # Structure context with Frozen and Churn zones for cache optimization
         context_parts = []
+
+        # 1. Frozen Zone: Stable project and memory headers
         if search_results or recent:
-            context_parts.append("## Relevant Context from Memory System\n")
+            context_parts.append("## [FROZEN ZONE: MEMORY SYSTEM CONTEXT]")
+            context_parts.append(
+                "The following memories provide relevant historical context for this task.\n"
+            )
 
             # Add relevant memories
             if search_results:
@@ -95,7 +107,9 @@ async def main():
                     content = result.memory.content
                     category = result.memory.category
                     score = result.score
-                    context_parts.append(f"- **{category}** (relevance: {score:.2f}): {content}")
+                    context_parts.append(
+                        f"- **{category}** (relevance: {score:.2f}): {content}"
+                    )
 
             # Add recent memories not already shown
             seen_ids = {r.memory.id for r in search_results}
@@ -105,8 +119,18 @@ async def main():
                 for mem in unique_recent[:2]:
                     context_parts.append(f"- {mem.category}: {mem.content}")
 
+        # 2. Churn Zone: Dynamic environment variables (moved to end to preserve cache)
+        context_parts.append("\n## [CHURN ZONE: DYNAMIC SESSION CONTEXT]")
+        context_parts.append(
+            f"- **Today's Date:** {datetime.now().strftime('%A, %B %d, %Y')}"
+        )
+        context_parts.append(
+            f"- **Platform:** {platform.system()} ({platform.release()})"
+        )
+        context_parts.append(f"- **Working Directory:** {os.getcwd()}")
+
         # Build response
-        context = "\n".join(context_parts) if context_parts else ""
+        context = "\n".join(context_parts)
 
         output = {}
         if context:
@@ -130,7 +154,9 @@ async def main():
             }
 
         json.dump(output, sys.stdout)
-        logger.info(f"Returned {len(context_parts) if context_parts else 0} memory contexts")
+        logger.info(
+            f"Returned {len(context_parts) if context_parts else 0} memory contexts"
+        )
 
     except Exception as e:
         logger.exception("Error during memory retrieval", e)
