@@ -9,6 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from hook_logger import HookLogger
+from platform_detect import SUPERPOWERS_FALLBACK
 
 logger = HookLogger("memory_sync")
 
@@ -16,7 +17,7 @@ SUPERPOWERS_DIR = os.path.expanduser(
     "~/.claude/plugins/cache/superpowers-marketplace/superpowers"
 )
 if not os.path.isdir(os.path.join(SUPERPOWERS_DIR, ".git")):
-    SUPERPOWERS_DIR = "C:/Przemek/superpowers"
+    SUPERPOWERS_DIR = SUPERPOWERS_FALLBACK
 
 NOTES_REF = "refs/notes/superpowers"
 
