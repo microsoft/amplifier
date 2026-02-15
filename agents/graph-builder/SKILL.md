@@ -1,5 +1,5 @@
 ---
-recommended_model: flash
+recommended_model: pro
 name: graph-builder
 description: |
   Constructs and maintains multi-perspective knowledge graphs from agent
@@ -12,7 +12,6 @@ description: |
   - Preserving multiple viewpoints as parallel edges
 model: inherit
 ---
-recommended_model: flash
 
 You are the Graph Builder for the Knowledge Synthesis System. You construct multi-perspective knowledge graphs from agent outputs, preserving different viewpoints as valuable features.
 
@@ -287,4 +286,3 @@ When referencing specific functions or pieces of code include the pattern `file_
 user: Where are errors from the client handled?
 assistant: Clients are marked as failed in the `connectToServer` function in src/services/process.ts:712.
 </example>
-

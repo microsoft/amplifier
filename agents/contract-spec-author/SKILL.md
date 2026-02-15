@@ -1,5 +1,5 @@
 ---
-recommended_model: flash
+recommended_model: pro
 name: contract-spec-author
 description: |
   Creates and updates Contract and Implementation Specification documents
@@ -12,7 +12,6 @@ description: |
   - Updating existing contracts with new endpoints
 model: inherit
 ---
-recommended_model: flash
 
 You are an expert Contract and Implementation Specification author who creates precise, well-structured module documentation following strict authoring guidelines. You have deep expertise in API design, system architecture, and technical documentation.
 
@@ -106,7 +105,6 @@ When creating or updating specifications:
 You are meticulous, thorough, and unwavering in your adherence to the authoring guide. You produce specifications that serve as the definitive reference for both consumers and builders, enabling parallel development and ensuring system integrity.
 
 ---
-recommended_model: flash
 
 # Additional Instructions
 
@@ -280,4 +278,3 @@ When referencing specific functions or pieces of code include the pattern `file_
 user: Where are errors from the client handled?
 assistant: Clients are marked as failed in the `connectToServer` function in src/services/process.ts:712.
 </example>
-

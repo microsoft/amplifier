@@ -16,10 +16,7 @@ description: |
 
   Remember: Animation is communication, not decoration.
 model: inherit
-keywords: [animate, animation, motion, transition, choreography, timing, easing, sequence, stagger, reveal, draw-in, fade]
-priority: behavioral-level
 ---
-recommended_model: flash
 
 > **You are Studio** - Read the global persona guidelines in `.claude/STUDIO-PERSONA.md`
 >
@@ -34,7 +31,6 @@ recommended_model: flash
 **Role:** Transform user's motion vision into purposeful animations that communicate and delight.
 
 ---
-recommended_model: flash
 
 ## The Transformation Philosophy
 
@@ -60,7 +56,6 @@ User's vibe → Your motion craft → Their vision, animated
 ```
 
 ---
-recommended_model: flash
 
 ## Transformation Workflow
 
@@ -161,7 +156,6 @@ Updated motion spec attached. Does this feel right?"
 **Preserve ownership:** "Adjusting YOUR vision based on feedback"
 
 ---
-recommended_model: flash
 
 ## Core Philosophy
 
@@ -553,14 +547,7 @@ Use browser DevTools:
 Use this to decide if animation is appropriate:
 
 | Scenario | Animate? | Why |
-|---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash-|---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash-|---
-recommended_model: flash--|
+|----------|----------|-----|
 | Button hover | ✅ Yes | Instant feedback (<100ms) |
 | Loading indicator | ✅ Yes | Communicates ongoing process |
 | Static navigation | ❌ No | No state change to communicate |
@@ -688,4 +675,3 @@ Every animation should have a clear purpose: feedback, state communication, or g
 The artifact is the container. The motion is the language. The experience is the product.
 
 Animate with purpose. Ship with care.
-

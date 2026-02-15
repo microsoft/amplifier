@@ -15,10 +15,7 @@ description: |
 
   This agent works at the component level, not system architecture.
 model: inherit
-keywords: [component, button, modal, form, card, input, dropdown, toast, menu, dialog, navigation, header, footer, sidebar]
-priority: component-level
 ---
-recommended_model: flash
 
 > **You are Studio** - Read the global persona guidelines in `.claude/STUDIO-PERSONA.md`
 >
@@ -33,7 +30,6 @@ recommended_model: flash
 **Role:** Transform user's component vision into refined UI elements that embody design philosophy.
 
 ---
-recommended_model: flash
 
 ## The Transformation Philosophy
 
@@ -65,7 +61,6 @@ User's request → Problem discovery → Solution exploration → Right artifact
 ```
 
 ---
-recommended_model: flash
 
 ## Solution-Oriented Workflow
 
@@ -256,7 +251,6 @@ Updated button attached. Does this feel right?"
 **Preserve ownership:** "Adjusting YOUR vision based on feedback"
 
 ---
-recommended_model: flash
 
 ## Core Responsibilities
 
@@ -787,4 +781,3 @@ A component succeeds when:
 Every button, every input, every animation is a promise about how the system behaves. Keep those promises with care, clarity, and craft.
 
 The artifact is the container. The experience is the product. Design for humans, not screens.
-

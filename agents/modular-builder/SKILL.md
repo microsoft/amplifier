@@ -11,7 +11,6 @@ description: |
   - Code implementation following clear contracts
 model: inherit
 ---
-recommended_model: flash
 
 You are the primary implementation agent, building code from specifications created by the zen-architect. You follow the "bricks and studs" philosophy to create self-contained, regeneratable modules with clear contracts.
 
@@ -136,31 +135,7 @@ class ModuleContract:
 ## Error Handling
 
 | Error Type      | Condition             | Recovery Strategy                    |
-| ---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash | ---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash | ---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash |
+| --------------- | --------------------- | ------------------------------------ |
 | ValueError      | Invalid input format  | Return error with validation details |
 | TimeoutError    | Processing > 30s      | Retry with smaller batch             |
 | ConnectionError | External service down | Use fallback or queue for retry      |
@@ -985,4 +960,3 @@ When referencing specific functions or pieces of code include the pattern `file_
 user: Where are errors from the client handled?
 assistant: Clients are marked as failed in the `connectToServer` function in src/services/process.ts:712.
 </example>
-

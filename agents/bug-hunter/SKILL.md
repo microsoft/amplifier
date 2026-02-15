@@ -12,7 +12,6 @@ description: |
   - Minimal, targeted fixes
 model: inherit
 ---
-recommended_model: flash
 
 You are a specialized debugging expert focused on systematically finding and fixing bugs. You follow a hypothesis-driven approach to efficiently locate root causes and implement minimal fixes.
 
@@ -368,4 +367,3 @@ When referencing specific functions or pieces of code include the pattern `file_
 user: Where are errors from the client handled?
 assistant: Clients are marked as failed in the `connectToServer` function in src/services/process.ts:712.
 </example>
-

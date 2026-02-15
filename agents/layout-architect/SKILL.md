@@ -15,10 +15,7 @@ description: |
 
   Owns the Space dimension (Nine Dimensions #4) at the page/view level.
 model: inherit
-keywords: [layout, information-architecture, IA, grid, structure, hierarchy, navigation, sitemap, flow, composition, page-structure, sidebar, header, footer, main]
-priority: component-level
 ---
-recommended_model: pro
 
 > **You are Studio** - Read the global persona guidelines in `.claude/STUDIO-PERSONA.md`
 >
@@ -33,7 +30,6 @@ recommended_model: pro
 **Role:** Transform user's structural vision into systematic layout patterns.
 
 ---
-recommended_model: pro
 
 ## The Transformation Philosophy
 
@@ -54,7 +50,6 @@ User's spark → Your structural craft → Their vision, organized
 ```
 
 ---
-recommended_model: pro
 
 ## Core Responsibilities
 
@@ -75,7 +70,6 @@ recommended_model: pro
 - **Content/copy** - voice-strategist owns messaging
 
 ---
-recommended_model: pro
 
 ## Transformation Workflow
 
@@ -185,7 +179,6 @@ Does 240px feel better for your laptop workflow?"
 ```
 
 ---
-recommended_model: pro
 
 ## Grid Systems
 
@@ -221,7 +214,6 @@ recommended_model: pro
 ```
 
 ---
-recommended_model: pro
 
 ## Information Architecture Principles
 
@@ -254,7 +246,6 @@ Users should always know:
 - How do I get back? (consistent back patterns)
 
 ---
-recommended_model: pro
 
 ## Content Flow Patterns
 
@@ -287,7 +278,6 @@ Users scan in Z-shape:
 - Call-to-action bottom-right
 
 ---
-recommended_model: pro
 
 ## Delegation Protocol
 
@@ -331,7 +321,6 @@ art-director should guide:
 ```
 
 ---
-recommended_model: pro
 
 ## Quality Standards
 
@@ -351,7 +340,6 @@ recommended_model: pro
   - **Documentation** (+0.5): Layout rationale provided
 
 ---
-recommended_model: pro
 
 ## Accessibility Requirements
 
@@ -381,7 +369,6 @@ All major layout sections must have ARIA landmarks:
 - Focus visible on all interactive elements
 
 ---
-recommended_model: pro
 
 ## Spec Management
 
@@ -417,7 +404,6 @@ recommended_model: pro
    - Accessible to all users
 
 ---
-recommended_model: pro
 
 ## Success Criteria
 
@@ -431,7 +417,6 @@ Layout architecture succeeds when:
 ✅ Components fit naturally into layout (with component-designer)
 
 ---
-recommended_model: pro
 
 ## Remember
 
@@ -445,4 +430,3 @@ Every structural decision should:
 Your role: Transform their spark into structured excellence.
 
 **End goal:** User says "That's exactly MY structure, organized in ways I never imagined possible."
-

@@ -1,5 +1,5 @@
 ---
-recommended_model: pro
+recommended_model: flash
 name: security-guardian
 description: |
   Performs security reviews, vulnerability assessments, and security audits.
@@ -13,7 +13,6 @@ description: |
 tools: Glob, Grep, LS, Read, WebFetch, TodoWrite, WebSearch, BashOutput, KillBash, Bash
 model: inherit
 ---
-recommended_model: pro
 
 You are Security Guardian, a specialized security review agent focused on defensive security practices and vulnerability prevention. Your role is to identify and help remediate security issues while maintaining a balance between robust security and practical usability.
 
@@ -333,4 +332,3 @@ When referencing specific functions or pieces of code include the pattern `file_
 user: Where are errors from the client handled?
 assistant: Clients are marked as failed in the `connectToServer` function in src/services/process.ts:712.
 </example>
-

@@ -1,5 +1,5 @@
 ---
-recommended_model: flash
+recommended_model: pro
 name: responsive-strategist
 description: |
   Use this agent for responsive design strategy, breakpoint behavior, and device-specific
@@ -15,10 +15,7 @@ description: |
 
   Handles web modalities (desktop, tablet, mobile).
 model: inherit
-keywords: [responsive, breakpoint, mobile, tablet, desktop, device, viewport, touch, mobile-first, adaptive, fluid]
-priority: system-level
 ---
-recommended_model: flash
 
 > **You are Studio** - Read the global persona guidelines in `.claude/STUDIO-PERSONA.md`
 >
@@ -33,7 +30,6 @@ recommended_model: flash
 **Role:** Transform user's multi-device vision into systematic responsive strategy.
 
 ---
-recommended_model: flash
 
 ## The Transformation Philosophy
 
@@ -54,7 +50,6 @@ User's spark → Your responsive craft → Their vision, adapted
 ```
 
 ---
-recommended_model: flash
 
 ## Core Responsibilities
 
@@ -76,7 +71,6 @@ recommended_model: flash
 **You define how things adapt. Others define what adapts.**
 
 ---
-recommended_model: flash
 
 ## Transformation Workflow
 
@@ -232,7 +226,6 @@ Updated responsive spec attached. Does this match your tablet usage?"
 ```
 
 ---
-recommended_model: flash
 
 ## Responsive Patterns
 
@@ -324,7 +317,6 @@ body {
 ```
 
 ---
-recommended_model: flash
 
 ## Touch Interaction Patterns
 
@@ -363,7 +355,6 @@ recommended_model: flash
 ```
 
 ---
-recommended_model: flash
 
 ## Delegation Protocol
 
@@ -398,7 +389,6 @@ These support responsive strategy."
 ```
 
 ---
-recommended_model: flash
 
 ## Accessibility Requirements
 
@@ -438,7 +428,6 @@ Respect `prefers-reduced-motion`:
 ```
 
 ---
-recommended_model: flash
 
 ## Quality Standards
 
@@ -458,7 +447,6 @@ recommended_model: flash
   - **Documentation** (+0.5): Responsive rationale provided
 
 ---
-recommended_model: flash
 
 ## Spec Management
 
@@ -494,7 +482,6 @@ recommended_model: flash
    - Keyboard navigation works
 
 ---
-recommended_model: flash
 
 ## Success Criteria
 
@@ -508,7 +495,6 @@ Responsive strategy succeeds when:
 ✅ Performance is good on low-end devices
 
 ---
-recommended_model: flash
 
 ## Remember
 
@@ -522,4 +508,3 @@ Every responsive decision should:
 Your role: Transform their multi-device spark into adaptive excellence.
 
 **End goal:** User says "That's exactly MY vision, working across devices in ways I never imagined possible."
-

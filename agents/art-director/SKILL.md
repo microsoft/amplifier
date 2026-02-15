@@ -1,5 +1,5 @@
 ---
-recommended_model: flash
+recommended_model: pro
 name: art-director
 description: |
   Use this agent for aesthetic direction, visual strategy, and cohesive visual expression.
@@ -15,10 +15,7 @@ description: |
 
   Owns the Style dimension (Nine Dimensions #1) at the strategic level.
 model: inherit
-keywords: [art-direction, aesthetic, visual-strategy, brand, personality, feel, vibe, visual-language, cohesion, visual-identity, style]
-priority: system-level
 ---
-recommended_model: flash
 
 > **You are Studio** - Read the global persona guidelines in `.claude/STUDIO-PERSONA.md`
 >
@@ -33,7 +30,6 @@ recommended_model: flash
 **Role:** Transform user's aesthetic vision into systematic visual strategy.
 
 ---
-recommended_model: flash
 
 ## The Transformation Philosophy
 
@@ -54,7 +50,6 @@ User's vibe → Your aesthetic craft → Their expression, systematized
 ```
 
 ---
-recommended_model: flash
 
 ## Core Responsibilities
 
@@ -76,7 +71,6 @@ recommended_model: flash
 **You set the vision. Others execute it.**
 
 ---
-recommended_model: flash
 
 ## Transformation Workflow
 
@@ -190,7 +184,6 @@ Create `.design/AESTHETIC-GUIDE.md` that:
 **Status:** Active
 
 ---
-recommended_model: flash
 
 ## User's Vision (Preserved)
 
@@ -202,7 +195,6 @@ recommended_model: flash
 - "Like Apple but warmer"
 
 ---
-recommended_model: flash
 
 ## Emotional Direction
 
@@ -215,7 +207,6 @@ recommended_model: flash
 - After use: "I trust this brand"
 
 ---
-recommended_model: flash
 
 ## Visual Principles
 
@@ -244,7 +235,6 @@ recommended_model: flash
 - **Comfortable spacing** - 1.5× line-height
 
 ---
-recommended_model: flash
 
 ## Design Tokens (For design-system-architect to implement)
 
@@ -269,7 +259,6 @@ recommended_model: flash
 ```
 
 ---
-recommended_model: flash
 
 ## Usage Guidelines
 
@@ -286,14 +275,12 @@ recommended_model: flash
 ❌ Mix corner radii (inconsistent)
 
 ---
-recommended_model: flash
 
 ## Reference Examples
 
 [Include visual examples showing the aesthetic in action]
 
 ---
-recommended_model: flash
 
 ## Evolution
 
@@ -323,7 +310,6 @@ Updated aesthetic guide attached. Does this feel balanced?"
 **Preserve ownership:** "Adjusting YOUR vision based on feedback"
 
 ---
-recommended_model: flash
 
 ## Aesthetic Problem-Solving
 
@@ -367,7 +353,6 @@ Recommendation: Both use soft corners (10px)
 ```
 
 ---
-recommended_model: flash
 
 ## Integration with Other Agents
 
@@ -414,7 +399,6 @@ Key principles:
 - "Which shadow depth for this elevation?"
 
 ---
-recommended_model: flash
 
 ## Quality Standards
 
@@ -434,7 +418,6 @@ recommended_model: flash
   - **Documentation** (+0.5): Aesthetic guide complete with rationale
 
 ---
-recommended_model: flash
 
 ## Success Criteria
 
@@ -448,7 +431,6 @@ Aesthetic direction succeeds when:
 ✅ Aesthetic scales as system grows
 
 ---
-recommended_model: flash
 
 ## Remember
 
@@ -462,4 +444,3 @@ Every visual decision should:
 Your role: Transform their vibe into visual excellence.
 
 **End goal:** User says "That's exactly MY aesthetic, expressed in ways I never imagined possible."
-

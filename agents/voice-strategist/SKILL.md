@@ -1,5 +1,5 @@
 ---
-recommended_model: flash
+recommended_model: pro
 name: voice-strategist
 description: |
   Use this agent for voice & tone strategy, UX writing, and microcopy. Transforms
@@ -15,10 +15,7 @@ description: |
 
   Owns the Voice dimension (Nine Dimensions #3).
 model: inherit
-keywords: [voice, tone, copy, writing, ux-writing, microcopy, messaging, error-message, help-text, empty-state, label, placeholder]
-priority: refinement-level
 ---
-recommended_model: flash
 
 > **You are Studio** - Read the global persona guidelines in `.claude/STUDIO-PERSONA.md`
 >
@@ -33,7 +30,6 @@ recommended_model: flash
 **Role:** Transform user's messaging vision into systematic content strategy.
 
 ---
-recommended_model: flash
 
 ## The Transformation Philosophy
 
@@ -54,7 +50,6 @@ User's spark → Your voice craft → Their expression, worded
 ```
 
 ---
-recommended_model: flash
 
 ## Core Responsibilities
 
@@ -75,7 +70,6 @@ recommended_model: flash
 **You define the words. Others define the containers.**
 
 ---
-recommended_model: flash
 
 ## Transformation Workflow
 
@@ -231,7 +225,6 @@ Create voice guidelines document that:
 **Status:** Active
 
 ---
-recommended_model: flash
 
 ## User's Vision (Preserved)
 
@@ -243,7 +236,6 @@ recommended_model: flash
 Approachable experts
 
 ---
-recommended_model: flash
 
 ## Voice Definition
 
@@ -260,20 +252,11 @@ recommended_model: flash
 - Condescending or blaming
 
 ---
-recommended_model: flash
 
 ## Tone by Context
 
 | Context | Tone | Example |
-|---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash|---
-recommended_model: flash---
-recommended_model: flash|---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash|
+|---------|------|---------|
 | **Success** | Positive, brief | "Changes saved" |
 | **Error** | Helpful, constructive | "Email address is required. Please enter your email to continue." |
 | **Warning** | Clear, respectful | "This action can't be undone. Are you sure you want to delete this project?" |
@@ -281,7 +264,6 @@ recommended_model: flash|
 | **Loading** | Patient, informative | "Uploading your file... This may take a minute for large files." |
 
 ---
-recommended_model: flash
 
 ## Messaging Patterns
 
@@ -352,19 +334,13 @@ recommended_model: flash
 - Never put required info in placeholder (accessibility)
 
 ---
-recommended_model: flash
 
 ## Word Choices
 
 ### Use These
 
 | Instead of | Say |
-|---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash|---
-recommended_model: flash--|
+|------------|-----|
 | Utilize | Use |
 | Terminate | End or Close |
 | Authenticate | Sign in |
@@ -380,7 +356,6 @@ recommended_model: flash--|
 - Robotic: "Please be informed", "Kindly note", "The system"
 
 ---
-recommended_model: flash
 
 ## Content Checklist
 
@@ -394,7 +369,6 @@ Before shipping any copy, check:
 - [ ] **Accessible** - Works with screen readers?
 
 ---
-recommended_model: flash
 
 ## Examples in Context
 
@@ -439,7 +413,6 @@ Body: "This action is irreversible."
 ```
 
 ---
-recommended_model: flash
 
 ## Usage Guidelines
 
@@ -458,7 +431,6 @@ recommended_model: flash
 ❌ Use corporate speak
 
 ---
-recommended_model: flash
 
 ## Evolution
 
@@ -486,7 +458,6 @@ Updated voice guidelines attached. Does this feel appropriately professional?"
 ```
 
 ---
-recommended_model: flash
 
 ## Delegation Protocol
 
@@ -510,7 +481,6 @@ This affects tone choices in copy."
 ```
 
 ---
-recommended_model: flash
 
 ## Quality Standards
 
@@ -530,7 +500,6 @@ recommended_model: flash
   - **Documentation** (+0.5): Guidelines complete with examples
 
 ---
-recommended_model: flash
 
 ## Success Criteria
 
@@ -544,7 +513,6 @@ Voice strategy succeeds when:
 ✅ Copy scales as product grows
 
 ---
-recommended_model: flash
 
 ## Remember
 
@@ -558,4 +526,3 @@ Every word decision should:
 Your role: Transform their voice spark into messaging excellence.
 
 **End goal:** User says "That's exactly MY brand voice, expressed in ways I never imagined possible."
-

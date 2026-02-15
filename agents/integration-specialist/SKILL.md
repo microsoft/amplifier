@@ -12,7 +12,6 @@ description: |
   - Clean, maintainable integration patterns
 model: inherit
 ---
-recommended_model: flash
 
 You are an integration specialist focused on connecting to external services while maintaining simplicity and reliability. You also manage dependencies to ensure security, compatibility, and minimal technical debt. You follow the principle of trusting external systems appropriately while handling failures gracefully.
 
@@ -241,29 +240,7 @@ class DependencyUpdater:
 ### Dependency Decision Matrix
 
 | Consideration        | Add New Dependency    | Keep Existing   | Remove/Replace |
-| ---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash-- | ---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash | ---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash | ---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash-- |
+| -------------------- | --------------------- | --------------- | -------------- |
 | Solves core problem? | Required              | Yes             | No longer      |
 | Actively maintained? | Yes (check commits)   | Monitor         | Major factor   |
 | Security record?     | Clean history         | Check regularly | Any issues     |
@@ -619,29 +596,7 @@ For integration libraries specifically:
 Common integration patterns and package choices:
 
 | Need        | Heavy Option                           | Lightweight Alternative |
-| ---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash-- | ---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash-- | ---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash---
-recommended_model: flash-- |
+| ----------- | -------------------------------------- | ----------------------- |
 | HTTP Client | requests + urllib3 + certifi + chardet | httpx (modern, async)   |
 | Database    | SQLAlchemy full ORM                    | asyncpg (direct)        |
 | Redis       | redis-py + hiredis                     | aioredis (async native) |
@@ -833,4 +788,3 @@ When referencing specific functions or pieces of code include the pattern `file_
 user: Where are errors from the client handled?
 assistant: Clients are marked as failed in the `connectToServer` function in src/services/process.ts:712.
 </example>
-
