@@ -3,6 +3,8 @@
 Claude Code PreCompact hook - exports full conversation transcript before compaction.
 Saves transcript to .data/transcripts/ for later retrieval via @mention.
 Includes duplicate detection to avoid re-embedding already-loaded transcripts.
+
+On OpenCode/Gemini, also performs Gold Prefix analysis for context cache optimization.
 """
 
 import json
@@ -14,9 +16,134 @@ from pathlib import Path
 # Add parent directory for logger import
 sys.path.insert(0, str(Path(__file__).parent))
 from hook_logger import HookLogger
-from platform_detect import SUPERPOWERS_FALLBACK
+from platform_detect import IS_OPENCODE, SUPERPOWERS_FALLBACK
 
 logger = HookLogger("precompact_export")
+
+
+class GoldPrefixCompactor:
+    """Gemini-optimized caching strategy that isolates a stable Frozen Zone.
+
+    Only active on OpenCode/Gemini where context caching benefits from
+    bit-for-bit prefix stability. On Claude Code this class is not used.
+    """
+
+    def __init__(self, hook_logger):
+        self.logger = hook_logger
+        self.frozen_char_limit = 600000  # ~150k tokens at 4 chars/token
+
+    def identify_frozen_zone(self, entries: list) -> list:
+        """Identify entries that belong to the stable Frozen Zone (system prompts, identity)."""
+        frozen = []
+        total_chars = 0
+
+        for i, entry in enumerate(entries):
+            content = self._extract_content(entry)
+            total_chars += len(content)
+
+            entry_type = entry.get("type")
+            is_core = any(
+                marker in content
+                for marker in ["Core Mandates", "AMPLIFIER-AGENTS", "CLAUDE.md", "Identity"]
+            )
+
+            # System prompts and core identity entries form the frozen prefix
+            if i < 5 or (entry_type == "system" and (i < 8 or is_core)):
+                frozen.append(entry)
+            else:
+                break
+
+            if total_chars > self.frozen_char_limit:
+                break
+
+        return frozen
+
+    def get_middle_history(self, entries: list, frozen_count: int) -> list:
+        """Extract middle history (between frozen zone and last 5 turns) for summarization."""
+        if len(entries) <= frozen_count + 5:
+            return []
+        return entries[frozen_count:-5]
+
+    def summarize_stable(self, entries: list) -> str:
+        """Generate a stable summary block for the middle history.
+
+        Includes both tool usage counts and user message summaries
+        for meaningful context after compaction.
+        """
+        if not entries:
+            return ""
+
+        tool_counts = {}
+        user_summaries = []
+
+        for entry in entries:
+            msg = entry.get("message", {})
+            entry_type = entry.get("type", "")
+            content = msg.get("content", "")
+
+            # Count tool uses
+            if isinstance(content, list):
+                for item in content:
+                    if isinstance(item, dict) and item.get("type") == "tool_use":
+                        name = item.get("name", "unknown")
+                        tool_counts[name] = tool_counts.get(name, 0) + 1
+
+            # Capture user message summaries (first 100 chars of each)
+            if entry_type == "user":
+                text = self._extract_text(content)
+                if text:
+                    summary = text[:100].strip()
+                    if len(text) > 100:
+                        summary += "..."
+                    user_summaries.append(summary)
+
+        lines = [
+            "### [GOLD PREFIX: STABLE PROGRESS SNAPSHOT]",
+            f"Compacted History Range: {len(entries)} turns",
+            f"Stability Key: {len(entries)}-{sum(tool_counts.values())}",
+            "",
+        ]
+
+        if user_summaries:
+            lines.append("#### User Requests:")
+            for summary in user_summaries[:10]:
+                lines.append(f"  - {summary}")
+            lines.append("")
+
+        if tool_counts:
+            lines.append("#### Tools Executed:")
+            for name, count in sorted(tool_counts.items()):
+                lines.append(f"  - {name}: {count} times")
+
+        lines.append("\n--- [END OF STABLE SNAPSHOT] ---")
+        return "\n".join(lines)
+
+    @staticmethod
+    def _extract_content(entry: dict) -> str:
+        """Extract text content from a transcript entry."""
+        entry_type = entry.get("type")
+        if entry_type == "system":
+            return str(entry.get("content", ""))
+        msg = entry.get("message", {})
+        content = msg.get("content", "")
+        if isinstance(content, list):
+            return " ".join(
+                item.get("text", "") for item in content
+                if isinstance(item, dict) and item.get("type") == "text"
+            )
+        return str(content)
+
+    @staticmethod
+    def _extract_text(content) -> str:
+        """Extract plain text from message content (string or list)."""
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            return " ".join(
+                item.get("text", "") for item in content
+                if isinstance(item, dict) and item.get("type") == "text"
+            )
+        return str(content)
 
 
 def format_message(msg: dict) -> str:
@@ -146,7 +273,35 @@ def extract_loaded_session_ids(entries: list) -> set[str]:
     return loaded_sessions
 
 
-def export_transcript(transcript_path: str, trigger: str, session_id: str, custom_instructions: str = "") -> str:
+def parse_transcript_entries(transcript_path: str) -> list:
+    """Parse a JSONL transcript file into a list of raw entries.
+
+    Returns:
+        List of parsed JSON objects from the transcript file.
+    """
+    transcript_file = Path(transcript_path)
+    if not transcript_file.exists():
+        logger.error(f"Transcript file not found: {transcript_file}")
+        return []
+
+    entries = []
+    with open(transcript_file, encoding="utf-8") as f:
+        for line in f:
+            if line.strip():
+                try:
+                    entries.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+    return entries
+
+
+def export_transcript(
+    transcript_path: str,
+    trigger: str,
+    session_id: str,
+    custom_instructions: str = "",
+    full_entries: list | None = None,
+) -> str:
     """
     Export the conversation transcript to a text file.
     Includes duplicate detection to avoid re-embedding already-loaded transcripts.
@@ -156,6 +311,7 @@ def export_transcript(transcript_path: str, trigger: str, session_id: str, custo
         trigger: "manual" or "auto" - how compact was triggered
         session_id: The session ID for the conversation
         custom_instructions: Any custom instructions provided with compact
+        full_entries: Pre-parsed JSONL entries (avoids re-reading file)
 
     Returns:
         Path to the exported transcript file
@@ -171,52 +327,34 @@ def export_transcript(transcript_path: str, trigger: str, session_id: str, custo
         output_filename = f"compact_{timestamp}_{session_id}.txt"
         output_path = storage_dir / output_filename
 
-        # Read the JSONL transcript
-        transcript_file = Path(transcript_path)
-        if not transcript_file.exists():
-            logger.error(f"Transcript file not found: {transcript_file}")
-            return ""
+        # Parse entries from file if not provided
+        if full_entries is None:
+            full_entries = parse_transcript_entries(transcript_path)
+            if not full_entries:
+                return ""
 
-        logger.info(f"Reading transcript from: {transcript_file}")
+        logger.info(f"Processing {len(full_entries)} entries")
 
-        # Parse JSONL and extract all conversation entries
+        # Convert raw entries to (type, message) tuples for formatting
         entries = []
-        with open(transcript_file, encoding="utf-8") as f:
-            for line_num, line in enumerate(f, 1):
-                line = line.strip()
-                if not line:
-                    continue
+        for entry in full_entries:
+            entry_type = entry.get("type")
 
-                try:
-                    entry = json.loads(line)
-                    entry_type = entry.get("type")
+            if entry_type == "system":
+                subtype = entry.get("subtype", "")
+                content = entry.get("content", "")
+                ts = entry.get("timestamp", "")
+                system_msg = {"role": "system", "content": f"[{subtype}] {content}", "timestamp": ts}
+                entries.append(("system", system_msg))
 
-                    # Include all entry types for complete transcript
-                    if entry_type == "system":
-                        # System entries provide important context
-                        subtype = entry.get("subtype", "")
-                        content = entry.get("content", "")
-                        timestamp = entry.get("timestamp", "")
+            elif entry_type in ["user", "assistant"]:
+                if "message" in entry and isinstance(entry["message"], dict):
+                    entries.append((entry_type, entry["message"]))
 
-                        # Create a pseudo-message for system entries
-                        system_msg = {"role": "system", "content": f"[{subtype}] {content}", "timestamp": timestamp}
-                        entries.append(("system", system_msg))
-
-                    elif entry_type in ["user", "assistant"]:
-                        # Extract the actual message
-                        if "message" in entry and isinstance(entry["message"], dict):
-                            msg = entry["message"]
-                            entries.append((entry_type, msg))
-
-                    elif entry_type in ["summary", "meta"]:
-                        # Include summary/meta for context
-                        content = entry.get("content", "")
-                        if content:
-                            meta_msg = {"role": entry_type, "content": content}
-                            entries.append((entry_type, meta_msg))
-
-                except json.JSONDecodeError as e:
-                    logger.error(f"Error parsing line {line_num}: {e}")
+            elif entry_type in ["summary", "meta"]:
+                content = entry.get("content", "")
+                if content:
+                    entries.append((entry_type, {"role": entry_type, "content": content}))
 
         logger.info(f"Extracted {len(entries)} total entries from conversation")
 
@@ -244,6 +382,17 @@ def export_transcript(transcript_path: str, trigger: str, session_id: str, custo
                 for loaded_id in sorted(loaded_sessions):
                     f.write(f"  - {loaded_id}\n")
                 f.write("Note: Content from these sessions may appear embedded in the conversation.\n")
+
+            # Gold Prefix status (OpenCode only)
+            if IS_OPENCODE:
+                compactor = GoldPrefixCompactor(logger)
+                frozen = compactor.identify_frozen_zone(full_entries)
+                middle = compactor.get_middle_history(full_entries, len(frozen))
+                if middle:
+                    f.write(f"Gold Prefix Status: OPTIMIZED\n")
+                    f.write(f"Frozen Zone: {len(frozen)} turns preserved\n")
+                    f.write(f"Middle History: {len(middle)} turns summarized\n")
+                    f.write(f"Recent turns: {len(full_entries) - len(frozen) - len(middle)} turns active\n")
 
             f.write("=" * 80 + "\n\n")
 
@@ -369,12 +518,44 @@ def main():
         except Exception as e:
             logger.warning(f"Memory push failed (non-critical): {e}")
 
-        # Export the transcript
+        # Parse transcript once, reuse for both analysis and export
         exported_path = ""
+        metadata = {
+            "transcript_exported": False,
+            "trigger": trigger,
+        }
+        full_entries = None
+
         if transcript_path:
-            exported_path = export_transcript(transcript_path, trigger, session_id, custom_instructions)
+            full_entries = parse_transcript_entries(transcript_path)
+
+            # Gold Prefix analysis (OpenCode/Gemini only)
+            if IS_OPENCODE and full_entries:
+                try:
+                    compactor = GoldPrefixCompactor(logger)
+                    frozen = compactor.identify_frozen_zone(full_entries)
+                    middle = compactor.get_middle_history(full_entries, len(frozen))
+
+                    if middle:
+                        summary = compactor.summarize_stable(middle)
+                        logger.info(
+                            f"Gold Prefix: {len(frozen)} frozen, {len(middle)} summarized"
+                        )
+                        metadata["gold_prefix_optimized"] = True
+                        metadata["frozen_turns"] = len(frozen)
+                        metadata["summarized_turns"] = len(middle)
+                        metadata["stable_summary"] = summary
+                except Exception as e:
+                    logger.error(f"Gold Prefix analysis error: {e}")
+
+            # Export transcript (both platforms)
+            exported_path = export_transcript(
+                transcript_path, trigger, session_id, custom_instructions, full_entries
+            )
             if exported_path:
                 logger.info(f"Successfully exported transcript to: {exported_path}")
+                metadata["transcript_exported"] = True
+                metadata["export_path"] = exported_path
             else:
                 logger.error("Failed to export transcript")
         else:
@@ -384,12 +565,11 @@ def main():
         output = {
             "continue": True,
             "suppressOutput": True,
-            "metadata": {"transcript_exported": bool(exported_path), "export_path": exported_path, "trigger": trigger},
+            "metadata": metadata,
         }
 
         # Add a system message to notify about the export
         if exported_path:
-            # Extract just the filename for the message
             filename = Path(exported_path).name
             output["systemMessage"] = f"Transcript exported to .data/transcripts/{filename}"
 
