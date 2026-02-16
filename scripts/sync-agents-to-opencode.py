@@ -117,7 +117,9 @@ def parse_frontmatter(content: str) -> tuple[dict, str]:
     return fm, body
 
 
-def generate_skill_md(fm: dict, body: str, agent_name: str) -> str:
+def generate_skill_md(
+    fm: dict, body: str, agent_name: str, frozen_header: str = ""
+) -> str:
     """Generate OpenCode SKILL.md content from parsed frontmatter and body."""
     recommended_model = MODEL_MAP.get(agent_name, "pro")
     tools = TOOLS_MAP.get(agent_name, "")
@@ -139,8 +141,14 @@ def generate_skill_md(fm: dict, body: str, agent_name: str) -> str:
     lines.append(f"model: {fm.get('model', 'inherit')}")
     lines.append("---")
 
-    # Body stays the same
-    return "\n".join(lines) + "\n" + body
+    # Inject Frozen Zone if provided
+    content = "\n".join(lines) + "\n"
+    if frozen_header:
+        content += (
+            f"<!-- FROZEN ZONE START -->\n{frozen_header}\n<!-- FROZEN ZONE END -->\n\n"
+        )
+
+    return content + body
 
 
 def main():
@@ -159,6 +167,15 @@ def main():
         print("No agent files found in .claude/agents/")
         sys.exit(1)
 
+    # Read Frozen Header
+    frozen_header_path = repo_root / ".claude" / "context" / "frozen_header.md"
+    frozen_header = ""
+    if frozen_header_path.exists():
+        frozen_header = frozen_header_path.read_text(encoding="utf-8").strip()
+        print(f"Loaded Frozen Header ({len(frozen_header)} chars)")
+    else:
+        print(f"Warning: Frozen Header not found at {frozen_header_path}")
+
     print(f"Syncing {len(agent_files)} agents from .claude/agents/ to agents/")
 
     synced = 0
@@ -171,7 +188,7 @@ def main():
             print(f"  SKIP {agent_name} (no frontmatter)")
             continue
 
-        skill_content = generate_skill_md(fm, body, agent_name)
+        skill_content = generate_skill_md(fm, body, agent_name, frozen_header)
         dst_dir = agents_dst / agent_name
         dst_file = dst_dir / "SKILL.md"
 

@@ -36,8 +36,7 @@ async def main():
     """Read input, search memories, return context"""
     try:
         # Check if memory system is enabled
-        import os
-
+        # We check this env var first to allow quick disable
         memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "false").lower() in [
             "true",
             "1",
@@ -53,10 +52,27 @@ async def main():
         logger.cleanup_old_logs()  # Clean up old logs on each run
 
         # Read JSON input
-        raw_input = sys.stdin.read()
+        try:
+            raw_input = sys.stdin.read()
+        except Exception as e:
+            logger.error(f"Failed to read stdin: {e}")
+            json.dump({}, sys.stdout)
+            return
+
         logger.info(f"Received input length: {len(raw_input)}")
 
-        input_data = json.loads(raw_input)
+        if not raw_input:
+            logger.warning("Empty input received")
+            json.dump({}, sys.stdout)
+            return
+
+        try:
+            input_data = json.loads(raw_input)
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON input: {e}")
+            json.dump({}, sys.stdout)
+            return
+
         prompt = input_data.get("prompt", "")
         logger.info(f"Prompt length: {len(prompt)}")
 
@@ -73,10 +89,9 @@ async def main():
         store = MemoryStore()
         searcher = MemorySearcher()
 
-        # Check data directory
+        # Check data directory (debug info)
         logger.debug(f"Data directory: {store.data_dir}")
         logger.debug(f"Data file: {store.data_file}")
-        logger.debug(f"Data file exists: {store.data_file.exists()}")
 
         # Get all memories
         all_memories = store.get_all()
@@ -91,67 +106,98 @@ async def main():
         recent = store.search_recent(limit=3)
         logger.info(f"Found {len(recent)} recent memories")
 
-        # Format context with platform-aware zone labels
+        # Prepare context parts
         context_parts = []
 
-        # 1. Frozen Zone: Stable project and memory headers
-        if search_results or recent:
-            # Frozen Zone label only for Gemini context caching
-            if IS_OPENCODE:
-                context_parts.append("## [FROZEN ZONE: MEMORY SYSTEM CONTEXT]")
-                context_parts.append(
-                    "The following memories provide relevant historical context for this task.\n"
-                )
+        # Calculate unique recent memories
+        seen_ids = {r.memory.id for r in search_results}
+        unique_recent = [m for m in recent if m.id not in seen_ids]
+
+        if IS_OPENCODE:
+            # --- GEMINI OPTIMIZED STRUCTURE ---
+            # 1. Frozen Zone: Stable project header
+            context_parts.append("## [FROZEN ZONE: STABLE CONTEXT]")
+
+            # Read frozen header
+            frozen_path = Path(__file__).parent.parent / "context" / "frozen_header.md"
+            if frozen_path.exists():
+                try:
+                    frozen_content = frozen_path.read_text(encoding="utf-8").strip()
+                    context_parts.append(frozen_content)
+                except Exception as e:
+                    logger.error(f"Failed to read frozen header: {e}")
             else:
+                logger.warning(f"Frozen header not found at {frozen_path}")
+
+            # 2. Churn Zone: Dynamic Session Context
+            context_parts.append("\n## [CHURN ZONE: DYNAMIC SESSION CONTEXT]")
+
+            # Session Environment (Dynamic)
+            context_parts.append(
+                f"- **Today's Date:** {datetime.now().strftime('%A, %B %d, %Y')}"
+            )
+            context_parts.append(
+                f"- **Platform:** {platform.system()} ({platform.release()})"
+            )
+            context_parts.append(f"- **Working Directory:** {os.getcwd()}")
+
+            # Memory Search Results (Dynamic because depends on prompt)
+            if search_results or unique_recent:
+                context_parts.append("\n### Relevant Context from Memory System")
+
+                if search_results:
+                    context_parts.append("#### Relevant Memories")
+                    for result in search_results[:3]:
+                        content = result.memory.content
+                        category = result.memory.category
+                        score = result.score
+                        context_parts.append(
+                            f"- **{category}** (relevance: {score:.2f}): {content}"
+                        )
+
+                if unique_recent:
+                    context_parts.append("\n#### Recent Context")
+                    for mem in unique_recent[:2]:
+                        context_parts.append(f"- {mem.category}: {mem.content}")
+
+        else:
+            # --- STANDARD CLAUDE CODE STRUCTURE ---
+            # Keep existing behavior roughly: Memories first, then session info
+
+            if search_results or unique_recent:
                 context_parts.append("## Relevant Context from Memory System\n")
 
-            # Add relevant memories
-            if search_results:
-                context_parts.append("### Relevant Memories")
-                for result in search_results[:3]:
-                    content = result.memory.content
-                    category = result.memory.category
-                    score = result.score
-                    context_parts.append(
-                        f"- **{category}** (relevance: {score:.2f}): {content}"
-                    )
+                if search_results:
+                    context_parts.append("### Relevant Memories")
+                    for result in search_results[:3]:
+                        content = result.memory.content
+                        category = result.memory.category
+                        score = result.score
+                        context_parts.append(
+                            f"- **{category}** (relevance: {score:.2f}): {content}"
+                        )
 
-            # Add recent memories not already shown
-            seen_ids = {r.memory.id for r in search_results}
-            unique_recent = [m for m in recent if m.id not in seen_ids]
-            if unique_recent:
-                context_parts.append("\n### Recent Context")
-                for mem in unique_recent[:2]:
-                    context_parts.append(f"- {mem.category}: {mem.content}")
+                if unique_recent:
+                    context_parts.append("\n### Recent Context")
+                    for mem in unique_recent[:2]:
+                        context_parts.append(f"- {mem.category}: {mem.content}")
 
-        # Dynamic session context (useful for both platforms)
-        if IS_OPENCODE:
-            context_parts.append("\n## [CHURN ZONE: DYNAMIC SESSION CONTEXT]")
-        else:
             context_parts.append("\n## Session Environment")
-        context_parts.append(
-            f"- **Today's Date:** {datetime.now().strftime('%A, %B %d, %Y')}"
-        )
-        context_parts.append(
-            f"- **Platform:** {platform.system()} ({platform.release()})"
-        )
-        context_parts.append(f"- **Working Directory:** {os.getcwd()}")
+            context_parts.append(
+                f"- **Today's Date:** {datetime.now().strftime('%A, %B %d, %Y')}"
+            )
+            context_parts.append(
+                f"- **Platform:** {platform.system()} ({platform.release()})"
+            )
+            context_parts.append(f"- **Working Directory:** {os.getcwd()}")
 
         # Build response
         context = "\n".join(context_parts)
 
         output = {}
         if context:
-            # Calculate memories loaded - unique_recent is always defined after the conditional above
-            memories_loaded = len(search_results)
-            if search_results:
-                # unique_recent is defined when we have search_results
-                seen_ids = {r.memory.id for r in search_results}
-                unique_recent_count = len([m for m in recent if m.id not in seen_ids])
-                memories_loaded += unique_recent_count
-            else:
-                # No search results, so all recent memories are unique
-                memories_loaded += len(recent)
+            # Calculate memories loaded
+            memories_loaded = len(search_results) + len(unique_recent)
 
             output = {
                 "additionalContext": context,
@@ -163,7 +209,7 @@ async def main():
 
         json.dump(output, sys.stdout)
         logger.info(
-            f"Returned {len(context_parts) if context_parts else 0} memory contexts"
+            f"Returned {len(context_parts) if context_parts else 0} context parts"
         )
 
     except Exception as e:
