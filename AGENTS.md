@@ -62,14 +62,7 @@ If a new agent would help, pause work and create it first. This investment pays 
 
 ### Available Specialized Agents
 
-The project includes specialized agents for various tasks (see `.claude/AGENTS_CATALOG.md` for full details):
-
-- **Development**: zen-code-architect, architecture-reviewer, bug-hunter, test-coverage, modular-builder, refactor-architect, integration-specialist
-- **Knowledge Synthesis**: triage-specialist, analysis-expert, synthesis-master, content-researcher
-- **Knowledge Synthesis System**: concept-extractor, insight-synthesizer, tension-keeper, uncertainty-navigator, knowledge-archaeologist, visualization-architect
-- **Meta**: subagent-architect (creates new agents)
-
-Use these agents proactively when their expertise matches your task.
+The project includes 30+ specialized agents. See `.claude/AGENTS_CATALOG.md` for the full catalog with descriptions and usage guidance. Use agents proactively when their expertise matches your task.
 
 ## Subagent Resilience Protocol
 

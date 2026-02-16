@@ -9,7 +9,6 @@ This file is reserved for Claude Code-specific instructions.
 # import the following files (using the `@` syntax):
 
 - @AGENTS.md
-- @DISCOVERIES.md
 - @ai_context/IMPLEMENTATION_PHILOSOPHY.md
 - @ai_context/MODULAR_DESIGN_PHILOSOPHY.md
 
@@ -205,70 +204,6 @@ Single message with multiple Task calls:
 - Learning and improving continuously
 - Maintaining alignment with user's approach
 
-## Philosophical Anchors
-
-- Always reference `@ai_context/IMPLEMENTATION_PHILOSOPHY.md`
-- Always reference `@ai_context/MODULAR_DESIGN_PHILOSOPHY.md`
-- Embrace ruthless simplicity
-- Build as bricks and studs
-- Trust in emergence over control
-
-## Next Actions
-
-- Design comprehensive knowledge synthesis architecture
-- Create specialized planning sub-agent
-- Build memory retrieval system
-- Establish measurement framework
-- Begin continuous learning cycle
-
-## Document Reference Protocol
-
-When working with documents that contain references:
-
-1. **Always check for references/citations** at the end of documents
-2. **Re-read source materials** when implementing referenced concepts
-3. **Understand the backstory/context** before applying ideas
-4. **Track which articles informed which decisions** for learning
-
-This ensures we build on the full depth of ideas, not just their summaries.
-
 ## Amplifier Commands
 
-Amplifier provides native commands in `.claude/commands/` invoked via `/command-name` using the Skill tool. Before starting work, check if an applicable command exists for the task.
-
-### Command Priority
-
-When approaching work, follow this order:
-
-1. **Brainstorm first** for new work — `/brainstorm` to explore the problem space
-2. **Plan next** — `/create-plan` to design the approach, `/execute-plan` to run it
-3. **Process commands** for specific situations — `/debug`, `/request-review`, `/tdd`
-4. **Implementation commands** last — `/subagent-dev`, `/parallel-agents`
-
-### When to Use Which Command
-
-| Situation | Command |
-|-----------|---------|
-| "Let's build X" | `/brainstorm` → `/create-plan` → `/subagent-dev` |
-| "Fix this bug" | `/debug` → `/parallel-agents` if multiple issues |
-| "Review this code" | `/request-review` |
-| "Address review feedback" | `/receive-review` |
-| "Add tests for X" | `/tdd` |
-| "Verify this works" | `/verify` |
-| "Work on a separate branch" | `/worktree` → `/finish-branch` when done |
-| "Document this skill" | `/write-skill` |
-
-### Available Commands
-
-`/brainstorm`, `/create-plan`, `/execute-plan`, `/subagent-dev`, `/parallel-agents`, `/debug`, `/tdd`, `/verify`, `/worktree`, `/finish-branch`, `/request-review`, `/receive-review`, `/write-skill`
-
-### Rigid vs Flexible Commands
-
-- **Rigid** (follow exactly): `/tdd`, `/debug`, `/verify` — these encode specific methodologies
-- **Flexible** (adapt to context): `/brainstorm`, `/create-plan`, `/parallel-agents` — adapt the pattern to the situation
-
-### Token Efficiency
-
-- Be concise when invoking commands — they contain their own detailed methodology
-- Batch operations where possible
-- The command index in the system prompt lists all available commands
+Amplifier provides native commands in `.claude/commands/` invoked via `/command-name`. Available commands are listed in the system prompt's skills section. Before starting work, check if an applicable command exists. Start with `/brainstorm` for new work, `/debug` for bugs, `/tdd` for test-driven development.
