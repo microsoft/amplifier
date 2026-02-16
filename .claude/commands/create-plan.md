@@ -12,9 +12,16 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Announce at start:** "I'm using the create-plan command to create the implementation plan."
 
-**Before planning:** Recall existing project decisions and patterns to avoid contradicting established architecture:
-- Search episodic memory for `knowledge_base.decisions` using the `mcp__plugin_episodic-memory_episodic-memory__search` tool
-- Search episodic memory for `knowledge_base.patterns` using the `mcp__plugin_episodic-memory_episodic-memory__search` tool
+**Before planning:** Gather context to avoid contradicting established architecture:
+1. Search episodic memory for `knowledge_base.decisions` using the `mcp__plugin_episodic-memory_episodic-memory__search` tool
+2. Search episodic memory for `knowledge_base.patterns` using the `mcp__plugin_episodic-memory_episodic-memory__search` tool
+3. **If modifying existing code**, dispatch `agentic-search` to understand the current architecture before writing tasks:
+   ```
+   Task(subagent_type="agentic-search", max_turns=12, description="Understand [area] before planning", prompt="
+     [specific question about how the code works that the plan depends on]
+   ")
+   ```
+   This prevents plans that contradict existing patterns or miss dependencies. The agent uses ctags + Grep for fast symbol lookup and returns precise file:line references you can embed directly in task definitions.
 
 **Context:** This should be run in a dedicated worktree (created by /brainstorm).
 
@@ -38,20 +45,28 @@ This structure informs the task decomposition. Each task should produce self-con
 
 ## Amplifier Agent Assignment
 
-Each task gets an `Agent:` field specifying which Amplifier agent will handle it during execution. Read `.claude/AGENTS_CATALOG.md` for the full mapping.
+Each task gets an `Agent:` field specifying which Amplifier agent will handle it during execution. Read `.claude/AGENTS_CATALOG.md` for the full catalog (31 agents across 5 categories).
 
 **Auto-assign by scanning the task description:**
-- Implementation tasks (build, create, add) → `modular-builder`
-- Test tasks (test, coverage, verify) → `test-coverage`
-- Fix/debug tasks (fix, debug, error) → `bug-hunter`
-- Security tasks (auth, secrets, permissions) → `security-guardian`
-- API tasks (endpoint, contract, route) → `api-contract-designer`
-- Database tasks (schema, migration, query) → `database-architect`
-- UI tasks (component, frontend, visual) → `component-designer`
-- Integration tasks (API, MCP, external) → `integration-specialist`
-- Performance tasks (optimize, bottleneck) → `performance-optimizer`
+
+| Task Type | Agent | When |
+|-----------|-------|------|
+| Research/explore | `agentic-search` | Understanding code before changing it, finding all callers, tracing flows |
+| Architecture | `zen-architect` | System design, module boundaries, ANALYZE/ARCHITECT mode |
+| Implementation | `modular-builder` | Build, create, add — the default for writing code |
+| Test | `test-coverage` | Test strategy, coverage analysis, test case design |
+| Fix/debug | `bug-hunter` | Errors, failures, unexpected behavior |
+| Security | `security-guardian` | Auth, secrets, OWASP, vulnerability assessment |
+| API | `api-contract-designer` | Endpoint contracts, REST/GraphQL specs |
+| Database | `database-architect` | Schema, migrations, query optimization |
+| UI | `component-designer` | Frontend components, visual elements |
+| Integration | `integration-specialist` | External APIs, MCP servers, dependencies |
+| Performance | `performance-optimizer` | Bottlenecks, profiling, optimization |
+| Cleanup | `post-task-cleanup` | Dead code, hygiene, lint fixes after task completion |
 
 When in doubt, use `modular-builder` for building and `bug-hunter` for fixing.
+
+**Research tasks come first.** When a plan modifies existing code, the first task(s) should use `agentic-search` to map the current architecture. This gives subsequent implementation agents precise file:line targets instead of vague "find and modify" instructions.
 
 **Review tasks use dedicated agents:**
 - Spec compliance review → `test-coverage`
@@ -121,6 +136,23 @@ For plans with <5 tasks, generate in-context as before (the overhead is acceptab
 After receiving the subagent's summary, present it to the user: "Plan complete with N tasks. [summary]. Ready to execute?"
 
 ## Task Structure
+
+### Research Task (when modifying existing code)
+
+```markdown
+### Task 0: Understand [area] architecture
+
+**Agent:** agentic-search
+
+**Question:** How does [feature/module] work end-to-end? What files handle [specific concern]?
+
+**Expected output:** Key Files table with file:line references, architecture narrative, dependency map.
+**Use results in:** Tasks 1-N file paths and modification targets.
+```
+
+Research tasks always come before implementation tasks. Their output gives subsequent agents precise targets.
+
+### Implementation Task
 
 ```markdown
 ### Task N: [Component Name]

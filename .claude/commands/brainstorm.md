@@ -18,14 +18,19 @@ Before diving into the idea, gather context by dispatching a **context scout sub
 2. **Dispatch context scout:**
 
 ```
-Task(subagent_type="general-purpose", model="haiku", max_turns=6, description="Gather session context for [topic]", prompt="
+Task(subagent_type="general-purpose", model="haiku", max_turns=8, description="Gather session context for [topic]", prompt="
   Gather project context for a brainstorming session about [topic].
 
   Run these steps and compile a summary:
   1. Run: git status --short && git log --oneline -5
   2. Search episodic memory for conversations about [topic] using mcp__plugin_episodic-memory_episodic-memory__search
   3. Check for existing specs: ls docs/specs/ (if directory exists)
-  4. Read .claude/AGENTS_CATALOG.md
+  4. Read .claude/AGENTS_CATALOG.md for available agents
+  5. If the topic involves existing code, search ctags for relevant symbols:
+     Run: grep -i '[keyword]' tags | head -20
+     (The tags file at repo root has pre-indexed class/function/method definitions)
+  6. If the topic involves existing code, use Grep to find related files:
+     Grep pattern='[keyword]' output_mode='files_with_matches' head_limit=15
 
   If any step fails, skip it and continue.
 
@@ -36,8 +41,11 @@ Task(subagent_type="general-purpose", model="haiku", max_turns=6, description="G
   ## Related Past Decisions
   [any ADRs or patterns relevant to topic — bullet list or 'None found']
 
+  ## Relevant Code
+  [key files and symbols related to topic from ctags/grep — bullet list or 'Greenfield (no existing code)']
+
   ## Relevant Agents
-  [which Amplifier agents are likely needed for this task — bullet list]
+  [which Amplifier agents are likely needed — match from AGENTS_CATALOG.md]
 
   ## Existing Specs
   [any related design docs — list or 'None found']
@@ -45,6 +53,14 @@ Task(subagent_type="general-purpose", model="haiku", max_turns=6, description="G
 ```
 
 3. **Present summary** to user and proceed to The Process.
+
+4. **If the topic involves understanding existing code**, dispatch `agentic-search` before designing:
+```
+Task(subagent_type="agentic-search", max_turns=12, description="Explore [topic] in codebase", prompt="
+  [specific question about how the existing code works]
+")
+```
+This gives you precise file:line references to ground your design in reality, not assumptions.
 
 ## The Process
 
@@ -59,10 +75,11 @@ Task(subagent_type="general-purpose", model="haiku", max_turns=6, description="G
 - Before proposing a design, search episodic memory for existing architectural constraints and decisions.
 
 **Exploring approaches:**
+- When the topic touches existing code, use `agentic-search` results to ground your proposals in actual architecture — don't propose changes to code you haven't examined
 - Propose 2-3 different approaches with trade-offs
 - Present options conversationally with your recommendation and reasoning
 - Lead with your recommended option and explain why
-- Note which Amplifier agents each approach would involve
+- For each approach, specify which Amplifier agents would handle each phase (use AGENTS_CATALOG.md as reference)
 
 **Presenting the design:**
 - Once you believe you understand what you're building, present the design
@@ -91,14 +108,22 @@ Every design MUST include an Agent Allocation section before handoff. This tells
 
 | Phase | Agent | Responsibility |
 |-------|-------|---------------|
+| Codebase Research | agentic-search | Understand existing code before changes |
 | Architecture | zen-architect | System design, module boundaries |
+| API Design | api-contract-designer | Endpoint contracts and specs |
+| Database | database-architect | Schema design, migrations |
 | Implementation | modular-builder | Build from specs |
 | Testing | test-coverage | Test strategy and coverage |
 | Security | security-guardian | Pre-deploy review |
 | Cleanup | post-task-cleanup | Final hygiene pass |
 ```
 
-Adjust the table based on what the design actually needs. Not every project needs every agent. Only list agents that will be used.
+Adjust the table based on what the design actually needs. Not every project needs every agent — pick from the full catalog in `.claude/AGENTS_CATALOG.md`. Common patterns:
+- **New feature in existing codebase:** agentic-search → zen-architect → modular-builder → test-coverage → post-task-cleanup
+- **API work:** agentic-search → api-contract-designer → modular-builder → test-coverage → security-guardian
+- **Bug investigation:** agentic-search → bug-hunter → test-coverage
+- **UI/frontend:** component-designer → modular-builder → test-coverage
+- **Performance:** agentic-search → performance-optimizer → test-coverage
 
 ## After the Design
 
@@ -131,9 +156,11 @@ Task(subagent_type="general-purpose", model="sonnet", max_turns=10, description=
 
 **Workflow routing — recommend the right execution path:**
 - **Simple task** (1-2 files, clear requirements) → implement directly with the appropriate Amplifier agent
-- **Medium task** (3-10 files, multiple steps) → write plan with `/create-plan` → execute with `/subagent-dev`
-- **Complex task** (10+ files, independent subsystems) → write plan → use `/parallel-agents` for independent pieces
-- **Investigation** (bugs, failures, unknowns) → dispatch bug-hunter or parallel specialists via `/parallel-agents`
+- **Medium task** (3-10 files, multiple steps) → `/create-plan` → `/subagent-dev`
+- **Complex task** (10+ files, independent subsystems) → `/create-plan` → `/parallel-agents` for independent pieces
+- **Investigation** (bugs, failures, unknowns) → `agentic-search` first, then `bug-hunter` or `/parallel-agents`
+- **Performance** → `agentic-search` to understand hotpath, then `performance-optimizer`
+- **Optimization/refactor** → `agentic-search` to map dependencies, then `/create-plan` → `/subagent-dev`
 
 **Implementation (if continuing):**
 - Ask: "Ready to set up for implementation?"
@@ -152,12 +179,18 @@ Task(subagent_type="general-purpose", model="sonnet", max_turns=10, description=
 - **Be flexible** - Go back and clarify when something doesn't make sense
 - **Agent-aware design** - Know which specialists are available and plan for their use
 
-## Visual Companion (Claude Code Only)
+## Available Amplifier Commands Reference
 
-A browser-based visual companion for showing mockups, diagrams, and options during brainstorming. Use it whenever visual representation would make feedback easier than text descriptions alone.
+When routing to execution, these are the key commands:
 
-**When the topic involves visual decisions, ask:**
-> "This involves some visual decisions. I can show mockups in a browser window so you can see options and give feedback visually. This feature is still new — it can be token-intensive and a bit slow, but it works well for layout, design, and architecture questions. Want to try it? (Requires opening a local URL)"
-
-If they agree, read the detailed guide before proceeding:
-`.claude/commands/brainstorm-visual-companion.md`
+| Command | Use When |
+|---------|----------|
+| `/create-plan` | Multi-step task needs structured plan with agent assignments |
+| `/subagent-dev` | Executing a plan task-by-task with fresh agents |
+| `/parallel-agents` | 2+ independent tasks that can run simultaneously |
+| `/debug` | Bug investigation with hypothesis-driven approach |
+| `/tdd` | Test-driven development for any feature or bugfix |
+| `/verify` | Verification before claiming work is complete |
+| `/worktree` | Isolated git workspace for feature development |
+| `/finish-branch` | Cleanup and merge/PR when implementation is done |
+| `/request-review` | Formal code review before merging |
