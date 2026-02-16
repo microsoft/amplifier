@@ -136,7 +136,6 @@ async def main():
             f"- **Platform:** {platform.system()} ({platform.release()})"
         )
         context_parts.append(f"- **Working Directory:** {os.getcwd()}")
-        context_parts.append(f"- **Working Directory:** {os.getcwd()}")
 
         # Build response
         context = "\n".join(context_parts)

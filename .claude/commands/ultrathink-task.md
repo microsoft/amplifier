@@ -47,6 +47,16 @@ Additional specialized agents available based on task needs:
 - Agents can work on different aspects simultaneously
 - Gathering diverse inputs for synthesis
 
+### **Turn Budgets**
+
+Always include `max_turns` in Task dispatches to prevent context exhaustion:
+- Analysis agents (zen-architect, bug-hunter): max_turns=12-15
+- Implementation agents (modular-builder): max_turns=15-20
+- Review agents (test-coverage, security-guardian): max_turns=10-12
+- Quick tasks (context gathering): max_turns=5-8
+
+If an agent returns incomplete work, resume with `Task(resume=agent_id, ...)` — max 3 cycles.
+
 ### **Context Handoff Protocols**
 
 When delegating to agents:

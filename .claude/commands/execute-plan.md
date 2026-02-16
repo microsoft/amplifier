@@ -1,23 +1,84 @@
-# Execute a plan
+---
+description: "Execute implementation plans with review checkpoints. Loads a plan, reviews it critically, then executes tasks in batches."
+---
 
-Everything below assumes you are in the repo root directory, change there if needed before running.
+# Executing Plans
 
-RUN:
-make install
-source .venv/bin/activate
+## Overview
 
-READ:
-@ai_context/IMPLEMENTATION_PHILOSOPHY.md
-@ai_context/MODULAR_DESIGN_PHILOSOPHY.md
+Load plan, review critically, execute tasks in batches, report for review between batches.
 
-Execute the plan created in $ARGUMENTS to implement the changes needed to complete the task. Follow the detailed instructions provided in the plan, ensuring that each step is executed as described.
+**Core principle:** Batch execution with checkpoints for architect review.
 
-Make sure to follow the philosophies outlined in the implementation philosophy documents. Create todo lists and use your sub-agents for each step. Pay attention to the modular design principles and ensure that the code is structured in a way that promotes maintainability, readability, and reusability while executing the plan.
+**Announce at start:** "I'm using the executing-plans skill to implement this plan."
 
-Update the plan as you go, to track status and any changes made during the implementation process. If you encounter any issues or need to make adjustments to the plan, confirm with the user before proceeding with changes and then document the adjustments made.
+## The Process
 
-Upon completion, provide a summary of the changes made, any challenges faced, and how they were resolved. Ensure that the final implementation is thoroughly tested and validated against the requirements outlined in the plan.
+### Step 1: Load and Review Plan
+1. Read plan file
+2. Review critically - identify any questions or concerns about the plan
+3. If concerns: Raise them with your human partner before starting
+4. If no concerns: Create TodoWrite and proceed
 
-RUN:
-make check
-make test
+### Step 2: Execute Batch
+**Default: First 3 tasks**
+
+For each task:
+1. Mark as in_progress
+2. Follow each step exactly (plan has bite-sized steps)
+3. Run verifications as specified
+4. Mark as completed
+
+### Step 3: Report
+When batch complete:
+- Show what was implemented
+- Show verification output
+- Say: "Ready for feedback."
+
+### Step 4: Continue
+Based on feedback:
+- Apply changes if needed
+- Execute next batch
+- Repeat until complete
+
+### Step 5: Complete Development
+
+After all tasks complete and verified:
+- Announce: "I'm using /finish-branch to complete this work."
+- **REQUIRED:** Use `/finish-branch`
+- Follow that skill to verify tests, present options, execute choice
+
+## When to Stop and Ask for Help
+
+**STOP executing immediately when:**
+- Hit a blocker mid-batch (missing dependency, test fails, instruction unclear)
+- Plan has critical gaps preventing starting
+- You don't understand an instruction
+- Verification fails repeatedly
+
+**Ask for clarification rather than guessing.**
+
+## When to Revisit Earlier Steps
+
+**Return to Review (Step 1) when:**
+- Partner updates the plan based on your feedback
+- Fundamental approach needs rethinking
+
+**Don't force through blockers** - stop and ask.
+
+## Remember
+- Review plan critically first
+- Follow plan steps exactly
+- Don't skip verifications
+- Reference skills when plan says to
+- Between batches: just report and wait
+- Stop when blocked, don't guess
+- Never start implementation on main/master branch without explicit user consent
+
+## Integration
+
+**Required workflow skills:**
+- `/worktree` - REQUIRED: Set up isolated workspace before starting
+- `/create-plan` - Creates the plan this command executes
+- `/finish-branch` - Complete development after all tasks
+- `/verify` - Verification before completion

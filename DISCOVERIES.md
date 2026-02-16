@@ -4,6 +4,31 @@ This file documents non-obvious problems, solutions, and patterns discovered dur
 
 Archived entries (no longer actively relevant) are in DISCOVERIES-archive.md.
 
+## Dual-Platform Architecture: Runtime Gating vs Separate Branches (2026-02-16)
+
+### Issue
+
+Amplifier runs on two AI platforms (Claude Code + OpenCode/Gemini) daily. Gemini requires platform-specific optimizations (Gold Prefix context caching, zone labels, agent format sync). The question: where does platform-specific code live?
+
+### Root Cause
+
+Initially implemented as runtime-gated code on main (PR #6). Then separated to a branch for "cleanliness." The branch immediately drifted — hook files (the exact files that differ) change frequently, causing constant merge conflicts.
+
+### Solution
+
+**Runtime gating on `main` is the correct approach** when both platforms are actively used. All Gemini-specific code is guarded by `if IS_OPENCODE:` checks in `.claude/tools/platform_detect.py`. The gated code never executes on the wrong machine.
+
+Key files: `platform_detect.py` (detection), `hook_session_start.py` (zone labels), `hook_precompact.py` (GoldPrefixCompactor), `scripts/sync-agents-to-opencode.py` (agent format).
+
+Full documentation: `docs/superpowers/specs/2026-02-15-context-caching-optimization.md`
+
+### Prevention
+
+- Never separate actively-used platform code into long-lived branches
+- Runtime gating has zero cost — gated code doesn't execute on the wrong platform
+- When adding Gemini features, use `if IS_OPENCODE:` / `else:` pattern
+- When adding agents, run `scripts/sync-agents-to-opencode.py` to update OpenCode format
+
 ## Subagent Context Exhaustion (2026-02-14)
 
 ### Issue

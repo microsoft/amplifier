@@ -30,11 +30,9 @@
           },
           {
             "type": "command",
-            "command": "powershell -ExecutionPolicy Bypass -File C:/Przemek/scripts/Sync-SuperpowersPlugin.ps1",
-            "timeout": 10000
-          },
-          {
-            "type": "command",
+            "command": "uv run .claude/tools/hook_memory_sync.py",
+            "timeout": 20000
+          }
             "command": "uv run .claude/tools/hook_memory_sync.py",
             "timeout": 20000
           }

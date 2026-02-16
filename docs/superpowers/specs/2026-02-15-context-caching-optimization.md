@@ -1,86 +1,141 @@
-# Context Caching Optimization (Gold Prefix) Design Spec
+# Dual-Platform Architecture: Claude Code + OpenCode/Gemini
 
-**Date:** 2026-02-15
-**Status:** Implemented
-**Branch:** feat/context-caching-optimization
+**Date:** 2026-02-15 (updated 2026-02-16)
+**Status:** Active
+**Decision:** Runtime-gated platform features on single `main` branch
 
-## Problem
+## Overview
 
-Gemini 3's context caching on OpenCode requires bit-for-bit prefix stability to maximize "Cache Read" operations and minimize TPM limit hits. The Amplifier hooks inject dynamic content (date, git status, environment) that invalidates the cache every session. Additionally, hardcoded paths prevented the same codebase from running on both the Claude Code machine and the Gemini/OpenCode machine.
+Amplifier runs on two AI platforms from a single codebase:
 
-## Goal
+| Platform | Machine | Root Path | AI Model | Detection |
+|----------|---------|-----------|----------|-----------|
+| **Claude Code** | FUSECP | `C:/claude/amplifier` | Claude Opus 4.6 | `IS_CLAUDE_CODE=True` |
+| **OpenCode** | Gemini machine | `C:/Przemek` | Gemini 3 | `IS_OPENCODE=True` |
 
-1. Restructure hook output into Frozen Zone (stable) and Churn Zone (dynamic) to maximize Gemini context caching
-2. Add platform detection so both Claude Code and OpenCode machines run from the same codebase
-3. Keep Gemini-specific optimizations gated so they don't add noise to Claude Code sessions
-4. Maintain `.claude/agents/` as canonical source with automated sync to OpenCode format
-5. Ensure subagents benefit from the same cache as the controller via prefix mirroring
+Both platforms are used daily. All platform-specific code lives on `main` and is gated by runtime checks — no separate branches.
 
-## Architecture
+## Architecture Decision
 
-### 1. Platform Detection
+**Considered approaches:**
 
-Module: `.claude/tools/platform_detect.py`
+1. **Separate branches** — `main` for Claude Code, `feature/gemini-opencode` for Gemini. Rejected: creates unacceptable drift since both platforms are active daily and hook files (the files that differ) change frequently.
 
-Detects which machine by checking root folder existence:
-- `C:/claude/amplifier` exists → Claude Code (IS_CLAUDE_CODE=True)
-- `C:/Przemek` exists → OpenCode/Gemini (IS_OPENCODE=True)
+2. **Runtime gating on main** (chosen) — All code on `main`, Gemini features gated by `if IS_OPENCODE:`. Zero maintenance burden, changes automatically propagate to both platforms.
 
-Exports: `IS_CLAUDE_CODE`, `IS_OPENCODE`, `AMPLIFIER_ROOT`, `SUPERPOWERS_FALLBACK`
+3. **Overlay directory** — Gemini code in a separate folder, deploy script merges at runtime. Rejected: adds deployment complexity without clear benefit over runtime gating.
 
-### 2. Gold Prefix Strategy (OpenCode only)
+## Platform Detection
 
-The prompt is divided into two zones:
+**Module:** `.claude/tools/platform_detect.py`
 
-**Frozen Zone (stable prefix - 100k+ tokens):**
+```python
+IS_CLAUDE_CODE = os.path.isdir("C:/claude/amplifier")
+IS_OPENCODE = os.path.isdir("C:/Przemek") and not IS_CLAUDE_CODE
+```
+
+**Exports used by hooks:**
+
+| Export | Purpose | Used by |
+|--------|---------|---------|
+| `IS_CLAUDE_CODE` | Gate Claude-only features | (reserved for future use) |
+| `IS_OPENCODE` | Gate Gemini-only features | hook_session_start, hook_precompact |
+| `AMPLIFIER_ROOT` | Machine-specific root path | (available for hooks) |
+| `SUPERPOWERS_FALLBACK` | Fallback git-notes directory | memory.py, hook_memory_sync, hook_precompact |
+
+## Gemini-Specific Features
+
+### Gold Prefix Context Caching
+
+**Problem:** Gemini 3 uses prefix-based context caching. Dynamic content (date, git status) at the start of the prompt invalidates the cache every session, wasting TPM quota.
+
+**Solution:** Restructure hook output into two zones:
+
+**Frozen Zone (stable prefix)** — Content that rarely changes:
 - Core identity and mandates
-- Agent manifest (AMPLIFIER-AGENTS.md)
-- Core Skills (Brainstorming, TDD, Writing Plans, Subagent Development)
+- Agent manifest
 - Project constitution (CLAUDE.md)
 - Memory system context
 
-**Churn Zone (dynamic suffix):**
+**Churn Zone (dynamic suffix)** — Content that changes every session:
 - Today's date
 - Working directory
 - Git status
 - Platform info
-- Tool outputs
 
-### 3. Hook Changes
+**Implementation:**
 
-| Hook | Change | Platform Gate |
-|------|--------|--------------|
-| `hook_session_start.py` | Zone labels on memory context | IS_OPENCODE only |
-| `hook_precompact.py` | Gold Prefix analysis + stable summary | IS_OPENCODE only |
-| `hook_precompact.py` | `export_transcript()` accepts pre-parsed entries | Both (optimization) |
-| `memory.py` | Platform-aware superpowers path | Both |
-| `hook_memory_sync.py` | Platform-aware superpowers path | Both |
+| Hook | Gemini Feature | Guard |
+|------|---------------|-------|
+| `hook_session_start.py` | `[FROZEN ZONE]` / `[CHURN ZONE]` labels on memory output | `if IS_OPENCODE:` |
+| `hook_precompact.py` | `GoldPrefixCompactor` class — analyzes transcript for stable prefix | `if IS_OPENCODE:` |
+| `hook_precompact.py` | Gold Prefix metadata in export header | `if IS_OPENCODE:` |
 
-### 4. Subagent Mirroring
+**On Claude Code:** None of this executes. The `else` branches produce standard headers without zone labels.
 
-The `Task` tool in the Superpowers bridge is updated via prompt templates to ensure subagents receive the same "Frozen Zone" as the controller. This allows them to start with a warm cache, leading to near-instant responses and 0 additional TPM usage for the codebase context.
+### Agent Sync to OpenCode Format
 
-### 5. Agent Sync
+**Script:** `scripts/sync-agents-to-opencode.py`
 
-Script: `scripts/sync-agents-to-opencode.py`
+OpenCode uses a different agent format (`agents/*/SKILL.md`) than Claude Code (`.claude/agents/*.md`). This script generates the OpenCode format from the canonical Claude Code definitions.
 
-Generates `agents/*/SKILL.md` (OpenCode format) from `.claude/agents/*.md` (canonical). Adds `recommended_model` (pro/flash) and `tools` frontmatter fields.
+**What it adds:**
+- `recommended_model`: `pro` (design/architecture agents) or `flash` (implementation/utility agents)
+- `tools`: OpenCode tool access list
 
-## Agent Allocation
+**Usage:**
+```bash
+python scripts/sync-agents-to-opencode.py          # Generate all 30 agents
+python scripts/sync-agents-to-opencode.py --dry-run # Preview without writing
+```
 
-| Phase | Agent | Responsibility |
-|-------|-------|---------------|
-| Architecture | zen-architect | Design prompt sequence and hook integration points. |
-| Hook Implementation | amplifier-cli-architect | Refactor hooks for stable prefixes and platform awareness. |
-| Bridge Implementation | modular-builder | Modify Superpowers templates for Subagent Mirroring. |
-| Profiling | performance-optimizer | Monitor cache hits and optimization impact. |
-| Cleanup | post-task-cleanup | Final hygiene pass. |
+**Run after:** Any change to `.claude/agents/*.md` files.
 
-## Success Criteria
+## Shared Features (Both Platforms)
 
-- Platform detection correctly identifies both machines
-- No Gemini-specific labels appear in Claude Code sessions
-- `opencode stats` shows >80% cache hit ratio
-- Subagent turns show >90% cache hits
-- Hooks run without import/path errors on both machines
-- Agent sync generates all 30 agents with correct format
+These features benefit both platforms and are not gated:
+
+| Feature | File | Purpose |
+|---------|------|---------|
+| `SUPERPOWERS_FALLBACK` path | platform_detect.py | Machine-aware git-notes directory |
+| Pre-parsed transcript entries | hook_precompact.py | Avoids double-parsing in export |
+| `push_memory_notes()` | hook_precompact.py | Git-notes sync before compaction |
+
+## How to Maintain
+
+### Adding a new hook or modifying an existing one
+
+1. Write the feature for both platforms (or Claude Code only if not relevant to Gemini)
+2. If Gemini needs different behavior, add `if IS_OPENCODE:` / `else:` guard
+3. The Gemini path never executes on the Claude Code machine — no runtime cost
+
+### Adding a new agent
+
+1. Create `.claude/agents/agent-name.md` (canonical source)
+2. Run `python scripts/sync-agents-to-opencode.py` to generate OpenCode format
+3. Add the agent to `MODEL_MAP` in the sync script (pro or flash)
+4. Update `.claude/AGENTS_CATALOG.md`
+
+### Testing platform detection
+
+```bash
+# On Claude Code machine:
+uv run python .claude/tools/platform_detect.py
+# → IS_CLAUDE_CODE=True, IS_OPENCODE=False
+
+# On OpenCode machine:
+python .claude/tools/platform_detect.py
+# → IS_CLAUDE_CODE=False, IS_OPENCODE=True
+```
+
+## File Index
+
+| File | Platform | Purpose |
+|------|----------|---------|
+| `.claude/tools/platform_detect.py` | Both | Runtime platform detection |
+| `.claude/tools/hook_session_start.py` | Both (gated) | Memory retrieval + zone labels |
+| `.claude/tools/hook_precompact.py` | Both (gated) | Transcript export + Gold Prefix |
+| `.claude/tools/hook_memory_sync.py` | Both | Git-notes memory sync |
+| `.claude/tools/memory.py` | Both | Git-notes memory wrapper |
+| `scripts/sync-agents-to-opencode.py` | OpenCode only | Agent format converter |
+| `docs/superpowers/specs/this-file.md` | Reference | This documentation |
