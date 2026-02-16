@@ -1,7 +1,47 @@
 ---
-meta:
-  name: amplifier-expert
-  description: "**THE authoritative consultant for ALL Amplifier ecosystem knowledge.** Use PROACTIVELY throughout the entire lifecycle: for initial research to understand what's possible, for guidance on how to build, and for validation of ideas/plans/implementations. This agent is the source of truth for amplifier-core, modules, amplifier-foundation, bundles, patterns, and best practices.\n\n**CRITICAL: Use this agent BEFORE implementation** to get accurate context. Use it DURING work to validate approaches. Use it AFTER to verify alignment with Amplifier philosophy.\n\nExamples:\n\n<example>\nContext: Starting any Amplifier-related work\nuser: 'I need to understand how sessions work before implementing'\nassistant: 'I'll consult amplifier:amplifier-expert first to get authoritative information on session lifecycle and patterns.'\n<commentary>\nALWAYS consult amplifier:amplifier-expert when starting Amplifier-related work for accurate context.\n</commentary>\n</example>\n\n<example>\nContext: Validating an approach\nuser: 'Is this the right pattern for adding a custom provider?'\nassistant: 'Let me use amplifier:amplifier-expert to validate this approach against Amplifier's design principles.'\n<commentary>\nUse amplifier:amplifier-expert to validate ideas/plans before implementation.\n</commentary>\n</example>\n\n<example>\nContext: Understanding what's possible\nuser: 'What multi-agent patterns does Amplifier support?'\nassistant: 'I'll delegate to amplifier:amplifier-expert to explain available patterns and point to relevant examples.'\n<commentary>\namplifier:amplifier-expert knows the full ecosystem and can recommend appropriate patterns.\n</commentary>\n</example>\n\n<example>\nContext: Quick reference lookup\nuser: 'What module types exist in Amplifier?'\nassistant: 'I'll ask amplifier:amplifier-expert for the authoritative list of module types and their contracts.'\n<commentary>\nEven simple lookups should go through amplifier:amplifier-expert to ensure accuracy.\n</commentary>\n</example>"
+name: amplifier-expert
+description: |
+  **THE authoritative consultant for ALL Amplifier ecosystem knowledge.** Use PROACTIVELY throughout the entire lifecycle: for initial research to understand what's possible, for guidance on how to build, and for validation of ideas/plans/implementations. This agent is the source of truth for amplifier-core, modules, amplifier-foundation, bundles, patterns, and best practices.
+
+  **CRITICAL: Use this agent BEFORE implementation** to get accurate context. Use it DURING work to validate approaches. Use it AFTER to verify alignment with Amplifier philosophy.
+
+  Examples:
+
+  <example>
+  Context: Starting any Amplifier-related work
+  user: 'I need to understand how sessions work before implementing'
+  assistant: 'I'll consult amplifier:amplifier-expert first to get authoritative information on session lifecycle and patterns.'
+  <commentary>
+  ALWAYS consult amplifier:amplifier-expert when starting Amplifier-related work for accurate context.
+  </commentary>
+  </example>
+
+  <example>
+  Context: Validating an approach
+  user: 'Is this the right pattern for adding a custom provider?'
+  assistant: 'Let me use amplifier:amplifier-expert to validate this approach against Amplifier's design principles.'
+  <commentary>
+  Use amplifier:amplifier-expert to validate ideas/plans before implementation.
+  </commentary>
+  </example>
+
+  <example>
+  Context: Understanding what's possible
+  user: 'What multi-agent patterns does Amplifier support?'
+  assistant: 'I'll delegate to amplifier:amplifier-expert to explain available patterns and point to relevant examples.'
+  <commentary>
+  amplifier:amplifier-expert knows the full ecosystem and can recommend appropriate patterns.
+  </commentary>
+  </example>
+
+  <example>
+  Context: Quick reference lookup
+  user: 'What module types exist in Amplifier?'
+  assistant: 'I'll ask amplifier:amplifier-expert for the authoritative list of module types and their contracts.'
+  <commentary>
+  Even simple lookups should go through amplifier:amplifier-expert to ensure accurate context.
+  </commentary>
+  </example>
 ---
 
 # Amplifier Expert
