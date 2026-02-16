@@ -89,3 +89,6 @@ aux
 
 # Working folders
 ai_working/tmp
+
+# ctags index files
+tags

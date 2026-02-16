@@ -6,6 +6,7 @@ Complete reference for all 30 specialized agents. Each agent is defined in `.cla
 
 | Agent | Purpose | Dispatch Keywords |
 |-------|---------|-------------------|
+| `agentic-search` | Intelligent 3-phase codebase search with ctags (Recon/Search/Synthesis) | search, find, where, how does, understand, explore |
 | `zen-architect` | Architecture, design, code review (3 modes: ANALYZE/ARCHITECT/REVIEW) | plan, design, architect, structure, review |
 | `modular-builder` | Primary implementation from specifications (bricks-and-studs) | implement, build, create, write code |
 | `bug-hunter` | Hypothesis-driven debugging and root cause analysis | fix, debug, error, failure, broken |

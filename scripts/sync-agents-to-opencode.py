@@ -42,7 +42,8 @@ MODEL_MAP = {
     "visualization-architect": "pro",
     "voice-strategist": "pro",
     "zen-architect": "pro",
-    # Flash (implementation, debugging, testing, cleanup)
+    # Flash (implementation, debugging, testing, cleanup, search)
+    "agentic-search": "flash",
     "animation-choreographer": "flash",
     "bug-hunter": "flash",
     "component-designer": "flash",
@@ -57,6 +58,7 @@ MODEL_MAP = {
 # Default tools for agents that need them (OpenCode uses this for tool access)
 # Agents without explicit tools get all tools by default in OpenCode
 TOOLS_MAP = {
+    "agentic-search": "Glob, Grep, LS, Read, TodoWrite, BashOutput, KillBash, Bash",
     "ambiguity-guardian": "Glob, Grep, LS, Read, WebFetch, TodoWrite, WebSearch, BashOutput, KillBash",
     "amplifier-cli-architect": "Glob, Grep, LS, Read, WebFetch, TodoWrite, WebSearch, BashOutput, KillBash",
     "analysis-engine": "Glob, Grep, LS, Read, WebFetch, TodoWrite, WebSearch, BashOutput, KillBash, Bash",
