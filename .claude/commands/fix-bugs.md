@@ -1,12 +1,12 @@
 ---
-description: "Autonomous bug-fixing pipeline for FuseCP. Fetches open bugs from the portal API, investigates with agentic-search + visual analysis, fixes with bug-hunter, builds/tests, and deploys with user confirmation."
+description: "Autonomous bug-fixing pipeline for FuseCP. Fetches open bugs from the portal API, investigates with Explore agent + visual analysis, fixes with bug-hunter, builds/tests, and deploys with user confirmation."
 ---
 
 # FuseCP Bug Fix Pipeline
 
 ## Overview
 
-Autonomous bug-fixing workflow that processes FuseCP bug reports one at a time. Fetches bugs from the portal's built-in bug reporting API, investigates using code search and visual comparison, implements fixes, and deploys with user confirmation.
+Autonomous bug-fixing workflow that processes FuseCP bug reports one at a time. Fetches bugs from the portal's built-in bug reporting API, investigates using codebase exploration and visual comparison, implements fixes, and deploys with user confirmation.
 
 **Announce at start:** "Starting FuseCP bug fix pipeline. Checking for open bugs..."
 
@@ -14,14 +14,24 @@ Autonomous bug-fixing workflow that processes FuseCP bug reports one at a time. 
 
 - FuseCP API must be running at `http://localhost:5010`
 - FuseCP Portal must be running at `https://fusecp.ergonet.pl`
-- Working directory should be `C:\claude\fusecp-enterprise` (or the Amplifier root — API calls work from anywhere)
+- Source code at `C:\claude\fusecp-enterprise`
+
+## Platform Notes (CRITICAL)
+
+This runs on **Windows Server + Git Bash**. Follow these rules in ALL commands:
+
+- **Paths**: Always use `C:/claude/fusecp-enterprise/` (Windows format with forward slashes). Never use `/c/` Git Bash paths in Python or PowerShell.
+- **curl**: Always single-line. Never use `\` line continuation (breaks in Git Bash).
+- **Temp files**: Save to `C:/claude/fusecp-enterprise/tmp/` (gitignored). Create with `mkdir -p` if needed.
+- **Base64 decode**: Use PowerShell (handles any size): `powershell -Command "[IO.File]::WriteAllBytes('output.jpg', [Convert]::FromBase64String((Get-Content 'input.txt' -Raw)))"`
+- **Null output**: Use `> /dev/null 2>&1` (never `> nul`)
+- **Python**: Use `uv run python` (not `python` — not on system PATH)
 
 ## API Configuration
 
 ```
 API_BASE=http://localhost:5010
 API_KEY=fusecp-admin-key-2026
-AUTH_HEADER="X-Api-Key: fusecp-admin-key-2026"
 ```
 
 All curl commands use: `curl -sk -H "X-Api-Key: fusecp-admin-key-2026"`
@@ -29,6 +39,7 @@ All curl commands use: `curl -sk -H "X-Api-Key: fusecp-admin-key-2026"`
 ## Phase 1: Fetch Open Bugs
 
 ```bash
+mkdir -p C:/claude/fusecp-enterprise/tmp
 curl -sk -H "X-Api-Key: fusecp-admin-key-2026" "http://localhost:5010/api/bugs?status=Open"
 ```
 
@@ -48,11 +59,14 @@ Found N open bugs:
 Working on #1 (highest priority). Say "skip" to pick a different one.
 ```
 
-## Phase 2: Load Bug Details
+## Phase 2: Load Bug Details & Set InProgress
 
+**Fetch full bug details and save response for later use:**
 ```bash
-curl -sk -H "X-Api-Key: fusecp-admin-key-2026" "http://localhost:5010/api/bugs/{id}"
+curl -sk -H "X-Api-Key: fusecp-admin-key-2026" "http://localhost:5010/api/bugs/{id}" -o C:/claude/fusecp-enterprise/tmp/bug_{id}.json
 ```
+
+Then read the saved JSON file with the Read tool to parse fields.
 
 **Extract key fields:**
 - `Title`, `Description` — What's broken
@@ -62,59 +76,107 @@ curl -sk -H "X-Api-Key: fusecp-admin-key-2026" "http://localhost:5010/api/bugs/{
 - `ScreenshotData` / `ScreenshotMimeType` — Visual evidence (Base64, if provided)
 - `ReportedInBuild` — Which build version had the bug
 
-**Update status to InProgress:**
+**Update status to InProgress (status-only endpoint — preserves screenshot):**
 ```bash
-curl -sk -X PUT -H "X-Api-Key: fusecp-admin-key-2026" -H "Content-Type: application/json" \
-  "http://localhost:5010/api/bugs/{id}" \
-  -d '{"bugId":{id},"title":"{title}","description":"{description}","status":"InProgress","priority":"{priority}","area":"{area}"}'
+curl -sk -X PUT -H "X-Api-Key: fusecp-admin-key-2026" -H "Content-Type: application/json" "http://localhost:5010/api/bugs/{id}/status" -d "{\"status\":\"InProgress\"}"
 ```
+
+**IMPORTANT:** Use the `/status` endpoint, NOT the full PUT. The full PUT overwrites all fields including ScreenshotData — any omitted nullable fields get set to NULL.
 
 ## Phase 3: Investigate
 
 ### 3a. Code Investigation
 
-Dispatch `agentic-search` to understand the affected code area:
+Dispatch `Explore` agent (built-in, always available) with thorough exploration:
 
 ```
-Task(subagent_type="agentic-search", max_turns=12, description="Investigate bug #{id} code area", prompt="
-  Search the FuseCP codebase at C:\claude\fusecp-enterprise to answer:
+Task(subagent_type="Explore", max_turns=15, description="Investigate bug #{id}: {title}", prompt="
+  very thorough
+
+  Search the FuseCP codebase at C:\claude\fusecp-enterprise to find the root cause of this bug.
 
   Bug: {title}
   Description: {description}
   Area: {area}
   Page URL: {pageUrl}
 
-  Find:
-  1. The Blazor component/page that handles this URL (look in src/FuseCP.Portal/Components/)
-  2. The API endpoint(s) that the page calls
-  3. The service/repository layer that processes the request
-  4. Any recent changes to these files (git log --oneline -5 -- <file>)
+  The ctags index is at C:\claude\fusecp-enterprise\tags — use grep on it for fast symbol lookup.
 
-  The ctags index is at C:\claude\fusecp-enterprise\tags.
-
-  Area-to-code mapping:
-  - Portal → src/FuseCP.Portal/Components/Pages/
-  - Exchange → src/FuseCP.Providers.Exchange/ and Endpoints/ExchangeEndpoints.cs
-  - AD → src/FuseCP.Providers.AD/ and Endpoints/ADEndpoints.cs
-  - DNS → src/FuseCP.Providers.DNS/ and Endpoints/DNSEndpoints.cs
-  - HyperV → src/FuseCP.Providers.HyperV/ and Endpoints/HyperVEndpoints.cs
+  Area-to-code mapping (search in these locations based on Area):
+  - Portal → src/FuseCP.Portal/Components/Pages/ (Blazor .razor files)
+  - Exchange → src/FuseCP.Providers.Exchange/ and src/FuseCP.EnterpriseServer/Endpoints/ExchangeEndpoints.cs
+  - AD → src/FuseCP.Providers.AD/ and src/FuseCP.EnterpriseServer/Endpoints/ADEndpoints.cs
+  - DNS → src/FuseCP.Providers.DNS/ and src/FuseCP.EnterpriseServer/Endpoints/DNSEndpoints.cs
+  - HyperV → src/FuseCP.Providers.HyperV/ and src/FuseCP.EnterpriseServer/Endpoints/HyperVEndpoints.cs
   - API → src/FuseCP.EnterpriseServer/Endpoints/
+
+  Architecture layers (trace top to bottom):
+  1. Blazor page (.razor) — UI component with @onclick handlers
+  2. Portal service (Services/*.cs) — HTTP client calling API
+  3. API endpoint (Endpoints/*.cs) — Minimal API route handler
+  4. Repository (Database/Repositories/*.cs) — SQL/Dapper data access
+  5. Provider (Providers.*/) — External system integration (Exchange/AD/DNS/HyperV)
+
+  Find:
+  1. The specific component/page that handles this feature
+  2. The click handler, API call, or service method involved
+  3. What's broken — missing handler, wrong parameter, failed call, etc.
+  4. Any recent changes: git log --oneline -5 -- <file>
+
+  Return a structured summary:
+  ## Root Cause
+  [What's broken and why]
+
+  ## Affected Files
+  | File | Line(s) | Issue |
+  |------|---------|-------|
+
+  ## Suggested Fix
+  [Minimal change needed]
 ")
 ```
+
+### 3a-fallback. Direct Investigation (if agent fails or returns incomplete)
+
+If the Explore agent returns without a clear root cause, investigate directly. Do NOT dispatch another agent — work in main context using these focused searches:
+
+**Step 1: ctags lookup**
+```bash
+grep -i '{keyword}' C:/claude/fusecp-enterprise/tags | head -20
+```
+
+**Step 2: Grep for the feature**
+```
+Grep(pattern="{keyword}", path="C:\\claude\\fusecp-enterprise\\src", output_mode="files_with_matches")
+```
+
+**Step 3: Area-specific search**
+
+| Area | Search Pattern | Key Files |
+|------|---------------|-----------|
+| Portal | `Grep pattern in src/FuseCP.Portal/Components/Pages/` | .razor files with @onclick handlers |
+| Exchange | `Grep in src/FuseCP.Providers.Exchange/` | ExchangeProvider.cs, ExchangeRepository.cs |
+| AD | `Grep in src/FuseCP.Providers.AD/` | ADProvider.cs, ADRepository.cs |
+| DNS | `Grep in src/FuseCP.Providers.DNS/` | DNSProvider.cs |
+| HyperV | `Grep in src/FuseCP.Providers.HyperV/` | HyperVProvider.cs |
+| API | `Grep in src/FuseCP.EnterpriseServer/Endpoints/` | *Endpoints.cs |
+
+**Step 4: Read the identified files** (max 3-5 files to preserve context)
+
+This fallback is faster and more reliable than retrying agent dispatches.
 
 ### 3b. Visual Investigation (when screenshot exists)
 
 If the bug has `ScreenshotData`:
 
-1. **Save the screenshot** to a temp file for viewing:
+1. **Extract and decode the screenshot** using PowerShell (handles any Base64 size):
    ```bash
-   # Decode Base64 screenshot from API response
-   echo "{screenshotData}" | base64 -d > /tmp/bug_{id}_screenshot.png
+   powershell -Command "$j = Get-Content 'C:/claude/fusecp-enterprise/tmp/bug_{id}.json' | ConvertFrom-Json; if ($j.screenshotData) { [IO.File]::WriteAllBytes('C:/claude/fusecp-enterprise/tmp/bug_{id}_screenshot.jpg', [Convert]::FromBase64String($j.screenshotData)); Write-Host 'Screenshot saved' } else { Write-Host 'No screenshot data' }"
    ```
 
 2. **View the screenshot** using the Read tool (it supports images):
    ```
-   Read(file_path="/tmp/bug_{id}_screenshot.png")
+   Read(file_path="C:/claude/fusecp-enterprise/tmp/bug_{id}_screenshot.jpg")
    ```
 
 3. **Navigate to the live page** (if PageUrl is provided and Chrome MCP is available):
@@ -138,10 +200,11 @@ Before dispatching the fix agent, compile everything learned:
 ## Bug #{id} Investigation Summary
 
 **Bug:** {title}
-**Root area:** {file:line references from agentic-search}
+**Root area:** {file:line references}
 **Visual analysis:** {screenshot comparison findings, or "No screenshot provided"}
 **Hypothesis:** {likely root cause based on code + visual evidence}
-**Affected files:** {list from agentic-search}
+**Affected files:** {list with line numbers}
+**Suggested fix:** {minimal change description}
 ```
 
 ## Phase 4: Fix
@@ -149,7 +212,7 @@ Before dispatching the fix agent, compile everything learned:
 Dispatch `bug-hunter` with the full investigation context:
 
 ```
-Task(subagent_type="bug-hunter", max_turns=15, description="Fix bug #{id}: {title}", prompt="
+Task(subagent_type="bug-hunter", max_turns=20, description="Fix bug #{id}: {title}", prompt="
   Fix this FuseCP bug. The investigation has already been done — go straight to implementing the fix.
 
   ## Bug Report
@@ -160,7 +223,7 @@ Task(subagent_type="bug-hunter", max_turns=15, description="Fix bug #{id}: {titl
   - Priority: {priority}
 
   ## Investigation Results
-  {paste the investigation summary from Phase 3c}
+  {paste the full investigation summary from Phase 3c — including file paths, line numbers, and suggested fix}
 
   ## Instructions
   1. Read the identified files to confirm the root cause
@@ -181,6 +244,10 @@ Task(subagent_type="bug-hunter", max_turns=15, description="Fix bug #{id}: {titl
 ")
 ```
 
+### Phase 4-fallback. Direct Fix (if bug-hunter fails)
+
+If the bug-hunter returns without completing the fix, implement it directly in main context. You already have the investigation summary — just Read the files and Edit them.
+
 ## Phase 5: Build and Test
 
 After the fix is applied:
@@ -195,7 +262,7 @@ If build fails, fix build errors and retry (max 3 attempts).
 cd /c/claude/fusecp-enterprise && dotnet test --no-build --verbosity quiet 2>&1 | tail -10
 ```
 
-If tests fail, investigate and fix (dispatch bug-hunter again if needed).
+If tests fail, investigate and fix. Note: 1 pre-existing HyperV test failure is expected (ResourceMailboxTests).
 
 ## Phase 6: Report to User
 
@@ -228,9 +295,16 @@ Only after user says yes:
 
 ### 7a. Commit
 ```bash
-cd /c/claude/fusecp-enterprise
-git add {changed-files}
-git commit -m "fix: {title} (Bug #{id})"
+cd /c/claude/fusecp-enterprise && git add {changed-files} && git commit -m "$(cat <<'EOF'
+fix: {title} (Bug #{id})
+
+{brief description of root cause and fix}
+
+🤖 Generated with [Amplifier](https://github.com/microsoft/amplifier)
+
+Co-Authored-By: Amplifier <240397093+microsoft-amplifier@users.noreply.github.com>
+EOF
+)"
 ```
 
 ### 7b. Deploy
@@ -240,32 +314,34 @@ Determine what to deploy based on changed files:
 - **Portal files changed** (`src/FuseCP.Portal/`):
   ```bash
   powershell -Command "Stop-WebAppPool -Name 'FuseCP_Portal'"
-  cd /c/claude/fusecp-enterprise/src/FuseCP.Portal
-  dotnet publish --configuration Release --output /c/FuseCP/Portal
+  cd /c/claude/fusecp-enterprise/src/FuseCP.Portal && dotnet publish --configuration Release --output /c/FuseCP/Portal
   powershell -Command "Start-WebAppPool -Name 'FuseCP_Portal'"
   ```
 
-- **API files changed** (`src/FuseCP.EnterpriseServer/`):
+- **API files changed** (`src/FuseCP.EnterpriseServer/` or `src/FuseCP.Database/` or `src/FuseCP.Providers.*/`):
   ```bash
   powershell -Command "Stop-WebAppPool -Name 'FuseCP_API'"
-  cd /c/claude/fusecp-enterprise/src/FuseCP.EnterpriseServer
-  dotnet publish --configuration Release --output /c/FuseCP/EnterpriseServer
+  cd /c/claude/fusecp-enterprise/src/FuseCP.EnterpriseServer && dotnet publish --configuration Release --output /c/FuseCP/EnterpriseServer
   powershell -Command "Start-WebAppPool -Name 'FuseCP_API'"
   ```
 
-- **Provider/Database changes**: Deploy API (providers are part of the API assembly).
+- **Both Portal + API changed**: Deploy both (API first, then Portal).
 
 ### 7c. Update Bug Status
 
 ```bash
-curl -sk -X PUT -H "X-Api-Key: fusecp-admin-key-2026" -H "Content-Type: application/json" \
-  "http://localhost:5010/api/bugs/{id}" \
-  -d '{"bugId":{id},"title":"{title}","description":"{description}","status":"Fixed","priority":"{priority}","area":"{area}"}'
+curl -sk -X PUT -H "X-Api-Key: fusecp-admin-key-2026" -H "Content-Type: application/json" "http://localhost:5010/api/bugs/{id}/status" -d "{\"status\":\"Fixed\"}"
 ```
 
 ### 7d. Visual Verification (if Chrome available and PageUrl exists)
 
 After deploy, navigate back to the PageUrl and take a screenshot to verify the fix is visible.
+
+### 7e. Cleanup temp files
+
+```bash
+rm -f C:/claude/fusecp-enterprise/tmp/bug_{id}*
+```
 
 ## Phase 8: Next Bug
 
@@ -279,6 +355,8 @@ If user says yes, loop back to Phase 1.
 
 - **API unreachable:** "FuseCP API is not responding at localhost:5010. Is the API running?"
 - **No open bugs:** "No open bugs found. The bug queue is clear."
+- **Explore agent fails:** Fall back to direct investigation (Phase 3a-fallback). Do NOT retry the agent.
+- **bug-hunter fails:** Fall back to direct fix in main context (Phase 4-fallback). Do NOT retry the agent.
 - **Build failure after 3 attempts:** "Build still failing after 3 fix attempts. Escalating — here's what I've tried: {summary}"
 - **Test failure:** "Tests failing after fix. Investigating if these are pre-existing or caused by the fix."
 - **Deploy failure:** "Deploy failed: {error}. The commit is saved but not deployed. You may need to deploy manually."
