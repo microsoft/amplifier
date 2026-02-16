@@ -19,12 +19,12 @@
 **Agent:** `zen-architect`
 
 **Files:**
-- Create: `C:/Przemek/amplifier/.claude/context/frozen_header.md`
+- Create: `./.claude/context/frozen_header.md`
 
 **Goal:** Establish the single source of truth for the stable "Frozen Zone" content.
 
 - [ ] **Step 1: Create context directory**
-  Run: `mkdir -p C:/Przemek/amplifier/.claude/context`
+  Run: `mkdir -p ./.claude/context`
 
 - [ ] **Step 2: Write frozen_header.md**
   Write content containing:
@@ -40,7 +40,7 @@
 **Agent:** `amplifier-cli-architect`
 
 **Files:**
-- Modify: `C:/Przemek/amplifier/.claude/tools/hook_session_start.py`
+- Modify: `./.claude/tools/hook_session_start.py`
 
 **Goal:** Split the hook output into strictly static (read from frozen_header) and dynamic sections.
 
@@ -68,12 +68,12 @@
 **Agent:** `modular-builder`
 
 **Files:**
-- Modify: `C:/Przemek/amplifier/scripts/sync-agents-to-opencode.py`
+- Modify: `./scripts/sync-agents-to-opencode.py`
 
 **Goal:** Bake the Frozen Zone into subagent skills so they share the cache.
 
 - [ ] **Step 1: Read frozen_header.md in script**
-  Update script to read `C:/Przemek/amplifier/.claude/context/frozen_header.md`.
+  Update script to read `./.claude/context/frozen_header.md`.
 
 - [ ] **Step 2: Prepend to generated SKILL.md**
   In `generate_skill_md`:
@@ -89,7 +89,7 @@
 **Agent:** `performance-optimizer`
 
 **Files:**
-- Modify: `C:/Przemek/amplifier/scripts/sync-agents-to-opencode.py`
+- Modify: `./scripts/sync-agents-to-opencode.py`
 
 **Goal:** Prevent TPM exhaustion by using Flash for non-reasoning tasks.
 
@@ -114,7 +114,7 @@
 
 **Files:**
 - Run: `python scripts/sync-agents-to-opencode.py`
-- Verify: `C:/Users/biuro/.config/opencode/skills/amplifier/modular-builder/SKILL.md`
+- Verify: `${OPENCODE_SKILLS_DIR}/amplifier/modular-builder/SKILL.md`
 
 **Goal:** Apply changes and verify the fix works in the real environment.
 
@@ -122,7 +122,7 @@
   Execute the sync script to update all 30 agents.
 
 - [ ] **Step 2: Check Installed Skill**
-  Read `C:/Users/biuro/.config/opencode/skills/amplifier/modular-builder/SKILL.md`.
+  Read `${OPENCODE_SKILLS_DIR}/amplifier/modular-builder/SKILL.md`.
   - Confirm Frozen Zone is present.
   - Confirm `recommended_model: flash`.
 

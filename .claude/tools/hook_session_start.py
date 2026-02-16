@@ -32,6 +32,43 @@ except ImportError as e:
     sys.exit(0)
 
 
+def format_session_env():
+    """Format session environment details."""
+    return [
+        f"- **Today's Date:** {datetime.now().strftime('%A, %B %d, %Y')}",
+        f"- **Platform:** {platform.system()} ({platform.release()})",
+        f"- **Working Directory:** {os.getcwd()}",
+    ]
+
+
+def format_memories(search_results, unique_recent, base_heading_level=2):
+    """Format memory search results and recent memories."""
+    parts = []
+
+    if not (search_results or unique_recent):
+        return parts
+
+    h_base = "#" * base_heading_level
+    h_sub = "#" * (base_heading_level + 1)
+
+    parts.append(f"\n{h_base} Relevant Context from Memory System")
+
+    if search_results:
+        parts.append(f"{h_sub} Relevant Memories")
+        for result in search_results[:3]:
+            content = result.memory.content
+            category = result.memory.category
+            score = result.score
+            parts.append(f"- **{category}** (relevance: {score:.2f}): {content}")
+
+    if unique_recent:
+        parts.append(f"\n{h_sub} Recent Context")
+        for mem in unique_recent[:2]:
+            parts.append(f"- {mem.category}: {mem.content}")
+
+    return parts
+
+
 async def main():
     """Read input, search memories, return context"""
     try:
@@ -133,63 +170,23 @@ async def main():
             context_parts.append("\n## [CHURN ZONE: DYNAMIC SESSION CONTEXT]")
 
             # Session Environment (Dynamic)
-            context_parts.append(
-                f"- **Today's Date:** {datetime.now().strftime('%A, %B %d, %Y')}"
-            )
-            context_parts.append(
-                f"- **Platform:** {platform.system()} ({platform.release()})"
-            )
-            context_parts.append(f"- **Working Directory:** {os.getcwd()}")
+            context_parts.extend(format_session_env())
 
             # Memory Search Results (Dynamic because depends on prompt)
-            if search_results or unique_recent:
-                context_parts.append("\n### Relevant Context from Memory System")
-
-                if search_results:
-                    context_parts.append("#### Relevant Memories")
-                    for result in search_results[:3]:
-                        content = result.memory.content
-                        category = result.memory.category
-                        score = result.score
-                        context_parts.append(
-                            f"- **{category}** (relevance: {score:.2f}): {content}"
-                        )
-
-                if unique_recent:
-                    context_parts.append("\n#### Recent Context")
-                    for mem in unique_recent[:2]:
-                        context_parts.append(f"- {mem.category}: {mem.content}")
+            context_parts.extend(
+                format_memories(search_results, unique_recent, base_heading_level=3)
+            )
 
         else:
             # --- STANDARD CLAUDE CODE STRUCTURE ---
             # Keep existing behavior roughly: Memories first, then session info
 
-            if search_results or unique_recent:
-                context_parts.append("## Relevant Context from Memory System\n")
-
-                if search_results:
-                    context_parts.append("### Relevant Memories")
-                    for result in search_results[:3]:
-                        content = result.memory.content
-                        category = result.memory.category
-                        score = result.score
-                        context_parts.append(
-                            f"- **{category}** (relevance: {score:.2f}): {content}"
-                        )
-
-                if unique_recent:
-                    context_parts.append("\n### Recent Context")
-                    for mem in unique_recent[:2]:
-                        context_parts.append(f"- {mem.category}: {mem.content}")
+            context_parts.extend(
+                format_memories(search_results, unique_recent, base_heading_level=2)
+            )
 
             context_parts.append("\n## Session Environment")
-            context_parts.append(
-                f"- **Today's Date:** {datetime.now().strftime('%A, %B %d, %Y')}"
-            )
-            context_parts.append(
-                f"- **Platform:** {platform.system()} ({platform.release()})"
-            )
-            context_parts.append(f"- **Working Directory:** {os.getcwd()}")
+            context_parts.extend(format_session_env())
 
         # Build response
         context = "\n".join(context_parts)
