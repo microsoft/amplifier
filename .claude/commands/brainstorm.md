@@ -18,7 +18,7 @@ Before diving into the idea, gather context by dispatching a **context scout sub
 2. **Dispatch context scout:**
 
 ```
-Task(subagent_type="general-purpose", model="haiku", description="Gather session context for [topic]", prompt="
+Task(subagent_type="general-purpose", model="haiku", max_turns=6, description="Gather session context for [topic]", prompt="
   Gather project context for a brainstorming session about [topic].
 
   Run these steps and compile a summary:
@@ -106,7 +106,7 @@ Adjust the table based on what the design actually needs. Not every project need
 - Delegate spec writing and review to a subagent, keeping only the result in main context:
 
 ```
-Task(subagent_type="general-purpose", model="sonnet", description="Write and validate design spec", prompt="
+Task(subagent_type="general-purpose", model="sonnet", max_turns=10, description="Write and validate design spec", prompt="
   Write a design spec document from the following validated design.
 
   ## Validated Design

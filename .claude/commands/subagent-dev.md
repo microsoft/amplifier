@@ -39,7 +39,9 @@ digraph when_to_use {
 Each task in the plan has an `Agent:` field. Use it as the `subagent_type` when dispatching:
 
 1. Read the task's `Agent:` field (e.g., `modular-builder`, `bug-hunter`, `database-architect`)
-2. **Dispatch using Task tool with `subagent_type` set to the Agent: field value.** Example: if the plan says `Agent: modular-builder`, call `Task(subagent_type="modular-builder", description="Implement Task N: ...", prompt="...")`
+2. **Dispatch using Task tool with `subagent_type` set to the Agent: field value.** Example: if the plan says `Agent: modular-builder`, call `Task(subagent_type="modular-builder", max_turns=15, description="Implement Task N: ...", prompt="...")`
+   - **Turn budgets (always include `max_turns`):** Implementation agents: 15-20, review agents: 10-12, specialists: 12-15, quick tasks: 5-8
+   - **If agent returns incomplete:** Resume with `Task(resume=agent_id, prompt="Continue your work...")` — max 3 resume cycles
 3. Pass the full task text + context in the prompt (never make subagent read the plan file)
 4. The agent brings domain expertise to the implementation — `modular-builder` builds clean modules, `bug-hunter` does hypothesis-driven debugging, `database-architect` designs schemas
 

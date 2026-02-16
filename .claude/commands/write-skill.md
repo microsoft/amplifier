@@ -16,7 +16,7 @@ You write test cases (pressure scenarios with subagents), watch them fail (basel
 
 **REQUIRED BACKGROUND:** You MUST understand `/tdd` before using this command. That command defines the fundamental RED-GREEN-REFACTOR cycle. This command adapts TDD to documentation.
 
-**Agent dispatch:** Use `modular-builder` for command implementation and `test-coverage` for command testing via the Task tool.
+**Agent dispatch:** Use `modular-builder` (max_turns=15) for command implementation and `test-coverage` (max_turns=10) for command testing via the Task tool.
 
 ## What is a Command?
 

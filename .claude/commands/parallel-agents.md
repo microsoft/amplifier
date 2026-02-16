@@ -83,14 +83,20 @@ Match each domain to the right agent from the mapping table above. Each speciali
 
 Then dispatch all in a single message with multiple Task calls:
 ```
-Task(subagent_type="bug-hunter", description="Fix auth test failures", prompt="...")
-Task(subagent_type="integration-specialist", description="Fix payment API", prompt="...")
-Task(subagent_type="performance-optimizer", description="Fix search latency", prompt="...")
+Task(subagent_type="bug-hunter", max_turns=12, description="Fix auth test failures", prompt="...")
+Task(subagent_type="integration-specialist", max_turns=12, description="Fix payment API", prompt="...")
+Task(subagent_type="performance-optimizer", max_turns=12, description="Fix search latency", prompt="...")
 ```
 
 **Never dispatch silently — the user should always see which specialists are working on what.**
 
-### 4. Review and Integrate
+### 4. Handle Incomplete Agents
+
+If any agent returns partial results (trailing "I'll now...", incomplete work):
+- Resume with `Task(resume=agent_id, prompt="Continue your work. Focus on completing remaining items.")`
+- Max 3 resume cycles per agent before escalating to user
+
+### 5. Review and Integrate
 
 When agents return:
 - Read each summary
