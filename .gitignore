@@ -65,6 +65,9 @@ next-steps.md
 # Amplifier specific ignores #
 ##############################
 
+# Generated agents (OpenCode format)
+agents/
+
 # Windows reserved names (CRITICAL - can corrupt NTFS)
 nul
 con
