@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from hook_logger import HookLogger
-SUPERPOWERS_FALLBACK = "C:/claude/superpowers"
+from platform_detect import SUPERPOWERS_FALLBACK
 
 logger = HookLogger("memory_sync")
 

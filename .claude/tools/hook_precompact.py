@@ -16,9 +16,134 @@ from pathlib import Path
 # Add parent directory for logger import
 sys.path.insert(0, str(Path(__file__).parent))
 from hook_logger import HookLogger
-SUPERPOWERS_FALLBACK = "C:/claude/superpowers"
+from platform_detect import IS_OPENCODE, SUPERPOWERS_FALLBACK
 
 logger = HookLogger("precompact_export")
+
+
+class GoldPrefixCompactor:
+    """Gemini-optimized caching strategy that isolates a stable Frozen Zone.
+
+    Only active on OpenCode/Gemini where context caching benefits from
+    bit-for-bit prefix stability. On Claude Code this class is not used.
+    """
+
+    def __init__(self, hook_logger):
+        self.logger = hook_logger
+        self.frozen_char_limit = 600000  # ~150k tokens at 4 chars/token
+
+    def identify_frozen_zone(self, entries: list) -> list:
+        """Identify entries that belong to the stable Frozen Zone (system prompts, identity)."""
+        frozen = []
+        total_chars = 0
+
+        for i, entry in enumerate(entries):
+            content = self._extract_content(entry)
+            total_chars += len(content)
+
+            entry_type = entry.get("type")
+            is_core = any(
+                marker in content
+                for marker in ["Core Mandates", "AMPLIFIER-AGENTS", "CLAUDE.md", "Identity"]
+            )
+
+            # System prompts and core identity entries form the frozen prefix
+            if i < 5 or (entry_type == "system" and (i < 8 or is_core)):
+                frozen.append(entry)
+            else:
+                break
+
+            if total_chars > self.frozen_char_limit:
+                break
+
+        return frozen
+
+    def get_middle_history(self, entries: list, frozen_count: int) -> list:
+        """Extract middle history (between frozen zone and last 5 turns) for summarization."""
+        if len(entries) <= frozen_count + 5:
+            return []
+        return entries[frozen_count:-5]
+
+    def summarize_stable(self, entries: list) -> str:
+        """Generate a stable summary block for the middle history.
+
+        Includes both tool usage counts and user message summaries
+        for meaningful context after compaction.
+        """
+        if not entries:
+            return ""
+
+        tool_counts = {}
+        user_summaries = []
+
+        for entry in entries:
+            msg = entry.get("message", {})
+            entry_type = entry.get("type", "")
+            content = msg.get("content", "")
+
+            # Count tool uses
+            if isinstance(content, list):
+                for item in content:
+                    if isinstance(item, dict) and item.get("type") == "tool_use":
+                        name = item.get("name", "unknown")
+                        tool_counts[name] = tool_counts.get(name, 0) + 1
+
+            # Capture user message summaries (first 100 chars of each)
+            if entry_type == "user":
+                text = self._extract_text(content)
+                if text:
+                    summary = text[:100].strip()
+                    if len(text) > 100:
+                        summary += "..."
+                    user_summaries.append(summary)
+
+        lines = [
+            "### [GOLD PREFIX: STABLE PROGRESS SNAPSHOT]",
+            f"Compacted History Range: {len(entries)} turns",
+            f"Stability Key: {len(entries)}-{sum(tool_counts.values())}",
+            "",
+        ]
+
+        if user_summaries:
+            lines.append("#### User Requests:")
+            for summary in user_summaries[:10]:
+                lines.append(f"  - {summary}")
+            lines.append("")
+
+        if tool_counts:
+            lines.append("#### Tools Executed:")
+            for name, count in sorted(tool_counts.items()):
+                lines.append(f"  - {name}: {count} times")
+
+        lines.append("\n--- [END OF STABLE SNAPSHOT] ---")
+        return "\n".join(lines)
+
+    @staticmethod
+    def _extract_content(entry: dict) -> str:
+        """Extract text content from a transcript entry."""
+        entry_type = entry.get("type")
+        if entry_type == "system":
+            return str(entry.get("content", ""))
+        msg = entry.get("message", {})
+        content = msg.get("content", "")
+        if isinstance(content, list):
+            return " ".join(
+                item.get("text", "") for item in content
+                if isinstance(item, dict) and item.get("type") == "text"
+            )
+        return str(content)
+
+    @staticmethod
+    def _extract_text(content) -> str:
+        """Extract plain text from message content (string or list)."""
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            return " ".join(
+                item.get("text", "") for item in content
+                if isinstance(item, dict) and item.get("type") == "text"
+            )
+        return str(content)
 
 
 def format_message(msg: dict) -> str:
@@ -258,6 +383,17 @@ def export_transcript(
                     f.write(f"  - {loaded_id}\n")
                 f.write("Note: Content from these sessions may appear embedded in the conversation.\n")
 
+            # Gold Prefix status (OpenCode only)
+            if IS_OPENCODE:
+                compactor = GoldPrefixCompactor(logger)
+                frozen = compactor.identify_frozen_zone(full_entries)
+                middle = compactor.get_middle_history(full_entries, len(frozen))
+                if middle:
+                    f.write(f"Gold Prefix Status: OPTIMIZED\n")
+                    f.write(f"Frozen Zone: {len(frozen)} turns preserved\n")
+                    f.write(f"Middle History: {len(middle)} turns summarized\n")
+                    f.write(f"Recent turns: {len(full_entries) - len(frozen) - len(middle)} turns active\n")
+
             f.write("=" * 80 + "\n\n")
 
             # Write all entries with proper formatting
@@ -382,7 +518,7 @@ def main():
         except Exception as e:
             logger.warning(f"Memory push failed (non-critical): {e}")
 
-        # Parse transcript and export
+        # Parse transcript once, reuse for both analysis and export
         exported_path = ""
         metadata = {
             "transcript_exported": False,
@@ -393,6 +529,26 @@ def main():
         if transcript_path:
             full_entries = parse_transcript_entries(transcript_path)
 
+            # Gold Prefix analysis (OpenCode/Gemini only)
+            if IS_OPENCODE and full_entries:
+                try:
+                    compactor = GoldPrefixCompactor(logger)
+                    frozen = compactor.identify_frozen_zone(full_entries)
+                    middle = compactor.get_middle_history(full_entries, len(frozen))
+
+                    if middle:
+                        summary = compactor.summarize_stable(middle)
+                        logger.info(
+                            f"Gold Prefix: {len(frozen)} frozen, {len(middle)} summarized"
+                        )
+                        metadata["gold_prefix_optimized"] = True
+                        metadata["frozen_turns"] = len(frozen)
+                        metadata["summarized_turns"] = len(middle)
+                        metadata["stable_summary"] = summary
+                except Exception as e:
+                    logger.error(f"Gold Prefix analysis error: {e}")
+
+            # Export transcript (both platforms)
             exported_path = export_transcript(
                 transcript_path, trigger, session_id, custom_instructions, full_entries
             )

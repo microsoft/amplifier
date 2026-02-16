@@ -18,6 +18,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 # Import logger from the same directory
 sys.path.insert(0, str(Path(__file__).parent))
 from hook_logger import HookLogger
+from platform_detect import IS_OPENCODE
+
 logger = HookLogger("session_start")
 
 try:
@@ -85,10 +87,17 @@ async def main():
         recent = store.search_recent(limit=3)
         logger.info(f"Found {len(recent)} recent memories")
 
-        # Format context
+        # Format context with platform-aware zone labels
         context_parts = []
         if search_results or recent:
-            context_parts.append("## Relevant Context from Memory System\n")
+            # Frozen Zone label only for Gemini context caching
+            if IS_OPENCODE:
+                context_parts.append("## [FROZEN ZONE: MEMORY SYSTEM CONTEXT]")
+                context_parts.append(
+                    "The following memories provide relevant historical context for this task.\n"
+                )
+            else:
+                context_parts.append("## Relevant Context from Memory System\n")
 
             # Add relevant memories
             if search_results:
@@ -107,8 +116,11 @@ async def main():
                 for mem in unique_recent[:2]:
                     context_parts.append(f"- {mem.category}: {mem.content}")
 
-        # Dynamic session context
-        context_parts.append("\n## Session Environment")
+        # Dynamic session context (useful for both platforms)
+        if IS_OPENCODE:
+            context_parts.append("\n## [CHURN ZONE: DYNAMIC SESSION CONTEXT]")
+        else:
+            context_parts.append("\n## Session Environment")
         context_parts.append(f"- **Today's Date:** {datetime.now().strftime('%A, %B %d, %Y')}")
         context_parts.append(f"- **Platform:** {platform.system()} ({platform.release()})")
         context_parts.append(f"- **Working Directory:** {os.getcwd()}")
