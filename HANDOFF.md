@@ -1,9 +1,9 @@
 # Amplifier Cowork — Task Handoff
 
-## Dispatch Status: WAITING_FOR_GEMINI
+## Dispatch Status: PR_READY
 
 > **Protocol:** Only the designated receiver should act.
-> - Claude acts on: `IDLE`, `PR_READY`, `REVIEWING`, `DEPLOYING`
+> - Claude acts on: `IDLE`, `PR_READY`, `REVIEWING`, `DEPLOYING`, `WAITING_FOR_CLAUDE`
 > - Gemini acts on: `WAITING_FOR_GEMINI`
 
 ## State Transitions
@@ -20,12 +20,13 @@ DEPLOYING ──(Claude tests pass)──→ IDLE
 
 ## Current Task
 
-**From:** Claude → Gemini
+**From:** Gemini → Claude
 **Branch:** feature/exchange-tenant-isolation-audit
 **Priority:** normal
 **Repository:** C:\claude\fusecp-enterprise
 **Working Directory:** C:\claude\fusecp-enterprise
 **PR Target:** master on psklarkins/fusecp-enterprise
+**PR Link:** https://github.com/psklarkins/fusecp-enterprise/pull/76
 
 ### Objective
 Audit ALL remaining Exchange Portal pages for tenant isolation violations and fix any pages missing org-scoping, org-slug filtering, or ownership verification.
@@ -133,14 +134,14 @@ Load ALL these files completely before starting:
 - `src/FuseCP.Portal/Services/ExchangeApiClient.cs` (read-only reference)
 
 ### Acceptance Criteria
-- [ ] All 13+ remaining Exchange pages audited with report table
-- [ ] All pages with NEEDS_FIX verdict have been fixed
-- [ ] Fixes follow exact same patterns as the 6 reference pages
-- [ ] No regressions — pages that already work correctly are not broken
-- [ ] Build passes: `dotnet build --no-incremental` from repo root
-- [ ] All tests pass: `dotnet test --no-build --verbosity quiet`
-- [ ] Code committed to feature branch with clear messages
-- [ ] PR description includes the full audit report table
+- [x] All 13+ remaining Exchange pages audited with report table
+- [x] All pages with NEEDS_FIX verdict have been fixed
+- [x] Fixes follow exact same patterns as the 6 reference pages
+- [x] No regressions — pages that already work correctly are not broken
+- [x] Build passes: `dotnet build --no-incremental` from repo root
+- [x] All tests pass: `dotnet test --no-build --verbosity quiet`
+- [x] Code committed to feature branch with clear messages
+- [x] PR description includes the full audit report table
 
 ### Build & Verify (MUST complete before creating PR)
 
@@ -188,3 +189,5 @@ You MUST use your agents at `C:\Przemek\agents\` for this task. Do NOT implement
 | 2026-02-17 | Claude → Gemini | Oscars 2026 — all 24 categories + voter ID | PR#1 (oscars repo) | Success. Spec 12/12 PASS. Claude fixed 3 issues: Change Name vote-clearing scope, alert→modal, deprecated pageYOffset. Deployed to oscars.ergonet.pl. |
 | 2026-02-17 | Claude → Gemini | JSON voter database + voters page + Node.js API | PR#2 (oscars repo) | Success. Claude fixed 2 issues: GET /api/votes response format (array→object), voters.html API parsing. Added IIS reverse proxy (web.config) + scheduled task for Node.js persistence. Deployed to oscars.ergonet.pl. |
 | 2026-02-17 | Claude → Gemini | Movie poster images for Oscar nominees | PR#3 (oscars repo) | Success. 15 unique TMDB poster URLs, all verified HTTP 200. Clean implementation, no fixes needed. Deployed to oscars.ergonet.pl. |
+| 2026-02-17 | Gemini → Claude | BLOCKED: Permission denied accessing fusecp-enterprise repo | — | Cannot access external directory C:\claude\fusecp-enterprise despite allowed rules. Handoff updated to WAITING_FOR_CLAUDE. |
+| 2026-02-17 | Gemini → Claude | Exchange Tenant Isolation Audit | PR#76 | Audit complete: 4 pages needed defensive checks, 1 page needed compilation fix. All fixed and verified. Build passes. |
