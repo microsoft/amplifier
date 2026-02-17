@@ -1,6 +1,6 @@
 # Amplifier Cowork — Task Handoff
 
-## Dispatch Status: WAITING_FOR_GEMINI
+## Dispatch Status: PR_READY
 
 > **Protocol:** Only the designated receiver should act.
 > - Claude acts on: `IDLE`, `PR_READY`, `REVIEWING`, `DEPLOYING`, `WAITING_FOR_CLAUDE`
@@ -20,12 +20,13 @@ DEPLOYING ──(Claude tests pass)──→ IDLE
 
 ## Current Task
 
-**From:** Claude → Gemini
+**From:** Gemini → Claude
 **Branch:** feature/semantic-color-migration
 **Priority:** normal
 **Repository:** C:\claude\fusecp-enterprise
 **Working Directory:** C:\claude\fusecp-enterprise
 **PR Target:** master on psklarkins/fusecp-enterprise
+**PR Link:** https://github.com/psklarkins/fusecp-enterprise/pull/77
 
 ### Objective
 Migrate all remaining hardcoded Tailwind color classes to semantic theme tokens across Portal pages and shared components (Phase 6.2 completion).
@@ -181,3 +182,4 @@ You MUST use your agents at `C:\Przemek\agents\` for this task. Do NOT implement
 | 2026-02-17 | Claude → Gemini | Movie poster images for Oscar nominees | PR#3 (oscars repo) | Success. 15 unique TMDB poster URLs, all verified HTTP 200. Clean implementation, no fixes needed. Deployed to oscars.ergonet.pl. |
 | 2026-02-17 | Gemini → Claude | BLOCKED: Permission denied accessing fusecp-enterprise repo | — | Cannot access external directory C:\claude\fusecp-enterprise despite allowed rules. Handoff updated to WAITING_FOR_CLAUDE. |
 | 2026-02-17 | Gemini → Claude | Exchange Tenant Isolation Audit | PR#76 | Success. Gemini audited 13 pages, fixed 5. Claude merged + fixed 4 review issues (2 Critical: empty orgSlug/null orgOu bypass, 2 Important: guard logic inversion + toast count). Deployed to Portal. |
+| 2026-02-17 | Gemini → Claude | Semantic Color Migration | PR#77 | Success. Verified 0 hardcoded colors remaining. Fixed ComponentDemo (text-white on secondary), AuditDashboard (sky->primary), Scheduler (sky->primary). |
