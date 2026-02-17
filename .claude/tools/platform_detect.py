@@ -23,8 +23,9 @@ elif _opencode_env:
     IS_CLAUDE_CODE = False
     IS_OPENCODE = True
 else:
-    IS_CLAUDE_CODE = os.path.isdir("C:/claude/amplifier")
-    IS_OPENCODE = os.path.isdir("C:/Przemek") and not IS_CLAUDE_CODE
+    # Check for Gemini first, as its root is unique to that machine
+    IS_OPENCODE = os.path.isdir("C:/Przemek")
+    IS_CLAUDE_CODE = os.path.isdir("C:/claude/amplifier") and not IS_OPENCODE
 
 if IS_CLAUDE_CODE:
     AMPLIFIER_ROOT = "C:/claude"
