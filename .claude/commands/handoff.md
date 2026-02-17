@@ -333,23 +333,21 @@ Recommendation: Approve / Request Changes
 
 **4f. User decision:**
 
-- **Approve** → Update HANDOFF.md to `REVIEWING`:
-  ```bash
-  # Update status in HANDOFF.md
-  git add HANDOFF.md && git commit -m "chore: handoff review approved — advancing to merge"
-  ```
-  Then proceed immediately to REVIEWING phase.
+- **Approve (no issues)** → Update HANDOFF.md to `REVIEWING`, proceed to merge.
 
-- **Request changes** → Post review on PR:
+- **Approve + fix ourselves (default for non-critical issues)** → Merge the PR, then Claude fixes the review issues in a follow-up commit on master. This is faster than sending back to Gemini and avoids round-trip delays. After merge:
+  1. Fix all Important/Minor issues identified in review
+  2. Build and verify
+  3. Commit with message referencing the PR: `fix: address review issues from PR #<number>`
+  4. Proceed to REVIEWING → DEPLOYING.
+
+- **Request changes (Critical issues only)** → Post review on PR:
   ```bash
   gh pr review <number> --request-changes --body "<consolidated review feedback>"
   ```
-  Stay at PR_READY. Report:
-  ```
-  Changes requested on PR #<number>.
-  Gemini will fix and re-push.
-  Run /handoff again after Gemini updates the PR.
-  ```
+  Stay at PR_READY. Only use this for Critical issues that would be harder for Claude to fix than for Gemini to redo (e.g., fundamentally wrong approach, needs complete rewrite).
+
+**Policy: Claude always fixes non-critical issues.** Sending work back to Gemini for minor/important fixes wastes time on round-trips. Claude is the senior developer and should fix review issues directly after merge.
 
 ---
 
