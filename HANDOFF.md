@@ -1,13 +1,12 @@
 # Amplifier Cowork — Task Handoff
 
-## Dispatch Status: WAITING_FOR_GEMINI
+## Dispatch Status: PR_READY
 
 > **Protocol:** Only the designated receiver should act.
 > - Claude acts on: `IDLE`, `PR_READY`, `REVIEWING`, `DEPLOYING`
 > - Gemini acts on: `WAITING_FOR_GEMINI`
 
 ## State Transitions
-
 ```
 IDLE ──(Claude writes task)──→ WAITING_FOR_GEMINI
 WAITING_FOR_GEMINI ──(Gemini starts)──→ IN_PROGRESS
@@ -27,6 +26,8 @@ DEPLOYING ──(Claude tests pass)──→ IDLE
 **Repository:** C:\claude\oscars
 **Working Directory:** C:\claude\oscars
 **PR Target:** main on psklarkins/oscars
+**PR Link:** https://github.com/psklarkins/oscars/pull/3
+
 
 ### Objective
 Find movie poster images from the internet for all Oscar 2026 nominated films and display them on nominee cards.
