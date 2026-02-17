@@ -1,6 +1,6 @@
 # Amplifier Cowork — Task Handoff
 
-## Dispatch Status: IN_PROGRESS
+## Dispatch Status: PR_READY
 
 > **Protocol:** Only the designated receiver should act.
 > - Claude acts on: `IDLE`, `PR_READY`, `REVIEWING`, `DEPLOYING`
@@ -27,9 +27,11 @@ DEPLOYING ──(Claude tests pass)──→ IDLE
 **Repository:** C:\claude\oscars
 **Working Directory:** C:\claude\oscars
 **PR Target:** main on psklarkins/oscars
+**PR Link:** https://github.com/psklarkins/oscars/pull/1
 
 ### Objective
 Update the Oscars voting page with all 24 categories from the 98th Academy Awards (2026), and add voter name identification (name input before voting, no login/auth).
+
 
 ### Detailed Requirements
 
