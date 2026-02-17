@@ -100,12 +100,18 @@ Task(subagent_type="agentic-search", model="haiku", max_turns=8,
 **From:** Claude → Gemini
 **Branch:** feature/<derived-name>
 **Priority:** normal | urgent
+**Repository:** [exact repo path, e.g. C:\claude\fusecp-enterprise]
+**Working Directory:** [where to run commands from, e.g. C:\claude\fusecp-enterprise]
+**PR Target:** [target branch + repo for the PR, e.g. main on psklarkins/fusecp-enterprise]
 
 ### Objective
 [One sentence from user's description]
 
+### Detailed Requirements
+[Specific, concrete changes needed. NOT vague — list exactly what to do with file paths and patterns to follow. If Gemini needs to follow an existing pattern, show the pattern inline or reference the exact file:line.]
+
 ### Spec
-[Link to spec if found by scout, or "Inline — see Objective and Acceptance Criteria"]
+[Link to spec if found by scout, or "Inline — see Objective and Detailed Requirements"]
 
 ### Context Loading (use your full 1M context)
 Load these files completely before starting:
@@ -128,6 +134,18 @@ Load these files completely before starting:
 - [ ] All tests pass
 - [ ] No lint errors
 - [ ] Code committed to feature branch with clear messages
+
+### Build & Verify (MUST complete before creating PR)
+
+Run these commands and confirm they pass. Do NOT create a PR until all pass:
+
+```bash
+[exact build command, e.g. cd /c/claude/fusecp-enterprise/src/FuseCP.Portal && dotnet build --configuration Release]
+```
+
+Expected: Build succeeded, 0 errors.
+
+If build fails, fix the errors before proceeding. Include build output summary in PR description.
 
 ### Agent Tier Unlocks
 [Scout suggestions, or "primary + knowledge only"]
@@ -230,14 +248,32 @@ gh pr list --state open --json number,title,headRefName,additions,deletions
 
 Match by branch name from HANDOFF.md. If no PR found, report error.
 
-**4b. Fetch PR details:**
+**4b. Local build verification** — Before reviewing code, verify it builds:
+
+```bash
+# Checkout PR branch locally
+git fetch origin
+git checkout <branch-name>
+
+# Run build command from HANDOFF.md "Build & Verify" section
+# e.g.: cd /c/claude/fusecp-enterprise/src/FuseCP.Portal && dotnet build --configuration Release
+```
+
+If build fails → post build errors as PR comment, request changes, stay at PR_READY:
+```bash
+gh pr comment <number> --body "Build failed. Errors: <paste errors>. Please fix and push."
+```
+
+If build passes → proceed to code review.
+
+**4c. Fetch PR details:**
 
 ```bash
 gh pr view <number> --json title,body,additions,deletions,changedFiles
 gh pr diff <number>
 ```
 
-**4c. Dispatch review** — Run spec compliance and code quality checks in parallel:
+**4d. Dispatch review** — Run spec compliance and code quality checks in parallel:
 
 ```
 >> Dispatching test-coverage (model: haiku) — spec compliance review
@@ -267,7 +303,7 @@ Task(subagent_type="zen-architect", model="sonnet", max_turns=12,
 ")
 ```
 
-**4d. Consolidate and present findings.**
+**4e. Consolidate and present findings.**
 
 Both agents run in parallel via a single message with two Task calls. Wait for both to return, then merge:
 
@@ -295,7 +331,7 @@ Recommendation: Approve / Request Changes
   [reasoning in one sentence]
 ```
 
-**4e. User decision:**
+**4f. User decision:**
 
 - **Approve** → Update HANDOFF.md to `REVIEWING`:
   ```bash
