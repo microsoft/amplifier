@@ -4,15 +4,28 @@ Platform detection for dual-machine Amplifier deployment.
 Detects whether we're running on the Claude Code machine (C:/claude/)
 or the Gemini/OpenCode machine (C:/Przemek/) and exports path constants
 that all hooks use instead of hardcoded paths.
+
+Detection priority (highest to lowest):
+  1. CLAUDECODE=1 env var  — set by .bash_profile for Claude Code sessions
+  2. OPENCODE=1 env var    — set as User env var for OpenCode sessions
+  3. Directory presence    — fallback for environments without env vars set
 """
 
 import os
 
-# Platform detection by root folder presence
-IS_CLAUDE_CODE = os.path.isdir("C:/claude/amplifier")
-IS_OPENCODE = os.path.isdir("C:/Przemek") and not IS_CLAUDE_CODE
+_claudecode_env = os.environ.get("CLAUDECODE") == "1"
+_opencode_env = os.environ.get("OPENCODE") == "1"
 
-# Path constants
+if _claudecode_env:
+    IS_CLAUDE_CODE = True
+    IS_OPENCODE = False
+elif _opencode_env:
+    IS_CLAUDE_CODE = False
+    IS_OPENCODE = True
+else:
+    IS_CLAUDE_CODE = os.path.isdir("C:/claude/amplifier")
+    IS_OPENCODE = os.path.isdir("C:/Przemek") and not IS_CLAUDE_CODE
+
 if IS_CLAUDE_CODE:
     AMPLIFIER_ROOT = "C:/claude"
     SUPERPOWERS_FALLBACK = "C:/claude/superpowers"
@@ -20,7 +33,6 @@ elif IS_OPENCODE:
     AMPLIFIER_ROOT = "C:/Przemek"
     SUPERPOWERS_FALLBACK = "C:/Przemek/superpowers"
 else:
-    # Unknown platform — use home directory fallback
     AMPLIFIER_ROOT = os.path.expanduser("~")
     SUPERPOWERS_FALLBACK = ""
 
