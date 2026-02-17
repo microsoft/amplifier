@@ -86,7 +86,15 @@ Task(subagent_type="agentic-search", model="haiku", max_turns=8,
     1. Search docs/specs/ for relevant spec files
     2. Identify source files that would need modification
     3. Suggest which agent tiers Gemini might need (senior-review or design-specialist)
-    Return: spec path (if found), file list (paths only), tier unlock suggestions
+    4. Map each part of the task to a Gemini agent from C:\Przemek\agents\:
+       - modular-builder: code implementation (models, services, endpoints)
+       - component-designer: UI components (Blazor pages, forms)
+       - database-architect: schema design, migrations, repositories
+       - api-contract-designer: API endpoint contracts
+       - agentic-search: codebase exploration before implementation
+       - bug-hunter: debugging, fixing issues
+       - test-coverage: writing tests
+    Return: spec path (if found), file list (paths only), tier unlock suggestions, agent assignment table
 ")
 ```
 
@@ -147,8 +155,18 @@ Expected: Build succeeded, 0 errors.
 
 If build fails, fix the errors before proceeding. Include build output summary in PR description.
 
-### Agent Tier Unlocks
-[Scout suggestions, or "primary + knowledge only"]
+### Agent Assignments (MANDATORY — use subagents for implementation)
+
+You MUST use your agents at `C:\Przemek\agents\` for this task. Do NOT implement everything in your main context — delegate to specialized agents.
+
+| Task | Agent | What to delegate |
+|------|-------|-----------------|
+[Claude fills this table mapping each part of the work to a specific agent. Example:]
+| [Part description] | [agent-name] | [specific deliverable] |
+
+**How to use agents:** For each row above, dispatch the agent as a subagent with a focused prompt describing exactly what to implement. The agent will do the work and return results. Review the output, fix any issues, then move to the next task.
+
+**Agent tier unlocks:** [primary + knowledge, or additional tiers if needed]
 ```
 
 **2d. Present for confirmation.** Show the filled template to the user using AskUserQuestion:
