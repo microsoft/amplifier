@@ -1,6 +1,6 @@
 # Amplifier Cowork — Task Handoff
 
-## Dispatch Status: IN_PROGRESS
+## Dispatch Status: PR_READY
 
 > **Protocol:** Only the designated receiver should act.
 > - Claude acts on: `IDLE`, `PR_READY`, `REVIEWING`, `DEPLOYING`
@@ -27,9 +27,11 @@ DEPLOYING ──(Claude tests pass)──→ IDLE
 **Repository:** C:\claude\oscars
 **Working Directory:** C:\claude\oscars
 **PR Target:** main on psklarkins/oscars
+**PR Link:** https://github.com/psklarkins/oscars/pull/2
 
 ### Objective
 Add a JSON-file voter database with a Node.js API server, and create a voters listing page with navigation menu between the ballot and voters pages.
+
 
 ### Detailed Requirements
 
