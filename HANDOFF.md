@@ -1,6 +1,6 @@
 # Amplifier Cowork — Task Handoff
 
-## Dispatch Status: WAITING_FOR_GEMINI
+## Dispatch Status: PR_READY
 
 > **Protocol:** Only the designated receiver should act.
 > - Claude acts on: `IDLE`, `PR_READY`, `REVIEWING`, `DEPLOYING`
@@ -27,6 +27,7 @@ DEPLOYING ──(Claude tests pass)──→ IDLE
 **Repository:** C:\claude\amplifier
 **Working Directory:** C:\claude\amplifier
 **PR Target:** main on psklarkins/amplifier
+**PR Link:** https://github.com/psklarkins/amplifier/pull/9
 
 ### Objective
 Build a standalone Oscars voting page (HTML/CSS/JS) that will be hosted at https://oscars.ergonet.pl, allowing visitors to vote for their favorite movies.
