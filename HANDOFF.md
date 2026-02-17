@@ -1,6 +1,8 @@
 # Amplifier Cowork — Task Handoff
 
-## Dispatch Status: IN_PROGRESS
+## Dispatch Status: PR_READY
+
+PR: https://github.com/psklarkins/fusecp-enterprise/pull/74
 
 > **Protocol:** Only the designated receiver should act.
 > - Claude acts on: `IDLE`, `PR_READY`, `REVIEWING`, `DEPLOYING`
