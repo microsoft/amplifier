@@ -15,9 +15,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const movieCardsContainer = document.getElementById('movie-cards-container');
     const resultsContainer = document.getElementById('results-container');
 
-    // Initialize votes from localStorage
-    let votes = JSON.parse(localStorage.getItem('oscarsVotes')) || {};
-    let votedCategories = JSON.parse(localStorage.getItem('oscarsVotedCategories')) || {};
+    // Initialize votes from localStorage (with fallback if corrupted/disabled)
+    let votes = {};
+    let votedCategories = {};
+    try {
+        votes = JSON.parse(localStorage.getItem('oscarsVotes')) || {};
+        votedCategories = JSON.parse(localStorage.getItem('oscarsVotedCategories')) || {};
+    } catch (e) {
+        votes = {};
+        votedCategories = {};
+    }
 
     // Function to render movie cards
     function renderMovieCards() {
@@ -29,8 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <h3>${movie.title}</h3>
                 <p>Category: ${movie.category}</p>
                 <button class="vote-button" data-movie-id="${movie.id}" data-category="${movie.category}">Vote</button>
-                <p class="vote-count">Votes: ${votes[movie.id] || 0}</p>
-                <p class="vote-message" style="display: none;"></p>
+                <p class="vote-count" data-vote-count="${movie.id}">Votes: ${votes[movie.id] || 0}</p>
+                <p class="vote-message" data-vote-message="${movie.id}" style="display: none;"></p>
             `;
             movieCardsContainer.appendChild(movieCard);
         });
@@ -44,7 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
             button.addEventListener('click', (event) => {
                 const movieId = event.target.dataset.movieId;
                 const category = event.target.dataset.category;
-                const voteMessageElement = event.target.nextElementSibling.nextElementSibling; // Get the .vote-message element
+                const card = event.target.closest('.movie-card');
+                const voteMessageElement = card.querySelector(`[data-vote-message="${movieId}"]`);
 
                 if (votedCategories[category]) {
                     voteMessageElement.textContent = 'You already voted in this category!';
@@ -55,8 +63,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 votes[movieId] = (votes[movieId] || 0) + 1;
                 votedCategories[category] = true;
-                localStorage.setItem('oscarsVotes', JSON.stringify(votes));
-                localStorage.setItem('oscarsVotedCategories', JSON.stringify(votedCategories));
+                try {
+                    localStorage.setItem('oscarsVotes', JSON.stringify(votes));
+                    localStorage.setItem('oscarsVotedCategories', JSON.stringify(votedCategories));
+                } catch (e) {
+                    // localStorage unavailable — votes still work in-memory for this session
+                }
                 updateVoteCounts();
                 renderResults();
                 disableCategoryButtons(category);
@@ -78,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Function to update vote counts displayed on cards
     function updateVoteCounts() {
         movies.forEach(movie => {
-            const voteCountElement = document.querySelector(`[data-movie-id="${movie.id}"]`).nextElementSibling;
+            const voteCountElement = document.querySelector(`[data-vote-count="${movie.id}"]`);
             if (voteCountElement) {
                 voteCountElement.textContent = `Votes: ${votes[movie.id] || 0}`;
             }
