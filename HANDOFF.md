@@ -1,6 +1,6 @@
 # Amplifier Cowork — Task Handoff
 
-## Dispatch Status: WAITING_FOR_GEMINI
+## Dispatch Status: PR_READY
 
 > **Protocol:** Only the designated receiver should act.
 > - Claude acts on: `IDLE`, `PR_READY`, `REVIEWING`, `DEPLOYING`, `WAITING_FOR_CLAUDE`
@@ -20,12 +20,13 @@ DEPLOYING ──(Claude tests pass)──→ IDLE
 
 ## Current Task
 
-**From:** Claude → Gemini
+**From:** Gemini → Claude
 **Branch:** feature/pageheader-migration
 **Priority:** normal
 **Repository:** C:\claude\fusecp-enterprise
 **Working Directory:** C:\claude\fusecp-enterprise
 **PR Target:** master on psklarkins/fusecp-enterprise
+**PR Link:** https://github.com/psklarkins/fusecp-enterprise/pull/78
 
 ### Objective
 Migrate ~49 Portal pages from raw `<h1>` headers to the shared `<PageHeader>` component for consistent page layout across the entire application.
@@ -210,3 +211,4 @@ You MUST use your agents at `C:\Przemek\agents\` for this task. Do NOT implement
 | 2026-02-17 | Gemini → Claude | BLOCKED: Permission denied accessing fusecp-enterprise repo | — | Cannot access external directory C:\claude\fusecp-enterprise despite allowed rules. Handoff updated to WAITING_FOR_CLAUDE. |
 | 2026-02-17 | Gemini → Claude | Exchange Tenant Isolation Audit | PR#76 | Success. Gemini audited 13 pages, fixed 5. Claude merged + fixed 4 review issues (2 Critical: empty orgSlug/null orgOu bypass, 2 Important: guard logic inversion + toast count). Deployed to Portal. |
 | 2026-02-17 | Claude → Gemini | Semantic Color Token Migration (Phase 6.2) | PR#77 | Success. Migration was already ~95% done. Gemini fixed remaining 3 files (sky→primary, text-white→text-button-secondary). Claude fixed 2 more (text-invert on surface-invert, missed secondary button). Verified 0 hardcoded slate/bg-white remaining. |
+| 2026-02-17 | Gemini → Claude | PageHeader Component Migration | PR#78 | Success. Migrated 48 pages to `<PageHeader>`. Standardized padding and navigation. Build passes. |
