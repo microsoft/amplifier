@@ -45,19 +45,37 @@ curl -sk -H "X-Api-Key: fusecp-admin-key-2026" "http://localhost:5010/api/bugs?s
 
 Parse the JSON response. If no open bugs, report "No open bugs found" and stop.
 
-**Sort by priority:** Critical > High > Medium > Low, then by ReportedAt (oldest first within same priority).
+**Separate by Type:** Split results into Bugs (Type=`Bug` or missing/null) and Feature Requests (Type=`FeatureRequest`).
 
-**Present to user:**
+**If Feature Requests exist, present them first:**
 ```
-Found N open bugs:
+Found M feature request(s):
+
+| # | ID | Priority | Area | Title | Reported |
+|---|-----|----------|------|-------|----------|
+| 1 | 45  | Medium   | Portal | Add bulk user import | 2026-02-18 |
+
+Feature requests are NOT auto-fixed. Use /brainstorm to discuss them.
+```
+
+**Then present Bugs:**
+
+**Sort bugs by priority:** Critical > High > Medium > Low, then by ReportedAt (oldest first within same priority).
+
+```
+Found N open bug(s):
 
 | # | ID | Priority | Area | Title | Reported |
 |---|-----|----------|------|-------|----------|
 | 1 | 42  | Critical | Portal | Login page crashes on submit | 2026-02-15 |
 | 2 | 38  | High     | Exchange | Mailbox creation fails silently | 2026-02-14 |
 
-Working on #1 (highest priority). Say "skip" to pick a different one.
+Working on #1 (highest priority). Say "skip" to pick a different one, or "brainstorm #45" to discuss a feature request.
 ```
+
+**Feature Request routing:** If the user says "brainstorm #ID" for a feature request, stop the fix pipeline and invoke `/brainstorm` with the feature request details as context. Do NOT attempt to implement feature requests automatically.
+
+**If only Feature Requests remain (no bugs):** Report "No open bugs found. There are M feature request(s) — use /brainstorm to discuss them." and stop.
 
 ## Phase 2: Load Bug Details & Set InProgress
 
