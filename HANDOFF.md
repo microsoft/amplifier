@@ -1,6 +1,6 @@
 # Amplifier Cowork — Task Handoff
 
-## Dispatch Status: IDLE
+## Dispatch Status: WAITING_FOR_GEMINI
 
 > **Protocol:** Only the designated receiver should act.
 > - Claude acts on: `IDLE`, `PR_READY`, `REVIEWING`, `DEPLOYING`, `WAITING_FOR_CLAUDE`
@@ -20,7 +20,134 @@ DEPLOYING ──(Claude tests pass)──→ IDLE
 
 ## Current Task
 
-_No active task. Claude: write a task below and set status to WAITING_FOR_GEMINI._
+**From:** Claude → Gemini
+**Branch:** feature/spacing-typography
+**Priority:** normal
+**Repository:** C:\claude\fusecp-enterprise
+**Working Directory:** C:\claude\fusecp-enterprise
+**PR Target:** master on psklarkins/fusecp-enterprise
+
+### Objective
+Define reusable CSS utility classes for page layout, section spacing, section headers, and card sections, then migrate all portal pages to use them — eliminating inconsistent inline Tailwind spacing/typography patterns.
+
+### Detailed Requirements
+
+**Step 1: Define 4 new CSS utility classes** in `Styles/app.css` (after the existing `@utility` blocks, before the `nav a.active` rule at the end):
+
+```css
+/* Page content wrapper — consistent padding for all page bodies */
+@utility page-content {
+  padding: 1rem;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  @media (min-width: 640px) { padding-left: 1.5rem; padding-right: 1.5rem; }
+  @media (min-width: 1024px) { padding-left: 2rem; padding-right: 2rem; }
+}
+
+/* Section title — consistent section heading style */
+@utility section-title {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--text-heading);
+}
+
+/* Card section — grouped content area within a page */
+@utility card-section {
+  background-color: var(--surface-secondary);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+/* Section group — standard vertical spacing between sections */
+@utility section-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+```
+
+**Step 2: Migrate all pages** to use these classes. Find-and-replace these 5 patterns:
+
+| # | Pattern to find | Replace with | Notes |
+|---|----------------|--------------|-------|
+| 1 | `class="p-4 sm:px-6 lg:px-8 py-8"` | `class="page-content"` | Page wrapper div, usually the outermost `<div>` after `<PageHeader>` |
+| 2 | `class="font-medium text-heading mb-4"` on h3 elements | `class="section-title mb-4"` | Section titles inside card-sections |
+| 3 | `class="text-lg font-medium text-heading"` on h2/h3 | `class="section-title"` | Alternate section title pattern |
+| 4 | `class="bg-surface-secondary rounded-lg p-4"` | `class="card-section"` | Grouped content areas |
+| 5 | `class="space-y-6"` on section container divs | `class="section-group"` | Only on divs that contain multiple sections (NOT on form field groups or lists) |
+
+**Important nuances:**
+- Pattern 5 (`space-y-6`): Only replace when it's the ONLY class on a div that groups page sections. Do NOT replace `space-y-6` when it appears alongside other classes like `space-y-6 mt-4` or in form/modal contexts.
+- Pattern 1: Some pages may have slight variations like `p-6 sm:px-6 lg:px-8 py-8`. Use `page-content` for those too.
+- Pattern 2 & 3: The heading element (h2 vs h3) should stay as-is. Only the class changes.
+- Keep any additional classes that appear alongside the pattern (e.g., `class="bg-surface-secondary rounded-lg p-4 mt-6"` → `class="card-section mt-6"`).
+
+**Step 3: Do NOT change:**
+- Components in `Components/Shared/` — shared components
+- Grid patterns (`grid grid-cols-*`) — layout-specific
+- `gap-*` on grid/flex containers — context-dependent
+- Table `th`/`td` styling — leave for 6.3d
+- Modal content styling — leave as-is
+- Any Blazor directives, `@bind`, `@onclick`, event handlers
+
+### Spec
+Inline — see Objective and Detailed Requirements above.
+
+### Context Loading (use your full 1M context)
+Load these files completely before starting:
+- `C:\claude\fusecp-enterprise\src\FuseCP.Portal\Styles\app.css` — existing CSS utilities
+- `C:\claude\fusecp-enterprise\docs\frontend\STYLE_GUIDE.md` — style guide reference
+- `C:\claude\amplifier\COWORK.md` — refresh protocol understanding
+- This task section of HANDOFF.md
+
+### Files YOU May Modify
+- `src/FuseCP.Portal/Styles/app.css` — add 4 new utility classes
+- All `.razor` files in `src/FuseCP.Portal/Components/Pages/` — migrate patterns
+
+### Files You Must NOT Modify
+- `.claude/*` (always)
+- `CLAUDE.md` (always)
+- `C:\FuseCP\*` (always)
+- `C:\Przemek\OPENCODE.md` (always)
+- `src/FuseCP.Portal/Components/Shared/*.razor` (shared components)
+- Any test files (CSS class changes don't affect tests)
+
+### Acceptance Criteria
+- [ ] 4 new CSS utility classes (`page-content`, `section-title`, `card-section`, `section-group`) defined in `Styles/app.css`
+- [ ] All `p-4 sm:px-6 lg:px-8 py-8` page wrappers use `page-content`
+- [ ] All section titles (`font-medium text-heading` on h2/h3) use `section-title`
+- [ ] All `bg-surface-secondary rounded-lg p-4` sections use `card-section`
+- [ ] All standalone `space-y-6` section containers use `section-group`
+- [ ] No remaining inline Tailwind patterns that match the 5 patterns above in Pages/
+- [ ] All `@bind`, `@onclick`, event handlers preserved exactly
+- [ ] Build passes with 0 errors
+
+### Build & Verify (MUST complete before creating PR)
+
+Run these commands and confirm they pass. Do NOT create a PR until all pass:
+
+```bash
+cd /c/claude/fusecp-enterprise/src/FuseCP.Portal && dotnet build --configuration Release
+```
+
+Expected: Build succeeded, 0 errors.
+
+If build fails, fix the errors before proceeding. Include build output summary in PR description.
+
+### Agent Assignments (MANDATORY — use subagents for implementation)
+
+You MUST use your agents at `C:\Przemek\agents\` for this task. Do NOT implement everything in your main context — delegate to specialized agents.
+
+| Task | Agent | What to delegate |
+|------|-------|-----------------|
+| Audit pages for spacing/typography patterns | agentic-search | Find every file with the 5 patterns above, return file:line list |
+| Add 4 CSS utilities to app.css | modular-builder | Add the 4 `@utility` blocks to `Styles/app.css` before the `nav a.active` rule |
+| Migrate pages to new classes | modular-builder | For each page, replace inline Tailwind patterns with the new utility classes |
+| Build verification | modular-builder | Run `dotnet build` and fix any errors |
+
+**How to use agents:** For each row above, dispatch the agent as a subagent with a focused prompt describing exactly what to implement. The agent will do the work and return results. Review the output, fix any issues, then move to the next task.
+
+**Agent tier unlocks:** primary + knowledge
 
 ---
 
