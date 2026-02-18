@@ -1,6 +1,6 @@
 # Amplifier Cowork — Task Handoff
 
-## Dispatch Status: IDLE
+## Dispatch Status: WAITING_FOR_GEMINI
 
 > **Protocol:** Only the designated receiver should act.
 > - Claude acts on: `IDLE`, `PR_READY`, `REVIEWING`, `DEPLOYING`, `WAITING_FOR_CLAUDE`
@@ -20,7 +20,178 @@ DEPLOYING ──(Claude tests pass)──→ IDLE
 
 ## Current Task
 
-_No active task. Claude: write a task below and set status to WAITING_FOR_GEMINI._
+**From:** Claude → Gemini
+**Branch:** feature/pageheader-migration
+**Priority:** normal
+**Repository:** C:\claude\fusecp-enterprise
+**Working Directory:** C:\claude\fusecp-enterprise
+**PR Target:** master on psklarkins/fusecp-enterprise
+
+### Objective
+Migrate ~49 Portal pages from raw `<h1>` headers to the shared `<PageHeader>` component for consistent page layout across the entire application.
+
+### Detailed Requirements
+
+**The Pattern — BEFORE (typical raw header):**
+```html
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-semibold text-heading">@T["exchange.mailboxes"]</h1>
+            <p class="text-sm text-muted">Some subtitle</p>
+        </div>
+        <div class="flex gap-2">
+            <button class="px-4 py-2 ...">Create</button>
+        </div>
+    </div>
+    <!-- page content -->
+</div>
+```
+
+**The Pattern — AFTER (using PageHeader):**
+```html
+<PageHeader Title="@T["exchange.mailboxes"]" Subtitle="Some subtitle">
+    <Actions>
+        <Button Variant="primary" OnClick="@(() => ...)">
+            <svg class="w-4 h-4 mr-2" ...>...</svg>
+            Create
+        </Button>
+    </Actions>
+</PageHeader>
+
+<div class="p-4 sm:px-6 lg:px-8 py-8">
+    <!-- page content -->
+</div>
+```
+
+**PageHeader component API** (read `Components/Shared/PageHeader.razor` for full source):
+- `Title` (required string) — main heading text
+- `Subtitle` (optional string) — muted text below title
+- `ShowBreadcrumbs` (bool, default true) — shows breadcrumbs above title
+- `Actions` (RenderFragment) — action buttons on the right side
+
+**CRITICAL RULES:**
+1. Every page that has a `<h1>` or heading `div` must be converted to `<PageHeader>`
+2. Keep existing title text exactly as-is (use `@T[...]` translation keys where they exist)
+3. Move action buttons into `<Actions>` fragment — convert raw `<button>` to `<Button>` component where possible
+4. Page content below the header should be wrapped in `<div class="p-4 sm:px-6 lg:px-8 py-8">`
+5. Remove the old header div entirely — don't leave dead code
+6. If a page has a back button (←) before the title, use `ShowBreadcrumbs="true"` (default) and remove the manual back button — breadcrumbs handle navigation
+7. Ensure `@using FuseCP.Portal.Components.Shared` is present if not already
+
+**GOOD EXAMPLE to follow** — see `Components/Pages/Admin/TenantList.razor` lines 19-28
+
+**Pages to migrate (ALL of these):**
+
+Exchange (15):
+- Mailboxes.razor, MailboxPlans.razor, MailboxEdit.razor, MailboxDetail.razor
+- DistributionLists.razor, DistributionListEdit.razor, Contacts.razor
+- ResourceMailboxes.razor, PublicFolders.razor, AcceptedDomains.razor
+- ActiveSyncPolicies.razor, Disclaimers.razor, StorageUsage.razor
+- RetentionPolicies.razor, AddressBookPolicies.razor
+
+ActiveDirectory (6):
+- Users.razor, Groups.razor, UserEdit.razor, UserDetail.razor
+- PasswordPolicy.razor, OrgStatistics.razor
+
+DNS (3):
+- Zones.razor, Records.razor, ZoneEdit.razor
+
+Admin (14):
+- Dashboard.razor, AuditLog.razor, AuditDashboard.razor, BugReports.razor
+- OperationsLog.razor, OrganizationCreate.razor, OrganizationEdit.razor
+- PlatformAdmins.razor, PortalUsers.razor, Reports.razor
+- Scheduler.razor, TenantServices.razor, TenantPortalUsers.razor, TestNewPage.razor
+
+Organizations (3):
+- Index.razor, Detail.razor, Edit.razor
+
+Settings (4):
+- Servers.razor, ServerEdit.razor, DnsSettings.razor, Index.razor
+
+HyperV/Vms (6):
+- VirtualMachines.razor, VmDetails.razor, VmEdit.razor
+- VmSnapshots.razor, VmCreateWizard.razor, HyperV/Library.razor
+
+Other (2):
+- Plans.razor, Security/ChangePassword.razor
+
+**DO NOT modify these files:**
+- Login.razor (special branding layout)
+- Logout.razor, AccessDenied.razor (minimal pages)
+- ComponentDemo.razor (demo page)
+- Exchange/Tabs/* (sub-components, not full pages)
+- Home.razor, Admin/TenantList.razor (already use PageHeader)
+
+### Spec
+Inline — see Objective and Detailed Requirements above.
+
+### Context Loading (use your full 1M context)
+Load these files completely before starting:
+- `src/FuseCP.Portal/Components/Shared/PageHeader.razor` — the component you're migrating TO
+- `src/FuseCP.Portal/Components/Shared/Button.razor` — for converting raw buttons
+- `src/FuseCP.Portal/Components/Shared/Breadcrumbs.razor` — included in PageHeader
+- `src/FuseCP.Portal/Components/Pages/Admin/TenantList.razor` — EXEMPLAR (already migrated)
+- `src/FuseCP.Portal/Components/Pages/Home.razor` — EXEMPLAR (already migrated)
+- ALL pages listed in "Pages to migrate" above — read them all before starting
+- COWORK.md — refresh protocol understanding
+- This task section of HANDOFF.md
+
+### Files YOU May Modify
+- All .razor files listed in "Pages to migrate" above (49 files)
+
+### Files You Must NOT Modify
+- .claude/* (always)
+- CLAUDE.md (always)
+- C:\FuseCP\* (always)
+- C:\Przemek\OPENCODE.md (always)
+- Components/Shared/* (do not modify shared components)
+- Components/Pages/Login.razor
+- Components/Pages/Home.razor
+- Components/Pages/Admin/TenantList.razor
+- Components/Pages/Admin/ComponentDemo.razor
+- Components/Pages/Exchange/Tabs/* (tab sub-components)
+
+### Acceptance Criteria
+- [ ] All 49 listed pages use `<PageHeader>` instead of raw h1/heading divs
+- [ ] No raw `<h1 class="text-2xl` or `<h1 class="text-xl` patterns remain in migrated pages
+- [ ] Action buttons preserved in `<Actions>` fragment where they existed
+- [ ] Page content wrapped in `<div class="p-4 sm:px-6 lg:px-8 py-8">` below PageHeader
+- [ ] All migrated pages have `@using FuseCP.Portal.Components.Shared` (or already inherited)
+- [ ] No functional changes — only header layout standardization
+- [ ] All tests pass
+- [ ] No lint errors
+- [ ] Code committed to feature branch with clear messages
+
+### Build & Verify (MUST complete before creating PR)
+
+Run these commands and confirm they pass. Do NOT create a PR until all pass:
+
+```bash
+cd /c/claude/fusecp-enterprise && dotnet build --no-incremental 2>&1 | tail -5
+```
+
+Expected: Build succeeded, 0 errors, 0 warnings.
+
+If build fails, fix the errors before proceeding. Include build output summary in PR description.
+
+### Agent Assignments (MANDATORY — use subagents for implementation)
+
+You MUST use your agents at `C:\Przemek\agents\` for this task. Do NOT implement everything in your main context — delegate to specialized agents.
+
+| Task | Agent | What to delegate |
+|------|-------|-----------------|
+| Read all 49 pages, extract current header patterns | agentic-search | Build a table mapping each file to its current title, subtitle, actions |
+| Migrate Exchange pages (15 files) | component-designer | Apply PageHeader pattern to all Exchange pages |
+| Migrate ActiveDirectory pages (6 files) | component-designer | Apply PageHeader pattern to all AD pages |
+| Migrate DNS pages (3 files) | component-designer | Apply PageHeader pattern to all DNS pages |
+| Migrate Admin pages (14 files) | component-designer | Apply PageHeader pattern to all Admin pages |
+| Migrate remaining pages (11 files) | component-designer | Organizations, Settings, HyperV, Plans, Security |
+| Verify build passes | modular-builder | Run `dotnet build --no-incremental`, fix any errors |
+
+**How to use agents:** For each row above, dispatch the agent as a subagent with a focused prompt describing exactly what to implement. The agent will do the work and return results. Review the output, fix any issues, then move to the next task.
+
+**Agent tier unlocks:** primary + knowledge
 
 ---
 
