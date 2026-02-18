@@ -300,18 +300,28 @@ Present a complete summary:
 **Tests:** {N} passing, {M} failing (or "All passing")
 
 **Ready to deploy?** This will:
-1. Commit changes: `fix: {title} (Bug #{id})`
-2. Deploy Portal/API to IIS
-3. Mark bug as Fixed in the system
+1. Create `hotfix/bug-{id}` branch from latest main
+2. Commit and push, then create a PR
+3. Wait for CI (pr-check.yml) to pass
+4. Merge PR to main
+5. Deploy Portal/API to IIS
+6. Mark bug as Fixed in the system
 ```
 
 **STOP HERE and wait for user confirmation.** Do NOT deploy without explicit approval.
 
-## Phase 7: Deploy (User-Confirmed)
+## Phase 7: Commit, PR & Deploy (User-Confirmed)
 
 Only after user says yes:
 
-### 7a. Commit
+### 7a. Create hotfix branch and commit
+
+Bug fixes go through the PR process to prevent fixes from being lost when feature branches merge.
+
+```bash
+cd /c/claude/fusecp-enterprise && git stash && git checkout main && git pull origin main && git checkout -b hotfix/bug-{id} && git stash pop
+```
+
 ```bash
 cd /c/claude/fusecp-enterprise && git add {changed-files} && git commit -m "$(cat <<'EOF'
 fix: {title} (Bug #{id})
@@ -325,37 +335,84 @@ EOF
 )"
 ```
 
-### 7b. Deploy
+### 7b. Push and create PR
+
+```bash
+cd /c/claude/fusecp-enterprise && git push -u origin hotfix/bug-{id}
+```
+
+```bash
+gh pr create --title "fix: {title} (Bug #{id})" --body "$(cat <<'EOF'
+## Bug Fix
+
+**Bug ID:** #{id}
+**Priority:** {priority}
+**Area:** {area}
+
+### Root Cause
+{root cause description}
+
+### Changes
+| File | Change |
+|------|--------|
+| {path} | {what changed} |
+
+### Testing
+- Build: PASS
+- Tests: {N} passing
+
+🤖 Generated with [Amplifier](https://github.com/microsoft/amplifier)
+EOF
+)"
+```
+
+### 7c. Wait for CI, then merge
+
+Wait for `pr-check.yml` to complete (build + test + security scan):
+
+```bash
+gh pr checks {pr-number} --watch
+```
+
+If CI passes, merge the PR:
+
+```bash
+gh pr merge {pr-number} --squash --delete-branch && cd /c/claude/fusecp-enterprise && git checkout main && git pull origin main
+```
+
+If CI fails, investigate the failure, fix on the hotfix branch, push again, and re-check.
+
+### 7d. Deploy from main
 
 Determine what to deploy based on changed files:
 
 - **Portal files changed** (`src/FuseCP.Portal/`):
   ```bash
-  powershell -Command "Stop-WebAppPool -Name 'FuseCP_Portal'"
+  C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -Command "Stop-WebAppPool -Name 'FuseCP_Portal'"
   cd /c/claude/fusecp-enterprise/src/FuseCP.Portal && dotnet publish --configuration Release --output /c/FuseCP/Portal
-  powershell -Command "Start-WebAppPool -Name 'FuseCP_Portal'"
+  C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -Command "Start-WebAppPool -Name 'FuseCP_Portal'"
   ```
 
 - **API files changed** (`src/FuseCP.EnterpriseServer/` or `src/FuseCP.Database/` or `src/FuseCP.Providers.*/`):
   ```bash
-  powershell -Command "Stop-WebAppPool -Name 'FuseCP_API'"
+  C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -Command "Stop-WebAppPool -Name 'FuseCP_API'"
   cd /c/claude/fusecp-enterprise/src/FuseCP.EnterpriseServer && dotnet publish --configuration Release --output /c/FuseCP/EnterpriseServer
-  powershell -Command "Start-WebAppPool -Name 'FuseCP_API'"
+  C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -Command "Start-WebAppPool -Name 'FuseCP_API'"
   ```
 
 - **Both Portal + API changed**: Deploy both (API first, then Portal).
 
-### 7c. Update Bug Status
+### 7e. Update Bug Status
 
 ```bash
 curl -sk -X PUT -H "X-Api-Key: fusecp-admin-key-2026" -H "Content-Type: application/json" "http://localhost:5010/api/bugs/{id}/status" -d "{\"status\":\"Fixed\"}"
 ```
 
-### 7d. Visual Verification (if Chrome available and PageUrl exists)
+### 7f. Visual Verification (if Chrome available and PageUrl exists)
 
 After deploy, navigate back to the PageUrl and take a screenshot to verify the fix is visible.
 
-### 7e. Cleanup temp files
+### 7g. Cleanup temp files
 
 ```bash
 rm -f C:/claude/fusecp-enterprise/tmp/bug_{id}*
@@ -377,7 +434,17 @@ If user says yes, loop back to Phase 1.
 - **bug-hunter fails:** Fall back to direct fix in main context (Phase 4-fallback). Do NOT retry the agent.
 - **Build failure after 3 attempts:** "Build still failing after 3 fix attempts. Escalating — here's what I've tried: {summary}"
 - **Test failure:** "Tests failing after fix. Investigating if these are pre-existing or caused by the fix."
-- **Deploy failure:** "Deploy failed: {error}. The commit is saved but not deployed. You may need to deploy manually."
+- **CI failure on PR:** Investigate the CI log (`gh pr checks {number}`), fix on the hotfix branch, push again. Do NOT merge a failing PR.
+- **Merge conflict:** Rebase the hotfix branch on latest main: `git fetch origin && git rebase origin/main`. Fix any conflicts, then force-push the branch.
+- **Deploy failure:** "Deploy failed: {error}. The PR is merged but not deployed. You may need to deploy manually."
+
+## Why PRs for Bug Fixes
+
+Bug fixes MUST go through the PR process (not direct commits to main) because:
+1. **Prevents lost fixes:** Feature branches that merge later won't overwrite bug fixes — they must be up-to-date with main before merging.
+2. **CI verification:** `pr-check.yml` runs build + tests + security scan before the fix reaches main.
+3. **Audit trail:** Each fix has a PR number linking to the bug ID for traceability.
+4. **Branch protection:** GitHub's "Require branches to be up-to-date" setting ensures no branch can merge without incorporating all prior main commits (including bug fixes).
 
 ## Priority Handling
 
