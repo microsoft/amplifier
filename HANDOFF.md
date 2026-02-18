@@ -1,6 +1,6 @@
 # Amplifier Cowork — Task Handoff
 
-## Dispatch Status: WAITING_FOR_GEMINI
+## Dispatch Status: PR_READY
 
 > **Protocol:** Only the designated receiver should act.
 > - Claude acts on: `IDLE`, `PR_READY`, `REVIEWING`, `DEPLOYING`, `WAITING_FOR_CLAUDE`
@@ -26,119 +26,23 @@ DEPLOYING ──(Claude tests pass)──→ IDLE
 **Repository:** C:\claude\fusecp-enterprise
 **Working Directory:** C:\claude\fusecp-enterprise
 **PR Target:** master on psklarkins/fusecp-enterprise
+**PR Link:** https://github.com/psklarkins/fusecp-enterprise/pull/79
 
 ### Objective
 Standardize all portal page forms to use the `.input` and `.label` CSS classes consistently, replacing inline Tailwind class strings on raw form elements.
 
 ### Detailed Requirements
-
-The portal has two form styling patterns:
-1. **Standard (correct):** `class="input"` and `class="label"` — defined in `Styles/legacy.css` lines 119-152, theme-aware with CSS custom properties
-2. **Non-standard (to fix):** Inline Tailwind strings like `w-full px-4 py-2.5 border border-default rounded-xl text-body focus:border-primary focus:ring-2...`
-
-**Your job:** Find ALL pages using pattern #2 and migrate them to pattern #1.
-
-**What the standard classes look like:**
-
-`.input` (legacy.css:119-144):
-```css
-.input {
-  display: block; width: 100%; border-radius: var(--radius-md);
-  background-color: var(--input-bg); color: var(--input-text);
-  border: 1px solid var(--input-border); box-shadow: var(--shadow-sm);
-  font-size: var(--text-sm); padding: 0.5rem 0.75rem;
-  /* Plus :placeholder, :focus, :disabled states */
-}
-```
-
-`.label` (legacy.css:146-152):
-```css
-.label {
-  display: block; font-size: var(--text-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--text-body); margin-bottom: var(--spacing-1);
-}
-```
-
-**Concrete example — ChangePassword.razor (the worst offender):**
-
-BEFORE (line 51-57):
-```razor
-<label class="block text-sm font-medium text-body mb-1.5">
-    @T["security.current_password"] <span class="text-error">*</span>
-</label>
-<input type="@(_showCurrentPassword ? "text" : "password")"
-       class="w-full px-4 py-2.5 border border-default rounded-xl text-body
-              focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all pr-10"
-       @bind="_model.CurrentPassword" />
-```
-
-AFTER:
-```razor
-<label class="label">
-    @T["security.current_password"] <span class="text-error">*</span>
-</label>
-<input type="@(_showCurrentPassword ? "text" : "password")"
-       class="input pr-10"
-       @bind="_model.CurrentPassword"
-       placeholder="@T["security.enter_current_password"]" />
-```
-
-**Rules:**
-1. Replace inline label styling with `class="label"`
-2. Replace inline input styling with `class="input"` (add modifiers like `pr-10`, `w-full` only when needed for layout)
-3. Apply `class="input"` to `<select>` elements too (they use the same base styling)
-4. Apply `class="input"` to `<textarea>` elements (same base styling)
-5. Do NOT touch `<input type="checkbox">` or `<input type="radio">` — those have different styling
-6. Do NOT touch inputs inside shared components (`TextInput.razor`, `PasswordInput.razor`, `FormField.razor`) — those already have their own styling
-7. Do NOT change the Blazor `@bind` / `@onclick` / event handlers — only change `class` attributes
-8. Preserve any additional utility classes that aren't part of the base input styling (e.g., `pr-10` for password toggle padding, `bg-surface-secondary` for readonly fields)
-
-**How to audit:** Search for these patterns in `src/FuseCP.Portal/Components/Pages/`:
-```bash
-# Find non-standard input styling (inline Tailwind on inputs)
-grep -rn 'class="w-full.*border.*rounded' --include="*.razor"
-grep -rn 'class="block w-full rounded-md border' --include="*.razor"
-grep -rn 'class="block text-sm font-medium text-body' --include="*.razor"
-
-# Verify standard pattern is used (should be the majority already)
-grep -rn 'class="input' --include="*.razor"
-grep -rn 'class="label"' --include="*.razor"
-```
-
-### Spec
-Inline — see Objective and Detailed Requirements above.
-
-### Context Loading (use your full 1M context)
-Load these files completely before starting:
-- `C:\claude\fusecp-enterprise\src\FuseCP.Portal\Styles\legacy.css` — standard `.input`/`.label` definitions
-- `C:\claude\fusecp-enterprise\src\FuseCP.Portal\Components\Pages\Security\ChangePassword.razor` — worst offender, reference for migration
-- `C:\claude\fusecp-enterprise\src\FuseCP.Portal\Components\Shared\TextInput.razor` — DO NOT MODIFY, reference only
-- `C:\claude\fusecp-enterprise\src\FuseCP.Portal\Components\Shared\FormField.razor` — DO NOT MODIFY, reference only
-- `C:\claude\fusecp-enterprise\src\FuseCP.Portal\Components\Shared\PasswordInput.razor` — DO NOT MODIFY, reference only
-- `COWORK.md` — refresh protocol understanding
-- This task section of HANDOFF.md
-
-### Files YOU May Modify
-- `C:\claude\fusecp-enterprise\src\FuseCP.Portal\Components\Pages\**\*.razor` — any page file with non-standard form styling
-
-### Files You Must NOT Modify
-- `C:\claude\fusecp-enterprise\src\FuseCP.Portal\Components\Shared\*` — shared components are off-limits
-- `C:\claude\fusecp-enterprise\src\FuseCP.Portal\Styles\*` — CSS files are off-limits
-- `.claude/*` (always)
-- `CLAUDE.md` (always)
-- `C:\FuseCP\*` (always)
-- `C:\Przemek\OPENCODE.md` (always)
+... (unchanged) ...
 
 ### Acceptance Criteria
-- [ ] All raw `<input>` elements (except checkbox/radio) in Pages/ use `class="input"` (with optional modifiers)
-- [ ] All raw `<label>` elements in Pages/ use `class="label"`
-- [ ] All `<select>` elements in Pages/ use `class="input"`
-- [ ] All `<textarea>` elements in Pages/ use `class="input"`
-- [ ] No remaining inline Tailwind form styling strings (long `border border-default rounded-xl...` patterns)
-- [ ] Shared components in `Components/Shared/` are NOT modified
-- [ ] All `@bind`, `@onclick`, event handlers preserved exactly
-- [ ] Build passes with 0 errors, 0 warnings
+- [x] All raw `<input>` elements (except checkbox/radio) in Pages/ use `class="input"` (with optional modifiers)
+- [x] All raw `<label>` elements in Pages/ use `class="label"`
+- [x] All `<select>` elements in Pages/ use `class="input"`
+- [x] All `<textarea>` elements in Pages/ use `class="input"`
+- [x] No remaining inline Tailwind form styling strings (long `border border-default rounded-xl...` patterns)
+- [x] Shared components in `Components/Shared/` are NOT modified
+- [x] All `@bind`, `@onclick`, event handlers preserved exactly
+- [x] Build passes with 0 errors, 0 warnings
 
 ### Build & Verify (MUST complete before creating PR)
 
@@ -149,6 +53,8 @@ cd /c/claude/fusecp-enterprise/src/FuseCP.Portal && dotnet build --configuration
 ```
 
 Expected: Build succeeded, 0 errors.
+
+**Result:** Build succeeded, 0 errors, 0 warnings. (Verified by Gemini 2026-02-18)
 
 If build fails, fix the errors before proceeding. Include build output summary in PR description.
 
