@@ -159,7 +159,7 @@ You MUST use your agents at `C:\Przemek\agents\` for this task. Do NOT implement
 | Task | Agent | What to delegate |
 |------|-------|-----------------|
 | Audit all pages for non-standard form styling | agentic-search | Find every file with inline Tailwind on form elements, report file:line list |
-| Migrate form classes in Pages/ | component-designer | For each file found, replace inline Tailwind with `.input`/`.label` classes |
+| Migrate form classes in Pages/ | modular-builder | For each file found, replace inline Tailwind with `.input`/`.label` classes. This is mechanical find-and-replace, NOT design work. Read the file, replace class strings, write the file. |
 | Build verification | modular-builder | Run `dotnet build` and fix any errors |
 
 **How to use agents:** For each row above, dispatch the agent as a subagent with a focused prompt describing exactly what to implement. The agent will do the work and return results. Review the output, fix any issues, then move to the next task.
