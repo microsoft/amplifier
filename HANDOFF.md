@@ -1,6 +1,6 @@
 # Amplifier Cowork — Task Handoff
 
-## Dispatch Status: DEPLOYING
+## Dispatch Status: IDLE
 
 > **Protocol:** Only the designated receiver should act.
 > - Claude acts on: `IDLE`, `PR_READY`, `REVIEWING`, `DEPLOYING`, `WAITING_FOR_CLAUDE`
@@ -20,57 +20,7 @@ DEPLOYING ──(Claude tests pass)──→ IDLE
 
 ## Current Task
 
-**From:** Claude → Gemini
-**Branch:** feature/form-standardization
-**Priority:** normal
-**Repository:** C:\claude\fusecp-enterprise
-**Working Directory:** C:\claude\fusecp-enterprise
-**PR Target:** master on psklarkins/fusecp-enterprise
-**PR Link:** https://github.com/psklarkins/fusecp-enterprise/pull/79
-
-### Objective
-Standardize all portal page forms to use the `.input` and `.label` CSS classes consistently, replacing inline Tailwind class strings on raw form elements.
-
-### Detailed Requirements
-... (unchanged) ...
-
-### Acceptance Criteria
-- [x] All raw `<input>` elements (except checkbox/radio) in Pages/ use `class="input"` (with optional modifiers)
-- [x] All raw `<label>` elements in Pages/ use `class="label"`
-- [x] All `<select>` elements in Pages/ use `class="input"`
-- [x] All `<textarea>` elements in Pages/ use `class="input"`
-- [x] No remaining inline Tailwind form styling strings (long `border border-default rounded-xl...` patterns)
-- [x] Shared components in `Components/Shared/` are NOT modified
-- [x] All `@bind`, `@onclick`, event handlers preserved exactly
-- [x] Build passes with 0 errors, 0 warnings
-
-### Build & Verify (MUST complete before creating PR)
-
-Run these commands and confirm they pass. Do NOT create a PR until all pass:
-
-```bash
-cd /c/claude/fusecp-enterprise/src/FuseCP.Portal && dotnet build --configuration Release
-```
-
-Expected: Build succeeded, 0 errors.
-
-**Result:** Build succeeded, 0 errors, 0 warnings. (Verified by Gemini 2026-02-18)
-
-If build fails, fix the errors before proceeding. Include build output summary in PR description.
-
-### Agent Assignments (MANDATORY — use subagents for implementation)
-
-You MUST use your agents at `C:\Przemek\agents\` for this task. Do NOT implement everything in your main context — delegate to specialized agents.
-
-| Task | Agent | What to delegate |
-|------|-------|-----------------|
-| Audit all pages for non-standard form styling | agentic-search | Find every file with inline Tailwind on form elements, report file:line list |
-| Migrate form classes in Pages/ | modular-builder | For each file found, replace inline Tailwind with `.input`/`.label` classes. This is mechanical find-and-replace, NOT design work. Read the file, replace class strings, write the file. |
-| Build verification | modular-builder | Run `dotnet build` and fix any errors |
-
-**How to use agents:** For each row above, dispatch the agent as a subagent with a focused prompt describing exactly what to implement. The agent will do the work and return results. Review the output, fix any issues, then move to the next task.
-
-**Agent tier unlocks:** primary + knowledge
+_No active task. Claude: write a task below and set status to WAITING_FOR_GEMINI._
 
 ---
 
@@ -90,3 +40,4 @@ You MUST use your agents at `C:\Przemek\agents\` for this task. Do NOT implement
 | 2026-02-17 | Gemini → Claude | Exchange Tenant Isolation Audit | PR#76 | Success. Gemini audited 13 pages, fixed 5. Claude merged + fixed 4 review issues (2 Critical: empty orgSlug/null orgOu bypass, 2 Important: guard logic inversion + toast count). Deployed to Portal. |
 | 2026-02-17 | Claude → Gemini | Semantic Color Token Migration (Phase 6.2) | PR#77 | Success. Migration was already ~95% done. Gemini fixed remaining 3 files (sky→primary, text-white→text-button-secondary). Claude fixed 2 more (text-invert on surface-invert, missed secondary button). Verified 0 hardcoded slate/bg-white remaining. |
 | 2026-02-18 | Claude → Gemini | PageHeader Component Migration (Phase 6.3a) | PR#78 | Success. Gemini migrated 48/50 pages, Claude review caught 2 missed (MailboxEdit, DistributionListEdit). Gemini fixed in follow-up commit. Claude fixed orphaned `</div>` formatting post-merge. 50 pages now use PageHeader. Deployed to Portal. |
+| 2026-02-18 | Claude → Gemini | Form Standardization (.input/.label classes) (Phase 6.3b) | PR#79 | Success. Gemini standardized 42+ pages. Claude resolved merge conflicts with master (Bug #18 type selector), fixed CI formatting (DnsSettingsRepository whitespace), fixed 15+ test failures (Bug #18 Set-Mailbox capture pattern). All 2789 tests pass. Deployed to Portal + API. |
