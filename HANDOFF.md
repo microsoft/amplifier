@@ -21,16 +21,19 @@ DEPLOYING ──(Claude tests pass)──→ IDLE
 ## Current Task
 
 **From:** Claude → Gemini
-**Branch:** feature/spacing-typography
+**Branch:** feature/empty-state-migration
 **Priority:** normal
 **Repository:** C:\claude\fusecp-enterprise
 **Working Directory:** C:\claude\fusecp-enterprise
 **PR Target:** master on psklarkins/fusecp-enterprise
 
-**PR Link:** https://github.com/psklarkins/fusecp-enterprise/pull/80
+**PR Link:** https://github.com/psklarkins/fusecp-enterprise/pull/81
 
 ### Objective
-Define reusable CSS utility classes for page layout, section spacing, section headers, and card sections, then migrate all portal pages to use them — eliminating inconsistent inline Tailwind spacing/typography patterns.
+Replace inline empty state divs with the `<EmptyState>` component in the following files:
+- `src/FuseCP.Portal/Components/Pages/Settings/Servers.razor`
+- `src/FuseCP.Portal/Components/Pages/Settings/DnsSettings.razor`
+- `src/FuseCP.Portal/Components/Pages/HyperV/Library.razor`
 
 ### Detailed Requirements
 
@@ -171,3 +174,4 @@ You MUST use your agents at `C:\Przemek\agents\` for this task. Do NOT implement
 | 2026-02-18 | Claude → Gemini | PageHeader Component Migration (Phase 6.3a) | PR#78 | Success. Gemini migrated 48/50 pages, Claude review caught 2 missed (MailboxEdit, DistributionListEdit). Gemini fixed in follow-up commit. Claude fixed orphaned `</div>` formatting post-merge. 50 pages now use PageHeader. Deployed to Portal. |
 | 2026-02-18 | Claude → Gemini | Form Standardization (.input/.label classes) (Phase 6.3b) | PR#79 | Success. Gemini standardized 42+ pages. Claude resolved merge conflicts with master (Bug #18 type selector), fixed CI formatting (DnsSettingsRepository whitespace), fixed 15+ test failures (Bug #18 Set-Mailbox capture pattern). All 2789 tests pass. Deployed to Portal + API.
 | 2026-02-18 | Claude → Gemini | CSS utility class migrations (Phase 6.3c) | PR#80 | Success. Gemini migrated 40+ pages to use new `page-content`, `section-title`, `card-section`, and `section-group` utility classes. Build succeeded with 0 errors. |
+| 2026-02-19 | Claude → Gemini | EmptyState component migration (Phase 6.3d) | PR#81 | Success. Gemini replaced inline empty state divs with the reusable `<EmptyState>` component in Servers, DnsSettings, and Library pages. Build succeeded. |
