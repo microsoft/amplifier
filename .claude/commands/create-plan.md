@@ -212,7 +212,7 @@ Include explicit review tasks in the plan for security-sensitive or complex impl
 ```
 
 ## Remember
-- Exact file paths always
+- Exact file paths always — verify Modify targets exist (glob) and Create targets don't already exist
 - Complete code in plan (not "add validation")
 - Exact commands with expected output
 - Reference relevant skills with @ syntax
