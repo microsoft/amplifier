@@ -1,6 +1,6 @@
 # Amplifier Agents Catalog
 
-Complete reference for all 30 specialized agents. Each agent is defined in `.claude/agents/<name>.md`.
+Complete reference for all specialized agents. Each agent is defined in `.claude/agents/<name>.md`.
 
 ## Core Development Agents
 
@@ -49,6 +49,12 @@ Complete reference for all 30 specialized agents. Each agent is defined in `.cla
 | `pattern-emergence` | Detect emergent patterns from diverse perspectives | pattern, recurring, trend, structural |
 | `visualization-architect` | Data visualization and knowledge graph rendering | diagram, chart, graph, visualize |
 | `graph-builder` | Multi-perspective knowledge graph construction | graph, relationship, entity, network |
+
+## Infrastructure Agents
+
+| Agent | Purpose | Dispatch Keywords |
+|-------|---------|-------------------|
+| `vmware-infrastructure` | VMware VCSA 8.x, ESXi 8.x, NSX 4.x log analysis and operations expert | vmware, vcsa, esxi, nsx, vsphere, powercli, vcenter, vmkernel, log analysis |
 
 ## Meta Agents
 
