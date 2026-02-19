@@ -27,6 +27,13 @@ DEPLOYING ──(Claude tests pass)──→ IDLE
 **Working Directory:** C:\claude\fusecp-enterprise
 **PR Target:** master on psklarkins/fusecp-enterprise
 
+### Getting Started (run these commands first)
+```bash
+cd /c/claude/fusecp-enterprise
+git checkout master && git pull origin master && git checkout -b feature/loading-spinner-migration-v2
+```
+**IMPORTANT:** The default branch is `master`, NOT `main`.
+
 ### Objective
 Replace 6 manual inline CSS spinners with the `<LoadingSpinner />` component in 4 admin pages. This is a retry — previous PRs #82-85 were closed without merge.
 
