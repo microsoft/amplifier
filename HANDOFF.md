@@ -1,6 +1,6 @@
 # Amplifier Cowork — Task Handoff
 
-## Dispatch Status: PR_READY
+## Dispatch Status: IDLE
 
 > **Protocol:** Only the designated receiver should act.
 > - Claude acts on: `IDLE`, `PR_READY`, `REVIEWING`, `DEPLOYING`, `WAITING_FOR_CLAUDE`
@@ -20,150 +20,7 @@ DEPLOYING ──(Claude tests pass)──→ IDLE
 
 ## Current Task
 
-**From:** Claude → Gemini
-**Branch:** feature/loading-spinner-migration-v2
-**Priority:** normal
-**Repository:** C:\claude\fusecp-enterprise
-**Working Directory:** C:\claude\fusecp-enterprise
-**PR Target:** master on psklarkins/fusecp-enterprise
-
-### Getting Started (run these commands first)
-```bash
-cd /c/claude/fusecp-enterprise
-git checkout master && git pull origin master && git checkout -b feature/loading-spinner-migration-v2
-```
-**IMPORTANT:** The default branch is `master`, NOT `main`.
-
-### Objective
-Replace 6 manual inline CSS spinners with the `<LoadingSpinner />` component in 4 admin pages. This is a retry — previous PRs #82-85 were closed without merge.
-
-### LoadingSpinner Component API
-The component is at `src/FuseCP.Portal/Components/Shared/LoadingSpinner.razor`:
-```razor
-@* Parameters: *@
-[Parameter] public SpinnerSize Size { get; set; } = SpinnerSize.Medium;  // Small=h-4/w-4, Medium=h-8/w-8, Large=h-12/w-12
-[Parameter] public string? Message { get; set; }
-[Parameter] public string? Class { get; set; }
-
-public enum SpinnerSize { Small, Medium, Large }
-```
-Usage: `<LoadingSpinner />` or `<LoadingSpinner Size="LoadingSpinner.SpinnerSize.Large" Class="mx-auto mb-4" />`
-
-All 4 target files already have `@using FuseCP.Portal.Components.Shared` — no import changes needed.
-
-### Exact Replacements (6 changes total)
-
-**1. AuditDashboard.razor — line 31-33 (page loading)**
-Replace:
-```razor
-        <div class="flex items-center justify-center py-12">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-        </div>
-```
-With:
-```razor
-        <LoadingSpinner Class="py-12" />
-```
-
-**2. OrganizationCreate.razor — line 551 (provisioning overlay, inside modal)**
-Replace:
-```razor
-            <div class="w-12 h-12 border-4 border-default border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
-```
-With:
-```razor
-            <LoadingSpinner Size="LoadingSpinner.SpinnerSize.Large" Class="mx-auto mb-4" />
-```
-
-**3. Scheduler.razor — line 24-26 (page loading)**
-Replace:
-```razor
-        <div class="flex items-center justify-center py-12">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-        </div>
-```
-With:
-```razor
-        <LoadingSpinner Class="py-12" />
-```
-
-**4. Scheduler.razor — line 130-132 (history modal)**
-Replace:
-```razor
-                        <div class="flex items-center justify-center py-8">
-                            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
-                        </div>
-```
-With:
-```razor
-                        <LoadingSpinner Size="LoadingSpinner.SpinnerSize.Small" Class="py-8" />
-```
-
-**5. Scheduler.razor — line 195-197 (parameters modal)**
-Replace:
-```razor
-                        <div class="flex items-center justify-center py-4">
-                            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
-                        </div>
-```
-With:
-```razor
-                        <LoadingSpinner Size="LoadingSpinner.SpinnerSize.Small" Class="py-4" />
-```
-
-**6. TenantList.razor — line 165 (delete modal)**
-Replace:
-```razor
-                    <div class="w-8 h-8 border-4 border-default border-t-error-500 rounded-full animate-spin mb-4"></div>
-```
-With:
-```razor
-                    <LoadingSpinner Size="LoadingSpinner.SpinnerSize.Medium" Class="mb-4" />
-```
-
-### CRITICAL: Do NOT change anything else
-- Keep all `@if` / `else if` / `else` control flow exactly as-is
-- Keep all surrounding HTML exactly as-is
-- Only replace the specific `<div>` elements shown above
-
-### Files YOU May Modify
-- `src/FuseCP.Portal/Components/Pages/Admin/AuditDashboard.razor`
-- `src/FuseCP.Portal/Components/Pages/Admin/OrganizationCreate.razor`
-- `src/FuseCP.Portal/Components/Pages/Admin/Scheduler.razor`
-- `src/FuseCP.Portal/Components/Pages/Admin/TenantList.razor`
-
-### Files You Must NOT Modify
-- `.claude/*` (always)
-- `CLAUDE.md` (always)
-- `C:\FuseCP\*` (always)
-- `C:\Przemek\OPENCODE.md` (always)
-
-### Acceptance Criteria
-- [ ] `AuditDashboard.razor` uses `<LoadingSpinner />` (1 replacement)
-- [ ] `OrganizationCreate.razor` uses `<LoadingSpinner />` for provisioning overlay (1 replacement)
-- [ ] `Scheduler.razor` uses `<LoadingSpinner />` in 3 places (page, history modal, parameters modal)
-- [ ] `TenantList.razor` uses `<LoadingSpinner />` in delete modal (1 replacement)
-- [ ] No manual `animate-spin` spinner divs remain in the 4 files
-- [ ] Build passes with 0 errors
-
-### Build & Verify (MUST complete before creating PR)
-
-```bash
-cd /c/claude/fusecp-enterprise/src/FuseCP.Portal && dotnet build --configuration Release
-```
-
-Expected: Build succeeded, 0 errors. Do NOT create a PR until build passes.
-
-### Agent Assignments (MANDATORY — use subagents for implementation)
-
-You MUST use your agents at `C:\Przemek\agents\` for this task.
-
-| Task | Agent | What to delegate |
-|------|-------|-----------------|
-| Implement all 6 replacements | modular-builder | Replace the spinners in the 4 files exactly as specified above |
-| Build verification | modular-builder | Run `dotnet build` and fix any errors |
-
-**Agent tier unlocks:** primary + knowledge
+_No active task. Claude: write a task below and set status to WAITING_FOR_GEMINI._
 
 ---
 
@@ -187,4 +44,4 @@ You MUST use your agents at `C:\Przemek\agents\` for this task.
 | 2026-02-18 | Claude → Gemini | CSS utility class migrations (Phase 6.3c) | PR#80 | Success. Gemini migrated 40+ pages to use new `page-content`, `section-title`, `card-section`, and `section-group` utility classes. Build succeeded with 0 errors. |
 | 2026-02-19 | Claude → Gemini | EmptyState component migration (Phase 6.3d) | PR#81 | Closed without merge. Build succeeded but PR was not merged to master. |
 | 2026-02-19 | Claude → Gemini | LoadingSpinner migration (Phase 6.3e) | PR#82-85 | 4 attempts, all closed without merge. Build succeeded each time but none merged to master. Re-dispatching as v2. |
-| 2026-02-19 | Gemini → Claude | LoadingSpinner migration (Phase 6.3e) v2 | PR#86 | Success. Build succeeded (0 errors). Replaced 6 spinners in 4 files. |
+| 2026-02-19 | Gemini → Claude | LoadingSpinner migration (Phase 6.3e) v2 | PR#86 | Success. 6 spinners in 4 files. Merged + deployed to Portal. No fixes needed. |
