@@ -1,5 +1,5 @@
 ---
-description: "Autonomous bug-fixing pipeline for FuseCP. Fetches open bugs from the portal API, investigates with Explore agent + visual analysis, fixes with bug-hunter, builds/tests, and deploys with user confirmation."
+description: "Autonomous bug-fixing pipeline for FuseCP. Fetches open bugs from the portal API, investigates with agentic-search + visual analysis, fixes with bug-hunter, builds/tests, and deploys with user confirmation."
 ---
 
 # FuseCP Bug Fix Pipeline
@@ -23,9 +23,9 @@ This runs on **Windows Server + Git Bash**. Follow these rules in ALL commands:
 - **Paths**: Always use `C:/claude/fusecp-enterprise/` (Windows format with forward slashes). Never use `/c/` Git Bash paths in Python or PowerShell.
 - **curl**: Always single-line. Never use `\` line continuation (breaks in Git Bash).
 - **Temp files**: Save to `C:/claude/fusecp-enterprise/tmp/` (gitignored). Create with `mkdir -p` if needed.
-- **Base64 decode**: Use PowerShell (handles any size): `powershell -Command "[IO.File]::WriteAllBytes('output.jpg', [Convert]::FromBase64String((Get-Content 'input.txt' -Raw)))"`
 - **Null output**: Use `> /dev/null 2>&1` (never `> nul`)
 - **Python**: Use `uv run python` (not `python` — not on system PATH)
+- **PowerShell**: NEVER use inline `powershell -Command` with `$_`, `$()`, or `$variable` — Git Bash mangles dollar signs into `extglob`. Instead, **always write a `.ps1` script file first** using the Write tool, then execute it with `powershell -File "path/to/script.ps1"`. This applies to ALL JSON parsing, Base64 decoding, and any PowerShell logic with variables.
 
 ## API Configuration
 
@@ -40,10 +40,28 @@ All curl commands use: `curl -sk -H "X-Api-Key: fusecp-admin-key-2026"`
 
 ```bash
 mkdir -p C:/claude/fusecp-enterprise/tmp
-curl -sk -H "X-Api-Key: fusecp-admin-key-2026" "http://localhost:5010/api/bugs?status=Open"
+curl -sk -H "X-Api-Key: fusecp-admin-key-2026" "http://localhost:5010/api/bugs?status=Open" -o C:/claude/fusecp-enterprise/tmp/open_bugs.json
 ```
 
-Parse the JSON response. If no open bugs, report "No open bugs found" and stop.
+**Parse the JSON using a PowerShell script** (never inline — see Platform Notes):
+
+Write this script using the Write tool to `C:/claude/fusecp-enterprise/tmp/parse_bugs.ps1`:
+```powershell
+$bugs = Get-Content 'C:/claude/fusecp-enterprise/tmp/open_bugs.json' | ConvertFrom-Json
+foreach ($b in $bugs) {
+    $hasScreenshot = if ($b.screenshotData) { 'Yes' } else { 'No' }
+    $type = if ($b.type) { $b.type } else { 'Bug' }
+    $reported = if ($b.reportedAt) { ($b.reportedAt -split 'T')[0] } else { 'Unknown' }
+    Write-Host "$($b.bugId)|$($b.priority)|$type|$($b.area)|$($b.title)|$reported|$hasScreenshot"
+}
+```
+
+Then execute:
+```bash
+powershell -File "C:/claude/fusecp-enterprise/tmp/parse_bugs.ps1"
+```
+
+Parse the pipe-delimited output. If no bugs, report "No open bugs found" and stop.
 
 **Separate by Type:** Split results into Bugs (Type=`Bug` or missing/null) and Feature Requests (Type=`FeatureRequest`).
 
@@ -84,14 +102,37 @@ Working on #1 (highest priority). Say "skip" to pick a different one, or "brains
 curl -sk -H "X-Api-Key: fusecp-admin-key-2026" "http://localhost:5010/api/bugs/{id}" -o C:/claude/fusecp-enterprise/tmp/bug_{id}.json
 ```
 
-Then read the saved JSON file with the Read tool to parse fields.
+**Extract key fields using a PowerShell script** (never inline — see Platform Notes):
 
-**Extract key fields:**
+Write this script using the Write tool to `C:/claude/fusecp-enterprise/tmp/read_bug.ps1`:
+```powershell
+$b = Get-Content 'C:/claude/fusecp-enterprise/tmp/bug_{id}.json' | ConvertFrom-Json
+Write-Host "Title: $($b.title)"
+Write-Host "Description: $($b.description)"
+Write-Host "Area: $($b.area)"
+Write-Host "Priority: $($b.priority)"
+Write-Host "PageUrl: $($b.pageUrl)"
+Write-Host "ReportedInBuild: $($b.reportedInBuild)"
+Write-Host "ReportedAt: $($b.reportedAt)"
+Write-Host "HasScreenshot: $([bool]$b.screenshotData)"
+Write-Host "ScreenshotMimeType: $($b.screenshotMimeType)"
+if ($b.screenshotData) {
+    [IO.File]::WriteAllBytes('C:/claude/fusecp-enterprise/tmp/bug_{id}_screenshot.png', [Convert]::FromBase64String($b.screenshotData))
+    Write-Host 'Screenshot saved to bug_{id}_screenshot.png'
+}
+```
+
+**IMPORTANT:** Replace `{id}` in the script with the actual bug ID before writing. Then execute:
+```bash
+powershell -File "C:/claude/fusecp-enterprise/tmp/read_bug.ps1"
+```
+
+Parse the output for these key fields:
 - `Title`, `Description` — What's broken
 - `Area` — Which subsystem (Portal, Exchange, AD, DNS, HyperV, API)
 - `PageUrl` — The URL where the bug was observed (if provided)
 - `Priority` — Severity level
-- `ScreenshotData` / `ScreenshotMimeType` — Visual evidence (Base64, if provided)
+- `ScreenshotData` — Visual evidence (screenshot auto-extracted to PNG if present)
 - `ReportedInBuild` — Which build version had the bug
 
 **Update status to InProgress (status-only endpoint — preserves screenshot):**
@@ -105,12 +146,10 @@ curl -sk -X PUT -H "X-Api-Key: fusecp-admin-key-2026" -H "Content-Type: applicat
 
 ### 3a. Code Investigation
 
-Dispatch `Explore` agent (built-in, always available) with thorough exploration:
+Dispatch `agentic-search` agent with structured three-phase methodology (Reconnaissance → Targeted Search → Synthesis). This agent has built-in output budgets and always produces a final synthesis — unlike generic Explore which can exhaust turns on tool calls with no summary.
 
 ```
-Task(subagent_type="Explore", max_turns=15, description="Investigate bug #{id}: {title}", prompt="
-  very thorough
-
+Task(subagent_type="agentic-search", max_turns=20, description="Investigate bug #{id}: {title}", prompt="
   Search the FuseCP codebase at C:\claude\fusecp-enterprise to find the root cause of this bug.
 
   Bug: {title}
@@ -118,7 +157,9 @@ Task(subagent_type="Explore", max_turns=15, description="Investigate bug #{id}: 
   Area: {area}
   Page URL: {pageUrl}
 
-  The ctags index is at C:\claude\fusecp-enterprise\tags — use grep on it for fast symbol lookup.
+  ## Phase 1: Reconnaissance
+  Use ctags for fast symbol lookup:
+    grep -i '{keyword}' C:/claude/fusecp-enterprise/tags | head -20
 
   Area-to-code mapping (search in these locations based on Area):
   - Portal → src/FuseCP.Portal/Components/Pages/ (Blazor .razor files)
@@ -128,6 +169,7 @@ Task(subagent_type="Explore", max_turns=15, description="Investigate bug #{id}: 
   - HyperV → src/FuseCP.Providers.HyperV/ and src/FuseCP.EnterpriseServer/Endpoints/HyperVEndpoints.cs
   - API → src/FuseCP.EnterpriseServer/Endpoints/
 
+  ## Phase 2: Targeted Search (max 8 file reads)
   Architecture layers (trace top to bottom):
   1. Blazor page (.razor) — UI component with @onclick handlers
   2. Portal service (Services/*.cs) — HTTP client calling API
@@ -135,22 +177,22 @@ Task(subagent_type="Explore", max_turns=15, description="Investigate bug #{id}: 
   4. Repository (Database/Repositories/*.cs) — SQL/Dapper data access
   5. Provider (Providers.*/) — External system integration (Exchange/AD/DNS/HyperV)
 
-  Find:
-  1. The specific component/page that handles this feature
-  2. The click handler, API call, or service method involved
-  3. What's broken — missing handler, wrong parameter, failed call, etc.
-  4. Any recent changes: git log --oneline -5 -- <file>
+  Read the identified files and trace the bug through the layers.
 
-  Return a structured summary:
+  ## Phase 3: Synthesis (CRITICAL — always produce this)
+  BEFORE you run out of turns, produce this structured output:
+
   ## Root Cause
-  [What's broken and why]
+  [What's broken and why — be specific about the code path]
 
   ## Affected Files
   | File | Line(s) | Issue |
   |------|---------|-------|
 
   ## Suggested Fix
-  [Minimal change needed]
+  [Minimal change needed — specific enough for a developer to implement]
+
+  IMPORTANT: Reserve your last 2-3 turns for writing the synthesis. Do NOT spend all turns on tool calls — the synthesis is the most important output.
 ")
 ```
 
@@ -187,14 +229,11 @@ This fallback is faster and more reliable than retrying agent dispatches.
 
 If the bug has `ScreenshotData`:
 
-1. **Extract and decode the screenshot** using PowerShell (handles any Base64 size):
-   ```bash
-   powershell -Command "$j = Get-Content 'C:/claude/fusecp-enterprise/tmp/bug_{id}.json' | ConvertFrom-Json; if ($j.screenshotData) { [IO.File]::WriteAllBytes('C:/claude/fusecp-enterprise/tmp/bug_{id}_screenshot.jpg', [Convert]::FromBase64String($j.screenshotData)); Write-Host 'Screenshot saved' } else { Write-Host 'No screenshot data' }"
-   ```
+1. **Screenshot already extracted** — The `read_bug.ps1` script from Phase 2 automatically decodes the screenshot to `C:/claude/fusecp-enterprise/tmp/bug_{id}_screenshot.png`. No additional extraction needed.
 
 2. **View the screenshot** using the Read tool (it supports images):
    ```
-   Read(file_path="C:/claude/fusecp-enterprise/tmp/bug_{id}_screenshot.jpg")
+   Read(file_path="C:/claude/fusecp-enterprise/tmp/bug_{id}_screenshot.png")
    ```
 
 3. **Navigate to the live page** (if PageUrl is provided and Chrome MCP is available):
@@ -430,7 +469,7 @@ If user says yes, loop back to Phase 1.
 
 - **API unreachable:** "FuseCP API is not responding at localhost:5010. Is the API running?"
 - **No open bugs:** "No open bugs found. The bug queue is clear."
-- **Explore agent fails:** Fall back to direct investigation (Phase 3a-fallback). Do NOT retry the agent.
+- **agentic-search agent fails or returns incomplete:** Fall back to direct investigation (Phase 3a-fallback). Do NOT retry the agent.
 - **bug-hunter fails:** Fall back to direct fix in main context (Phase 4-fallback). Do NOT retry the agent.
 - **Build failure after 3 attempts:** "Build still failing after 3 fix attempts. Escalating — here's what I've tried: {summary}"
 - **Test failure:** "Tests failing after fix. Investigating if these are pre-existing or caused by the fix."
