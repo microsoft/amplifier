@@ -184,7 +184,7 @@ Loop on Option 2 until user approves or cancels. Never write HANDOFF.md without 
 git add HANDOFF.md && git commit -m "chore: dispatch task to Gemini — <objective summary>"
 ```
 
-**2f. Report:**
+**2f. Report and offer parallel worktree:**
 
 ```
 Task dispatched.
@@ -196,11 +196,36 @@ Next: Tell Gemini to check HANDOFF.md.
       Run /handoff to check progress.
 ```
 
+**2g. Offer parallel worktree** — Ask the user if they want Claude to work on a parallel task while Gemini works:
+
+```
+Gemini is working on <branch>. Want to start parallel work in a worktree?
+
+1. Yes — create a worktree for a parallel task (specify branch name)
+2. No — I'll wait for Gemini's PR
+```
+
+If yes:
+1. Ask for a branch name (or derive from the parallel task description)
+2. Verify `.worktrees/` is in `.gitignore` (it should be)
+3. Create the worktree:
+   ```bash
+   git worktree add .worktrees/<branch-name> -b <branch-name>
+   ```
+4. Report the path and note that the main checkout stays on master for handoff management:
+   ```
+   Worktree created at .worktrees/<branch-name>
+   Main checkout stays on master for /handoff operations.
+   Work in the worktree — when done, push and create PR separately.
+   ```
+
+**Important:** The main checkout at the repo root MUST stay on master. All handoff state management, PR reviews, and deployments happen from the main checkout. The worktree is for Claude's independent parallel work only.
+
 ---
 
 #### State: WAITING_FOR_GEMINI — Monitor
 
-Check if Gemini has started work:
+Check if Gemini has started work and show active worktrees:
 
 ```bash
 # Check for feature branch
@@ -208,6 +233,9 @@ git branch -a | grep "feature/"
 
 # Check for open PR
 gh pr list --state open --json number,title,headRefName 2>/dev/null
+
+# Show active worktrees (if any)
+git worktree list
 ```
 
 **If PR found:** Offer to advance state:
@@ -239,6 +267,14 @@ Branch: <expected branch> (not created yet)
 → Tell Gemini to check HANDOFF.md and start working.
 ```
 
+**Always include worktree status** in the report if worktrees exist:
+```
+Active worktrees:
+  .worktrees/<name>  →  <branch> (Claude parallel work)
+```
+
+If no worktree exists and user hasn't been offered one yet, offer to create one (same flow as step 2g).
+
 ---
 
 #### State: IN_PROGRESS — Monitor
@@ -254,6 +290,8 @@ Branch: <branch>
 → Run /handoff again when PR is ready.
 ```
 
+Include active worktree status in report (same as WAITING_FOR_GEMINI).
+
 ---
 
 #### State: PR_READY — Review
@@ -266,23 +304,29 @@ gh pr list --state open --json number,title,headRefName,additions,deletions
 
 Match by branch name from HANDOFF.md. If no PR found, report error.
 
-**4b. Local build verification** — Before reviewing code, verify it builds:
+**4b. Local build verification** — Use a temporary review worktree to avoid disrupting the main checkout:
 
 ```bash
-# Checkout PR branch locally
+# Fetch and create a review worktree (do NOT checkout on main)
 git fetch origin
-git checkout <branch-name>
+git worktree add .worktrees/review-pr-<number> origin/<branch-name> --detach
 
+# Build in the worktree
+cd .worktrees/review-pr-<number>
 # Run build command from HANDOFF.md "Build & Verify" section
-# e.g.: cd /c/claude/fusecp-enterprise/src/FuseCP.Portal && dotnet build --configuration Release
+# e.g.: dotnet build src/FuseCP.Portal --configuration Release
+cd ../..  # Return to main checkout
 ```
 
-If build fails → post build errors as PR comment, request changes, stay at PR_READY:
+**Why a worktree?** The main checkout stays on master. If Claude has a parallel work worktree, checking out the PR branch on master would disrupt it. Review worktrees keep everything isolated.
+
+If build fails → post build errors as PR comment, request changes, clean up worktree, stay at PR_READY:
 ```bash
 gh pr comment <number> --body "Build failed. Errors: <paste errors>. Please fix and push."
+git worktree remove .worktrees/review-pr-<number> --force
 ```
 
-If build passes → proceed to code review.
+If build passes → proceed to code review (keep review worktree for now).
 
 **4c. Fetch PR details:**
 
@@ -371,11 +415,14 @@ Recommendation: Approve / Request Changes
 
 #### State: REVIEWING — Merge & Deploy
 
-**5a. Merge the PR:**
+**5a. Merge the PR and clean up review worktree:**
 
 ```bash
 gh pr merge <number> --merge --delete-branch
 git pull origin main
+
+# Clean up the review worktree (if it exists)
+git worktree remove .worktrees/review-pr-<number> --force 2>/dev/null
 ```
 
 **5b. Update state** → Set `DEPLOYING` in HANDOFF.md, commit.
@@ -413,7 +460,19 @@ If verification fails → stay at DEPLOYING, report the failure, let user invest
 | <YYYY-MM-DD> | Gemini → Claude | <objective summary> | #<pr-number> | Success |
 ```
 
-**6c. Clear task and set IDLE:**
+**6c. Check for active Claude worktrees:**
+
+```bash
+git worktree list
+```
+
+If Claude has an active parallel worktree (not a review worktree), remind the user:
+```
+Note: You have an active worktree at .worktrees/<name> (branch: <branch>).
+This work is independent of the completed handoff. When ready, push and create a PR for it separately.
+```
+
+**6d. Clear task and set IDLE:**
 
 Replace the Current Task section with:
 ```markdown
@@ -427,13 +486,13 @@ _No active task. Claude: write a task below and set status to WAITING_FOR_GEMINI
 
 Set `## Dispatch Status: IDLE`.
 
-**6d. Commit:**
+**6e. Commit:**
 
 ```bash
 git add HANDOFF.md && git commit -m "chore: complete handoff cycle — <objective summary>"
 ```
 
-**6e. Report:**
+**6f. Report:**
 
 ```
 Handoff cycle complete.
@@ -477,7 +536,12 @@ WHAT HAPPENS AT EACH STATE
 
 BRANCH RULES
   Gemini works on:  feature/*  gemini/*
-  Claude works on:  main  review/*  hotfix/*
+  Claude works on:  main  review/*  hotfix/*  claude/*
+
+WORKTREES
+  Main checkout:    stays on master (handoff mgmt, deploys)
+  Claude parallel:  .worktrees/<branch> (independent work)
+  PR review:        .worktrees/review-pr-<N> (temporary, auto-cleaned)
 
 EXAMPLES
   /handoff Add dark mode toggle to FuseCP portal sidebar
@@ -521,6 +585,8 @@ When `$ARGUMENTS` equals `reset`:
 - Deploy without user confirmation (CI/CD policy)
 - Advance state without completing the phase's work
 - Modify files in `C:\Przemek\` (Gemini's workspace)
+- Switch the main checkout away from master (use worktrees instead)
+- Leave review worktrees (`.worktrees/review-pr-*`) after merge
 
 **Always:**
 - Read HANDOFF.md before acting
@@ -529,6 +595,8 @@ When `$ARGUMENTS` equals `reset`:
 - Commit every state transition
 - Update history table when closing the cycle
 - Preserve the Task Template reference in HANDOFF.md when clearing
+- Use worktrees for PR review and parallel work (never checkout branches on main)
+- Clean up review worktrees after merge
 
 ## Integration
 
