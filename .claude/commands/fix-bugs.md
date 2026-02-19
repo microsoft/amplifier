@@ -149,7 +149,7 @@ curl -sk -X PUT -H "X-Api-Key: fusecp-admin-key-2026" -H "Content-Type: applicat
 Dispatch `agentic-search` agent with structured three-phase methodology (Reconnaissance → Targeted Search → Synthesis). This agent has built-in output budgets and always produces a final synthesis — unlike generic Explore which can exhaust turns on tool calls with no summary.
 
 ```
-Task(subagent_type="agentic-search", max_turns=20, description="Investigate bug #{id}: {title}", prompt="
+Task(subagent_type="agentic-search", model="sonnet", max_turns=20, description="Investigate bug #{id}: {title}", prompt="
   Search the FuseCP codebase at C:\claude\fusecp-enterprise to find the root cause of this bug.
 
   Bug: {title}
@@ -269,7 +269,7 @@ Before dispatching the fix agent, compile everything learned:
 Dispatch `bug-hunter` with the full investigation context:
 
 ```
-Task(subagent_type="bug-hunter", max_turns=20, description="Fix bug #{id}: {title}", prompt="
+Task(subagent_type="bug-hunter", model="sonnet", max_turns=20, description="Fix bug #{id}: {title}", prompt="
   Fix this FuseCP bug. The investigation has already been done — go straight to implementing the fix.
 
   ## Bug Report

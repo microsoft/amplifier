@@ -17,7 +17,7 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 2. Search episodic memory for `knowledge_base.patterns` using the `mcp__plugin_episodic-memory_episodic-memory__search` tool
 3. **If modifying existing code**, dispatch `agentic-search` to understand the current architecture before writing tasks:
    ```
-   Task(subagent_type="agentic-search", max_turns=12, description="Understand [area] before planning", prompt="
+   Task(subagent_type="agentic-search", model="haiku", max_turns=12, description="Understand [area] before planning", prompt="
      [specific question about how the code works that the plan depends on]
    ")
    ```

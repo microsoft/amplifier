@@ -56,7 +56,7 @@ Task(subagent_type="general-purpose", model="haiku", max_turns=8, description="G
 
 4. **If the topic involves understanding existing code**, dispatch `agentic-search` before designing:
 ```
-Task(subagent_type="agentic-search", max_turns=12, description="Explore [topic] in codebase", prompt="
+Task(subagent_type="agentic-search", model="haiku", max_turns=12, description="Explore [topic] in codebase", prompt="
   [specific question about how the existing code works]
 ")
 ```
