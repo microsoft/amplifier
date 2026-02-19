@@ -99,6 +99,8 @@ Be honest about uncertainty.]
 
 ## Context Budget
 
+- **Synthesis guard**: When nearing your turn limit, STOP tool calls and produce your final output with whatever findings you have. Partial results with clear structure are MORE valuable than exhausting all turns on research with no summary. Always reserve at least 2 turns for writing your response.
+
 - **Phase 1 tools:** Unlimited Glob/Grep/ctags, zero file reads
 - **Phase 2 reads:** Max 8 files, max 500 lines per read
 - **Total output:** Max 200 lines

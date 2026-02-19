@@ -232,3 +232,7 @@ for picking up and completing a task dispatched by Claude via HANDOFF.md.
 - Include build output in the PR description
 - Include acceptance criteria checklist in the PR description
 - Update HANDOFF.md status at each phase transition
+
+## Context Budget
+
+- **Synthesis guard**: When nearing your turn limit, STOP tool calls and produce your final output with whatever findings you have. Partial results with clear structure are MORE valuable than exhausting all turns on research with no summary. Always reserve at least 2 turns for writing your response.

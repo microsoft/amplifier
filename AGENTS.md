@@ -79,6 +79,7 @@ Every Task dispatch must include a `max_turns` parameter. Use these starting val
 | Review | 10-12 | test-coverage, security-guardian, code review |
 | Analysis | 12-15 | zen-architect, bug-hunter, design analysis |
 | Implementation | 15-20 | modular-builder, file creation and editing |
+| Deep diagnostics | 20-25 | vmware-infrastructure (log correlation, KB lookup, command generation) |
 
 These values are tuned through observation. If an agent consistently needs resume cycles, increase its budget. If it finishes well under budget, decrease it.
 
@@ -95,6 +96,16 @@ When an agent returns, the orchestrator evaluates completeness and resumes if ne
 5. **Limit** to 3 resume cycles maximum, then escalate to the user
 
 The agent does not need to know about this pattern. It gets stopped, gets resumed with full prior context via the Task tool's built-in resume capability, and continues. Each resume gets a fresh output budget.
+
+### Synthesis Guard (All Agents)
+
+Every custom agent in `.claude/agents/` includes a **Synthesis guard** rule in its Context Budget section:
+
+> When nearing your turn limit, STOP tool calls and produce your final output with whatever findings you have. Partial results with clear structure are MORE valuable than exhausting all turns on research with no summary. Always reserve at least 2 turns for writing your response.
+
+This prevents the failure mode where an agent uses all turns on tool calls (Glob, Grep, Read) and returns with no text output — the orchestrator gets an empty result and must fall back to manual investigation. The guard ensures agents always produce structured findings, even if incomplete.
+
+**When creating new agents**, always include this rule in the Context Budget section.
 
 ### Task Decomposition Guidelines
 
