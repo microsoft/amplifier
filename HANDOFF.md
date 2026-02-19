@@ -1,6 +1,6 @@
 # Amplifier Cowork — Task Handoff
 
-## Dispatch Status: WAITING_FOR_GEMINI
+## Dispatch Status: PR_READY
 
 > **Protocol:** Only the designated receiver should act.
 > - Claude acts on: `IDLE`, `PR_READY`, `REVIEWING`, `DEPLOYING`, `WAITING_FOR_CLAUDE`
@@ -310,3 +310,4 @@ You MUST use your agents at `C:\Przemek\agents\` for this task.
 | 2026-02-19 | Claude → Gemini | EmptyState component migration (Phase 6.3d) | PR#81 | Closed without merge. Build succeeded but PR was not merged to master. |
 | 2026-02-19 | Claude → Gemini | LoadingSpinner migration (Phase 6.3e) | PR#82-85 | 4 attempts, all closed without merge. Build succeeded each time but none merged to master. Re-dispatching as v2. |
 | 2026-02-19 | Gemini → Claude | LoadingSpinner migration (Phase 6.3e) v2 | PR#86 | Success. 6 spinners in 4 files. Merged + deployed to Portal. No fixes needed. |
+| 2026-02-19 | Gemini → Claude | EmptyState migration (Phase 6.3d) | PR#87 | Success. Build succeeded (0 errors). Replaced 11 empty states in 9 files. |
