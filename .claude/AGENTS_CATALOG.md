@@ -79,10 +79,16 @@ Used by superpowers skills for two-stage review:
 
 | Agent | Tier | Claude | Gemini |
 |-------|------|--------|--------|
-| `modular-builder` (simple) | Fast | `haiku` | Flash |
+| `agentic-search` (scouting) | Fast | `haiku` | Flash |
+| `agentic-search` (deep investigation) | Balanced | `sonnet` | Pro |
+| `modular-builder` (simple, 1-2 files) | Fast | `haiku` | Flash |
 | `modular-builder` (multi-file) | Balanced | `sonnet` | Pro |
 | `bug-hunter` | Balanced | `sonnet` | Pro |
 | `database-architect` | Balanced | `sonnet` | Pro |
+| `api-contract-designer` | Balanced | `sonnet` | Pro |
+| `integration-specialist` | Balanced | `sonnet` | Pro |
+| `performance-optimizer` | Balanced | `sonnet` | Pro |
+| `component-designer` | Balanced | `sonnet` | Pro |
 | `test-coverage` (review) | Fast | `haiku` | Flash |
 | `zen-architect` (review) | Balanced | `sonnet` | Pro |
 | `security-guardian` | Deep | `opus` | Pro |
