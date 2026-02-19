@@ -42,6 +42,8 @@ MODEL_MAP = {
     "visualization-architect": "pro",
     "voice-strategist": "pro",
     "zen-architect": "pro",
+    # Pro (infrastructure)
+    "vmware-infrastructure": "pro",
     # Flash (implementation, debugging, testing, cleanup, search)
     "agentic-search": "flash",
     "animation-choreographer": "flash",
@@ -51,6 +53,7 @@ MODEL_MAP = {
     "modular-builder": "flash",
     "performance-optimizer": "flash",
     "post-task-cleanup": "flash",
+    "handoff-gemini": "flash",
     "security-guardian": "flash",
     "test-coverage": "flash",
 }
