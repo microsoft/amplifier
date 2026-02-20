@@ -1,8 +1,8 @@
 # Amplifier Cowork — Task Handoff
 
-## Dispatch Status: IDLE
+## Dispatch Status: PR_READY
 
-PR: https://github.com/psklarkins/fusecp-enterprise/pull/95
+PR: https://github.com/psklarkins/fusecp-enterprise/pull/96
 
 > **Protocol:** Only the designated receiver should act.
 > - Claude acts on: `IDLE`, `PR_READY`, `REVIEWING`, `DEPLOYING`, `WAITING_FOR_CLAUDE`
@@ -52,3 +52,4 @@ See `/handoff` skill for template format.
 | 2026-02-19 | Gemini → Claude | LoadingSpinner migration (Phase 6.3e) v2 | PR#86 | Success. 6 spinners in 4 files. Merged + deployed to Portal. No fixes needed. |
 | 2026-02-19 | Gemini → Claude | EmptyState migration (Phase 6.3d) v2 | PR#87 | Success. 11 empty states in 9 files. Build 0 errors. Merged + deployed to Portal. No fixes needed. |
 | 2026-02-20 | Claude → Gemini | P6.4 Component Library Polish — semantic tokens + shared components | PR#95 | Success. 15 files, +162/-300 lines. Claude fixed 2 review issues post-merge: Settings/Index.razor link regression, OperationsLog category color collision. Deployed to Portal. |
+| 2026-02-20 | Gemini → Claude | Fix missing i18n translations (dashboard, DNS templates) | PR#96 | Success. Added migration 084 with 40+ missing keys. |
