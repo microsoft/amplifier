@@ -1,6 +1,6 @@
 # Amplifier Cowork — Task Handoff
 
-## Dispatch Status: REVIEWING
+## Dispatch Status: DEPLOYING
 
 PR: https://github.com/psklarkins/fusecp-enterprise/pull/95
 
