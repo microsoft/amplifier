@@ -1,6 +1,6 @@
 # Amplifier Cowork — Task Handoff
 
-## Dispatch Status: DEPLOYING
+## Dispatch Status: IDLE
 
 PR: https://github.com/psklarkins/fusecp-enterprise/pull/95
 
@@ -22,96 +22,10 @@ DEPLOYING ──(Claude tests pass)──→ IDLE
 
 ## Current Task
 
-**From:** Claude → Gemini
-**Branch:** feature/p64-component-polish
-**Priority:** normal
-**Repository:** C:\claude\fusecp-enterprise
-**Working Directory:** C:\claude\fusecp-enterprise
-**PR Target:** main on psklarkins/fusecp-enterprise
+_No active task. Claude: write a task below and set status to WAITING_FOR_GEMINI._
 
-### Objective
-Execute P6.4 Component Library Polish — migrate raw palette colors to semantic tokens, raw HTML elements to shared components (`<Badge>`, `<Button>`), and create frontend Style Guide documentation.
-
-### Detailed Requirements
-
-This is a systematic page-by-page sweep of all portal Razor files. The implementation plan at `docs/plans/2026-02-20-p64-component-polish.md` contains **exact before/after code** for every change. Follow it precisely.
-
-**Three types of changes:**
-
-1. **Palette color → semantic token** — Replace raw Tailwind palette colors (`bg-orange-100 text-orange-700`, `bg-purple-100 text-purple-700`, `hover:bg-purple-50`, `dark:bg-blue-900`, etc.) with semantic tokens (`bg-warning-muted text-warning-emphasis`, `bg-info-muted text-info-emphasis`, `hover:bg-hover`, etc.). The full mapping table is in the plan's "Semantic Token Reference" section.
-
-2. **Inline `<span>` badges → `<Badge>` component** — Replace `<span class="px-2 py-1 text-xs font-medium rounded-full @GetStatusClass(...)">` with `<Badge Class="@GetStatusClass(...)" Size="BadgeSize.Small">`. Keep existing helper methods (`GetStatusClass`, `GetPriorityClass`, `GetTypeClass`) and pass via `Class=` attribute.
-
-3. **Raw `<button>` → `<Button>` component** — Replace `<button class="px-4 py-2 text-sm ..." @onclick="...">` with `<Button Variant="primary|secondary|danger|ghost|link" Size="sm|md" OnClick="...">`. Modal cancel = `secondary`, submit = `primary`, delete = `danger`, table actions = `ghost` or `link`.
-
-**Task 6 (final):** Create `docs/frontend/STYLE_GUIDE.md` documenting the design token system, color rules, component usage patterns, and before/after migration examples.
-
-### Spec
-`docs/plans/2026-02-20-p64-component-polish.md` — contains all 6 tasks with exact before/after code snippets, file paths, and line number hints.
-
-### Context Loading (use your full 1M context)
-Load these files completely before starting:
-- `HANDOFF.md` — this file, refresh protocol understanding
-- `docs/plans/2026-02-20-p64-component-polish.md` — the implementation plan (PRIMARY reference)
-- `src/FuseCP.Portal/Styles/app.css` — semantic token definitions (lines 606-836)
-- `src/FuseCP.Portal/Components/Shared/Badge.razor` — Badge component API
-- `src/FuseCP.Portal/Components/Shared/Button.razor` — Button component API
-
-### Files YOU May Modify
-- `src/FuseCP.Portal/Components/Pages/Admin/BugReports.razor` (Task 1)
-- `src/FuseCP.Portal/Components/Pages/Admin/OperationsLog.razor` (Task 2)
-- `src/FuseCP.Portal/Components/Pages/Admin/Scheduler.razor` (Task 2)
-- `src/FuseCP.Portal/Components/Pages/Admin/PortalUsers.razor` (Task 3)
-- `src/FuseCP.Portal/Components/Pages/Admin/PlatformAdmins.razor` (Task 3)
-- `src/FuseCP.Portal/Components/Pages/Admin/TenantList.razor` (Task 4)
-- `src/FuseCP.Portal/Components/Pages/Admin/TenantPortalUsers.razor` (Task 4)
-- `src/FuseCP.Portal/Components/Pages/Admin/TenantServices.razor` (Task 4)
-- `src/FuseCP.Portal/Components/Pages/Settings/DnsSettings.razor` (Task 5)
-- `src/FuseCP.Portal/Components/Pages/HyperV/Library.razor` (Task 5)
-- `src/FuseCP.Portal/Components/Pages/AccessDenied.razor` (Task 5)
-- `src/FuseCP.Portal/Components/Pages/Admin/Reports.razor` (Task 5)
-- `src/FuseCP.Portal/Components/Pages/Exchange/MailboxEdit.razor` (Task 5)
-- `docs/frontend/STYLE_GUIDE.md` (Task 6 — new file)
-
-### Files You Must NOT Modify
-- `.claude/*` (always)
-- `CLAUDE.md` (always)
-- `C:\FuseCP\*` (always)
-- `C:\Przemek\OPENCODE.md` (always)
-- `src/FuseCP.Portal/Components/Pages/Admin/ComponentDemo.razor` (intentionally uses raw colors for demo)
-- Any shared component in `src/FuseCP.Portal/Components/Shared/` (they are already token-aware)
-
-### Acceptance Criteria
-- [ ] All raw palette colors in the 13 target files replaced with semantic tokens
-- [ ] All inline badge `<span>` elements migrated to `<Badge>` component
-- [ ] All raw `<button>` elements migrated to `<Button>` component
-- [ ] No `dark:` Tailwind prefix usage remaining (only `[data-theme="dark"]` system)
-- [ ] `docs/frontend/STYLE_GUIDE.md` created with token system, color rules, component usage, patterns
-- [ ] `ComponentDemo.razor` is untouched
-- [ ] Build succeeds with 0 errors
-- [ ] All tests pass
-- [ ] Code committed to feature branch with clear messages per task
-
-### Build & Verify (MUST complete before creating PR)
-
-```bash
-cd /c/claude/fusecp-enterprise && dotnet build --configuration Release src/FuseCP.Portal/FuseCP.Portal.csproj
-```
-
-Expected: Build succeeded, 0 errors.
-
-After all tasks, run the palette color verification:
-```bash
-grep -rn "bg-orange-1\|bg-purple-1\|bg-blue-1\|bg-teal-1\|bg-cyan-1\|text-orange-[0-9]\|text-purple-[0-9]\|hover:bg-purple\|hover:bg-orange\|hover:text-purple\|hover:text-orange\|dark:bg-\|dark:text-\|btn btn-" src/FuseCP.Portal/Components/Pages/ --include="*.razor" | grep -v "ComponentDemo.razor"
-```
-
-Expected: 0 results.
-
-If build fails, fix the errors before proceeding. Include build output summary in PR description.
-
-### Implementation Notes
-
-**Do ALL implementation in your main session.** OpenCode subagents are read-only — use them only for codebase search/research. Use `/user:handoff` to start, `/user:review-pr` before creating PR.
+### Task Template (copy when dispatching)
+See `/handoff` skill for template format.
 
 ---
 
@@ -137,3 +51,4 @@ If build fails, fix the errors before proceeding. Include build output summary i
 | 2026-02-19 | Claude → Gemini | LoadingSpinner migration (Phase 6.3e) | PR#82-85 | 4 attempts, all closed without merge. Build succeeded each time but none merged to master. Re-dispatching as v2. |
 | 2026-02-19 | Gemini → Claude | LoadingSpinner migration (Phase 6.3e) v2 | PR#86 | Success. 6 spinners in 4 files. Merged + deployed to Portal. No fixes needed. |
 | 2026-02-19 | Gemini → Claude | EmptyState migration (Phase 6.3d) v2 | PR#87 | Success. 11 empty states in 9 files. Build 0 errors. Merged + deployed to Portal. No fixes needed. |
+| 2026-02-20 | Claude → Gemini | P6.4 Component Library Polish — semantic tokens + shared components | PR#95 | Success. 15 files, +162/-300 lines. Claude fixed 2 review issues post-merge: Settings/Index.razor link regression, OperationsLog category color collision. Deployed to Portal. |
