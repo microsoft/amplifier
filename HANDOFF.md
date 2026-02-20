@@ -1,6 +1,8 @@
 # Amplifier Cowork — Task Handoff
 
-## Dispatch Status: WAITING_FOR_GEMINI
+## Dispatch Status: PR_READY
+
+PR: https://github.com/psklarkins/fusecp-enterprise/pull/95
 
 > **Protocol:** Only the designated receiver should act.
 > - Claude acts on: `IDLE`, `PR_READY`, `REVIEWING`, `DEPLOYING`, `WAITING_FOR_CLAUDE`
@@ -107,25 +109,9 @@ Expected: 0 results.
 
 If build fails, fix the errors before proceeding. Include build output summary in PR description.
 
-### Agent Assignments (MANDATORY — use subagents for implementation)
+### Implementation Notes
 
-You MUST use your agents at `C:\Przemek\agents\` for this task. Do NOT implement everything in your main context — delegate to specialized agents.
-
-| Task | Agent | What to delegate |
-|------|-------|-----------------|
-| Task 1: BugReports badges + colors | modular-builder | 6 badge migrations, 1 palette fix in BugReports.razor |
-| Task 2: OperationsLog + Scheduler | modular-builder | Category badge colors, 3 button migrations |
-| Task 3: PortalUsers + PlatformAdmins | modular-builder | 4 hover palette fixes, ~13 button migrations |
-| Task 4: Tenant pages | modular-builder | 1 gradient fix, ~14 button migrations across 3 files |
-| Task 5: Remaining files sweep | modular-builder | DnsSettings badges, Library backgrounds, misc buttons |
-| Task 6: Build + Style Guide | modular-builder | Verification grep + create STYLE_GUIDE.md |
-
-**How to use agents:** For each row above, dispatch the agent as a subagent with a focused prompt describing exactly what to implement. The agent will do the work and return results. Review the output, fix any issues, then move to the next task.
-
-**Agent tier unlocks:** primary + knowledge
-
-### Task Template (copy when dispatching)
-See `/handoff` skill for template format.
+**Do ALL implementation in your main session.** OpenCode subagents are read-only — use them only for codebase search/research. Use `/user:handoff` to start, `/user:review-pr` before creating PR.
 
 ---
 
