@@ -6,7 +6,7 @@ description: "Autonomous bug-fixing pipeline for FuseCP. Fetches open bugs from 
 
 ## Overview
 
-Autonomous bug-fixing workflow that processes FuseCP bug reports one at a time. Fetches bugs from the portal's built-in bug reporting API, investigates using codebase exploration and visual comparison, implements fixes, and deploys with user confirmation.
+Autonomous bug-fixing workflow that processes FuseCP bug reports. When multiple bugs are open, performs an LLM-powered triage to group similar/redundant bugs so they can be investigated and fixed together. Single bugs proceed directly. Fetches bugs from the portal's built-in bug reporting API, investigates using codebase exploration and visual comparison, implements fixes, and deploys with user confirmation.
 
 **Announce at start:** "Starting FuseCP bug fix pipeline. Checking for open bugs..."
 
@@ -95,7 +95,75 @@ Working on #1 (highest priority). Say "skip" to pick a different one, or "brains
 
 **If only Feature Requests remain (no bugs):** Report "No open bugs found. There are M feature request(s) — use /brainstorm to discuss them." and stop.
 
+## Phase 1b: Triage & Group (when 2+ bugs open)
+
+**Skip this phase entirely if only 1 bug is open** — proceed directly to Phase 2.
+
+When there are 2 or more open bugs, dispatch `analysis-engine` to cluster them by likely root cause:
+
+```
+Task(subagent_type="analysis-engine", model="haiku", max_turns=8, description="Triage and group open bugs", prompt="
+  Analyze these open FuseCP bugs and group them by likely root cause or similarity.
+
+  ## Open Bugs
+  {paste the bug list as a table: ID, Priority, Area, Title, Reported date}
+
+  ## Grouping Criteria
+  Group bugs that likely share:
+  - Same root cause (e.g., two reports of the same broken feature)
+  - Same affected component (same Area + related page/functionality)
+  - Overlapping symptoms (descriptions point to the same underlying issue)
+  - Duplicate reports (same bug reported by different users or at different times)
+
+  Bugs that are clearly independent should be in their own group of 1.
+
+  ## Output Format (CRITICAL — follow exactly)
+
+  Return ONLY this JSON structure, nothing else:
+
+  ```json
+  {
+    \"groups\": [
+      {
+        \"name\": \"Short description of the shared issue\",
+        \"bugIds\": [42, 38],
+        \"rationale\": \"One sentence explaining why these are grouped\",
+        \"priority\": \"Critical\"
+      }
+    ]
+  }
+  ```
+
+  Rules:
+  - Every bug must appear in exactly one group
+  - A group can have 1 bug (independent issue)
+  - Group priority = highest priority among its bugs
+  - Sort groups by priority: Critical > High > Medium > Low
+")
+```
+
+**Parse the agent response and present to user:**
+
+```
+## Bug Triage — {N} bugs in {G} groups
+
+| Group | Bugs | Priority | Description |
+|-------|------|----------|-------------|
+| 1 | #42, #38 | Critical | Login and auth both fail — likely same session handling bug |
+| 2 | #45 | Medium | DNS template preview not rendering (independent) |
+
+Proceed with Group 1 first? Say "regroup" to adjust, or "skip to #N" to pick a different group.
+```
+
+**STOP and wait for user confirmation.** Do not proceed until the user approves the grouping.
+
+**If user says "regroup":** Ask which bugs to move between groups, update the groupings, and re-present.
+
+**After confirmation:** Process groups in priority order. For each group, set `_currentGroup` to the list of bug IDs. All subsequent phases operate on the entire group together.
+
 ## Phase 2: Load Bug Details & Set InProgress
+
+**When processing a group of bugs:** Repeat the fetch and details extraction for EACH bug in the group. Compile all bug details into a single investigation context. Set ALL bugs in the group to InProgress.
 
 **Fetch full bug details and save response for later use:**
 ```bash
@@ -156,6 +224,15 @@ Task(subagent_type="agentic-search", model="sonnet", max_turns=20, description="
   Description: {description}
   Area: {area}
   Page URL: {pageUrl}
+
+  **When processing a group:** Replace the single Bug/Description/Area/URL fields above with:
+
+  ## Bugs in this group
+  {for each bug in group, list: Bug #{id}: {title} — {description} (Area: {area}, URL: {pageUrl})}
+
+  These bugs are grouped because: {group rationale}
+
+  Investigate the SHARED root cause. If during investigation you discover they are actually unrelated, note this in your synthesis.
 
   ## Phase 1: Reconnaissance
   Use ctags for fast symbol lookup:
@@ -282,6 +359,16 @@ Task(subagent_type="bug-hunter", model="sonnet", max_turns=20, description="Fix 
   ## Investigation Results
   {paste the full investigation summary from Phase 3c — including file paths, line numbers, and suggested fix}
 
+  **When processing a group:** Replace the single Bug fields above with:
+
+  ## Bug Group
+  {for each bug in group: Bug #{id}: {title} — {description}}
+  Group rationale: {rationale}
+
+  ## Group-Specific Instructions
+  1. Fix the SHARED root cause that affects all bugs in this group
+  2. If the bugs have slightly different symptoms, ensure the fix addresses all of them
+
   ## Instructions
   1. Read the identified files to confirm the root cause
   2. Implement the MINIMAL fix — don't refactor surrounding code
@@ -347,6 +434,31 @@ Present a complete summary:
 6. Mark bug as Fixed in the system
 ```
 
+**When processing a group, use this template instead:**
+
+```
+## Bug Group Fixed: {group name}
+
+**Bugs resolved:** #{id1}, #{id2}, ...
+**Root Cause:** {what was actually wrong — shared cause}
+
+**Changes:**
+| File | Change |
+|------|--------|
+| {path} | {what changed} |
+
+**Build:** PASS
+**Tests:** {N} passing, {M} failing (or "All passing")
+
+**Ready to deploy?** This will:
+1. Create `hotfix/bugs-{id1}-{id2}` branch from latest main
+2. Commit and push, then create a PR
+3. Wait for CI to pass
+4. Merge PR to main
+5. Deploy Portal/API to IIS
+6. Mark ALL {count} bugs as Fixed in the system
+```
+
 **STOP HERE and wait for user confirmation.** Do NOT deploy without explicit approval.
 
 ## Phase 7: Commit, PR & Deploy (User-Confirmed)
@@ -356,6 +468,10 @@ Only after user says yes:
 ### 7a. Create hotfix branch and commit
 
 Bug fixes go through the PR process to prevent fixes from being lost when feature branches merge.
+
+**Branch naming:**
+- Single bug: `hotfix/bug-{id}`
+- Group of bugs: `hotfix/bugs-{id1}-{id2}` (use first two IDs if group is large)
 
 ```bash
 cd /c/claude/fusecp-enterprise && git stash && git checkout main && git pull origin main && git checkout -b hotfix/bug-{id} && git stash pop
@@ -375,6 +491,9 @@ EOF
 ```
 
 ### 7b. Push and create PR
+
+**PR title for groups:** `fix: {group name} (Bugs #{id1}, #{id2}, ...)`
+**PR body:** List all bug IDs with their titles.
 
 ```bash
 cd /c/claude/fusecp-enterprise && git push -u origin hotfix/bug-{id}
@@ -447,6 +566,12 @@ Determine what to deploy based on changed files:
 curl -sk -X PUT -H "X-Api-Key: fusecp-admin-key-2026" -H "Content-Type: application/json" "http://localhost:5010/api/bugs/{id}/status" -d "{\"status\":\"Fixed\"}"
 ```
 
+**When processing a group — mark ALL bugs in the group as Fixed:**
+```bash
+# For each bug ID in the group:
+curl -sk -X PUT -H "X-Api-Key: fusecp-admin-key-2026" -H "Content-Type: application/json" "http://localhost:5010/api/bugs/{id}/status" -d "{\"status\":\"Fixed\"}"
+```
+
 ### 7f. Visual Verification (if Chrome available and PageUrl exists)
 
 After deploy, navigate back to the PageUrl and take a screenshot to verify the fix is visible.
@@ -462,6 +587,9 @@ rm -f C:/claude/fusecp-enterprise/tmp/bug_{id}*
 After completing a fix:
 
 "Bug #{id} fixed and deployed. {N-1} open bugs remaining. Fix the next one?"
+
+**When processing a group:**
+"Bug group fixed and deployed. {remaining groups} group(s) remaining ({total remaining bugs} bugs). Fix the next group?"
 
 If user says yes, loop back to Phase 1.
 
