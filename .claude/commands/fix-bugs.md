@@ -27,6 +27,20 @@ This runs on **Windows Server + Git Bash**. Follow these rules in ALL commands:
 - **Python**: Use `uv run python` (not `python` — not on system PATH)
 - **PowerShell**: NEVER use inline `powershell -Command` with `$_`, `$()`, or `$variable` — Git Bash mangles dollar signs into `extglob`. Instead, **always write a `.ps1` script file first** using the Write tool, then execute it with `powershell -File "path/to/script.ps1"`. This applies to ALL JSON parsing, Base64 decoding, and any PowerShell logic with variables.
 
+## Bugfix Scripts (Persistent)
+
+Reusable PowerShell scripts live at `C:/claude/fusecp-enterprise/scripts/bugfix/`. Use these instead of writing new scripts each time:
+
+| Script | Purpose | Usage |
+|--------|---------|-------|
+| `fetch-open-bugs.ps1` | Fetch open bugs, output pipe-delimited | `powershell -File scripts/bugfix/fetch-open-bugs.ps1 [-JsonOut tmp/open_bugs.json]` |
+| `read-bug.ps1` | Fetch single bug details + screenshot | `powershell -File scripts/bugfix/read-bug.ps1 -BugId 30 [-ExtractScreenshot]` |
+| `read-bugs-group.ps1` | Fetch multiple bugs + screenshots | `powershell -File scripts/bugfix/read-bugs-group.ps1 -BugIds 29,30,34 [-ExtractScreenshots]` |
+| `extract-screenshot.ps1` | Extract screenshot (legacy + multi) | `powershell -File scripts/bugfix/extract-screenshot.ps1 -BugId 30` |
+| `set-bug-status.ps1` | Update bug status (safe endpoint) | `powershell -File scripts/bugfix/set-bug-status.ps1 -BugId 30 -Status InProgress` |
+
+All scripts default to `ApiBase=http://localhost:5010` and `ApiKey=fusecp-admin-key-2026`. Screenshots save to `tmp/` by default.
+
 ## API Configuration
 
 ```
@@ -40,25 +54,7 @@ All curl commands use: `curl -sk -H "X-Api-Key: fusecp-admin-key-2026"`
 
 ```bash
 mkdir -p C:/claude/fusecp-enterprise/tmp
-curl -sk -H "X-Api-Key: fusecp-admin-key-2026" "http://localhost:5010/api/bugs?status=Open" -o C:/claude/fusecp-enterprise/tmp/open_bugs.json
-```
-
-**Parse the JSON using a PowerShell script** (never inline — see Platform Notes):
-
-Write this script using the Write tool to `C:/claude/fusecp-enterprise/tmp/parse_bugs.ps1`:
-```powershell
-$bugs = Get-Content 'C:/claude/fusecp-enterprise/tmp/open_bugs.json' | ConvertFrom-Json
-foreach ($b in $bugs) {
-    $hasScreenshot = if ($b.screenshotData) { 'Yes' } else { 'No' }
-    $type = if ($b.type) { $b.type } else { 'Bug' }
-    $reported = if ($b.reportedAt) { ($b.reportedAt -split 'T')[0] } else { 'Unknown' }
-    Write-Host "$($b.bugId)|$($b.priority)|$type|$($b.area)|$($b.title)|$reported|$hasScreenshot"
-}
-```
-
-Then execute:
-```bash
-powershell -File "C:/claude/fusecp-enterprise/tmp/parse_bugs.ps1"
+powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/fetch-open-bugs.ps1" -JsonOut "C:/claude/fusecp-enterprise/tmp/open_bugs.json"
 ```
 
 Parse the pipe-delimited output. If no bugs, report "No open bugs found" and stop.
@@ -163,36 +159,16 @@ Proceed with Group 1 first? Say "regroup" to adjust, or "skip to #N" to pick a d
 
 ## Phase 2: Load Bug Details & Set InProgress
 
-**When processing a group of bugs:** Repeat the fetch and details extraction for EACH bug in the group. Compile all bug details into a single investigation context. Set ALL bugs in the group to InProgress.
+**When processing a group of bugs:** Use `read-bugs-group.ps1` to fetch all at once. For a single bug, use `read-bug.ps1`.
 
-**Fetch full bug details and save response for later use:**
+**Single bug:**
 ```bash
-curl -sk -H "X-Api-Key: fusecp-admin-key-2026" "http://localhost:5010/api/bugs/{id}" -o C:/claude/fusecp-enterprise/tmp/bug_{id}.json
+powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/read-bug.ps1" -BugId {id} -ExtractScreenshot
 ```
 
-**Extract key fields using a PowerShell script** (never inline — see Platform Notes):
-
-Write this script using the Write tool to `C:/claude/fusecp-enterprise/tmp/read_bug.ps1`:
-```powershell
-$b = Get-Content 'C:/claude/fusecp-enterprise/tmp/bug_{id}.json' | ConvertFrom-Json
-Write-Host "Title: $($b.title)"
-Write-Host "Description: $($b.description)"
-Write-Host "Area: $($b.area)"
-Write-Host "Priority: $($b.priority)"
-Write-Host "PageUrl: $($b.pageUrl)"
-Write-Host "ReportedInBuild: $($b.reportedInBuild)"
-Write-Host "ReportedAt: $($b.reportedAt)"
-Write-Host "HasScreenshot: $([bool]$b.screenshotData)"
-Write-Host "ScreenshotMimeType: $($b.screenshotMimeType)"
-if ($b.screenshotData) {
-    [IO.File]::WriteAllBytes('C:/claude/fusecp-enterprise/tmp/bug_{id}_screenshot.png', [Convert]::FromBase64String($b.screenshotData))
-    Write-Host 'Screenshot saved to bug_{id}_screenshot.png'
-}
-```
-
-**IMPORTANT:** Replace `{id}` in the script with the actual bug ID before writing. Then execute:
+**Group of bugs:**
 ```bash
-powershell -File "C:/claude/fusecp-enterprise/tmp/read_bug.ps1"
+powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/read-bugs-group.ps1" -BugIds {id1},{id2},{id3} -ExtractScreenshots
 ```
 
 Parse the output for these key fields:
@@ -200,15 +176,14 @@ Parse the output for these key fields:
 - `Area` — Which subsystem (Portal, Exchange, AD, DNS, HyperV, API)
 - `PageUrl` — The URL where the bug was observed (if provided)
 - `Priority` — Severity level
-- `ScreenshotData` — Visual evidence (screenshot auto-extracted to PNG if present)
-- `ReportedInBuild` — Which build version had the bug
+- `ScreenshotCount` — Number of screenshots (auto-extracted to `tmp/bug_{id}_screenshot.png` if `-ExtractScreenshot(s)` flag used)
 
-**Update status to InProgress (status-only endpoint — preserves screenshot):**
+**Update status to InProgress:**
 ```bash
-curl -sk -X PUT -H "X-Api-Key: fusecp-admin-key-2026" -H "Content-Type: application/json" "http://localhost:5010/api/bugs/{id}/status" -d "{\"status\":\"InProgress\"}"
+powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/set-bug-status.ps1" -BugId {id} -Status InProgress
 ```
 
-**IMPORTANT:** Use the `/status` endpoint, NOT the full PUT. The full PUT overwrites all fields including ScreenshotData — any omitted nullable fields get set to NULL.
+**IMPORTANT:** The `set-bug-status.ps1` script uses the `/status` endpoint (not full PUT), which preserves screenshot data.
 
 ## Phase 3: Investigate
 
@@ -304,9 +279,12 @@ This fallback is faster and more reliable than retrying agent dispatches.
 
 ### 3b. Visual Investigation (when screenshot exists)
 
-If the bug has `ScreenshotData`:
+If the bug has screenshots (ScreenshotCount > 0):
 
-1. **Screenshot already extracted** — The `read_bug.ps1` script from Phase 2 automatically decodes the screenshot to `C:/claude/fusecp-enterprise/tmp/bug_{id}_screenshot.png`. No additional extraction needed.
+1. **Screenshot already extracted** — Phase 2 scripts automatically extract screenshots to `C:/claude/fusecp-enterprise/tmp/bug_{id}_screenshot.png`. If you need to re-extract or get multi-screenshots separately:
+   ```bash
+   powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/extract-screenshot.ps1" -BugId {id}
+   ```
 
 2. **View the screenshot** using the Read tool (it supports images):
    ```
@@ -563,13 +541,13 @@ Determine what to deploy based on changed files:
 ### 7e. Update Bug Status
 
 ```bash
-curl -sk -X PUT -H "X-Api-Key: fusecp-admin-key-2026" -H "Content-Type: application/json" "http://localhost:5010/api/bugs/{id}/status" -d "{\"status\":\"Fixed\"}"
+powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/set-bug-status.ps1" -BugId {id} -Status Fixed
 ```
 
 **When processing a group — mark ALL bugs in the group as Fixed:**
 ```bash
 # For each bug ID in the group:
-curl -sk -X PUT -H "X-Api-Key: fusecp-admin-key-2026" -H "Content-Type: application/json" "http://localhost:5010/api/bugs/{id}/status" -d "{\"status\":\"Fixed\"}"
+powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/set-bug-status.ps1" -BugId {id} -Status Fixed
 ```
 
 ### 7f. Visual Verification (if Chrome available and PageUrl exists)
