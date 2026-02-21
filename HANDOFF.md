@@ -1,6 +1,6 @@
 # Amplifier Cowork — Task Handoff
 
-## Dispatch Status: WAITING_FOR_GEMINI
+## Dispatch Status: PR_READY
 
 > **Protocol:** Only the designated receiver should act.
 > - Claude acts on: `IDLE`, `PR_READY`, `REVIEWING`, `DEPLOYING`, `WAITING_FOR_CLAUDE`
@@ -232,3 +232,4 @@ You MUST use your agents at `C:\Przemek\agents\` for this task. Do NOT implement
 | 2026-02-19 | Gemini → Claude | EmptyState migration (Phase 6.3d) v2 | PR#87 | Success. 11 empty states in 9 files. Build 0 errors. Merged + deployed to Portal. No fixes needed. |
 | 2026-02-20 | Claude → Gemini | P6.4 Component Library Polish — semantic tokens + shared components | PR#95 | Success. 15 files, +162/-300 lines. Claude fixed 2 review issues post-merge: Settings/Index.razor link regression, OperationsLog category color collision. Deployed to Portal. |
 | 2026-02-20 | Gemini → Claude | Fix missing i18n translations (dashboard, DNS templates) | PR#96 | Success. Added migration 084 with 40+ missing keys. |
+| 2026-02-21 | Gemini → Claude | Mailbox General Tab Redesign | PR#107 | Success. Extended DTO, redesigned layout, created translation migration, and added tests. Ready for review. |
