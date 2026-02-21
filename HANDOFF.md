@@ -1,8 +1,6 @@
 # Amplifier Cowork — Task Handoff
 
-## Dispatch Status: PR_READY
-
-PR: https://github.com/psklarkins/fusecp-enterprise/pull/96
+## Dispatch Status: WAITING_FOR_GEMINI
 
 > **Protocol:** Only the designated receiver should act.
 > - Claude acts on: `IDLE`, `PR_READY`, `REVIEWING`, `DEPLOYING`, `WAITING_FOR_CLAUDE`
@@ -22,10 +20,191 @@ DEPLOYING ──(Claude tests pass)──→ IDLE
 
 ## Current Task
 
-_No active task. Claude: write a task below and set status to WAITING_FOR_GEMINI._
+**From:** Claude → Gemini
+**Branch:** feature/mailbox-general-tab-redesign
+**Priority:** normal
+**Repository:** C:\claude\fusecp-enterprise
+**Working Directory:** C:\claude\fusecp-enterprise
+**PR Target:** master on psklarkins/fusecp-enterprise
 
-### Task Template (copy when dispatching)
-See `/handoff` skill for template format.
+### Objective
+Redesign the Mailbox General Tab with AD contact fields integration and 5-section accordion layout (Phase 1 of Feature Requests plan — Tasks 2, 3, 4).
+
+### Detailed Requirements
+
+This task implements Phase 1 of the feature requests plan. It involves three coordinated changes:
+
+#### Task 2: Extend MailboxGeneralSettings DTO
+
+File: `src/FuseCP.Providers.Exchange/Models/MailboxSettings.cs`
+
+Add an `AdContactFields` record to hold AD contact data. The existing `MailboxGeneralSettings` record currently has: DisplayName, FirstName, LastName, Initials, Alias, HiddenFromAddressLists, Database, MailboxType.
+
+**Add this new record** (after the existing `MailboxGeneralSettings` record):
+
+```csharp
+public record AdContactFields(
+    string? TelephoneNumber,
+    string? MobilePhone,
+    string? FacsimileTelephoneNumber,
+    string? HomePhone,
+    string? Pager,
+    string? IpPhone,
+    string? JobTitle,
+    string? Department,
+    string? Company,
+    string? Manager,
+    string? StreetAddress,
+    string? City,
+    string? State,
+    string? PostalCode,
+    string? Country,
+    string? Notes,
+    string? WebPage
+);
+```
+
+**Extend MailboxGeneralSettings** — add a single property:
+```csharp
+AdContactFields? ContactFields
+```
+
+This follows the existing pattern where MailboxSettings.cs contains all Exchange-related DTOs.
+
+**Reference the AD field names from:** `src/FuseCP.Providers.AD/Models/AdUser.cs` (lines 3-23) — the `AdUser` record already has all 17 contact fields with identical names. The new `AdContactFields` record mirrors those field names exactly.
+
+#### Task 3: Redesign MailboxGeneralTab.razor
+
+File: `src/FuseCP.Portal/Components/Pages/Exchange/Tabs/MailboxGeneralTab.razor`
+
+Replace the current flat form layout with a 5-section accordion using the existing FuseCP accordion pattern.
+
+**The 5 accordion sections:**
+
+1. **General** (expanded by default) — DisplayName, FirstName, LastName, Initials, Alias, HiddenFromAddressLists
+2. **Contact Information** — TelephoneNumber, MobilePhone, FacsimileTelephoneNumber, HomePhone, Pager, IpPhone
+3. **Organization** — JobTitle, Department, Company, Manager
+4. **Address** — StreetAddress, City, State, PostalCode, Country
+5. **Notes** — Notes, WebPage
+
+**Accordion pattern to follow** — use the same HTML/CSS pattern already used in FuseCP. Look at existing accordion implementations in the Portal codebase:
+- Search for `accordion` in `src/FuseCP.Portal/Components/` for existing patterns
+- If no existing accordion pattern exists, use standard Bootstrap 5 accordion (`accordion`, `accordion-item`, `accordion-header`, `accordion-body`, `accordion-collapse`)
+
+**Form field pattern** — follow the existing `.input` and `.label` classes used throughout the portal (standardized in Phase 6.3b). Example:
+```html
+<div class="mb-3">
+    <label class="label">@Loc["exchange.display_name"]</label>
+    <input type="text" class="input" @bind="Model.DisplayName" />
+</div>
+```
+
+**i18n keys** — Use the `exchange.*` namespace for all new field labels. The keys should be:
+- `exchange.contact_information` (section header)
+- `exchange.organization` (section header)
+- `exchange.address` (section header)
+- `exchange.notes` (section header)
+- `exchange.telephone_number`, `exchange.mobile_phone`, `exchange.fax`, `exchange.home_phone`, `exchange.pager`, `exchange.ip_phone`
+- `exchange.job_title`, `exchange.department`, `exchange.company`, `exchange.manager`
+- `exchange.street_address`, `exchange.city`, `exchange.state`, `exchange.postal_code`, `exchange.country`
+- `exchange.notes_field`, `exchange.web_page`
+
+**Create a SQL migration** for these i18n keys (both EN and PL) at:
+`src/FuseCP.Database/Migrations/092_AddMailboxGeneralTabTranslations.sql`
+
+Follow the MERGE pattern from migration 091 (`src/FuseCP.Database/Migrations/091_AddDashboardAndMissingTranslations.sql`).
+
+Also create a PowerShell execution script at `scripts/bugfix/run-migration-092.ps1` following the same pattern as `scripts/bugfix/run-migration-091.ps1` (ADO.NET with proper Unicode handling for Polish diacritics).
+
+#### Task 4: Write Tests
+
+Add tests for the new DTO and verify the accordion renders correctly.
+
+File: `tests/FuseCP.Tests/Exchange/MailboxGeneralSettingsTests.cs` (new file)
+
+Test coverage:
+- `AdContactFields` record can be created with all fields
+- `AdContactFields` record handles null fields correctly
+- `MailboxGeneralSettings` includes `ContactFields` property
+- `ContactFields` can be null (backward compatible)
+
+### Spec
+Inline — see Objective and Detailed Requirements above.
+Full plan at: `C:\claude\amplifier\docs\plans\2026-02-21-feature-requests-phases1-4.md` (Tasks 2-4)
+
+### Context Loading (use your full 1M context)
+Load these files completely before starting:
+- `C:\claude\fusecp-enterprise\src\FuseCP.Providers.Exchange\Models\MailboxSettings.cs` — current DTO to extend
+- `C:\claude\fusecp-enterprise\src\FuseCP.Providers.AD\Models\AdUser.cs` — reference for AD contact field names
+- `C:\claude\fusecp-enterprise\src\FuseCP.Portal\Components\Pages\Exchange\Tabs\MailboxGeneralTab.razor` — page to redesign
+- `C:\claude\fusecp-enterprise\src\FuseCP.Database\Migrations\091_AddDashboardAndMissingTranslations.sql` — migration pattern
+- `C:\claude\fusecp-enterprise\scripts\bugfix\run-migration-091.ps1` — PowerShell migration pattern
+- `C:\claude\fusecp-enterprise\src\FuseCP.Portal\Components\Pages\Exchange\MailboxEdit.razor` — parent page for context
+- `C:\claude\fusecp-enterprise\tmp\mailbox-general-tab-playground.html` — design reference for the accordion layout
+- COWORK.md — refresh protocol understanding
+- This task section of HANDOFF.md
+
+### Files YOU May Modify
+- `src/FuseCP.Providers.Exchange/Models/MailboxSettings.cs` — extend with AdContactFields
+- `src/FuseCP.Portal/Components/Pages/Exchange/Tabs/MailboxGeneralTab.razor` — redesign layout
+- `src/FuseCP.Database/Migrations/092_AddMailboxGeneralTabTranslations.sql` — new migration
+- `scripts/bugfix/run-migration-092.ps1` — new PowerShell migration script
+- `tests/FuseCP.Tests/Exchange/MailboxGeneralSettingsTests.cs` — new test file
+
+### Files You Must NOT Modify
+- .claude/* (always)
+- CLAUDE.md (always)
+- C:\FuseCP\* (always)
+- C:\Przemek\OPENCODE.md (always)
+- `src/FuseCP.Providers.AD/Models/AdUser.cs` — read-only reference
+- `src/FuseCP.EnterpriseServer/Endpoints/ExchangeEndpoints.cs` — do NOT modify API endpoints in this task
+
+### Acceptance Criteria
+- [ ] `AdContactFields` record added with all 17 fields matching AdUser.cs field names
+- [ ] `MailboxGeneralSettings` extended with nullable `ContactFields` property
+- [ ] MailboxGeneralTab.razor uses 5-section accordion layout
+- [ ] General section expanded by default, other 4 collapsed
+- [ ] All form fields use `.input` and `.label` classes
+- [ ] All labels use `@Loc["exchange.*"]` i18n keys
+- [ ] Migration 092 creates all new i18n keys (EN + PL)
+- [ ] PowerShell migration script handles Polish diacritics correctly
+- [ ] Tests verify DTO creation and null handling
+- [ ] All tests pass
+- [ ] No lint errors
+- [ ] Code committed to feature branch with clear messages
+
+### Build & Verify (MUST complete before creating PR)
+
+Run these commands and confirm they pass. Do NOT create a PR until all pass:
+
+```bash
+cd /c/claude/fusecp-enterprise && dotnet build --no-incremental 2>&1 | tail -5
+```
+
+Expected: Build succeeded, 0 errors.
+
+```bash
+cd /c/claude/fusecp-enterprise && dotnet test --no-build --verbosity quiet 2>&1 | tail -10
+```
+
+Expected: All tests pass (1 pre-existing HyperV test failure is acceptable).
+
+If build fails, fix the errors before proceeding. Include build output summary in PR description.
+
+### Agent Assignments (MANDATORY — use subagents for implementation)
+
+You MUST use your agents at `C:\Przemek\agents\` for this task. Do NOT implement everything in your main context — delegate to specialized agents.
+
+| Task | Agent | What to delegate |
+|------|-------|-----------------|
+| Extend MailboxSettings.cs with AdContactFields record | modular-builder | Add AdContactFields record and extend MailboxGeneralSettings with ContactFields property |
+| Redesign MailboxGeneralTab.razor with accordion | component-designer | Build 5-section accordion layout with all form fields and i18n keys |
+| Create migration 092 SQL + PowerShell scripts | database-architect | Write MERGE-based SQL migration and ADO.NET PowerShell script for Unicode handling |
+| Write DTO tests | test-coverage | Create MailboxGeneralSettingsTests.cs with record creation and null handling tests |
+
+**How to use agents:** For each row above, dispatch the agent as a subagent with a focused prompt describing exactly what to implement. The agent will do the work and return results. Review the output, fix any issues, then move to the next task.
+
+**Agent tier unlocks:** primary + knowledge
 
 ---
 
