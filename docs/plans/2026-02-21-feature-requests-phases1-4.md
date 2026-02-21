@@ -23,9 +23,11 @@ All UI phases use the same accordion design from the approved playground (`C:/cl
 
 ---
 
-## Phase 4: Operations Logging Fix (FR #48)
+## Phase 4: Operations Logging Fix (FR #48) -- COMPLETED
 
 > Quick win — single file change, fully independent. Fix first before any UI work.
+>
+> **Status:** DONE. The try/catch/finally pattern with `statusCode = 500` in catch block is already in `OperationsLoggingMiddleware.cs:54-63`.
 
 ---
 
