@@ -110,9 +110,11 @@ finally
 
 ---
 
-## Phase 1: Mailbox General Tab Redesign (FR #44, #42, #38)
+## Phase 1: Mailbox General Tab Redesign (FR #44, #42, #38) -- COMPLETED
 
 > Establish the accordion design system in Blazor. Extends existing mailbox tab with full AD contact fields using the IAdApiClient bridge already in use for password resets.
+>
+> **Status:** DONE (2026-02-21). Implemented via PR #107 (Gemini: DTO + accordion layout + migration 092) + PR #108 (Claude: wired AD contact fields load/save via AdApiClient). Deployed to Portal.
 
 ---
 
