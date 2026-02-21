@@ -26,6 +26,7 @@ This runs on **Windows Server + Git Bash**. Follow these rules in ALL commands:
 - **Null output**: Use `> /dev/null 2>&1` (never `> nul`)
 - **Python**: Use `uv run python` (not `python` — not on system PATH)
 - **PowerShell**: NEVER use inline `powershell -Command` with `$_`, `$()`, or `$variable` — Git Bash mangles dollar signs into `extglob`. Instead, **always write a `.ps1` script file first** using the Write tool, then execute it with `powershell -File "path/to/script.ps1"`. This applies to ALL JSON parsing, Base64 decoding, and any PowerShell logic with variables.
+- **Screenshots (CRITICAL)**: NEVER download screenshots using `curl --output file.png`. The screenshot API returns **JSON with base64 data**, NOT raw image bytes. Saving JSON as `.png` and then using `Read` to view it will crash the session permanently (the malformed image poisons the conversation context and every subsequent API call fails). **ALWAYS use the PowerShell bugfix scripts** (`read-bug.ps1 -ExtractScreenshot`, `read-bugs-group.ps1 -ExtractScreenshots`, or `extract-screenshot.ps1`) which properly decode base64 and validate PNG magic bytes.
 
 ## Bugfix Scripts (Persistent)
 
@@ -35,7 +36,7 @@ Reusable PowerShell scripts live at `C:/claude/fusecp-enterprise/scripts/bugfix/
 |--------|---------|-------|
 | `fetch-open-bugs.ps1` | Fetch open bugs, output pipe-delimited | `powershell -File scripts/bugfix/fetch-open-bugs.ps1 [-JsonOut tmp/open_bugs.json]` |
 | `read-bug.ps1` | Fetch single bug details + screenshot | `powershell -File scripts/bugfix/read-bug.ps1 -BugId 30 [-ExtractScreenshot]` |
-| `read-bugs-group.ps1` | Fetch multiple bugs + screenshots | `powershell -File scripts/bugfix/read-bugs-group.ps1 -BugIds 29,30,34 [-ExtractScreenshots]` |
+| `read-bugs-group.ps1` | Fetch multiple bugs + screenshots | `powershell -File scripts/bugfix/read-bugs-group.ps1 -BugIds "29,30,34" [-ExtractScreenshots]` |
 | `extract-screenshot.ps1` | Extract screenshot (legacy + multi) | `powershell -File scripts/bugfix/extract-screenshot.ps1 -BugId 30` |
 | `set-bug-status.ps1` | Update bug status (safe endpoint) | `powershell -File scripts/bugfix/set-bug-status.ps1 -BugId 30 -Status InProgress` |
 
@@ -168,7 +169,7 @@ powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/read-bug.ps1" -BugI
 
 **Group of bugs:**
 ```bash
-powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/read-bugs-group.ps1" -BugIds {id1},{id2},{id3} -ExtractScreenshots
+powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/read-bugs-group.ps1" -BugIds "{id1},{id2},{id3}" -ExtractScreenshots
 ```
 
 Parse the output for these key fields:
@@ -279,19 +280,32 @@ This fallback is faster and more reliable than retrying agent dispatches.
 
 ### 3b. Visual Investigation (when screenshot exists)
 
+**CRITICAL: NEVER download screenshots with curl.** The API returns JSON (not raw bytes). Using `curl --output file.png` saves JSON as a PNG file, which crashes the session when Read tries to display it. This is an **unrecoverable crash** — the malformed image poisons the conversation context permanently.
+
 If the bug has screenshots (ScreenshotCount > 0):
 
-1. **Screenshot already extracted** — Phase 2 scripts automatically extract screenshots to `C:/claude/fusecp-enterprise/tmp/bug_{id}_screenshot.png`. If you need to re-extract or get multi-screenshots separately:
+1. **Screenshot already extracted** — Phase 2 scripts automatically extract screenshots to `C:/claude/fusecp-enterprise/tmp/`. The scripts handle base64 decoding and PNG validation. If you need to re-extract:
    ```bash
    powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/extract-screenshot.ps1" -BugId {id}
    ```
 
-2. **View the screenshot** using the Read tool (it supports images):
+   Screenshots are saved as:
+   - Legacy: `tmp/bug_{id}_screenshot.png`
+   - Multi-screenshot: `tmp/bug_{id}_ss_{screenshotId}.png`
+
+2. **Validate before viewing** — ALWAYS verify the file is a real PNG before using Read:
+   ```bash
+   file C:/claude/fusecp-enterprise/tmp/bug_{id}_screenshot.png
+   ```
+   - If output says `PNG image data` → safe to view
+   - If output says `JSON text data`, `ASCII text`, or anything else → **DO NOT Read it**. The extraction failed. Log "Screenshot extraction produced invalid file — skipping visual analysis" and continue to Phase 3c.
+
+3. **View the screenshot** (only after validation passes):
    ```
    Read(file_path="C:/claude/fusecp-enterprise/tmp/bug_{id}_screenshot.png")
    ```
 
-3. **Navigate to the live page** (if PageUrl is provided and Chrome MCP is available):
+4. **Navigate to the live page** (if PageUrl is provided and Chrome MCP is available):
    ```
    mcp__claude-in-chrome__tabs_context_mcp()
    mcp__claude-in-chrome__tabs_create_mcp()
@@ -299,10 +313,12 @@ If the bug has screenshots (ScreenshotCount > 0):
    mcp__claude-in-chrome__browser_take_screenshot(type="png")
    ```
 
-4. **Compare** the bug screenshot with the live page to understand:
+5. **Compare** the bug screenshot with the live page to understand:
    - Is the bug still reproducible?
    - What visual elements are broken?
    - What's the expected vs actual state?
+
+6. **If no valid screenshots could be extracted**, skip visual investigation entirely. Note "No screenshots available — investigation based on code analysis only" and proceed to Phase 3c.
 
 ### 3c. Compile Investigation Summary
 
@@ -582,6 +598,7 @@ If user says yes, loop back to Phase 1.
 - **CI failure on PR:** Investigate the CI log (`gh pr checks {number}`), fix on the hotfix branch, push again. Do NOT merge a failing PR.
 - **Merge conflict:** Rebase the hotfix branch on latest main: `git fetch origin && git rebase origin/main`. Fix any conflicts, then force-push the branch.
 - **Deploy failure:** "Deploy failed: {error}. The PR is merged but not deployed. You may need to deploy manually."
+- **Screenshot extraction produces non-PNG file:** Skip visual analysis entirely. Do NOT attempt to Read the file. Log the issue and proceed with code-only investigation. Check with `file <path>` — if it says anything other than "PNG image data", delete the file and continue.
 
 ## Why PRs for Bug Fixes
 
