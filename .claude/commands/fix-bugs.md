@@ -26,7 +26,7 @@ This runs on **Windows Server + Git Bash**. Follow these rules in ALL commands:
 - **Null output**: Use `> /dev/null 2>&1` (never `> nul`)
 - **Python**: Use `uv run python` (not `python` — not on system PATH)
 - **PowerShell**: NEVER use inline `powershell -Command` with `$_`, `$()`, or `$variable` — Git Bash mangles dollar signs into `extglob`. Instead, **always write a `.ps1` script file first** using the Write tool, then execute it with `powershell -File "path/to/script.ps1"`. This applies to ALL JSON parsing, Base64 decoding, and any PowerShell logic with variables.
-- **Screenshots (CRITICAL)**: NEVER download screenshots using `curl --output file.png`. The screenshot API returns **JSON with base64 data**, NOT raw image bytes. Saving JSON as `.png` and then using `Read` to view it will crash the session permanently (the malformed image poisons the conversation context and every subsequent API call fails). **ALWAYS use the PowerShell bugfix scripts** (`read-bug.ps1 -ExtractScreenshot`, `read-bugs-group.ps1 -ExtractScreenshots`, or `extract-screenshot.ps1`) which properly decode base64 and validate PNG magic bytes.
+- **Screenshots (CRITICAL)**: NEVER download screenshots using `curl --output file.png`. The screenshot API returns **JSON with base64 data**, NOT raw image bytes. Saving JSON as `.png` and then using `Read` to view it will crash the session permanently (the malformed image poisons the conversation context and every subsequent API call fails). **ALWAYS use the PowerShell bugfix scripts** (`read-bug.ps1 -ExtractScreenshot`, `read-bugs-group.ps1 -ExtractScreenshots`, or `extract-screenshot.ps1`) which properly decode base64 and validate image magic bytes. Scripts support PNG, JPEG, GIF, and WebP — files are saved with the correct extension (`.png`, `.jpg`, `.gif`, `.webp`).
 
 ## Bugfix Scripts (Persistent)
 
@@ -177,7 +177,7 @@ Parse the output for these key fields:
 - `Area` — Which subsystem (Portal, Exchange, AD, DNS, HyperV, API)
 - `PageUrl` — The URL where the bug was observed (if provided)
 - `Priority` — Severity level
-- `ScreenshotCount` — Number of screenshots (auto-extracted to `tmp/bug_{id}_screenshot.png` if `-ExtractScreenshot(s)` flag used)
+- `ScreenshotCount` — Number of screenshots (auto-extracted to `tmp/bug_{id}_screenshot.{ext}` with correct extension if `-ExtractScreenshot(s)` flag used)
 
 **Update status to InProgress:**
 ```bash
@@ -284,25 +284,24 @@ This fallback is faster and more reliable than retrying agent dispatches.
 
 If the bug has screenshots (ScreenshotCount > 0):
 
-1. **Screenshot already extracted** — Phase 2 scripts automatically extract screenshots to `C:/claude/fusecp-enterprise/tmp/`. The scripts handle base64 decoding and PNG validation. If you need to re-extract:
+1. **Screenshot already extracted** — Phase 2 scripts automatically extract screenshots to `C:/claude/fusecp-enterprise/tmp/`. The scripts handle base64 decoding and image format detection (PNG, JPEG, GIF, WebP). If you need to re-extract:
    ```bash
    powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/extract-screenshot.ps1" -BugId {id}
    ```
 
-   Screenshots are saved as:
-   - Legacy: `tmp/bug_{id}_screenshot.png`
-   - Multi-screenshot: `tmp/bug_{id}_ss_{screenshotId}.png`
+   Screenshots are saved with the correct extension based on actual image format:
+   - Legacy: `tmp/bug_{id}_screenshot.{png|jpg|gif|webp}`
+   - Multi-screenshot: `tmp/bug_{id}_ss_{screenshotId}.{png|jpg|gif|webp}`
 
-2. **Validate before viewing** — ALWAYS verify the file is a real PNG before using Read:
+2. **Find the extracted file** — list tmp files for this bug to find the actual filename:
    ```bash
-   file C:/claude/fusecp-enterprise/tmp/bug_{id}_screenshot.png
+   ls C:/claude/fusecp-enterprise/tmp/bug_{id}_screenshot.* C:/claude/fusecp-enterprise/tmp/bug_{id}_ss_*.* 2>/dev/null
    ```
-   - If output says `PNG image data` → safe to view
-   - If output says `JSON text data`, `ASCII text`, or anything else → **DO NOT Read it**. The extraction failed. Log "Screenshot extraction produced invalid file — skipping visual analysis" and continue to Phase 3c.
+   If no files found, the extraction failed — skip visual analysis and proceed to Phase 3c.
 
-3. **View the screenshot** (only after validation passes):
+3. **View the screenshot** (the scripts already validate image magic bytes, so extracted files are safe to view):
    ```
-   Read(file_path="C:/claude/fusecp-enterprise/tmp/bug_{id}_screenshot.png")
+   Read(file_path="C:/claude/fusecp-enterprise/tmp/bug_{id}_screenshot.{ext}")
    ```
 
 4. **Navigate to the live page** (if PageUrl is provided and Chrome MCP is available):
@@ -318,7 +317,7 @@ If the bug has screenshots (ScreenshotCount > 0):
    - What visual elements are broken?
    - What's the expected vs actual state?
 
-6. **If no valid screenshots could be extracted**, skip visual investigation entirely. Note "No screenshots available — investigation based on code analysis only" and proceed to Phase 3c.
+6. **If no valid screenshots could be extracted** (no files in `tmp/bug_{id}_*`), skip visual investigation entirely. Note "No screenshots available — investigation based on code analysis only" and proceed to Phase 3c.
 
 ### 3c. Compile Investigation Summary
 
@@ -598,7 +597,7 @@ If user says yes, loop back to Phase 1.
 - **CI failure on PR:** Investigate the CI log (`gh pr checks {number}`), fix on the hotfix branch, push again. Do NOT merge a failing PR.
 - **Merge conflict:** Rebase the hotfix branch on latest main: `git fetch origin && git rebase origin/main`. Fix any conflicts, then force-push the branch.
 - **Deploy failure:** "Deploy failed: {error}. The PR is merged but not deployed. You may need to deploy manually."
-- **Screenshot extraction produces non-PNG file:** Skip visual analysis entirely. Do NOT attempt to Read the file. Log the issue and proceed with code-only investigation. Check with `file <path>` — if it says anything other than "PNG image data", delete the file and continue.
+- **Screenshot extraction produces no files:** Skip visual analysis entirely. The extraction scripts validate image magic bytes and only keep valid images (PNG, JPEG, GIF, WebP). If no files are saved, proceed with code-only investigation.
 
 ## Why PRs for Bug Fixes
 
