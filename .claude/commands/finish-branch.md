@@ -8,11 +8,19 @@ description: "Complete development branch with cleanup, verification, and merge/
 
 Guide completion of development work by presenting clear options and handling chosen workflow.
 
-**Core principle:** Verify tests → Present options → Execute choice → Clean up.
+**Core principle:** Verify tests → Create PR (default) → Clean up.
 
 **Announce at start:** "I'm using the finish-branch command to complete this work."
 
 ## The Process
+
+**Session Naming:** First, rename this session to indicate the completion phase:
+
+/rename finish: <branch-name>
+
+Get branch from `git branch --show-current`. Example: `/rename finish: feature/auth`
+
+If `/rename` is unavailable, skip this step.
 
 ### Step 1: Pre-Merge Verification
 
@@ -45,22 +53,24 @@ git merge-base HEAD main 2>/dev/null || git merge-base HEAD master 2>/dev/null
 
 Or ask: "This branch split from main - is that correct?"
 
-### Step 3: Present Options
+### Step 3: Default Action — Create PR
 
-Present exactly these 4 options:
+**The default completion action is always to create a Pull Request.** Do not present a menu of options. Instead:
 
 ```
-Implementation complete. What would you like to do?
-
-1. Merge back to <base-branch> locally
-2. Push and create a Pull Request
-3. Keep the branch as-is (I'll handle it later)
-4. Discard this work
-
-Which option?
+Implementation complete. Tests pass. Creating PR against <base-branch>.
 ```
 
-**Don't add explanation** - keep options concise.
+Then proceed directly to Option 2 (Push and Create PR) below.
+
+**Only offer alternatives if the user explicitly asks** (e.g., "just merge locally", "discard this"). The 4 options still exist but PR is the default — don't ask, just do it.
+
+**If on main/master (should not happen if Branch Gate was followed):**
+```
+WARNING: You're on main. Cannot create a PR from main to main.
+Creating feature branch from current HEAD, then resetting main.
+```
+Then: create branch, reset main, push branch, create PR. This is the recovery path — it works but is messy. The Branch Gate in /subagent-dev should prevent this.
 
 ### Step 4: Execute Choice
 

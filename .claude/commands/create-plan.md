@@ -158,6 +158,7 @@ Research tasks always come before implementation tasks. Their output gives subse
 ### Task N: [Component Name]
 
 **Agent:** [agent-name from AGENTS_CATALOG.md]
+**Model:** [optional: haiku | sonnet | opus — omit to use default tier table]
 
 **Files:**
 - Create: `exact/path/to/file.py`
@@ -237,6 +238,16 @@ After completing each chunk of the plan:
 - Same agent that wrote the plan fixes it (preserves context)
 - If loop exceeds 5 iterations, surface to human for guidance
 - Reviewers are advisory - explain disagreements if you believe feedback is incorrect
+
+## Session Naming
+
+After saving the plan, rename this session to reflect the topic:
+
+/rename plan: <topic>
+
+Derive `<topic>` (2-4 words) from the feature name. Example: `/rename plan: auth-token-refresh`
+
+If `/rename` is unavailable, skip this step.
 
 ## Execution Handoff
 

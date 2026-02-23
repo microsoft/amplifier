@@ -54,6 +54,12 @@ Task(subagent_type="general-purpose", model="haiku", max_turns=8, description="G
 
 3. **Present summary** to user and proceed to The Process.
 
+**Context scale check:** If the scout found 15+ relevant files or the topic spans 3+ subsystems, note to the user:
+
+> Large codebase scope detected ([N] files). Fast mode (`/fast`) provides 1M context at 2.5x cost. Enable?
+
+Advisory only — do not enable without explicit user confirmation.
+
 4. **If the topic involves understanding existing code**, dispatch `agentic-search` before designing:
 ```
 Task(subagent_type="agentic-search", model="haiku", max_turns=12, description="Explore [topic] in codebase", prompt="
@@ -153,6 +159,14 @@ Task(subagent_type="general-purpose", model="sonnet", max_turns=10, description=
 ```
 
 - (User preferences for spec location override the default path)
+
+**Session Naming:** After the design is validated and spec written, rename this session:
+
+/rename design: <topic>
+
+Example: `/rename design: dns-zone-editor`
+
+If `/rename` is unavailable, skip this step.
 
 **Workflow routing — recommend the right execution path:**
 - **Simple task** (1-2 files, clear requirements) → implement directly with the appropriate Amplifier agent

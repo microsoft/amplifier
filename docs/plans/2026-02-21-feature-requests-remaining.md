@@ -1,6 +1,6 @@
 # FuseCP Feature Requests — Remaining Tasks (5-12 Restated as 1-8)
 
-> **For Claude:** REQUIRED: Use /subagent-dev (if subagents available) or /execute-plan to implement this plan. Each task specifies its Agent — dispatch that Amplifier agent as the subagent for implementation. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Status: ALL 8 TASKS COMPLETE** — Implemented via /subagent-dev, merged as PR #109 (2026-02-21). Post-merge fixes: PR #110 (photo gating), migration 096 (Polish diacritics + missing i18n key). All deployed to production.
 
 **Goal:** Implement the remaining 8 tasks from the FuseCP feature requests plan. Tasks 1-4 from the original plan (Phase 4 OperationsLogging fix + Phase 1 Mailbox General Tab redesign) are already DONE as of 2026-02-21. This document covers: Phase 3 (Mail Flow Tab accordion + searchable forwarding picker) and Phase 2 (Organization contact fields in DB/API/UI + AD thumbnailPhoto read/write + mailbox avatar).
 
@@ -51,10 +51,10 @@ The selected value stored in `_forwardingAddress` remains a string (email addres
 
 The 150ms blur delay before hiding dropdown (`Task.Delay(150)`) is required so that `@onmousedown` on a dropdown item fires before the input loses focus.
 
-- [ ] **Step 1: Read MailboxMailFlowTab.razor in full**
+- [x] **Step 1: Read MailboxMailFlowTab.razor in full**
   Read all 525 lines. Confirm exact line numbers for: forwarding TextInput block (lines 41-57), `_forwardingAddress` declaration, `_orgMailboxes` declaration (line 283), `FilteredOrgMailboxes` property (lines 286-300), `LoadOrgMailboxes()` (lines 353-364), `ShowAddModal()` (lines 340-351), `OnInitializedAsync()` (line 308).
 
-- [ ] **Step 2: Add forwarding-picker state variables in @code**
+- [x] **Step 2: Add forwarding-picker state variables in @code**
   In the `// Address book search` block (around line 280), ADD alongside existing variables:
   ```csharp
   // Forwarding picker state (separate from Add Sender modal state)
@@ -73,7 +73,7 @@ The 150ms blur delay before hiding dropdown (`Task.Delay(150)`) is required so t
   ```
   Note: `Identity` is the current mailbox's email/samAccountName — exclude it from the picker.
 
-- [ ] **Step 3: Load org mailboxes on init**
+- [x] **Step 3: Load org mailboxes on init**
   In `LoadSettings()` (around line 310), after the existing settings are loaded, add:
   ```csharp
   // Pre-load org mailboxes for forwarding picker (don't wait for modal open)
@@ -82,7 +82,7 @@ The 150ms blur delay before hiding dropdown (`Task.Delay(150)`) is required so t
   ```
   This ensures the dropdown is populated immediately when the user enables forwarding.
 
-- [ ] **Step 4: Add forwarding picker helper methods**
+- [x] **Step 4: Add forwarding picker helper methods**
   In the `@code` block, add:
   ```csharp
   private string GetForwardingDisplayText()
@@ -110,7 +110,7 @@ The 150ms blur delay before hiding dropdown (`Task.Delay(150)`) is required so t
   }
   ```
 
-- [ ] **Step 5: Replace the forwarding TextInput block**
+- [x] **Step 5: Replace the forwarding TextInput block**
   Remove lines 43-45 (the `<TextInput>` for forwarding). Replace with:
   ```razor
   @if (!string.IsNullOrEmpty(_forwardingAddress))
@@ -167,13 +167,13 @@ The 150ms blur delay before hiding dropdown (`Task.Delay(150)`) is required so t
   }
   ```
 
-- [ ] **Step 6: Build and verify**
+- [x] **Step 6: Build and verify**
   ```bash
   cd /c/claude/fusecp-enterprise && dotnet build src/FuseCP.Portal/FuseCP.Portal.csproj --no-restore 2>&1 | tail -10
   ```
   Confirm zero build errors. Confirm `_forwardingAddress` is still used by `SaveSettings()` via `MailboxMailFlowDto` — no DTO changes required.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
   ```bash
   cd /c/claude/fusecp-enterprise
   git add src/FuseCP.Portal/Components/Pages/Exchange/Tabs/MailboxMailFlowTab.razor
@@ -217,10 +217,10 @@ Section IDs to use:
 3. `collapseReject` / `headingReject` — Reject Messages From
 4. `collapseSizeLimits` / `headingSizeLimits` — Message Size Limits
 
-- [ ] **Step 1: Read MailboxMailFlowTab.razor in full (post-Task 1 state)**
+- [x] **Step 1: Read MailboxMailFlowTab.razor in full (post-Task 1 state)**
   Identify exact boundaries of each of the 4 sections by their heading text. Map start/end line numbers.
 
-- [ ] **Step 2: Wrap the `<form>` contents in accordion container**
+- [x] **Step 2: Wrap the `<form>` contents in accordion container**
   Replace `<form @onsubmit="SaveSettings" @onsubmit:preventDefault class="section-group">` outer wrapper such that the 4 flat divs become accordion items. The form tag must still wrap the accordion for submit to work.
 
   Accordion template for each section:
@@ -248,18 +248,18 @@ Section IDs to use:
   ```
   Apply same pattern for Accept (using `collapseAccept`/`headingAccept`), Reject (`collapseReject`/`headingReject`), and Size Limits (`collapseSizeLimits`/`headingSizeLimits`).
 
-- [ ] **Step 3: Remove the old flat `<div class="border rounded p-4">` wrappers**
+- [x] **Step 3: Remove the old flat `<div class="border rounded p-4">` wrappers**
   Each of the 4 old wrapper divs should be removed — their inner content is now inside `accordion-body`.
 
-- [ ] **Step 4: Add the Save button outside the accordion (at form bottom)**
+- [x] **Step 4: Add the Save button outside the accordion (at form bottom)**
   Verify the Save button and any global error/success alerts remain outside the accordion items, at the bottom of the form.
 
-- [ ] **Step 5: Build and verify**
+- [x] **Step 5: Build and verify**
   ```bash
   cd /c/claude/fusecp-enterprise && dotnet build src/FuseCP.Portal/FuseCP.Portal.csproj --no-restore 2>&1 | tail -10
   ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
   ```bash
   cd /c/claude/fusecp-enterprise
   git add src/FuseCP.Portal/Components/Pages/Exchange/Tabs/MailboxMailFlowTab.razor
@@ -292,13 +292,13 @@ Section IDs to use:
 **Context:**
 Contact fields for organizations are stored in the `Packages` table (not a custom `Organizations` table). The PackageRepository reads from `Packages`. The migration number is 093 (last was 092).
 
-- [ ] **Step 1: Inspect current Packages table schema**
+- [x] **Step 1: Inspect current Packages table schema**
   ```bash
   sqlcmd -S "(local)\SQLEXPRESS" -d FuseCPLab -Q "SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Packages' ORDER BY ORDINAL_POSITION"
   ```
   Confirm the table name is `Packages` and list any existing contact-related columns to avoid duplication.
 
-- [ ] **Step 2: Create the migration file**
+- [x] **Step 2: Create the migration file**
   Write `093_AddOrganizationContactFields.sql`:
   ```sql
   -- Migration 093: Add organization contact fields to Packages table
@@ -326,7 +326,7 @@ Contact fields for organizations are stored in the `Packages` table (not a custo
   ```
   Note: Using `ContactPhone` and `ContactEmail` (prefixed) to avoid conflict if SolidCP already has generic `Phone`/`Email` columns in the table. The Step 1 schema check will confirm.
 
-- [ ] **Step 3: Apply migration to local database**
+- [x] **Step 3: Apply migration to local database**
   ```bash
   sqlcmd -S "(local)\SQLEXPRESS" -d FuseCPLab -i src/FuseCP.Database/Migrations/093_AddOrganizationContactFields.sql
   ```
@@ -336,7 +336,7 @@ Contact fields for organizations are stored in the `Packages` table (not a custo
   ```
   All 10 columns must appear with `IS_NULLABLE = YES`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
   ```bash
   cd /c/claude/fusecp-enterprise
   git add src/FuseCP.Database/Migrations/093_AddOrganizationContactFields.sql
@@ -371,10 +371,10 @@ Organization API endpoints are defined inline in `Program.cs` under the `orgGrou
 
 DTOs belong near the endpoint definitions in `Program.cs` (existing pattern — check where other response records are defined in Program.cs).
 
-- [ ] **Step 1: Read relevant Program.cs section and PackageRepository**
+- [x] **Step 1: Read relevant Program.cs section and PackageRepository**
   Read `Program.cs` lines 560-650 to understand the orgGroup endpoint pattern. Read `PackageRepository.cs` in full to understand Dapper usage pattern (connection per method, `CommandDefinition`, `ConfigureAwait(false)`). Read `IPackageRepository.cs` to understand interface style.
 
-- [ ] **Step 2: Define contact DTOs**
+- [x] **Step 2: Define contact DTOs**
   Near the existing DTO/record definitions in `Program.cs` (or in a new file `src/FuseCP.EnterpriseServer/Models/OrganizationContactDtos.cs`), add:
   ```csharp
   public sealed record OrganizationContactDto(
@@ -392,7 +392,7 @@ DTOs belong near the endpoint definitions in `Program.cs` (existing pattern — 
   ```
   Single record used for both GET response and PUT request body.
 
-- [ ] **Step 3: Add GetContactAsync to IPackageRepository and PackageRepository**
+- [x] **Step 3: Add GetContactAsync to IPackageRepository and PackageRepository**
   In `IPackageRepository.cs`:
   ```csharp
   Task<OrganizationContactDto?> GetContactAsync(int packageId, CancellationToken ct = default);
@@ -412,7 +412,7 @@ DTOs belong near the endpoint definitions in `Program.cs` (existing pattern — 
   }
   ```
 
-- [ ] **Step 4: Add UpdateContactAsync to IPackageRepository and PackageRepository**
+- [x] **Step 4: Add UpdateContactAsync to IPackageRepository and PackageRepository**
   In `IPackageRepository.cs`:
   ```csharp
   Task UpdateContactAsync(int packageId, OrganizationContactDto contact, CancellationToken ct = default);
@@ -446,7 +446,7 @@ DTOs belong near the endpoint definitions in `Program.cs` (existing pattern — 
   }
   ```
 
-- [ ] **Step 5: Register two new endpoints in Program.cs orgGroup**
+- [x] **Step 5: Register two new endpoints in Program.cs orgGroup**
   In `Program.cs`, after the existing `orgGroup.MapGet("/{id:int}/quota", ...)` endpoint, add:
   ```csharp
   orgGroup.MapGet("/{id:int}/contact", async (
@@ -480,7 +480,7 @@ DTOs belong near the endpoint definitions in `Program.cs` (existing pattern — 
   .Produces(StatusCodes.Status404NotFound);
   ```
 
-- [ ] **Step 6: Build and smoke test**
+- [x] **Step 6: Build and smoke test**
   ```bash
   cd /c/claude/fusecp-enterprise && dotnet build --no-restore 2>&1 | tail -10
   ```
@@ -489,7 +489,7 @@ DTOs belong near the endpoint definitions in `Program.cs` (existing pattern — 
   curl -sk -H "X-Api-Key: fusecp-admin-key-2026" "http://localhost:5010/api/organizations/101/contact"
   ```
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
   ```bash
   cd /c/claude/fusecp-enterprise
   git add src/FuseCP.EnterpriseServer/Program.cs \
@@ -530,13 +530,13 @@ The `IOrganizationApiClient` needs two new methods: `GetContactAsync(int package
 
 Since the whole OrganizationEdit form is not currently accordion-based, we add only the Contact section as an accordion and leave existing fields in their flat layout. The form submit button wires both the existing save and the new contact save.
 
-- [ ] **Step 1: Read OrganizationEdit.razor in full**
+- [x] **Step 1: Read OrganizationEdit.razor in full**
   Read all 237 lines. Understand: how `Id` parameter is used, what `OnInitializedAsync` loads, how save works (calls OrgApi methods), where the submit button is. Note that `_package.PackageID` is the ID used for API calls.
 
-- [ ] **Step 2: Read IOrganizationApiClient.cs and OrganizationApiClient.cs**
+- [x] **Step 2: Read IOrganizationApiClient.cs and OrganizationApiClient.cs**
   Read both files fully. Understand `ApiResult<T>` pattern, how HTTP calls are made (`_httpClient.GetFromJsonAsync`, `PutAsJsonAsync`, etc.), base URL configuration, and how `X-Api-Key` header is set.
 
-- [ ] **Step 3: Define OrganizationContactDto in portal services**
+- [x] **Step 3: Define OrganizationContactDto in portal services**
   In `IOrganizationApiClient.cs` (after existing records), add:
   ```csharp
   public sealed record OrganizationContactDto(
@@ -553,13 +553,13 @@ Since the whole OrganizationEdit form is not currently accordion-based, we add o
   );
   ```
 
-- [ ] **Step 4: Add interface methods to IOrganizationApiClient**
+- [x] **Step 4: Add interface methods to IOrganizationApiClient**
   ```csharp
   Task<ApiResult<OrganizationContactDto>> GetContactAsync(int packageId, CancellationToken ct = default);
   Task<ApiOperationResult> UpdateContactAsync(int packageId, OrganizationContactDto contact, CancellationToken ct = default);
   ```
 
-- [ ] **Step 5: Implement in OrganizationApiClient.cs**
+- [x] **Step 5: Implement in OrganizationApiClient.cs**
   Following existing implementation patterns:
   ```csharp
   public async Task<ApiResult<OrganizationContactDto>> GetContactAsync(int packageId, CancellationToken ct = default)
@@ -583,7 +583,7 @@ Since the whole OrganizationEdit form is not currently accordion-based, we add o
   ```
   Adjust method signatures to match existing `ApiResult<T>` / `ApiOperationResult` factory patterns exactly.
 
-- [ ] **Step 6: Add contact state variables to OrganizationEdit.razor @code**
+- [x] **Step 6: Add contact state variables to OrganizationEdit.razor @code**
   ```csharp
   private OrganizationContactDto _contact = new(null, null, null, null, null, null, null, null, null, null);
   private bool _contactLoaded = false;
@@ -620,7 +620,7 @@ Since the whole OrganizationEdit form is not currently accordion-based, we add o
   _contactLoaded = true;
   ```
 
-- [ ] **Step 7: Wire contact save alongside existing save**
+- [x] **Step 7: Wire contact save alongside existing save**
   In the existing save handler, after the org name/status/plan updates succeed, add:
   ```csharp
   var contactDto = new OrganizationContactDto(
@@ -630,7 +630,7 @@ Since the whole OrganizationEdit form is not currently accordion-based, we add o
   await OrgApi.UpdateContactAsync(Id, contactDto);
   ```
 
-- [ ] **Step 8: Add Contact Information accordion section to razor markup**
+- [x] **Step 8: Add Contact Information accordion section to razor markup**
   Below the existing form content (before the save button), add:
   ```razor
   @if (_contactLoaded)
@@ -701,18 +701,18 @@ Since the whole OrganizationEdit form is not currently accordion-based, we add o
   }
   ```
 
-- [ ] **Step 9: Add i18n keys for new contact labels**
+- [x] **Step 9: Add i18n keys for new contact labels**
   Create migration `094_AddOrgContactTranslations.sql` with EN/PL translations for:
   `org.contact_information`, `org.company_legal_name`, `org.tax_id`, `org.contact_phone`,
   `org.contact_email`, `org.address`, `org.city`, `org.state`, `org.postal_code`,
   `org.country`, `org.website`
 
-- [ ] **Step 10: Build and verify**
+- [x] **Step 10: Build and verify**
   ```bash
   cd /c/claude/fusecp-enterprise && dotnet build --no-restore 2>&1 | tail -10
   ```
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
   ```bash
   cd /c/claude/fusecp-enterprise
   git add src/FuseCP.Portal/Services/IOrganizationApiClient.cs \
@@ -749,13 +749,13 @@ AD stores `thumbnailPhoto` as a raw byte array (JPEG). Max size enforced: 100KB.
 
 The AD provider uses WinRM to communicate with the AD controller at 172.31.251.101. Read `AdProvider.cs` first to understand whether `GetUserAsync` and `UpdateUserAsync` use `DirectoryEntry` directly or via WinRM PowerShell — the photo methods must use the same approach.
 
-- [ ] **Step 1: Read AdProvider.cs in full**
+- [x] **Step 1: Read AdProvider.cs in full**
   Understand how `GetUserAsync`, `UpdateUserAsync` work. Confirm whether `thumbnailPhoto` access is via `DirectorySearcher`/`DirectoryEntry` or via PowerShell WinRM (Get-ADUser). Identify the method signature pattern and error handling style used.
 
-- [ ] **Step 2: Read ADEndpoints.cs in full**
+- [x] **Step 2: Read ADEndpoints.cs in full**
   Understand existing endpoint patterns: parameter naming, auth requirements, error response shapes, how `IAdProvider` or `IAdApiClient` is injected.
 
-- [ ] **Step 3: Add GetUserPhotoAsync to the AD provider**
+- [x] **Step 3: Add GetUserPhotoAsync to the AD provider**
   If using `DirectoryEntry`:
   ```csharp
   public Task<string?> GetUserPhotoAsync(string identity)
@@ -775,7 +775,7 @@ The AD provider uses WinRM to communicate with the AD controller at 172.31.251.1
   ```
   If using PowerShell WinRM, use `Get-ADUser -Identity {identity} -Properties thumbnailPhoto` and extract the byte array from the result.
 
-- [ ] **Step 4: Add SetUserPhotoAsync to the AD provider**
+- [x] **Step 4: Add SetUserPhotoAsync to the AD provider**
   If using `DirectoryEntry`:
   ```csharp
   public Task SetUserPhotoAsync(string identity, string? base64Photo)
@@ -798,14 +798,14 @@ The AD provider uses WinRM to communicate with the AD controller at 172.31.251.1
   ```
   If using PowerShell WinRM, use `Set-ADUser -Identity {identity} -Replace @{thumbnailPhoto=[byte[]]...}` or `-Clear thumbnailPhoto`.
 
-- [ ] **Step 5: Add the methods to the IAdProvider interface (if applicable)**
+- [x] **Step 5: Add the methods to the IAdProvider interface (if applicable)**
   If an `IAdProvider` interface exists, add:
   ```csharp
   Task<string?> GetUserPhotoAsync(string identity);
   Task SetUserPhotoAsync(string identity, string? base64Photo);
   ```
 
-- [ ] **Step 6: Add GET and PUT photo endpoints to ADEndpoints.cs**
+- [x] **Step 6: Add GET and PUT photo endpoints to ADEndpoints.cs**
   ```csharp
   adGroup.MapGet("/users/{identity}/photo", async (
       string identity,
@@ -841,12 +841,12 @@ The AD provider uses WinRM to communicate with the AD controller at 172.31.251.1
   ```
   Add `PhotoRequest` record near ADEndpoints: `public sealed record PhotoRequest(string? PhotoBase64);`
 
-- [ ] **Step 7: Build and verify**
+- [x] **Step 7: Build and verify**
   ```bash
   cd /c/claude/fusecp-enterprise && dotnet build --no-restore 2>&1 | tail -10
   ```
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
   ```bash
   cd /c/claude/fusecp-enterprise
   git add src/FuseCP.Providers.AD/AdProvider.cs \
@@ -884,16 +884,16 @@ The avatar is placed ABOVE the accordion sections (before `<div class="accordion
 
 The `InputFile` component for upload must be hidden behind a styled label (standard Blazor pattern). Photo upload fires immediately on file select (not on form save). 100KB client-side size check before uploading.
 
-- [ ] **Step 1: Read IAdApiClient.cs and AdApiClient.cs**
+- [x] **Step 1: Read IAdApiClient.cs and AdApiClient.cs**
   Understand existing method signatures, HTTP call patterns, `ApiResult<T>` usage. Confirm the base URL and auth header patterns match.
 
-- [ ] **Step 2: Add photo methods to IAdApiClient**
+- [x] **Step 2: Add photo methods to IAdApiClient**
   ```csharp
   Task<ApiResult<string?>> GetUserPhotoAsync(string identity, CancellationToken ct = default);
   Task<ApiOperationResult> SetUserPhotoAsync(string identity, string? base64Photo, CancellationToken ct = default);
   ```
 
-- [ ] **Step 3: Implement in AdApiClient.cs**
+- [x] **Step 3: Implement in AdApiClient.cs**
   ```csharp
   public async Task<ApiResult<string?>> GetUserPhotoAsync(string identity, CancellationToken ct = default)
   {
@@ -919,7 +919,7 @@ The `InputFile` component for upload must be hidden behind a styled label (stand
   private sealed record PhotoResponse(string? PhotoBase64);
   ```
 
-- [ ] **Step 4: Add avatar state and helpers in MailboxGeneralTab @code**
+- [x] **Step 4: Add avatar state and helpers in MailboxGeneralTab @code**
   ```csharp
   private string? _photoBase64;
   private bool _photoLoading = false;
@@ -936,7 +936,7 @@ The `InputFile` component for upload must be hidden behind a styled label (stand
   ```
   Call `LoadPhotoAsync()` inside `OnInitializedAsync` (or `LoadSettings`) after `_firstName` / `_lastName` are populated.
 
-- [ ] **Step 5: Add upload and clear handlers**
+- [x] **Step 5: Add upload and clear handlers**
   ```csharp
   private async Task HandlePhotoUpload(InputFileChangeEventArgs e)
   {
@@ -974,7 +974,7 @@ The `InputFile` component for upload must be hidden behind a styled label (stand
   }
   ```
 
-- [ ] **Step 6: Add avatar CSS to the tab's `<style>` block**
+- [x] **Step 6: Add avatar CSS to the tab's `<style>` block**
   ```css
   .avatar-container {
       display: flex;
@@ -1009,7 +1009,7 @@ The `InputFile` component for upload must be hidden behind a styled label (stand
   }
   ```
 
-- [ ] **Step 7: Add avatar markup above the accordion in razor**
+- [x] **Step 7: Add avatar markup above the accordion in razor**
   Before `<div class="accordion" id="generalTabAccordion">`, add:
   ```razor
   <div class="avatar-container">
@@ -1046,16 +1046,16 @@ The `InputFile` component for upload must be hidden behind a styled label (stand
   </div>
   ```
 
-- [ ] **Step 8: Add i18n keys for photo UI**
+- [x] **Step 8: Add i18n keys for photo UI**
   Create migration `095_AddPhotoTranslations.sql` with EN/PL translations for:
   `exchange.upload_photo`, `exchange.clear_photo`, `exchange.user_photo`, `exchange.photo_too_large`
 
-- [ ] **Step 9: Build and verify**
+- [x] **Step 9: Build and verify**
   ```bash
   cd /c/claude/fusecp-enterprise && dotnet build --no-restore 2>&1 | tail -10
   ```
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
   ```bash
   cd /c/claude/fusecp-enterprise
   git add src/FuseCP.Portal/Services/IAdApiClient.cs \
@@ -1091,19 +1091,19 @@ The `InputFile` component for upload must be hidden behind a styled label (stand
 **Context:**
 Final verification pass after all 7 implementation tasks. Verify build cleanliness, test pass rate, DB additivity, accordion pattern consistency, and no dead code.
 
-- [ ] **Step 1: Full solution build**
+- [x] **Step 1: Full solution build**
   ```bash
   cd /c/claude/fusecp-enterprise && dotnet build 2>&1 | tail -20
   ```
   Zero errors required. Treat warnings as issues to resolve.
 
-- [ ] **Step 2: Run all tests**
+- [x] **Step 2: Run all tests**
   ```bash
   cd /c/claude/fusecp-enterprise && dotnet test tests/ 2>&1 | tail -30
   ```
   All existing tests must pass. Report any regressions.
 
-- [ ] **Step 3: Verify DB migrations are additive**
+- [x] **Step 3: Verify DB migrations are additive**
   ```bash
   sqlcmd -S "(local)\SQLEXPRESS" -d FuseCPLab -Q "
     SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE
@@ -1115,7 +1115,7 @@ Final verification pass after all 7 implementation tasks. Verify build cleanline
   ```
   All 10 columns must exist and be `IS_NULLABLE = YES`.
 
-- [ ] **Step 4: Verify accordion pattern consistency**
+- [x] **Step 4: Verify accordion pattern consistency**
   Grep both tab files for accordion class names:
   ```bash
   grep -n "accordion-item\|accordion-button\|accordion-collapse" \
@@ -1125,20 +1125,20 @@ Final verification pass after all 7 implementation tasks. Verify build cleanline
   ```
   Confirm all three files use `accordion-item`, `accordion-button`, `accordion-collapse collapse show` consistently.
 
-- [ ] **Step 5: Scan for dead code in MailboxMailFlowTab.razor**
+- [x] **Step 5: Scan for dead code in MailboxMailFlowTab.razor**
   Verify the old `<TextInput>` for forwarding is completely removed (no commented-out block). Verify `_forwardingAddress` string variable is still in use in `SaveSettings()`. Verify `_forwardingSearch` and `_showForwardingDropdown` are declared and used in markup.
 
-- [ ] **Step 6: Verify forwarding picker excludes current mailbox**
+- [x] **Step 6: Verify forwarding picker excludes current mailbox**
   Confirm `FilteredForwardingMailboxes` filters out the mailbox whose `Identity` matches the current mailbox's email address.
 
-- [ ] **Step 7: Scan for unused variables**
+- [x] **Step 7: Scan for unused variables**
   Run:
   ```bash
   cd /c/claude/fusecp-enterprise && dotnet build --no-restore 2>&1 | grep -i "warning.*unused\|CS0219\|CS0168"
   ```
   Fix any unused variable warnings introduced by the new code.
 
-- [ ] **Step 8: Final commit for any cleanup changes**
+- [x] **Step 8: Final commit for any cleanup changes**
   ```bash
   cd /c/claude/fusecp-enterprise
   git add .
