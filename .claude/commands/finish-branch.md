@@ -14,6 +14,14 @@ Guide completion of development work by presenting clear options and handling ch
 
 ## The Process
 
+**Session Naming:** First, rename this session to indicate the completion phase:
+
+/rename finish: <branch-name>
+
+Get branch from `git branch --show-current`. Example: `/rename finish: feature/auth`
+
+If `/rename` is unavailable, skip this step.
+
 ### Step 1: Pre-Merge Verification
 
 **Dispatch `test-coverage` agent** to run the project's test suite and verify all tests pass before presenting options.

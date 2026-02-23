@@ -39,7 +39,7 @@ digraph when_to_use {
 Each task in the plan has an `Agent:` field. Use it as the `subagent_type` when dispatching:
 
 1. Read the task's `Agent:` field (e.g., `modular-builder`, `bug-hunter`, `database-architect`)
-2. **Dispatch using Task tool with `subagent_type` set to the Agent: field value.** Example: if the plan says `Agent: modular-builder`, call `Task(subagent_type="modular-builder", model="haiku", max_turns=15, description="Implement Task N: ...", prompt="...")` — set `model` per the Model Selection table below.
+2. **Dispatch using Task tool with `subagent_type` set to the Agent: field value.** Example: if the plan says `Agent: modular-builder`, call `Task(subagent_type="modular-builder", model="haiku", max_turns=15, description="Implement Task N: ...", prompt="...")` — set `model` per the task's **Model:** field if present; otherwise use the Model Selection table below. The task's explicit Model field always takes precedence.
    - **Turn budgets (always include `max_turns`):** Implementation agents: 15-20, review agents: 10-12, specialists: 12-15, quick tasks: 5-8
    - **If agent returns incomplete:** Resume with `Task(resume=agent_id, prompt="Continue your work...")` — max 3 resume cycles
 3. Pass the full task text + context in the prompt (never make subagent read the plan file)
@@ -82,6 +82,17 @@ Not every task needs full two-stage review. Match review depth to task risk:
 - Examples: auth flow, payment handling, data migration, public API
 
 **How to choose:** Default to Level 2. Upgrade to Level 3 for security/architecture. Downgrade to Level 1 only when the task is trivially simple.
+
+## Session Naming
+
+After loading the plan and creating the TodoWrite list, rename this session to reflect the work:
+
+/rename dev: <plan-name>
+
+Where `<plan-name>` is a 2-4 word slug derived from the plan filename or its Goal line.
+Example: `/rename dev: mailbox-redesign`
+
+If `/rename` is unavailable, skip this step.
 
 ## The Process
 
@@ -138,19 +149,27 @@ digraph process {
 
 ## Dispatch Announcements
 
-**Before every Task dispatch, output a visible status line to the user:**
+**Before every Task dispatch, output a visible status line:**
 
+For implementation:
 ```
->> Dispatching [agent-name] (model: [model]) for Task N: [short description]
->>   Review level: [1/2/3] | Files: [count] | Complexity: [simple/standard/complex]
-```
-
-For review dispatches:
-```
->> Dispatching [reviewer-agent] (model: [model]) — [review type] review for Task N
+>> [N/TOTAL] Dispatching [agent] (model: [model]) for Task N: [description]
+>>   Review: L[1/2/3] | Files: [count] | isolation: [worktree|none]
 ```
 
-This gives the user visibility into which specialist is handling what, at what cost tier, and what review depth applies. **Never dispatch silently.**
+For reviews:
+```
+>> [N/TOTAL] Review: [reviewer] (model: [model]) — [type] review for Task N
+```
+
+Example:
+```
+>> [3/8] Dispatching modular-builder (model: haiku) for Task 3: Create mailbox list component
+>>   Review: L2 | Files: 3 | isolation: worktree
+>> [3/8] Review: test-coverage (model: haiku) — spec compliance for Task 3
+```
+
+**Never dispatch silently.**
 
 ## Model Selection
 
@@ -174,6 +193,25 @@ Use the least powerful model that can handle each role.
 - `post-task-cleanup` → `haiku` / Flash (mechanical cleanup)
 
 **When to upgrade:** If a `haiku`/Flash agent returns BLOCKED or NEEDS_CONTEXT, re-dispatch with `sonnet`/Pro. If `sonnet`/Pro is blocked, try `opus`.
+
+## Context Assessment
+
+Before dispatching the first implementation agent, assess whether fast mode benefits this session:
+
+**Signals for fast mode:**
+- Plan has 8+ tasks
+- Files referenced across 15+ paths
+- Prior haiku dispatch returned BLOCKED due to context
+- Architecture-level work spanning multiple subsystems
+
+**When signals are present, surface to the user:**
+
+> This plan has [N] tasks across [M] files. Fast mode (`/fast`) provides 1M context (vs 200K standard) at 2.5x cost. Enable for this session?
+
+**Wait for explicit user confirmation.** Never auto-enable fast mode.
+
+If confirmed, run `/fast` to enable, then proceed with dispatches.
+After all tasks complete, remind user: "Fast mode is still enabled — toggle `/fast` to disable."
 
 ## Handling Implementer Status
 

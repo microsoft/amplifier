@@ -20,6 +20,14 @@ Load plan, review critically, execute tasks in batches, report for review betwee
 3. If concerns: Raise them with your human partner before starting
 4. If no concerns: Create TodoWrite and proceed
 
+**Session Naming:** After loading the plan, rename this session:
+
+/rename exec: <plan-name>
+
+Derive the name from the plan filename. Example: `/rename exec: email-forwarding`
+
+If `/rename` is unavailable, skip this step.
+
 ### Step 2: Execute Batch
 **Default: First 3 tasks**
 

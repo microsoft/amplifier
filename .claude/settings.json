@@ -54,6 +54,14 @@
             "command": "uv run .claude/tools/hook_stop.py"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run .claude/tools/subagent-validator.py"
+          }
+        ]
       }
     ],
     "PreToolUse": [

@@ -75,11 +75,27 @@ Match each domain to the right agent from the mapping table above. Each speciali
 **Before dispatching, output a visible status block showing all agents being launched:**
 
 ```
->> Dispatching 3 parallel agents:
->>   1. bug-hunter — Fix 3 failing tests in auth.test.ts
->>   2. integration-specialist — API connection failures to payment service
->>   3. performance-optimizer — Response time regression in /api/search
+>> Dispatching [N] parallel agents:
+>>   1. [agent] (model: [model]) — [description]
+>>   2. [agent] (model: [model]) — [description]
+>>   3. [agent] (model: [model]) — [description]
 ```
+
+Example:
+```
+>> Dispatching 3 parallel agents:
+>>   1. bug-hunter (model: sonnet) — Fix 3 failing tests in auth.test.ts
+>>   2. integration-specialist (model: sonnet) — API connection failures to payment service
+>>   3. performance-optimizer (model: sonnet) — Response time regression in /api/search
+```
+
+**Session Naming:** After dispatching, rename this session:
+
+/rename parallel: <N>-agents-<brief>
+
+Example: `/rename parallel: 3-agents-auth-fixes`
+
+If `/rename` is unavailable, skip this step.
 
 Then dispatch all in a single message with multiple Task calls:
 ```

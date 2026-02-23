@@ -127,6 +127,14 @@ Tests passing (<N> tests, 0 failures)
 Ready to implement <feature-name>
 ```
 
+**Session Naming:** After the worktree is confirmed ready, rename this session:
+
+/rename worktree: <branch-name>
+
+Use the branch name created in Step 2. Example: `/rename worktree: feature/mailbox-redesign`
+
+If `/rename` is unavailable, skip this step.
+
 ## Quick Reference
 
 | Situation | Action |
