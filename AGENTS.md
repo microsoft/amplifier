@@ -35,6 +35,40 @@ Co-Authored-By: Amplifier <240397093+microsoft-amplifier@users.noreply.github.co
 
 ---
 
+## PR-First Policy (CRITICAL)
+
+**All completed work MUST go through a Pull Request. Never commit directly to main/master.**
+
+### Rules
+
+1. **Start on a feature branch** — Before any implementation work, create or verify you're on a feature branch (`feature/<name>`, `fix/<name>`, etc.). Never start work on main.
+2. **End with a PR** — When work is complete, push the branch and create a PR via `gh pr create`. This is the default, not an option to choose.
+3. **Never push to main** — Direct pushes to main are prohibited. If you find yourself on main with uncommitted work, create a branch first.
+4. **Never merge without user confirmation** — Present the PR URL and wait for the user to approve the merge.
+
+### Enforcement Points
+
+- `/subagent-dev` has a **Branch Gate** that blocks execution on main
+- `/finish-branch` defaults to creating a PR (no menu of options)
+- `/brainstorm` → `/create-plan` → `/worktree` flow ensures a feature branch exists before implementation
+
+### Recovery (if work accidentally lands on main)
+
+```bash
+# Create feature branch at current HEAD
+git branch feature/<name>
+# Reset main to before your changes
+git reset --hard <pre-work-commit>
+# Push the feature branch
+git push -u origin feature/<name>
+# Create PR
+gh pr create --base main --head feature/<name>
+```
+
+This recovery works but is error-prone. Prevention (starting on a feature branch) is always preferred.
+
+---
+
 ## Important: Consult DISCOVERIES.md
 
 Before implementing solutions to complex problems:

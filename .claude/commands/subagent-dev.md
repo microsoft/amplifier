@@ -94,6 +94,27 @@ Example: `/rename dev: mailbox-redesign`
 
 If `/rename` is unavailable, skip this step.
 
+## Branch Gate (REQUIRED)
+
+Before doing ANY work, verify you are NOT on main/master:
+
+```bash
+BRANCH=$(git branch --show-current)
+if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
+  echo "ON_MAIN"
+fi
+```
+
+**If on main/master:**
+1. STOP — do not dispatch any implementation agents
+2. Tell the user: "You're on main. All work must happen on a feature branch so we can create a PR at the end."
+3. Offer to create one: `git checkout -b feature/<plan-name-slug>`
+4. Wait for confirmation before proceeding
+
+**If already on a feature branch:** Proceed to The Process.
+
+**Why:** Work on main cannot produce a clean PR. Creating the branch first costs nothing; retroactively moving commits is error-prone and risky.
+
 ## The Process
 
 ```dot
