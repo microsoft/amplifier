@@ -71,7 +71,7 @@ This recovery works but is error-prone. Prevention (starting on a feature branch
 
 ## Git Workflow — Gitea-First (Two-Stage)
 
-**PRIMARY remote**: Gitea at http://localhost:3001/ (port 3001)
+**PRIMARY remote**: Gitea at https://gitea.ergonet.pl:3001/ (HTTPS, port 3001)
 **BACKUP remote**: GitHub at https://github.com/psklarkins/ (push mirror, auto-syncs on commit)
 
 ### Remote Layout (all locally cloned repos)
@@ -81,7 +81,7 @@ This recovery works but is error-prone. Prevention (starting on a feature branch
 ### Daily Workflow
 1. Work and commit locally as usual
 2. Push to `origin` (Gitea): `git push origin feature/my-feature`
-3. Open PR on Gitea: http://localhost:3001/admin/{repo}/pulls
+3. Open PR on Gitea: https://gitea.ergonet.pl:3001/admin/{repo}/pulls
 4. Merge PR on Gitea — push mirror triggers GitHub backup automatically
 5. Never push directly to `main`/`master`/`develop` — branch protection enforced
 

@@ -26,6 +26,7 @@ This runs on **Windows Server + Git Bash**. Follow these rules in ALL commands:
 - **Null output**: Use `> /dev/null 2>&1` (never `> nul`)
 - **Python**: Use `uv run python` (not `python` — not on system PATH)
 - **PowerShell**: NEVER use inline `powershell -Command` with `$_`, `$()`, or `$variable` — Git Bash mangles dollar signs into `extglob`. Instead, **always write a `.ps1` script file first** using the Write tool, then execute it with `powershell -File "path/to/script.ps1"`. This applies to ALL JSON parsing, Base64 decoding, and any PowerShell logic with variables.
+- **Gitea API (CRITICAL)**: NEVER use `curl` to POST JSON to the Gitea API from Git Bash — JSON escaping with double-quotes and backslashes breaks silently, producing `"json: string unexpected end of JSON input"`. **ALWAYS use the PowerShell bugfix scripts** (`create-gitea-pr.ps1`, `merge-gitea-pr.ps1`) which handle JSON properly via `ConvertTo-Json`.
 - **Screenshots (CRITICAL)**: NEVER download screenshots using `curl --output file.png`. The screenshot API returns **JSON with base64 data**, NOT raw image bytes. Saving JSON as `.png` and then using `Read` to view it will crash the session permanently (the malformed image poisons the conversation context and every subsequent API call fails). **ALWAYS use the PowerShell bugfix scripts** (`read-bug.ps1 -ExtractScreenshot`, `read-bugs-group.ps1 -ExtractScreenshots`, or `extract-screenshot.ps1`) which properly decode base64 and validate image magic bytes. Scripts support PNG, JPEG, GIF, and WebP — files are saved with the correct extension (`.png`, `.jpg`, `.gif`, `.webp`).
 
 ## Bugfix Scripts (Persistent)
@@ -39,8 +40,10 @@ Reusable PowerShell scripts live at `C:/claude/fusecp-enterprise/scripts/bugfix/
 | `read-bugs-group.ps1` | Fetch multiple bugs + screenshots | `powershell -File scripts/bugfix/read-bugs-group.ps1 -BugIds "29,30,34" [-ExtractScreenshots]` |
 | `extract-screenshot.ps1` | Extract screenshot (legacy + multi) | `powershell -File scripts/bugfix/extract-screenshot.ps1 -BugId 30` |
 | `set-bug-status.ps1` | Update bug status (safe endpoint) | `powershell -File scripts/bugfix/set-bug-status.ps1 -BugId 30 -Status InProgress` |
+| `gitea-create-pr.ps1` | Create PR on Gitea (shared, auto-detects repo) | `powershell -File "C:/claude/scripts/gitea-create-pr.ps1" -Title "fix: title" -Head "hotfix/bug-30"` |
+| `gitea-merge-pr.ps1` | Merge PR on Gitea (shared, auto-detects repo) | `powershell -File "C:/claude/scripts/gitea-merge-pr.ps1" -PrNumber 1 -DeleteBranch` |
 
-All scripts default to `ApiBase=http://localhost:5010` and `ApiKey=fusecp-admin-key-2026`. Screenshots save to `tmp/` by default.
+All bugfix scripts default to `ApiBase=http://localhost:5010` and `ApiKey=fusecp-admin-key-2026`. Gitea scripts live at `C:\claude\scripts\` (shared across all repos), default to `https://gitea.ergonet.pl:3001` with token from `$GITEA_ADMIN_TOKEN` env var (fallback: hardcoded), and auto-detect the repo from `git remote get-url origin`. Screenshots save to `tmp/` by default.
 
 ## API Configuration
 
@@ -483,55 +486,58 @@ EOF
 )"
 ```
 
-### 7b. Push and create PR
+### 7b. Push and create PR on Gitea
 
 **PR title for groups:** `fix: {group name} (Bugs #{id1}, #{id2}, ...)`
 **PR body:** List all bug IDs with their titles.
+
+Push to Gitea (primary). The push mirror will sync to GitHub automatically.
 
 ```bash
 cd /c/claude/fusecp-enterprise && git push -u origin hotfix/bug-{id}
 ```
 
-```bash
-gh pr create --title "fix: {title} (Bug #{id})" --body "$(cat <<'EOF'
-## Bug Fix
-
-**Bug ID:** #{id}
-**Priority:** {priority}
-**Area:** {area}
-
-### Root Cause
-{root cause description}
-
-### Changes
-| File | Change |
-|------|--------|
-| {path} | {what changed} |
-
-### Testing
-- Build: PASS
-- Tests: {N} passing
-
-🤖 Generated with [Amplifier](https://github.com/microsoft/amplifier)
-EOF
-)"
-```
-
-### 7c. Wait for CI, then merge
-
-Wait for `pr-check.yml` to complete (build + test + security scan):
+Create PR on Gitea using the PowerShell script (**NEVER use curl for Gitea API** — JSON escaping breaks in Git Bash):
 
 ```bash
-gh pr checks {pr-number} --watch
+powershell -File "C:/claude/scripts/gitea-create-pr.ps1" -Title "fix: {title} (Bug #{id})" -Head "hotfix/bug-{id}" -Body "## Bug Fix`n`n**Bug ID:** #{id}`n**Priority:** {priority}`n**Area:** {area}`n`n### Root Cause`n{root cause}`n`n### Testing`n- Build: PASS`n- Tests: {N} passing`n`nGenerated with Amplifier"
 ```
 
-If CI passes, merge the PR:
+Parse the output for `PR_NUMBER=` line. Save the number for Phase 7c.
+
+### 7c. Wait for CI, then merge on Gitea
+
+The Gitea push mirror syncs branches to GitHub on commit (+ every 10 min). GitHub Actions `pr-check.yml` triggers on push events to synced branches. Wait for it:
 
 ```bash
-gh pr merge {pr-number} --squash --delete-branch && cd /c/claude/fusecp-enterprise && git checkout main && git pull origin main
+# Wait for GitHub Actions CI on the branch
+gh run list --branch hotfix/bug-{id} --limit 1 --json status,conclusion,name --jq '.[0]'
 ```
 
-If CI fails, investigate the failure, fix on the hotfix branch, push again, and re-check.
+If no run appears within 2 minutes, the push mirror may not have synced yet. Push directly to GitHub:
+```bash
+cd /c/claude/fusecp-enterprise && git push github hotfix/bug-{id}
+```
+
+Then re-check CI:
+```bash
+gh run watch --branch hotfix/bug-{id}
+```
+
+**If GitHub Actions CI is not configured for the branch** (no `pr-check.yml` push trigger), skip CI wait and merge directly — the build and tests were already verified locally in Phase 5.
+
+Merge the PR on Gitea using the PowerShell script:
+
+```bash
+powershell -File "C:/claude/scripts/gitea-merge-pr.ps1" -PrNumber {gitea-pr-number} -DeleteBranch
+```
+
+Then sync local main:
+```bash
+cd /c/claude/fusecp-enterprise && git checkout main && git pull origin main
+```
+
+If CI fails, investigate the failure, fix on the hotfix branch, push to origin again, and re-check.
 
 ### 7d. Deploy from main
 
@@ -594,7 +600,7 @@ If user says yes, loop back to Phase 1.
 - **bug-hunter fails:** Fall back to direct fix in main context (Phase 4-fallback). Do NOT retry the agent.
 - **Build failure after 3 attempts:** "Build still failing after 3 fix attempts. Escalating — here's what I've tried: {summary}"
 - **Test failure:** "Tests failing after fix. Investigating if these are pre-existing or caused by the fix."
-- **CI failure on PR:** Investigate the CI log (`gh pr checks {number}`), fix on the hotfix branch, push again. Do NOT merge a failing PR.
+- **CI failure on PR:** Investigate the CI log (`gh run view --branch hotfix/bug-{id}`), fix on the hotfix branch, push to origin again. Do NOT merge a failing PR.
 - **Merge conflict:** Rebase the hotfix branch on latest main: `git fetch origin && git rebase origin/main`. Fix any conflicts, then force-push the branch.
 - **Deploy failure:** "Deploy failed: {error}. The PR is merged but not deployed. You may need to deploy manually."
 - **Screenshot extraction produces no files:** Skip visual analysis entirely. The extraction scripts validate image magic bytes and only keep valid images (PNG, JPEG, GIF, WebP). If no files are saved, proceed with code-only investigation.
@@ -603,9 +609,9 @@ If user says yes, loop back to Phase 1.
 
 Bug fixes MUST go through the PR process (not direct commits to main) because:
 1. **Prevents lost fixes:** Feature branches that merge later won't overwrite bug fixes — they must be up-to-date with main before merging.
-2. **CI verification:** `pr-check.yml` runs build + tests + security scan before the fix reaches main.
-3. **Audit trail:** Each fix has a PR number linking to the bug ID for traceability.
-4. **Branch protection:** GitHub's "Require branches to be up-to-date" setting ensures no branch can merge without incorporating all prior main commits (including bug fixes).
+2. **CI verification:** Push mirror syncs to GitHub where `pr-check.yml` runs build + tests + security scan.
+3. **Audit trail:** Each fix has a Gitea PR number linking to the bug ID for traceability.
+4. **Branch protection:** Gitea branch protection blocks direct pushes to main — PRs are required on all repos.
 
 ## Priority Handling
 
