@@ -69,6 +69,35 @@ This recovery works but is error-prone. Prevention (starting on a feature branch
 
 ---
 
+## Git Workflow — Gitea-First (Two-Stage)
+
+**PRIMARY remote**: Gitea at http://localhost:3001/ (port 3001)
+**BACKUP remote**: GitHub at https://github.com/psklarkins/ (push mirror, auto-syncs on commit)
+
+### Remote Layout (all locally cloned repos)
+- `origin` → Gitea (primary, all day-to-day pushes go here)
+- `github` → GitHub (backup, never push manually — Gitea mirrors automatically)
+
+### Daily Workflow
+1. Work and commit locally as usual
+2. Push to `origin` (Gitea): `git push origin feature/my-feature`
+3. Open PR on Gitea: http://localhost:3001/admin/{repo}/pulls
+4. Merge PR on Gitea — push mirror triggers GitHub backup automatically
+5. Never push directly to `main`/`master`/`develop` — branch protection enforced
+
+### Branch Protection Rules (all 19 repos)
+- Direct push to default branch is BLOCKED
+- PR is required to merge
+- 0 approvals required (solo dev)
+- Status checks: disabled (no CI configured on Gitea yet)
+
+### GitHub Actions
+- GitHub Actions runner at C:\actions-runner\ still runs CI on GitHub
+- When Gitea push mirror syncs, GitHub Actions fires on the mirrored commits
+- This provides CI coverage without needing Gitea Actions
+
+---
+
 ## Important: Consult DISCOVERIES.md
 
 Before implementing solutions to complex problems:

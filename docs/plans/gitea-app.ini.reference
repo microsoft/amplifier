@@ -1,0 +1,43 @@
+APP_NAME = Gitea — psklarkins Local
+RUN_MODE = prod
+RUN_USER = FUSECP$
+
+[server]
+HTTP_ADDR       = 0.0.0.0
+HTTP_PORT       = 3001
+ROOT_URL        = http://localhost:3001/
+DISABLE_SSH     = true
+OFFLINE_MODE    = false
+
+[database]
+DB_TYPE  = sqlite3
+PATH     = C:/gitea/data/gitea.db
+
+[repository]
+ROOT           = C:/gitea/data/gitea-repositories
+DEFAULT_BRANCH = main
+
+[mirror]
+ENABLED             = true
+DISABLE_NEW_PUSH    = false
+MIN_INTERVAL        = 1m
+DEFAULT_INTERVAL    = 10m
+
+[log]
+MODE      = file
+LEVEL     = Info
+ROOT_PATH = C:/gitea/log
+
+[service]
+DISABLE_REGISTRATION              = true
+REQUIRE_SIGNIN_VIEW               = false
+ENABLE_NOTIFY_MAIL                = false
+NO_REPLY_ADDRESS                  = noreply@localhost
+
+[security]
+INSTALL_LOCK   = false
+SECRET_KEY     = changeme_generate_on_first_run
+INTERNAL_TOKEN = changeme_generate_on_first_run
+
+[actions]
+ENABLED = false
