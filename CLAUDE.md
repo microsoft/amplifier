@@ -18,6 +18,19 @@ This file is reserved for Claude Code-specific instructions.
 # - ai_context/design/DESIGN-FRAMEWORK.md
 # - ai_context/design/DESIGN-VISION.md
 
+## LLM-Friendly Documentation (llms.txt)
+
+Each project provides two files at the repo root for LLM consumption:
+
+- **`llms.txt`** — Lightweight navigation index with one-line descriptions of every key doc. Hand-maintained; update when docs structure changes.
+- **`llms-full.txt`** — Auto-generated concatenation of all key docs into a single file. Regenerate with `bash scripts/generate-llms.sh`. Never hand-edit.
+
+**When to use:**
+- Share `llms-full.txt` with Gemini/OpenCode for full project context in a single file
+- Use `llms.txt` as a table of contents when orienting a new Claude session
+- Regenerate `llms-full.txt` after significant doc changes: `bash scripts/generate-llms.sh`
+- To add/remove docs from the generated file, edit the `FILES` array in `scripts/generate-llms.sh`
+
 # Claude's Working Philosophy and Memory System
 
 ## Critical Operating Principles
