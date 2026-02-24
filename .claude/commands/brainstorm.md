@@ -19,6 +19,8 @@ Before diving into the idea, gather context by dispatching a **context scout sub
 
 ```
 Task(subagent_type="general-purpose", model="haiku", max_turns=8, description="Gather session context for [topic]", prompt="
+  **READ-ONLY MODE: Use ONLY Read, Glob, Grep, LS, and search tools. Do NOT use Edit, Write, Bash, or any tool that modifies files.**
+
   Gather project context for a brainstorming session about [topic].
 
   Run these steps and compile a summary:
@@ -63,6 +65,8 @@ Advisory only — do not enable without explicit user confirmation.
 4. **If the topic involves understanding existing code**, dispatch `agentic-search` before designing:
 ```
 Task(subagent_type="agentic-search", model="haiku", max_turns=12, description="Explore [topic] in codebase", prompt="
+  **READ-ONLY MODE: Use ONLY Read, Glob, Grep, LS, and search tools. Do NOT use Edit, Write, Bash, or any tool that modifies files.**
+
   [specific question about how the existing code works]
 ")
 ```

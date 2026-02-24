@@ -18,6 +18,8 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 3. **If modifying existing code**, dispatch `agentic-search` to understand the current architecture before writing tasks:
    ```
    Task(subagent_type="agentic-search", model="haiku", max_turns=12, description="Understand [area] before planning", prompt="
+     **READ-ONLY MODE: Use ONLY Read, Glob, Grep, LS, and search tools. Do NOT use Edit, Write, Bash, or any tool that modifies files.**
+
      [specific question about how the code works that the plan depends on]
    ")
    ```

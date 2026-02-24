@@ -197,6 +197,8 @@ Dispatch `agentic-search` agent with structured three-phase methodology (Reconna
 
 ```
 Task(subagent_type="agentic-search", model="sonnet", max_turns=20, description="Investigate bug #{id}: {title}", prompt="
+  **READ-ONLY MODE: Use ONLY Read, Glob, Grep, LS, and search tools. Do NOT use Edit, Write, Bash, or any tool that modifies files.**
+
   Search the FuseCP codebase at C:\claude\fusecp-enterprise to find the root cause of this bug.
 
   Bug: {title}
