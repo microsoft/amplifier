@@ -146,6 +146,19 @@ Every Task dispatch must include a `max_turns` parameter. Use these starting val
 
 These values are tuned through observation. If an agent consistently needs resume cycles, increase its budget. If it finishes well under budget, decrease it.
 
+### Read-Only Research Constraint
+
+Research and scout subagents (context gathering, codebase exploration, documentation lookup) must be **read-only**. Include this instruction in their prompts:
+
+> **READ-ONLY MODE: You are a research agent. Use ONLY Read, Glob, Grep, LS, and search tools. Do NOT use Edit, Write, Bash, or any tool that modifies files or executes commands. Your job is to gather and return information, not to make changes.**
+
+This applies to:
+- Context scouts dispatched by `/brainstorm` and `/create-plan`
+- `agentic-search` agents doing pre-implementation reconnaissance
+- Any `general-purpose` agent with `model="haiku"` used for information gathering
+
+Implementation agents (`modular-builder`, `bug-hunter`, etc.) are exempt — they need write access.
+
 ### Resume Protocol
 
 When an agent returns, the orchestrator evaluates completeness and resumes if needed:
