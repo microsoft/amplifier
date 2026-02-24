@@ -1,0 +1,59 @@
+# Amplifier (Claude Code Integration)
+
+> AI-powered modular development assistant with 30+ specialized agents, 19 slash commands, and design philosophy docs. Uses Claude Code as the agent runtime. Built on Microsoft Amplifier v2.
+
+## Core Project Files
+
+- [CLAUDE.md](CLAUDE.md): Claude Code project instructions and configuration
+- [AGENTS.md](AGENTS.md): AI assistant guidance — commit style, PR policy, git workflow, subagent protocols
+- [README.md](README.md): Project overview and quick start
+
+## Design Philosophy
+
+- [Implementation Philosophy](ai_context/IMPLEMENTATION_PHILOSOPHY.md): Ruthless simplicity, KISS, vertical slices, testing strategy
+- [Modular Design Philosophy](ai_context/MODULAR_DESIGN_PHILOSOPHY.md): Brick-and-stud approach to AI-driven software development
+- [Design Philosophy](ai_context/DESIGN-PHILOSOPHY.md): Aesthetic and UX design principles
+- [Design Principles](ai_context/DESIGN-PRINCIPLES.md): Zero-BS, no stubs, incremental processing patterns
+- [Design Framework](ai_context/design/DESIGN-FRAMEWORK.md): Nine Dimensions and Five Pillars design system
+- [Design Vision](ai_context/design/DESIGN-VISION.md): Visual direction and goals
+
+## Agents & Commands
+
+- [Agents Catalog](.claude/AGENTS_CATALOG.md): Complete reference for all 30+ specialized agents with dispatch keywords
+- [Agent Prompt Include](.claude/AGENT_PROMPT_INCLUDE.md): Shared context included in all agent prompts
+
+## Developer Guides
+
+- [Developer Guide](docs/DEVELOPER.md): Development setup and contribution guidelines
+- [Local Development](docs/LOCAL_DEVELOPMENT.md): Local environment setup
+- [Module Development](docs/MODULE_DEVELOPMENT.md): How to create new modules
+- [Modules Reference](docs/MODULES.md): Available modules and their contracts
+- [Testing Guide](docs/TESTING_GUIDE.md): Testing strategy and conventions
+- [Repository Rules](docs/REPOSITORY_RULES.md): Branch protection, PR requirements
+
+## User Documentation
+
+- [User Guide](docs/USER_GUIDE.md): End-user documentation
+- [User Onboarding](docs/USER_ONBOARDING.md): Getting started for new users
+
+## Claude Code SDK Reference
+
+- [SDK Overview](ai_context/claude_code/sdk/CLAUDE_CODE_SDK_OVERVIEW.md): Claude Code SDK architecture
+- [Subagents](ai_context/claude_code/CLAUDE_CODE_SUBAGENTS.md): How subagent delegation works
+- [Hooks](ai_context/claude_code/CLAUDE_CODE_HOOKS.md): Hook system for tool call interception
+- [Settings](ai_context/claude_code/CLAUDE_CODE_SETTINGS.md): Configuration reference
+- [CLI Reference](ai_context/claude_code/CLAUDE_CODE_CLI_REFERENCE.md): Command-line interface
+- [Common Workflows](ai_context/claude_code/CLAUDE_CODE_COMMON_WORKFLOWS.md): Patterns and recipes
+
+## Ecosystem Context
+
+- [Ecosystem Overview](context/ecosystem-overview.md): How Amplifier fits in the broader landscape
+- [Development Hygiene](context/development-hygiene.md): Code quality and maintenance practices
+- [Recipes Usage](context/recipes-usage.md): YAML recipe system for workflow automation
+
+## Optional
+
+- [Roadmap](ROADMAP.md): Future development plans
+- [Security](SECURITY.md): Security policy
+- [Code of Conduct](CODE_OF_CONDUCT.md): Community guidelines
+- [ADR Template](docs/ADR_TEMPLATE.md): Architecture decision record format

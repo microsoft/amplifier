@@ -28,10 +28,11 @@ Task(subagent_type="general-purpose", model="haiku", max_turns=8, description="G
   2. Search episodic memory for conversations about [topic] using mcp__plugin_episodic-memory_episodic-memory__search
   3. Check for existing specs: ls docs/specs/ (if directory exists)
   4. Read .claude/AGENTS_CATALOG.md for available agents
-  5. If the topic involves existing code, search ctags for relevant symbols:
+  5. Read llms.txt for a quick overview of all project documentation
+  6. If the topic involves existing code, search ctags for relevant symbols:
      Run: grep -i '[keyword]' tags | head -20
      (The tags file at repo root has pre-indexed class/function/method definitions)
-  6. If the topic involves existing code, use Grep to find related files:
+  7. If the topic involves existing code, use Grep to find related files:
      Grep pattern='[keyword]' output_mode='files_with_matches' head_limit=15
 
   If any step fails, skip it and continue.

@@ -123,6 +123,7 @@ Task(subagent_type="agentic-search", model="haiku", max_turns=8,
 
 ### Context Loading (use your full 1M context)
 Load these files completely before starting:
+- llms-full.txt — complete project documentation in a single file
 - [relevant files from scout — full paths]
 - COWORK.md — refresh protocol understanding
 - This task section of HANDOFF.md

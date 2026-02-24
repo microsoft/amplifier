@@ -17,6 +17,9 @@ appsettings.*.json
 **/*sec.endpointdlp
 **/*:sec.endpointdlp
 
+# Auto-generated LLM documentation (regenerate with: bash scripts/generate-llms.sh)
+llms-full.txt
+
 # Dependencies, build, test, and other generated files
 node_modules
 .venv
