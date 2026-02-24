@@ -110,7 +110,7 @@ Task(subagent_type="agentic-search", model="haiku", max_turns=8,
 **Priority:** normal | urgent
 **Repository:** [exact repo path, e.g. C:\claude\fusecp-enterprise]
 **Working Directory:** [where to run commands from, e.g. C:\claude\fusecp-enterprise]
-**PR Target:** [target branch + repo for the PR, e.g. main on psklarkins/fusecp-enterprise]
+**PR Target:** [target branch + repo for the PR, e.g. main on admin/fusecp-enterprise (Gitea)]
 
 ### Objective
 [One sentence from user's description]
@@ -232,8 +232,15 @@ Check if Gemini has started work and show active worktrees:
 # Check for feature branch
 git branch -a | grep "feature/"
 
-# Check for open PR
-gh pr list --state open --json number,title,headRefName 2>/dev/null
+# Check for open PR on Gitea (auto-detects repo from git remote)
+pwsh -Command "
+  $token = '2b1322e34ee940a072903a6d52c59aca82858d12'
+  $headers = @{ 'Authorization' = \"token $token\" }
+  $remote = git remote get-url origin
+  if ($remote -match '/([^/]+/[^/]+?)(?:\.git)?$') { $repo = $Matches[1] }
+  $prs = Invoke-RestMethod -Uri \"https://gitea.ergonet.pl:3001/api/v1/repos/$repo/pulls?state=open\" -Headers $headers -SkipCertificateCheck
+  $prs | ForEach-Object { Write-Host \"PR #$($_.number): $($_.title) ($($_.head.ref))\" }
+"
 
 # Show active worktrees (if any)
 git worktree list
@@ -297,10 +304,18 @@ Include active worktree status in report (same as WAITING_FOR_GEMINI).
 
 #### State: PR_READY — Review
 
-**4a. Find the PR:**
+**4a. Find the PR on Gitea:**
 
 ```bash
-gh pr list --state open --json number,title,headRefName,additions,deletions
+# List open PRs on Gitea (auto-detects repo from git remote)
+pwsh -Command "
+  $token = '2b1322e34ee940a072903a6d52c59aca82858d12'
+  $headers = @{ 'Authorization' = \"token $token\" }
+  $remote = git remote get-url origin
+  if ($remote -match '/([^/]+/[^/]+?)(?:\.git)?$') { $repo = $Matches[1] }
+  $prs = Invoke-RestMethod -Uri \"https://gitea.ergonet.pl:3001/api/v1/repos/$repo/pulls?state=open\" -Headers $headers -SkipCertificateCheck
+  $prs | ForEach-Object { Write-Host \"PR #$($_.number): $($_.title) (branch: $($_.head.ref), +$($_.additions)/-$($_.deletions))\" }
+"
 ```
 
 Match by branch name from HANDOFF.md. If no PR found, report error.
@@ -321,9 +336,17 @@ cd ../..  # Return to main checkout
 
 **Why a worktree?** The main checkout stays on master. If Claude has a parallel work worktree, checking out the PR branch on master would disrupt it. Review worktrees keep everything isolated.
 
-If build fails → post build errors as PR comment, request changes, clean up worktree, stay at PR_READY:
+If build fails → post build errors as PR comment on Gitea, request changes, clean up worktree, stay at PR_READY:
 ```bash
-gh pr comment <number> --body "Build failed. Errors: <paste errors>. Please fix and push."
+# Post comment on Gitea PR
+pwsh -Command "
+  $token = '2b1322e34ee940a072903a6d52c59aca82858d12'
+  $headers = @{ 'Authorization' = \"token $token\"; 'Content-Type' = 'application/json' }
+  $remote = git remote get-url origin
+  if ($remote -match '/([^/]+/[^/]+?)(?:\.git)?$') { $repo = $Matches[1] }
+  $body = @{ body = 'Build failed. Errors: <paste errors>. Please fix and push.' } | ConvertTo-Json
+  Invoke-RestMethod -Uri \"https://gitea.ergonet.pl:3001/api/v1/repos/$repo/issues/<number>/comments\" -Method Post -Headers $headers -Body $body -SkipCertificateCheck
+"
 git worktree remove .worktrees/review-pr-<number> --force
 ```
 
@@ -332,8 +355,21 @@ If build passes → proceed to code review (keep review worktree for now).
 **4c. Fetch PR details:**
 
 ```bash
-gh pr view <number> --json title,body,additions,deletions,changedFiles
-gh pr diff <number>
+# View PR details on Gitea
+pwsh -Command "
+  $token = '2b1322e34ee940a072903a6d52c59aca82858d12'
+  $headers = @{ 'Authorization' = \"token $token\" }
+  $remote = git remote get-url origin
+  if ($remote -match '/([^/]+/[^/]+?)(?:\.git)?$') { $repo = $Matches[1] }
+  $pr = Invoke-RestMethod -Uri \"https://gitea.ergonet.pl:3001/api/v1/repos/$repo/pulls/<number>\" -Headers $headers -SkipCertificateCheck
+  Write-Host \"Title: $($pr.title)\"
+  Write-Host \"Body: $($pr.body)\"
+  Write-Host \"+$($pr.additions)/-$($pr.deletions)\"
+"
+
+# Get the diff (use git directly — works better than Gitea API for diffs)
+git fetch origin
+git diff main...origin/<branch-name>
 ```
 
 **4d. Dispatch review** — Run spec compliance and code quality checks in parallel:
@@ -347,7 +383,7 @@ Task(subagent_type="test-coverage", model="haiku", max_turns=10,
     Review PR #<number> against these acceptance criteria:
     [paste acceptance criteria from HANDOFF.md]
 
-    Run: gh pr diff <number>
+    Run: git diff main...origin/<branch-name>
     Read the actual code changes.
     Verify each acceptance criterion is met.
     Report: PASS or FAIL with specific file:line references.
@@ -360,7 +396,7 @@ Task(subagent_type="zen-architect", model="sonnet", max_turns=12,
   prompt="
     Code quality review for PR #<number>.
     Mode: REVIEW
-    Run: gh pr diff <number>
+    Run: git diff main...origin/<branch-name>
     Review for: architecture alignment, code quality, simplicity, testing.
     Report: Strengths, Issues (Critical/Important/Minor), Assessment.
 ")
@@ -404,9 +440,19 @@ Recommendation: Approve / Request Changes
   3. Commit with message referencing the PR: `fix: address review issues from PR #<number>`
   4. Proceed to REVIEWING → DEPLOYING.
 
-- **Request changes (Critical issues only)** → Post review on PR:
+- **Request changes (Critical issues only)** → Post review comment on Gitea PR:
   ```bash
-  gh pr review <number> --request-changes --body "<consolidated review feedback>"
+  # Post review feedback as PR comment on Gitea
+  pwsh -File "C:/claude/scripts/gitea-pr-comment.ps1" -PrNumber <number> -Body "<consolidated review feedback>"
+  # Or inline:
+  pwsh -Command "
+    $token = '2b1322e34ee940a072903a6d52c59aca82858d12'
+    $headers = @{ 'Authorization' = \"token $token\"; 'Content-Type' = 'application/json' }
+    $remote = git remote get-url origin
+    if ($remote -match '/([^/]+/[^/]+?)(?:\.git)?$') { $repo = $Matches[1] }
+    $body = @{ body = '<consolidated review feedback>' } | ConvertTo-Json
+    Invoke-RestMethod -Uri \"https://gitea.ergonet.pl:3001/api/v1/repos/$repo/issues/<number>/comments\" -Method Post -Headers $headers -Body $body -SkipCertificateCheck
+  "
   ```
   Stay at PR_READY. Only use this for Critical issues that would be harder for Claude to fix than for Gemini to redo (e.g., fundamentally wrong approach, needs complete rewrite).
 
@@ -416,10 +462,13 @@ Recommendation: Approve / Request Changes
 
 #### State: REVIEWING — Merge & Deploy
 
-**5a. Merge the PR and clean up review worktree:**
+**5a. Merge the PR on Gitea and clean up review worktree:**
 
 ```bash
-gh pr merge <number> --merge --delete-branch
+# Merge PR on Gitea using PowerShell script
+pwsh -File "C:/claude/scripts/gitea-merge-pr.ps1" -PrNumber <number>
+
+# Pull merged changes locally
 git pull origin main
 
 # Clean up the review worktree (if it exists)
