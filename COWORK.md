@@ -45,7 +45,7 @@ See `HANDOFF.md` for the full state machine and task template.
 |---------|---------|--------|
 | `HANDOFF.md` | Task dispatch + status | State machine with structured template |
 | `DISCOVERIES.md` | Non-obvious findings | Dated entries with Issue/Solution/Prevention |
-| GitHub PR | Code review | Standard PR review workflow |
+| Gitea PR | Code review | PR on Gitea (primary), GitHub mirror auto-syncs |
 | `docs/decisions/` | Architectural decisions | ADR format |
 
 ## Memory Architecture
@@ -81,6 +81,45 @@ All agents are available to both platforms. Gemini's copies include tier marking
 | `design-specialist` | Only when Claude assigns | art-director, component-designer, design-system-architect, layout-architect, animation-choreographer, responsive-strategist, voice-strategist |
 
 Claude unlocks senior-review or design-specialist agents per-task in HANDOFF.md under "Agent Tier Unlocks".
+
+## Git & Gitea
+
+**Primary remote**: Gitea at https://gitea.ergonet.pl:3001/ (HTTPS, port 3001)
+**Backup remote**: GitHub (push mirror, auto-syncs from Gitea on commit)
+
+### Accounts
+
+| User | Purpose | Git Remote URL Pattern |
+|------|---------|----------------------|
+| `admin` | Claude / human | `https://admin:GiteaAdmin2026%21@gitea.ergonet.pl:3001/admin/<repo>.git` |
+| `gemini` | Gemini (OpenCode) | `https://gemini:GeminiDev2026%21@gitea.ergonet.pl:3001/admin/<repo>.git` |
+
+### Gemini Git Setup
+
+Gemini should configure git in its workspace:
+```bash
+git config user.name "Gemini (OpenCode)"
+git config user.email "gemini@ergonet.pl"
+```
+
+Remote URL with embedded credentials (no interactive auth needed):
+```bash
+git remote set-url origin https://gemini:GeminiDev2026%21@gitea.ergonet.pl:3001/admin/<repo>.git
+```
+
+### PR Workflow (Gitea-First)
+
+1. Push branch to `origin` (Gitea)
+2. Create PR on Gitea using API or web UI
+3. Review/merge on Gitea
+4. GitHub mirror syncs automatically
+
+**Gemini creates PRs** via Gitea web UI at `https://gitea.ergonet.pl:3001/admin/<repo>/pulls/new/<branch>`
+or via API token: `GITEA_GEMINI_TOKEN=5ac28f2a987782a15ffe7664d39d2d48908b4cec`
+
+**Claude reviews/merges PRs** via PowerShell scripts at `C:\claude\scripts\gitea-*.ps1`
+
+**Never use `gh` CLI for PR operations** — all PRs live on Gitea, not GitHub.
 
 ## Safety Boundaries
 
