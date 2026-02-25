@@ -40,6 +40,7 @@ Reusable PowerShell scripts live at `C:/claude/fusecp-enterprise/scripts/bugfix/
 | `read-bugs-group.ps1` | Fetch multiple bugs + screenshots | `powershell -File scripts/bugfix/read-bugs-group.ps1 -BugIds "29,30,34" [-ExtractScreenshots]` |
 | `extract-screenshot.ps1` | Extract screenshot (legacy + multi) | `powershell -File scripts/bugfix/extract-screenshot.ps1 -BugId 30` |
 | `set-bug-status.ps1` | Update bug status (safe endpoint) | `powershell -File scripts/bugfix/set-bug-status.ps1 -BugId 30 -Status InProgress` |
+| `add-bug-comment.ps1` | Add fix description comment to bug | `powershell -File scripts/bugfix/add-bug-comment.ps1 -BugId 30 -Comment "Fixed by..." -SystemNote` |
 | `gitea-create-pr.ps1` | Create PR on Gitea (shared, auto-detects repo) | `powershell -File "C:/claude/scripts/gitea-create-pr.ps1" -Title "fix: title" -Head "hotfix/bug-30"` |
 | `gitea-merge-pr.ps1` | Merge PR on Gitea (shared, auto-detects repo) | `powershell -File "C:/claude/scripts/gitea-merge-pr.ps1" -PrNumber 1 -DeleteBranch` |
 
@@ -507,7 +508,32 @@ powershell -File "C:/claude/scripts/gitea-create-pr.ps1" -Title "fix: {title} (B
 
 Parse the output for `PR_NUMBER=` line. Save the number for Phase 7c.
 
-### 7c. Wait for CI, then merge on Gitea
+### 7c. Review PR (MANDATORY)
+
+Before merging, review the PR to catch issues. Dispatch `pr-review-toolkit:code-reviewer` agent:
+
+```
+Task(subagent_type="pr-review-toolkit:code-reviewer", model="sonnet", max_turns=12, description="Review PR #{pr-number}", prompt="
+  Review the changes on branch hotfix/bug-{id} in C:\claude\fusecp-enterprise.
+
+  Context: This is a bug fix for Bug #{id}: {title}
+
+  Review for:
+  1. Does the fix address the root cause (not just symptoms)?
+  2. Are there any regressions or side effects?
+  3. Does it follow existing code patterns?
+  4. Any edge cases missed?
+
+  Run: git diff main...hotfix/bug-{id}
+
+  Return: APPROVE with summary, or CHANGES_REQUESTED with specific issues.
+")
+```
+
+**If APPROVE:** Proceed to merge.
+**If CHANGES_REQUESTED:** Fix the issues on the hotfix branch, push again, and re-review. Max 2 review cycles — if still failing, present issues to user for decision.
+
+### 7d. Wait for CI, then merge on Gitea
 
 The Gitea push mirror syncs branches to GitHub on commit (+ every 10 min). GitHub Actions `pr-check.yml` triggers on push events to synced branches. Wait for it:
 
@@ -541,7 +567,7 @@ cd /c/claude/fusecp-enterprise && git checkout main && git pull origin main
 
 If CI fails, investigate the failure, fix on the hotfix branch, push to origin again, and re-check.
 
-### 7d. Deploy from main
+### 7e. Deploy from main
 
 Determine what to deploy based on changed files:
 
@@ -561,23 +587,34 @@ Determine what to deploy based on changed files:
 
 - **Both Portal + API changed**: Deploy both (API first, then Portal).
 
-### 7e. Update Bug Status
+### 7f. Add Fix Comment & Update Bug Status
 
+**MANDATORY: Add a fix description comment to each bug BEFORE marking as Fixed.** The comment documents what was fixed for future reference and appears on the bug report page.
+
+**Comment format:** `**Fix:** {concise description of root cause and what was changed}. PR #{pr-number} ({branch-name}).`
+
+```bash
+# For each bug ID:
+powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/add-bug-comment.ps1" -BugId {id} -SystemNote -Comment "**Fix:** {description of what was changed and why}. PR #{pr-number} ({branch-name})."
+```
+
+Then mark as Fixed:
 ```bash
 powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/set-bug-status.ps1" -BugId {id} -Status Fixed
 ```
 
-**When processing a group — mark ALL bugs in the group as Fixed:**
+**When processing a group — comment and mark ALL bugs in the group:**
 ```bash
 # For each bug ID in the group:
+powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/add-bug-comment.ps1" -BugId {id} -SystemNote -Comment "**Fix:** {description}. PR #{pr-number} ({branch-name})."
 powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/set-bug-status.ps1" -BugId {id} -Status Fixed
 ```
 
-### 7f. Visual Verification (if Chrome available and PageUrl exists)
+### 7g. Visual Verification (if Chrome available and PageUrl exists)
 
 After deploy, navigate back to the PageUrl and take a screenshot to verify the fix is visible.
 
-### 7g. Cleanup temp files
+### 7h. Cleanup temp files
 
 ```bash
 rm -f C:/claude/fusecp-enterprise/tmp/bug_{id}*
