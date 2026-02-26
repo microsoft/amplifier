@@ -41,10 +41,10 @@ Reusable PowerShell scripts live at `C:/claude/fusecp-enterprise/scripts/bugfix/
 | `extract-screenshot.ps1` | Extract screenshot (legacy + multi) | `powershell -File scripts/bugfix/extract-screenshot.ps1 -BugId 30` |
 | `set-bug-status.ps1` | Update bug status (safe endpoint) | `powershell -File scripts/bugfix/set-bug-status.ps1 -BugId 30 -Status InProgress` |
 | `add-bug-comment.ps1` | Add fix description comment to bug | `powershell -File scripts/bugfix/add-bug-comment.ps1 -BugId 30 -Comment "Fixed by..." -SystemNote` |
-| `gitea-create-pr.ps1` | Create PR on Gitea (shared, auto-detects repo) | `powershell -File "C:/claude/scripts/gitea-create-pr.ps1" -Title "fix: title" -Head "hotfix/bug-30"` |
-| `gitea-merge-pr.ps1` | Merge PR on Gitea (shared, auto-detects repo) | `powershell -File "C:/claude/scripts/gitea-merge-pr.ps1" -PrNumber 1 -DeleteBranch` |
+| `gitea-create-pr.ps1` | Create PR on Gitea (shared, auto-detects repo) | `powershell -File "C:/claude/amplifier/scripts/gitea/gitea-create-pr.ps1" -Title "fix: title" -Head "hotfix/bug-30"` |
+| `gitea-merge-pr.ps1` | Merge PR on Gitea (shared, auto-detects repo) | `powershell -File "C:/claude/amplifier/scripts/gitea/gitea-merge-pr.ps1" -PrNumber 1 -DeleteBranch` |
 
-All bugfix scripts default to `ApiBase=http://localhost:5010` and `ApiKey=fusecp-admin-key-2026`. Gitea scripts live at `C:\claude\scripts\` (shared across all repos), default to `https://gitea.ergonet.pl:3001` with token from `$GITEA_ADMIN_TOKEN` env var (fallback: hardcoded), and auto-detect the repo from `git remote get-url origin`. Screenshots save to `tmp/` by default.
+All bugfix scripts default to `ApiBase=http://localhost:5010` and `ApiKey=fusecp-admin-key-2026`. Gitea scripts live at `C:\claude\amplifier\scripts\gitea\` (version-controlled), default to `https://gitea.ergonet.pl:3001` with token from `$GITEA_ADMIN_TOKEN` env var (fallback: hardcoded), and auto-detect the repo by finding which repo contains the `-Head` branch. Screenshots save to `tmp/` by default.
 
 ## API Configuration
 
@@ -79,18 +79,20 @@ Feature requests are NOT auto-fixed. Use /brainstorm to discuss them.
 
 **Then present Bugs:**
 
-**Sort bugs by priority:** Critical > High > Medium > Low, then by ReportedAt (oldest first within same priority).
+**Sort bugs by priority:** Re-opened bugs get top priority within their priority level. Then Critical > High > Medium > Low, then by ReportedAt (oldest first within same priority).
 
 ```
 Found N open bug(s):
 
-| # | ID | Priority | Area | Title | Reported |
-|---|-----|----------|------|-------|----------|
-| 1 | 42  | Critical | Portal | Login page crashes on submit | 2026-02-15 |
-| 2 | 38  | High     | Exchange | Mailbox creation fails silently | 2026-02-14 |
+| # | ID | Priority | Area | Title | Reported | Re-opened |
+|---|-----|----------|------|-------|----------|-----------|
+| 1 | 42  | Critical | Portal | Login page crashes on submit | 2026-02-15 | REOPENED(2) |
+| 2 | 38  | High     | Exchange | Mailbox creation fails silently | 2026-02-14 | |
 
-Working on #1 (highest priority). Say "skip" to pick a different one, or "brainstorm #45" to discuss a feature request.
+Working on #1 (highest priority, re-opened). Say "skip" to pick a different one, or "brainstorm #45" to discuss a feature request.
 ```
+
+**Re-opened bug handling:** Bugs with `ReopenedCount > 0` (shown as `REOPENED(N)` in the last column) were previously fixed but the fix didn't work. These require extra scrutiny — the previous fix attempt was insufficient. When investigating re-opened bugs, also check the bug's comments for the previous fix description to understand what was tried.
 
 **Feature Request routing:** If the user says "brainstorm #ID" for a feature request, stop the fix pipeline and invoke `/brainstorm` with the feature request details as context. Do NOT attempt to implement feature requests automatically.
 
@@ -503,7 +505,7 @@ cd /c/claude/fusecp-enterprise && git push -u origin hotfix/bug-{id}
 Create PR on Gitea using the PowerShell script (**NEVER use curl for Gitea API** — JSON escaping breaks in Git Bash):
 
 ```bash
-powershell -File "C:/claude/scripts/gitea-create-pr.ps1" -Title "fix: {title} (Bug #{id})" -Head "hotfix/bug-{id}" -Body "## Bug Fix`n`n**Bug ID:** #{id}`n**Priority:** {priority}`n**Area:** {area}`n`n### Root Cause`n{root cause}`n`n### Testing`n- Build: PASS`n- Tests: {N} passing`n`nGenerated with Amplifier"
+powershell -File "C:/claude/amplifier/scripts/gitea/gitea-create-pr.ps1" -Title "fix: {title} (Bug #{id})" -Head "hotfix/bug-{id}" -Body "## Bug Fix`n`n**Bug ID:** #{id}`n**Priority:** {priority}`n**Area:** {area}`n`n### Root Cause`n{root cause}`n`n### Testing`n- Build: PASS`n- Tests: {N} passing`n`nGenerated with Amplifier"
 ```
 
 Parse the output for `PR_NUMBER=` line. Save the number for Phase 7c.
@@ -557,7 +559,7 @@ gh run watch --branch hotfix/bug-{id}
 Merge the PR on Gitea using the PowerShell script:
 
 ```bash
-powershell -File "C:/claude/scripts/gitea-merge-pr.ps1" -PrNumber {gitea-pr-number} -DeleteBranch
+powershell -File "C:/claude/amplifier/scripts/gitea/gitea-merge-pr.ps1" -PrNumber {gitea-pr-number} -DeleteBranch
 ```
 
 Then sync local main:
