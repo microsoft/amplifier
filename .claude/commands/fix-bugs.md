@@ -15,6 +15,7 @@ Autonomous bug-fixing workflow that processes FuseCP bug reports. When multiple 
 - FuseCP API must be running at `http://localhost:5010`
 - FuseCP Portal must be running at `https://fusecp.ergonet.pl`
 - Source code at `C:\claude\fusecp-enterprise`
+- Playwright MCP server configured (for post-deploy smoke checks — gracefully skipped if unavailable)
 
 ## Platform Notes (CRITICAL)
 
@@ -612,9 +613,96 @@ powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/add-bug-comment.ps1
 powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/set-bug-status.ps1" -BugId {id} -Status Fixed
 ```
 
-### 7g. Visual Verification (if Chrome available and PageUrl exists)
+### 7g. Post-Deploy Smoke Check (Playwright)
 
-After deploy, navigate back to the PageUrl and take a screenshot to verify the fix is visible.
+After deploy, run an automated smoke check on the fixed page using Playwright MCP. This verifies the deployment succeeded and the page renders without errors.
+
+**Skip if:** No `PageUrl` in the bug report, or bug `Area` is not `Portal`.
+
+**Step 1: Navigate to the page**
+
+```
+mcp__playwright__browser_navigate(url="{pageUrl}")
+```
+
+**Step 2: Handle login (if redirected to `/auth/login`)**
+
+Take a snapshot to check if the page is a login form:
+```
+mcp__playwright__browser_snapshot()
+```
+
+If login form is present, authenticate using the snapshot's element refs:
+```
+mcp__playwright__browser_click(ref="{username-field-ref}", element="Username input")
+mcp__playwright__browser_type(ref="{username-field-ref}", text="serveradmin", submit=false)
+mcp__playwright__browser_click(ref="{password-field-ref}", element="Password input")
+mcp__playwright__browser_type(ref="{password-field-ref}", text="Fusecp@2026", submit=false)
+mcp__playwright__browser_click(ref="{login-button-ref}", element="Login button")
+```
+
+Wait for navigation, then go to the target page:
+```
+mcp__playwright__browser_wait_for(time=3000)
+mcp__playwright__browser_navigate(url="{pageUrl}")
+```
+
+**Step 3: Wait for Blazor to stabilize**
+
+Blazor Server establishes a SignalR connection after page load. Wait for the page to settle:
+```
+mcp__playwright__browser_wait_for(time=3000)
+```
+
+**Step 4: Take accessibility snapshot**
+
+```
+mcp__playwright__browser_snapshot()
+```
+
+Review the snapshot for:
+- Page content rendered (not blank or error page)
+- No "Error" or "Exception" banners in the page structure
+- Expected UI elements are present (tables, forms, buttons relevant to the bug's area)
+
+**Step 5: Check console for errors**
+
+```
+mcp__playwright__browser_console_messages(level="error")
+```
+
+Review console errors. **Ignore known Blazor noise:**
+- `blazor.server.js` reconnection messages
+- `[HMR]` hot module reload messages
+- `favicon.ico` 404s
+
+**Flag unexpected errors** — these may indicate the fix introduced a runtime issue.
+
+**Step 6: Take verification screenshot**
+
+```
+mcp__playwright__browser_take_screenshot(type="png", filename="C:/claude/fusecp-enterprise/tmp/bug_{id}_post_deploy.png")
+```
+
+View the screenshot. If a pre-fix bug screenshot exists (`tmp/bug_{id}_screenshot.*`), compare the two visually.
+
+**Step 7: Report result**
+
+Append smoke check result to the bug fix summary:
+- **PASS**: Page loads, no console errors, content renders correctly
+- **WARN**: Page loads but has console errors or unexpected visual state — report details
+- **FAIL**: Page doesn't load, shows error page, or is blank — report details
+
+**Step 8: Cleanup**
+
+```
+mcp__playwright__browser_close()
+```
+
+**Failure handling:**
+- If Playwright MCP is unavailable (tool call fails), skip with note: "Playwright unavailable — smoke check skipped. Verify manually."
+- Do NOT block the pipeline on smoke check failures — report the result and continue to Phase 7h.
+- If smoke check finds issues, include them in the bug comment (Phase 7f) as a note.
 
 ### 7h. Cleanup temp files
 
