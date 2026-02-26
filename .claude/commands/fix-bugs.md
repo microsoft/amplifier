@@ -41,10 +41,10 @@ Reusable PowerShell scripts live at `C:/claude/fusecp-enterprise/scripts/bugfix/
 | `extract-screenshot.ps1` | Extract screenshot (legacy + multi) | `powershell -File scripts/bugfix/extract-screenshot.ps1 -BugId 30` |
 | `set-bug-status.ps1` | Update bug status (safe endpoint) | `powershell -File scripts/bugfix/set-bug-status.ps1 -BugId 30 -Status InProgress` |
 | `add-bug-comment.ps1` | Add fix description comment to bug | `powershell -File scripts/bugfix/add-bug-comment.ps1 -BugId 30 -Comment "Fixed by..." -SystemNote` |
-| `gitea-create-pr.ps1` | Create PR on Gitea (shared, auto-detects repo) | `powershell -File "C:/claude/scripts/gitea-create-pr.ps1" -Title "fix: title" -Head "hotfix/bug-30"` |
-| `gitea-merge-pr.ps1` | Merge PR on Gitea (shared, auto-detects repo) | `powershell -File "C:/claude/scripts/gitea-merge-pr.ps1" -PrNumber 1 -DeleteBranch` |
+| `gitea-create-pr.ps1` | Create PR on Gitea (shared, auto-detects repo) | `powershell -File "C:/claude/amplifier/scripts/gitea/gitea-create-pr.ps1" -Title "fix: title" -Head "hotfix/bug-30"` |
+| `gitea-merge-pr.ps1` | Merge PR on Gitea (shared, auto-detects repo) | `powershell -File "C:/claude/amplifier/scripts/gitea/gitea-merge-pr.ps1" -PrNumber 1 -DeleteBranch` |
 
-All bugfix scripts default to `ApiBase=http://localhost:5010` and `ApiKey=fusecp-admin-key-2026`. Gitea scripts live at `C:\claude\scripts\` (shared across all repos), default to `https://gitea.ergonet.pl:3001` with token from `$GITEA_ADMIN_TOKEN` env var (fallback: hardcoded), and auto-detect the repo from `git remote get-url origin`. Screenshots save to `tmp/` by default.
+All bugfix scripts default to `ApiBase=http://localhost:5010` and `ApiKey=fusecp-admin-key-2026`. Gitea scripts live at `C:\claude\amplifier\scripts\gitea\` (version-controlled), default to `https://gitea.ergonet.pl:3001` with token from `$GITEA_ADMIN_TOKEN` env var (fallback: hardcoded), and auto-detect the repo by finding which repo contains the `-Head` branch. Screenshots save to `tmp/` by default.
 
 ## API Configuration
 
@@ -505,7 +505,7 @@ cd /c/claude/fusecp-enterprise && git push -u origin hotfix/bug-{id}
 Create PR on Gitea using the PowerShell script (**NEVER use curl for Gitea API** — JSON escaping breaks in Git Bash):
 
 ```bash
-powershell -File "C:/claude/scripts/gitea-create-pr.ps1" -Title "fix: {title} (Bug #{id})" -Head "hotfix/bug-{id}" -Body "## Bug Fix`n`n**Bug ID:** #{id}`n**Priority:** {priority}`n**Area:** {area}`n`n### Root Cause`n{root cause}`n`n### Testing`n- Build: PASS`n- Tests: {N} passing`n`nGenerated with Amplifier"
+powershell -File "C:/claude/amplifier/scripts/gitea/gitea-create-pr.ps1" -Title "fix: {title} (Bug #{id})" -Head "hotfix/bug-{id}" -Body "## Bug Fix`n`n**Bug ID:** #{id}`n**Priority:** {priority}`n**Area:** {area}`n`n### Root Cause`n{root cause}`n`n### Testing`n- Build: PASS`n- Tests: {N} passing`n`nGenerated with Amplifier"
 ```
 
 Parse the output for `PR_NUMBER=` line. Save the number for Phase 7c.
@@ -559,7 +559,7 @@ gh run watch --branch hotfix/bug-{id}
 Merge the PR on Gitea using the PowerShell script:
 
 ```bash
-powershell -File "C:/claude/scripts/gitea-merge-pr.ps1" -PrNumber {gitea-pr-number} -DeleteBranch
+powershell -File "C:/claude/amplifier/scripts/gitea/gitea-merge-pr.ps1" -PrNumber {gitea-pr-number} -DeleteBranch
 ```
 
 Then sync local main:
