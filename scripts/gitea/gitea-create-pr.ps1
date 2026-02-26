@@ -72,8 +72,25 @@ if (-not $Repo) {
     }
 }
 
-# Skip SSL validation (self-signed/internal cert)
-[System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
+# Skip SSL validation and force TLS 1.2 (self-signed cert)
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+try {
+    Add-Type @"
+using System.Net;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
+public class TrustAllCertsPolicy {
+    public static void Enable() {
+        ServicePointManager.ServerCertificateValidationCallback =
+            delegate { return true; };
+    }
+}
+"@
+    [TrustAllCertsPolicy]::Enable()
+} catch {
+    # Type may already be added in this session
+    [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
+}
 
 $uri = "$GiteaUrl/api/v1/repos/$Repo/pulls"
 
