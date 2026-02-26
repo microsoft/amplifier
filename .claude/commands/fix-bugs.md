@@ -79,18 +79,20 @@ Feature requests are NOT auto-fixed. Use /brainstorm to discuss them.
 
 **Then present Bugs:**
 
-**Sort bugs by priority:** Critical > High > Medium > Low, then by ReportedAt (oldest first within same priority).
+**Sort bugs by priority:** Re-opened bugs get top priority within their priority level. Then Critical > High > Medium > Low, then by ReportedAt (oldest first within same priority).
 
 ```
 Found N open bug(s):
 
-| # | ID | Priority | Area | Title | Reported |
-|---|-----|----------|------|-------|----------|
-| 1 | 42  | Critical | Portal | Login page crashes on submit | 2026-02-15 |
-| 2 | 38  | High     | Exchange | Mailbox creation fails silently | 2026-02-14 |
+| # | ID | Priority | Area | Title | Reported | Re-opened |
+|---|-----|----------|------|-------|----------|-----------|
+| 1 | 42  | Critical | Portal | Login page crashes on submit | 2026-02-15 | REOPENED(2) |
+| 2 | 38  | High     | Exchange | Mailbox creation fails silently | 2026-02-14 | |
 
-Working on #1 (highest priority). Say "skip" to pick a different one, or "brainstorm #45" to discuss a feature request.
+Working on #1 (highest priority, re-opened). Say "skip" to pick a different one, or "brainstorm #45" to discuss a feature request.
 ```
+
+**Re-opened bug handling:** Bugs with `ReopenedCount > 0` (shown as `REOPENED(N)` in the last column) were previously fixed but the fix didn't work. These require extra scrutiny — the previous fix attempt was insufficient. When investigating re-opened bugs, also check the bug's comments for the previous fix description to understand what was tried.
 
 **Feature Request routing:** If the user says "brainstorm #ID" for a feature request, stop the fix pipeline and invoke `/brainstorm` with the feature request details as context. Do NOT attempt to implement feature requests automatically.
 
