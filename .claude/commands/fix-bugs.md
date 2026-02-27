@@ -63,9 +63,12 @@ mkdir -p C:/claude/fusecp-enterprise/tmp
 powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/fetch-open-bugs.ps1" -JsonOut "C:/claude/fusecp-enterprise/tmp/open_bugs.json"
 ```
 
-Parse the pipe-delimited output. If no bugs, report "No open bugs found" and stop.
+Parse the pipe-delimited output. If no bugs or feature requests, report "No open bugs found" and stop.
 
-**Separate by Type:** Split results into Bugs (Type=`Bug` or missing/null) and Feature Requests (Type=`FeatureRequest`).
+**Separate by Type:** Split results into three buckets:
+1. **Feature Requests** (Type=`FeatureRequest`)
+2. **Re-opened Bugs** (Type=`Bug` or missing/null, AND `ReopenedCount > 0`)
+3. **New Bugs** (Type=`Bug` or missing/null, AND `ReopenedCount = 0`)
 
 **If Feature Requests exist, present them first:**
 ```
@@ -78,26 +81,54 @@ Found M feature request(s):
 Feature requests are NOT auto-fixed. Use /brainstorm to discuss them.
 ```
 
-**Then present Bugs:**
+**If Re-opened Bugs exist, present them next:**
 
-**Sort bugs by priority:** Re-opened bugs get top priority within their priority level. Then Critical > High > Medium > Low, then by ReportedAt (oldest first within same priority).
+**Sort re-opened bugs by priority:** Critical > High > Medium > Low, then by LastReopenedAt (most recently reopened first).
 
 ```
-Found N open bug(s):
+Found R re-opened bug(s) (previous fix failed — requires deep analysis):
 
-| # | ID | Priority | Area | Title | Reported | Re-opened |
-|---|-----|----------|------|-------|----------|-----------|
-| 1 | 42  | Critical | Portal | Login page crashes on submit | 2026-02-15 | REOPENED(2) |
-| 2 | 38  | High     | Exchange | Mailbox creation fails silently | 2026-02-14 | |
+| # | ID | Priority | Area | Title | Last Reopened | Times |
+|---|-----|----------|------|-------|---------------|-------|
+| 1 | 42  | High     | Portal | Login page crashes | 2026-02-25 | 2 |
 
-Working on #1 (highest priority, re-opened). Say "skip" to pick a different one, or "brainstorm #45" to discuss a feature request.
+Re-opened bugs go through analysis → /brainstorm (not auto-fix).
 ```
 
-**Re-opened bug handling:** Bugs with `ReopenedCount > 0` (shown as `REOPENED(N)` in the last column) were previously fixed but the fix didn't work. These require extra scrutiny — the previous fix attempt was insufficient. When investigating re-opened bugs, also check the bug's comments for the previous fix description to understand what was tried.
+**Then present New Bugs:**
+
+**Sort new bugs by priority:** Critical > High > Medium > Low, then by ReportedAt (oldest first within same priority).
+
+```
+Found N new bug(s):
+
+| # | ID | Priority | Area | Title | Reported |
+|---|-----|----------|------|-------|----------|
+| 1 | 38  | High     | Exchange | Mailbox creation fails silently | 2026-02-14 |
+
+Working on #1 (highest priority). Say "skip" to pick a different one, or "brainstorm #45" to discuss a feature request.
+```
+
+**Re-opened bug selection:** When the user selects a re-opened bug (or one is auto-selected as highest priority among re-opened), immediately:
+
+```bash
+powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/set-bug-status.ps1" -BugId {id} -Status Investigating
+powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/add-bug-comment.ps1" -BugId {id} -SystemNote -Comment "Re-opened bug picked up for deep analysis (reopened {N} times)"
+```
+
+Then proceed to **Phase 1c** (below).
+
+**New bug selection:** Proceed to Phase 1b (triage, if 2+ new bugs) or Phase 2 (if 1 new bug) — unchanged.
+
+**Re-opened bug handling:** Bugs with `ReopenedCount > 0` are routed to the analysis flow (Phases 1c → 1d → 1e → /brainstorm) instead of the auto-fix pipeline. They are NOT processed by Phases 2-8.
 
 **Feature Request routing:** If the user says "brainstorm #ID" for a feature request, stop the fix pipeline and invoke `/brainstorm` with the feature request details as context. Do NOT attempt to implement feature requests automatically.
 
-**If only Feature Requests remain (no bugs):** Report "No open bugs found. There are M feature request(s) — use /brainstorm to discuss them." and stop.
+**If only Feature Requests remain (no bugs of either type):** Report "No open bugs found. There are M feature request(s) — use /brainstorm to discuss them." and stop.
+
+**If only Re-opened Bugs remain (no new bugs):** Process re-opened bugs through analysis flow. Do NOT report "no bugs."
+
+**If only New Bugs remain (no re-opened):** Process new bugs through normal pipeline (unchanged).
 
 ## Phase 1b: Triage & Group (when 2+ bugs open)
 
@@ -164,6 +195,197 @@ Proceed with Group 1 first? Say "regroup" to adjust, or "skip to #N" to pick a d
 **If user says "regroup":** Ask which bugs to move between groups, update the groupings, and re-present.
 
 **After confirmation:** Process groups in priority order. For each group, set `_currentGroup` to the list of bug IDs. All subsequent phases operate on the entire group together.
+
+## Phase 1c: Previous-Fix Forensics (Re-opened Bugs Only)
+
+**Skip this phase for new bugs** — proceed directly to Phase 2.
+
+This phase determines why the prior fix failed. The previous fix description is in the bug's comments (added by Phase 7f of the prior pipeline run). Format: `**Fix:** {description}. PR #{pr-number} ({branch-name}).`
+
+**Step 1: Fetch full bug details and comments:**
+```bash
+powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/read-bug.ps1" -BugId {id} -ExtractScreenshot
+```
+
+Parse the output for the fix comment. Look for comments with `IsSystemNote=true` that contain `**Fix:**`.
+
+**Step 2: Dispatch forensics agent:**
+
+```
+Task(subagent_type="agentic-search", model="sonnet", max_turns=15, description="Forensics on previous fix for bug #{id}", prompt="
+  **READ-ONLY MODE: Use ONLY Read, Glob, Grep, LS, and search tools. Do NOT use Edit, Write, Bash, or any tool that modifies files.**
+
+  A previous fix for this FuseCP bug FAILED. Analyze why.
+
+  ## Bug
+  - Title: {title}
+  - Description: {description}
+  - Area: {area}
+  - Page URL: {pageUrl}
+
+  ## Previous Fix (from bug comments)
+  {paste the **Fix:** comment text verbatim}
+
+  ## Instructions
+  1. Find the PR branch or commit mentioned in the fix comment:
+     ```bash
+     cd /c/claude/fusecp-enterprise && git log --oneline --all --grep='Bug #{id}' | head -10
+     ```
+     Or search for the branch name from the comment:
+     ```bash
+     cd /c/claude/fusecp-enterprise && git log --oneline --all | grep '{branch-name}' | head -5
+     ```
+  2. Read the diff of the relevant commit(s):
+     ```bash
+     cd /c/claude/fusecp-enterprise && git show {commit-hash} --stat
+     cd /c/claude/fusecp-enterprise && git show {commit-hash}
+     ```
+  3. Trace the changed code path — is the fix still present or was it reverted/overwritten?
+     Read the current version of each changed file and compare to the diff.
+  4. Determine WHY the fix failed. Classify as one of:
+     - **Wrong root cause** — the original diagnosis was incorrect
+     - **Incomplete fix** — correct direction but missed edge cases or code paths
+     - **Overwritten** — a subsequent merge or commit reverted/conflicted with the fix
+     - **Environment issue** — fix was correct but a config/data/timing issue remains
+     - **Other** — state the specific reason
+
+  ## Output (CRITICAL — reserve last 2-3 turns for this)
+  ## Previous Fix Analysis
+  **PR/Commit:** {reference}
+  **What was changed:** {files and summary of changes}
+  **Fix still present:** Yes/No — {explanation}
+  **Failure mode:** {one of the categories above}
+  **Why it failed:** {specific technical explanation}
+  **What was missed:** {what the previous investigation got wrong or overlooked}
+")
+```
+
+**Step 3: Update bug with forensics findings:**
+```bash
+powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/add-bug-comment.ps1" -BugId {id} -SystemNote -Comment "Previous fix analysis: {failure mode}. {brief explanation of what was missed}."
+```
+
+## Phase 1d: Fresh Investigation (Re-opened Bugs Only)
+
+**Skip this phase for new bugs** — proceed directly to Phase 2.
+
+Armed with knowledge of what was already tried and why it failed, run a fresh codebase investigation from scratch.
+
+**Step 1: Dispatch fresh investigation agent:**
+
+```
+Task(subagent_type="agentic-search", model="sonnet", max_turns=20, description="Fresh investigation for re-opened bug #{id}", prompt="
+  **READ-ONLY MODE: Use ONLY Read, Glob, Grep, LS, and search tools. Do NOT use Edit, Write, Bash, or any tool that modifies files.**
+
+  Investigate this re-opened FuseCP bug with FRESH EYES. A previous fix was applied and failed.
+
+  ## Bug
+  - Title: {title}
+  - Description: {description}
+  - Area: {area}
+  - Page URL: {pageUrl}
+
+  ## Previous Fix Forensics (DO NOT repeat this approach)
+  - What was tried: {from Phase 1c output}
+  - Failure mode: {from Phase 1c output}
+  - What was missed: {from Phase 1c output}
+
+  ## Instructions
+  1. Start from scratch — do NOT assume the previous root cause was correct
+  2. Use ctags for fast symbol lookup:
+     ```bash
+     grep -i '{keyword}' C:/claude/fusecp-enterprise/tags | head -20
+     ```
+  3. Area-to-code mapping (search in these locations based on Area):
+     - Portal → src/FuseCP.Portal/Components/Pages/ (Blazor .razor files)
+     - Exchange → src/FuseCP.Providers.Exchange/ and src/FuseCP.EnterpriseServer/Endpoints/ExchangeEndpoints.cs
+     - AD → src/FuseCP.Providers.AD/ and src/FuseCP.EnterpriseServer/Endpoints/ADEndpoints.cs
+     - DNS → src/FuseCP.Providers.DNS/ and src/FuseCP.EnterpriseServer/Endpoints/DNSEndpoints.cs
+     - HyperV → src/FuseCP.Providers.HyperV/ and src/FuseCP.EnterpriseServer/Endpoints/HyperVEndpoints.cs
+     - API → src/FuseCP.EnterpriseServer/Endpoints/
+  4. Trace the FULL code path top to bottom:
+     - Blazor page (.razor) → Portal service (Services/*.cs) → API endpoint (Endpoints/*.cs) → Repository (Database/Repositories/*.cs) → Provider (Providers.*/)
+  5. Look specifically for what the previous investigation missed
+  6. Consider: is this a symptom of a deeper architectural issue?
+
+  ## Output (CRITICAL — reserve last 2-3 turns for this)
+  ## Fresh Investigation Results
+  **Root cause:** {what's actually broken — be specific about the code path}
+  **Differs from previous analysis:** Yes/No — {explain how and why}
+  **Affected files:**
+  | File | Line(s) | Issue |
+  |------|---------|-------|
+  **Complexity:** Simple / Needs design / Architectural
+  - Simple = single-file change, low risk
+  - Needs design = multi-file or behavioral change, requires solution design
+  - Architectural = cross-cutting concern, requires architectural decision
+  **Recommended approach:** {if Simple: describe the fix. If Needs design or Architectural: note what needs to be designed}
+")
+```
+
+**Step 2: Visual investigation (if screenshots exist):**
+
+Follow the same visual investigation process as Phase 3b (navigate to PageUrl, compare bug screenshot with live page). This is unchanged — reuse the existing Phase 3b instructions.
+
+**Step 3: Update bug with findings:**
+```bash
+powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/add-bug-comment.ps1" -BugId {id} -SystemNote -Comment "Fresh analysis complete. Root cause: {root cause summary}. Complexity: {Simple|Needs design|Architectural}."
+```
+
+## Phase 1e: Compile Analysis & Brainstorm Handoff (Re-opened Bugs Only)
+
+**Skip this phase for new bugs** — proceed directly to Phase 2.
+
+After Phases 1c and 1d complete, compile all findings and hand off to `/brainstorm`.
+
+**Step 1: Present analysis summary to user:**
+
+```markdown
+## Re-opened Bug #{id} — Analysis Complete
+
+**Bug:** {title}
+**Reopened:** {N} times
+**Area:** {area}
+
+### Previous Fix (Phase 1c)
+- **What was tried:** {from forensics}
+- **Why it failed:** {failure mode and explanation}
+- **Fix still present:** {yes/no}
+
+### Fresh Investigation (Phase 1d)
+- **Root cause:** {from fresh investigation}
+- **Differs from previous analysis:** {yes/no + explanation}
+- **Complexity:** {Simple / Needs design / Architectural}
+- **Affected files:**
+  | File | Line(s) | Issue |
+  |------|---------|-------|
+
+### Visual Comparison
+{screenshot findings or "No screenshots available"}
+
+Ready to start /brainstorm with this context?
+```
+
+**STOP HERE and wait for explicit user confirmation.** Do NOT proceed without approval.
+
+**Step 2: On confirmation, update bug:**
+```bash
+powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/add-bug-comment.ps1" -BugId {id} -SystemNote -Comment "Analysis complete. Escalated to brainstorm for solution design."
+```
+
+**Step 3: Launch /brainstorm**
+
+Invoke `/brainstorm` with the full compiled context as the input message. Include:
+- Bug title, ID, description, area, page URL
+- Previous fix forensics summary (what was tried, why it failed)
+- Fresh investigation results (root cause, affected files, complexity)
+- Visual comparison findings (if any)
+
+The brainstorm session receives all context needed to skip its own investigation and go straight to exploring solution approaches.
+
+**Step 4: Pipeline stops for this bug.** `/brainstorm` takes over solution design. The bug remains in `Investigating` status until a fix is eventually deployed through the normal Phase 7 flow (which sets it to `Fixed`).
+
+**After brainstorm completes:** The user will use `/create-plan` → `/subagent-dev` to implement the designed solution. The resulting PR and deploy go through the standard Phase 7 process, which marks the bug as Fixed.
 
 ## Phase 2: Load Bug Details & Set InProgress
 
