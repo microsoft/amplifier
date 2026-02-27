@@ -15,7 +15,7 @@ Autonomous bug-fixing workflow that processes FuseCP bug reports. When multiple 
 - FuseCP API must be running at `http://localhost:5010`
 - FuseCP Portal must be running at `https://fusecp.ergonet.pl`
 - Source code at `C:\claude\fusecp-enterprise`
-- Playwright MCP server configured (for post-deploy smoke checks — gracefully skipped if unavailable)
+- Playwright MCP server configured (for visual investigation + post-deploy smoke checks)
 
 ## Platform Notes (CRITICAL)
 
@@ -535,20 +535,84 @@ If the bug has screenshots (ScreenshotCount > 0):
    Read(file_path="C:/claude/fusecp-enterprise/tmp/bug_{id}_screenshot.{ext}")
    ```
 
-4. **Navigate to the live page** (if PageUrl is provided and Chrome MCP is available):
+4. **Navigate to the live page** (if PageUrl is provided) using Playwright MCP:
    ```
-   mcp__claude-in-chrome__tabs_context_mcp()
-   mcp__claude-in-chrome__tabs_create_mcp()
-   mcp__claude-in-chrome__navigate(url="{pageUrl}", tabId={tabId})
-   mcp__claude-in-chrome__browser_take_screenshot(type="png")
+   mcp__playwright__browser_navigate(url="{pageUrl}")
    ```
 
-5. **Compare** the bug screenshot with the live page to understand:
+5. **Handle login (if redirected to `/auth/login`)**
+
+   Take a snapshot to check if the page is a login form:
+   ```
+   mcp__playwright__browser_snapshot()
+   ```
+
+   If login form is present, authenticate using the snapshot's element refs:
+   ```
+   mcp__playwright__browser_click(ref="{username-field-ref}", element="Username input")
+   mcp__playwright__browser_type(ref="{username-field-ref}", text="serveradmin", submit=false)
+   mcp__playwright__browser_click(ref="{password-field-ref}", element="Password input")
+   mcp__playwright__browser_type(ref="{password-field-ref}", text="Fusecp@2026", submit=false)
+   mcp__playwright__browser_click(ref="{login-button-ref}", element="Login button")
+   ```
+
+   Wait for navigation, then go to the target page:
+   ```
+   mcp__playwright__browser_wait_for(time=3000)
+   mcp__playwright__browser_navigate(url="{pageUrl}")
+   ```
+
+6. **Wait for Blazor to stabilize and take baseline screenshot**
+
+   Wait for page content to appear (prefer text-based wait over fixed timer):
+   ```
+   mcp__playwright__browser_wait_for(text="{expected page heading or content indicator}")
+   ```
+   If no known text indicator exists for this page, fall back to:
+   ```
+   mcp__playwright__browser_wait_for(time=3000)
+   ```
+
+   Take an accessibility snapshot to verify the page rendered:
+   ```
+   mcp__playwright__browser_snapshot()
+   ```
+
+   Save a **baseline screenshot** (pre-fix state for later comparison in Phase 7g):
+   ```
+   mcp__playwright__browser_take_screenshot(type="png", filename="C:/claude/fusecp-enterprise/tmp/bug_{id}_baseline.png")
+   ```
+
+7. **Interaction testing** (when bug involves UI interactions)
+
+   If the bug description mentions clicking, submitting, selecting, or form input:
+   - Use the accessibility snapshot from step 6 to identify the relevant interactive elements
+   - Attempt the interaction described in the bug report (click a button, fill a form, select an option)
+   - Take a snapshot after the interaction to observe the result
+   - Note what happens: error message, blank page, nothing, unexpected behavior
+
+   If the bug is purely visual (layout, styling, missing data), skip interaction testing.
+
+8. **Check console for JavaScript errors**
+   ```
+   mcp__playwright__browser_console_messages(level="error")
+   ```
+   Note any errors (ignoring known Blazor noise: `blazor.server.js`, `[HMR]`, `favicon.ico` 404s).
+
+9. **Compare** the bug screenshot (from step 3) with the live page to understand:
    - Is the bug still reproducible?
    - What visual elements are broken?
    - What's the expected vs actual state?
+   - Are there console errors that explain the visual issue?
 
-6. **If no valid screenshots could be extracted** (no files in `tmp/bug_{id}_*`), skip visual investigation entirely. Note "No screenshots available — investigation based on code analysis only" and proceed to Phase 3c.
+10. **Cleanup — close browser to free resources**
+    ```
+    mcp__playwright__browser_close()
+    ```
+
+11. **If no valid screenshots could be extracted** (no files in `tmp/bug_{id}_*`) AND no PageUrl is provided, skip visual investigation entirely. Note "No screenshots or page URL available — investigation based on code analysis only" and proceed to Phase 3c.
+
+    **If PageUrl exists but no screenshots:** Still navigate and take baseline — the live page investigation is valuable even without a bug screenshot to compare against.
 
 ### 3c. Compile Investigation Summary
 
@@ -871,7 +935,11 @@ mcp__playwright__browser_navigate(url="{pageUrl}")
 
 **Step 3: Wait for Blazor to stabilize**
 
-Blazor Server establishes a SignalR connection after page load. Wait for the page to settle:
+Blazor Server establishes a SignalR connection after page load. Prefer text-based wait over fixed timer:
+```
+mcp__playwright__browser_wait_for(text="{expected page heading or content indicator}")
+```
+If no known text indicator exists for this page, fall back to:
 ```
 mcp__playwright__browser_wait_for(time=3000)
 ```
@@ -906,7 +974,11 @@ Review console errors. **Ignore known Blazor noise:**
 mcp__playwright__browser_take_screenshot(type="png", filename="C:/claude/fusecp-enterprise/tmp/bug_{id}_post_deploy.png")
 ```
 
-View the screenshot. If a pre-fix bug screenshot exists (`tmp/bug_{id}_screenshot.*`), compare the two visually.
+View the screenshot and compare against available references:
+- **Baseline screenshot** (`tmp/bug_{id}_baseline.png` from Phase 3b): Best comparison — same viewport, same Playwright session type. Shows what changed between pre-fix and post-fix.
+- **Bug report screenshot** (`tmp/bug_{id}_screenshot.*`): Secondary comparison — may differ in viewport/browser but shows the original reported issue.
+
+If both exist, compare all three (bug report → baseline → post-deploy) to verify the fix addressed the reported issue.
 
 **Step 7: Report result**
 
