@@ -6,63 +6,67 @@ Complete reference for all specialized agents. Each agent is defined in `.claude
 
 | Agent | Purpose | Dispatch Keywords |
 |-------|---------|-------------------|
-| `agentic-search` | Intelligent 3-phase codebase search with ctags (Recon/Search/Synthesis) | search, find, where, how does, understand, explore |
-| `zen-architect` | Architecture, design, code review (3 modes: ANALYZE/ARCHITECT/REVIEW) | plan, design, architect, structure, review |
-| `modular-builder` | Primary implementation from specifications (bricks-and-studs) | implement, build, create, write code |
-| `bug-hunter` | Hypothesis-driven debugging and root cause analysis | fix, debug, error, failure, broken |
-| `test-coverage` | Test analysis, gap identification, test case design | test, coverage, verify, validate |
-| `security-guardian` | Security reviews, OWASP, vulnerability assessment | security, auth, secrets, vulnerability |
-| `post-task-cleanup` | Codebase hygiene after task completion | cleanup, hygiene, lint, unused, dead code |
-| `performance-optimizer` | Measure-first performance analysis and optimization | performance, slow, optimize, bottleneck |
-| `integration-specialist` | External services, APIs, MCP servers, dependency health | API, MCP, external, dependency, integration |
+| `agentic-search` | Search codebases, find files, locate symbols, trace dependencies, explore unfamiliar code | search, find, where, how does, understand, explore |
+| `zen-architect` | Review architecture, evaluate trade-offs, simplify complexity, conduct code reviews | plan, design, architect, structure, review |
+| `modular-builder` | Implement features, build modules, write code from specifications, execute implementation tasks | implement, build, create, write code |
+| `bug-hunter` | Debug errors, fix bugs, investigate failures, troubleshoot crashes, trace root causes | fix, debug, error, failure, broken |
+| `test-coverage` | Analyze test coverage, identify gaps, review spec compliance, verify implementations | test, coverage, verify, validate |
+| `security-guardian` | Review security, audit auth flows, identify OWASP vulnerabilities, assess secrets exposure | security, auth, secrets, vulnerability |
+| `post-task-cleanup` | Clean up after tasks, remove dead code, fix lint errors, restore codebase tidiness | cleanup, hygiene, lint, unused, dead code |
+| `performance-optimizer` | Optimize performance, profile bottlenecks, measure latency, resolve throughput issues | performance, slow, optimize, bottleneck |
+| `integration-specialist` | Integrate external services, wire APIs, connect MCP servers, debug integration failures | API, MCP, external, dependency, integration |
+| `spec-reviewer` | Review spec compliance, verify implementations match requirements, detect missing or extra work | spec review, compliance, verify spec |
+| `code-quality-reviewer` | Review code quality, check type safety, enforce style consistency, verify test coverage | quality review, code review, style, types |
 
 ## API & Data Agents
 
 | Agent | Purpose | Dispatch Keywords |
 |-------|---------|-------------------|
-| `api-contract-designer` | REST/GraphQL API contracts and specifications | endpoint, contract, REST, GraphQL, route |
-| `database-architect` | Schema design, query optimization, migrations | schema, migration, query, index, database |
-| `contract-spec-author` | Formal contract and implementation specification docs | spec, contract, interface, protocol |
-| `module-intent-architect` | Translate natural language to module specifications | module boundary, interface, requirements |
+| `api-contract-designer` | Design REST APIs, define GraphQL schemas, write OpenAPI specs, specify contracts | endpoint, contract, REST, GraphQL, route |
+| `database-architect` | Design schemas, write migrations, optimize queries, define indexes, resolve N+1 problems | schema, migration, query, index, database |
+| `contract-spec-author` | Write formal specifications, author interface contracts, define acceptance criteria | spec, contract, interface, protocol |
+| `module-intent-architect` | Translate requirements into module specs, define module boundaries, clarify interfaces | module boundary, interface, requirements |
 
 ## Design Agents
 
 | Agent | Purpose | Dispatch Keywords |
 |-------|---------|-------------------|
-| `component-designer` | Individual UI component design and implementation | component, UI, frontend, visual, widget |
-| `art-director` | Aesthetic direction and visual strategy | aesthetic, brand, visual identity, style |
-| `animation-choreographer` | Motion design, animations, transitions | animation, transition, motion, easing |
-| `layout-architect` | Page-level layout, information architecture | layout, grid, page structure, navigation |
-| `responsive-strategist` | Responsive design, breakpoints, device adaptation | responsive, breakpoint, mobile, viewport |
-| `design-system-architect` | Design tokens, theme systems, design foundations | design tokens, theme, design system |
-| `voice-strategist` | UX writing, microcopy, voice & tone | copy, microcopy, tone, error message |
+| `component-designer` | Design UI components, implement frontend widgets, create React/Vue/Svelte components | component, UI, frontend, visual, widget |
+| `art-director` | Direct visual aesthetics, define brand identity, set color palettes, evaluate consistency | aesthetic, brand, visual identity, style |
+| `animation-choreographer` | Design animations, choreograph transitions, specify motion curves, create micro-interactions | animation, transition, motion, easing |
+| `layout-architect` | Design page layouts, define information architecture, plan grid systems | layout, grid, page structure, navigation |
+| `responsive-strategist` | Design responsive layouts, define breakpoints, adapt UI for mobile/tablet/desktop | responsive, breakpoint, mobile, viewport |
+| `design-system-architect` | Build design systems, define design tokens, architect theme infrastructure | design tokens, theme, design system |
+| `voice-strategist` | Write UX copy, craft microcopy, define voice and tone, improve error messages | copy, microcopy, tone, error message |
 
 ## Knowledge & Analysis Agents
 
 | Agent | Purpose | Dispatch Keywords |
 |-------|---------|-------------------|
-| `content-researcher` | Extract actionable insights from content collections | research, investigate, compare, evaluate |
-| `analysis-engine` | Multi-mode analysis (DEEP/SYNTHESIS/TRIAGE) | analyze, assess, audit, measure, report |
-| `concept-extractor` | Extract atomic concepts from articles/papers | extract, summarize, distill, key ideas |
-| `insight-synthesizer` | Cross-domain connections and meta-pattern recognition | synthesize, combine, cross-reference |
-| `knowledge-archaeologist` | Trace knowledge evolution, find abandoned approaches | history, evolution, legacy, original intent |
-| `pattern-emergence` | Detect emergent patterns from diverse perspectives | pattern, recurring, trend, structural |
-| `visualization-architect` | Data visualization and knowledge graph rendering | diagram, chart, graph, visualize |
-| `graph-builder` | Multi-perspective knowledge graph construction | graph, relationship, entity, network |
+| `content-researcher` | Research topics, investigate content, compare sources, extract actionable insights | research, investigate, compare, evaluate |
+| `analysis-engine` | Analyze systems, audit codebases, assess technical debt, produce structured reports | analyze, assess, audit, measure, report |
+| `concept-extractor` | Extract key concepts, distill articles, summarize papers, surface actionable takeaways | extract, summarize, distill, key ideas |
+| `insight-synthesizer` | Synthesize cross-domain insights, identify meta-patterns, combine findings from multiple sources | synthesize, combine, cross-reference |
+| `knowledge-archaeologist` | Trace knowledge evolution, recover abandoned approaches, investigate legacy decisions | history, evolution, legacy, original intent |
+| `pattern-emergence` | Detect emergent patterns, identify recurring structures, surface trends across diverse inputs | pattern, recurring, trend, structural |
+| `visualization-architect` | Design data visualizations, create charts and diagrams, specify rendering approaches | diagram, chart, graph, visualize |
+| `graph-builder` | Build knowledge graphs, map entity relationships, construct multi-perspective networks | graph, relationship, entity, network |
 
 ## Infrastructure Agents
 
 | Agent | Purpose | Dispatch Keywords |
 |-------|---------|-------------------|
-| `vmware-infrastructure` | VMware VCSA 8.x, ESXi 8.x, NSX 4.x log analysis and operations expert | vmware, vcsa, esxi, nsx, vsphere, powercli, vcenter, vmkernel, log analysis |
+| `vmware-infrastructure` | Diagnose VMware issues, analyze ESXi/VCSA/NSX logs, generate PowerCLI commands | vmware, vcsa, esxi, nsx, vsphere, powercli, vcenter, vmkernel, log analysis |
 
 ## Meta Agents
 
 | Agent | Purpose | Dispatch Keywords |
 |-------|---------|-------------------|
-| `subagent-architect` | Create new specialized agents | new agent, specialized agent, create agent |
-| `amplifier-cli-architect` | CLI tool design for hybrid code/AI architectures | CLI tool, command, scenario, amplifier tool |
-| `ambiguity-guardian` | Preserve productive contradictions and uncertainty | ambiguous, unclear, conflicting, assumption |
+| `subagent-architect` | Create new agents, design agent prompts, define agent roles, review agent effectiveness | new agent, specialized agent, create agent |
+| `amplifier-cli-architect` | Design CLI tools, architect hybrid code-AI workflows, structure amplifier scenarios | CLI tool, command, scenario, amplifier tool |
+| `ambiguity-guardian` | Preserve contradictions, flag ambiguous requirements, surface hidden assumptions | ambiguous, unclear, conflicting, assumption |
+| `amplifier-expert` | Answer Amplifier questions, explain agent selection, troubleshoot command failures | amplifier, how to, expert, help, explain |
+| `handoff-gemini` | Prepare Gemini handoffs, write HANDOFF.md dispatches, coordinate cross-model work | handoff, gemini, dispatch, cross-model |
 
 ## Review Agent Mapping
 
@@ -70,8 +74,8 @@ Used by superpowers skills for two-stage review:
 
 | Review Type | Agent | When |
 |-------------|-------|------|
-| Spec Compliance | `test-coverage` | After every implementation task |
-| Code Quality | `zen-architect` (REVIEW mode) | After spec compliance passes |
+| Spec Compliance | `spec-reviewer` | After every implementation task |
+| Code Quality | `code-quality-reviewer` | After spec compliance passes |
 | Security | `security-guardian` | Security-sensitive tasks or final review |
 | Post-completion | `post-task-cleanup` | After all tasks pass, before finishing branch |
 
@@ -89,6 +93,8 @@ Used by superpowers skills for two-stage review:
 | `integration-specialist` | Balanced | `sonnet` | Pro |
 | `performance-optimizer` | Balanced | `sonnet` | Pro |
 | `component-designer` | Balanced | `sonnet` | Pro |
+| `spec-reviewer` | Fast | `haiku` | Flash |
+| `code-quality-reviewer` | Balanced | `sonnet` | Pro |
 | `test-coverage` (review) | Fast | `haiku` | Flash |
 | `zen-architect` (review) | Balanced | `sonnet` | Pro |
 | `security-guardian` | Deep | `opus` | Pro |

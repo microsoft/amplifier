@@ -1,9 +1,7 @@
 ---
 name: component-designer
 description: |
-  Use this agent when designing or implementing individual UI components. Transforms
-  user's component vision into refined UI elements that embody the Nine Dimensions
-  and Five Pillars while maintaining the 9.5/10 quality baseline.
+  Design UI components, implement frontend widgets, create React/Vue/Svelte components, define component APIs, write component documentation, build interactive UI elements
 
   Deploy for:
   - Designing new UI components

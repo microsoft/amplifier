@@ -1,8 +1,7 @@
 ---
 name: database-architect
 description: |
-  Expert in database design, optimization, and migrations.
-  Embraces ruthless simplicity and pragmatic solutions.
+  Design database schemas, write migrations, optimize queries, define indexes, model entity relationships, plan data partitioning, review ORM patterns, resolve N+1 problems
 
   Deploy for:
   - Designing new database schemas

@@ -83,6 +83,61 @@ Not every task needs full two-stage review. Match review depth to task risk:
 
 **How to choose:** Default to Level 2. Upgrade to Level 3 for security/architecture. Downgrade to Level 1 only when the task is trivially simple.
 
+## Two-Stage Review Loop (REQUIRED for non-trivial tasks)
+
+After each implementation agent completes a task, run two sequential review stages before marking the task complete.
+
+### Trivial Task Exemption
+
+A task may skip the review loop ONLY if the orchestrator explicitly marks it as trivial at dispatch time. Trivial means: single-line change or documentation-only update. The orchestrator must include the following in the task dispatch:
+
+```
+TRIVIAL EXEMPTION: [specific justification — e.g., "single typo fix in README"]
+```
+
+If no TRIVIAL EXEMPTION is logged, both review stages are mandatory.
+
+### Stage 1: Spec Compliance Review
+
+After the implementer completes:
+
+1. Dispatch `test-coverage` with:
+   - The original task specification (copy the task's Steps/description from the plan)
+   - List of files changed (from the implementer's commit)
+   - Summary of changes (from the implementer's report)
+
+2. Read the `VERDICT` from spec-reviewer:
+   - **PASS**: Proceed to Stage 2.
+   - **FAIL (first time)**: Share FINDINGS with the implementer. Dispatch implementer again to fix the spec gaps. Then dispatch spec-reviewer again for re-review.
+   - **FAIL (second time)**: ESCALATE TO USER. Report both the FINDINGS and the implementer's attempted fixes. Do not loop a third time. Wait for user direction.
+
+### Stage 2: Code Quality Review
+
+After spec-reviewer returns PASS:
+
+1. Dispatch `code-quality-reviewer` with:
+   - List of files changed
+   - Summary of changes
+   - Reference to AGENTS.md for project conventions
+
+2. Read the `VERDICT` from code-quality-reviewer:
+   - **PASS**: Task is complete. Mark it done in TodoWrite.
+   - **FAIL (first time)**: Share FINDINGS with the implementer. Dispatch implementer again to fix the quality issues. Then dispatch code-quality-reviewer again for re-review.
+   - **FAIL (second time)**: ESCALATE TO USER. Report both the FINDINGS and the implementer's attempted fixes. Do not loop a third time. Wait for user direction.
+
+### Loop Cap Enforcement
+
+Maximum 2 review cycles per reviewer per task. Track cycle count explicitly. Never dispatch a third review cycle — always escalate after the second consecutive FAIL.
+
+### Dispatch Announcements for Reviews
+
+Use this format for all review dispatches:
+
+```
+>> Review [1/2]: spec-reviewer for Task N — spec compliance check
+>> Review [2/2]: code-quality-reviewer for Task N — code quality check
+```
+
 ## Session Naming
 
 After loading the plan and creating the TodoWrite list, rename this session to reflect the work:
@@ -96,77 +151,86 @@ If `/rename` is unavailable, skip this step.
 
 ## Branch Gate (REQUIRED)
 
-Before doing ANY work, verify you are NOT on main/master:
+Before doing ANY work, check the current branch and REFUSE if on main or master:
 
 ```bash
-BRANCH=$(git branch --show-current)
-if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
-  echo "ON_MAIN"
+CURRENT_BRANCH=$(git branch --show-current 2>/dev/null)
+if [ "$CURRENT_BRANCH" = "main" ] || [ "$CURRENT_BRANCH" = "master" ]; then
+  echo "ERROR: Cannot run /subagent-dev on branch '$CURRENT_BRANCH'."
+  echo "Create a feature branch first:"
+  echo "  Option 1: /worktree  (recommended — isolated environment)"
+  echo "  Option 2: git checkout -b feature/<name>"
+  exit 1
 fi
 ```
 
-**If on main/master:**
-1. STOP — do not dispatch any implementation agents
-2. Tell the user: "You're on main. All work must happen on a feature branch so we can create a PR at the end."
-3. Offer to create one: `git checkout -b feature/<plan-name-slug>`
-4. Wait for confirmation before proceeding
+**HARD BLOCK:** If on main/master, STOP immediately. Do NOT dispatch any agents. Do NOT offer to continue. Tell the user: "Cannot run /subagent-dev on main. Create a feature branch first, then re-run." Offer the two branch creation options above and wait for the user to switch branches before proceeding.
 
-**If already on a feature branch:** Proceed to The Process.
+**If on a feature branch:** Proceed to The Process.
 
-**Why:** Work on main cannot produce a clean PR. Creating the branch first costs nothing; retroactively moving commits is error-prone and risky.
+## Process Graph (Authoritative)
 
-## The Process
+> When this graph conflicts with prose, follow the graph.
 
 ```dot
-digraph process {
-    rankdir=TB;
+digraph subagent_dev {
+  rankdir=TB;
 
-    subgraph cluster_per_task {
-        label="Per Task";
-        "Read task Agent field, dispatch Amplifier agent (see Implementer Prompt Template)" [shape=box];
-        "Agent asks questions?" [shape=diamond];
-        "Answer questions, provide context" [shape=box];
-        "Agent implements, tests, commits, self-reviews" [shape=box];
-        "Determine review level (see Review Levels)" [shape=diamond style=filled fillcolor=lightyellow];
-        "Level 1: self-review sufficient" [shape=box];
-        "Level 2+: Dispatch test-coverage for spec review" [shape=box];
-        "Spec compliant?" [shape=diamond];
-        "Implementation agent fixes spec gaps" [shape=box];
-        "Level 3: Dispatch zen-architect REVIEW mode" [shape=box];
-        "Quality approved?" [shape=diamond];
-        "Implementation agent fixes quality issues" [shape=box];
-        "Mark task complete in TodoWrite" [shape=box];
-    }
+  "branch_gate" [label="Branch Gate\ncheck current branch" shape=diamond];
+  "on_main" [label="STOP: on main/master\nCreate feature branch first" shape=box style=filled fillcolor=red fontcolor=white];
+  "load_plan" [label="Read plan, extract tasks\nCreate TodoWrite list" shape=box];
+  "dispatch_impl" [label="Dispatch implementation agent\n(agent from task Agent field)" shape=box];
+  "impl_questions" [label="Agent has questions?" shape=diamond];
+  "answer" [label="Answer questions\nprovide context" shape=box];
+  "impl_done" [label="Implementation complete\nand committed" shape=box];
+  "trivial" [label="Task marked trivial?" shape=diamond];
+  "spec_review" [label="Dispatch spec-reviewer\n(verify spec compliance)" shape=box style=filled fillcolor=lightyellow];
+  "spec_pass" [label="spec-reviewer PASS?" shape=diamond];
+  "spec_fix" [label="Implementer fixes\nspec gaps" shape=box];
+  "spec_second_fail" [label="Second spec FAIL?" shape=diamond];
+  "spec_escalate" [label="ESCALATE to user\n(do not loop again)" shape=box style=filled fillcolor=orange];
+  "quality_review" [label="Dispatch code-quality-reviewer\n(verify code quality)" shape=box style=filled fillcolor=lightyellow];
+  "quality_pass" [label="quality-reviewer PASS?" shape=diamond];
+  "quality_fix" [label="Implementer fixes\nquality issues" shape=box];
+  "quality_second_fail" [label="Second quality FAIL?" shape=diamond];
+  "quality_escalate" [label="ESCALATE to user\n(do not loop again)" shape=box style=filled fillcolor=orange];
+  "task_complete" [label="Mark task complete\nin TodoWrite" shape=box];
+  "more_tasks" [label="More tasks remain?" shape=diamond];
+  "cleanup" [label="Dispatch post-task-cleanup" shape=box];
+  "finish" [label="/finish-branch" shape=box style=filled fillcolor=lightgreen];
 
-    "Read plan, extract all tasks with Agent fields, note context, create TodoWrite" [shape=box];
-    "More tasks remain?" [shape=diamond];
-    "Dispatch post-task-cleanup agent" [shape=box];
-    "Use /finish-branch" [shape=box style=filled fillcolor=lightgreen];
-
-    "Read plan, extract all tasks with Agent fields, note context, create TodoWrite" -> "Read task Agent field, dispatch Amplifier agent (see Implementer Prompt Template)";
-    "Read task Agent field, dispatch Amplifier agent (see Implementer Prompt Template)" -> "Agent asks questions?";
-    "Agent asks questions?" -> "Answer questions, provide context" [label="yes"];
-    "Answer questions, provide context" -> "Read task Agent field, dispatch Amplifier agent (see Implementer Prompt Template)";
-    "Agent asks questions?" -> "Agent implements, tests, commits, self-reviews" [label="no"];
-    "Agent implements, tests, commits, self-reviews" -> "Determine review level (see Review Levels)";
-    "Determine review level (see Review Levels)" -> "Level 1: self-review sufficient" [label="simple"];
-    "Determine review level (see Review Levels)" -> "Level 2+: Dispatch test-coverage for spec review" [label="standard/complex"];
-    "Level 1: self-review sufficient" -> "Mark task complete in TodoWrite";
-    "Level 2+: Dispatch test-coverage for spec review" -> "Spec compliant?";
-    "Spec compliant?" -> "Implementation agent fixes spec gaps" [label="no"];
-    "Implementation agent fixes spec gaps" -> "Level 2+: Dispatch test-coverage for spec review" [label="re-review"];
-    "Spec compliant?" -> "Level 3: Dispatch zen-architect REVIEW mode" [label="yes + complex"];
-    "Spec compliant?" -> "Mark task complete in TodoWrite" [label="yes + standard"];
-    "Level 3: Dispatch zen-architect REVIEW mode" -> "Quality approved?";
-    "Quality approved?" -> "Implementation agent fixes quality issues" [label="no"];
-    "Implementation agent fixes quality issues" -> "Level 3: Dispatch zen-architect REVIEW mode" [label="re-review"];
-    "Quality approved?" -> "Mark task complete in TodoWrite" [label="yes"];
-    "Mark task complete in TodoWrite" -> "More tasks remain?";
-    "More tasks remain?" -> "Read task Agent field, dispatch Amplifier agent (see Implementer Prompt Template)" [label="yes"];
-    "More tasks remain?" -> "Dispatch post-task-cleanup agent" [label="no"];
-    "Dispatch post-task-cleanup agent" -> "Use /finish-branch";
+  "branch_gate" -> "on_main" [label="main/master"];
+  "branch_gate" -> "load_plan" [label="feature branch"];
+  "load_plan" -> "dispatch_impl";
+  "dispatch_impl" -> "impl_questions";
+  "impl_questions" -> "answer" [label="yes"];
+  "answer" -> "dispatch_impl";
+  "impl_questions" -> "impl_done" [label="no"];
+  "impl_done" -> "trivial";
+  "trivial" -> "task_complete" [label="yes (with justification)"];
+  "trivial" -> "spec_review" [label="no"];
+  "spec_review" -> "spec_pass";
+  "spec_pass" -> "quality_review" [label="yes"];
+  "spec_pass" -> "spec_fix" [label="no (first fail)"];
+  "spec_fix" -> "spec_review" [label="re-review"];
+  "spec_review" -> "spec_second_fail" [label="still failing"];
+  "spec_second_fail" -> "spec_escalate" [label="yes"];
+  "spec_second_fail" -> "quality_review" [label="no (passed)"];
+  "quality_review" -> "quality_pass";
+  "quality_pass" -> "task_complete" [label="yes"];
+  "quality_pass" -> "quality_fix" [label="no (first fail)"];
+  "quality_fix" -> "quality_review" [label="re-review"];
+  "quality_review" -> "quality_second_fail" [label="still failing"];
+  "quality_second_fail" -> "quality_escalate" [label="yes"];
+  "quality_second_fail" -> "task_complete" [label="no (passed)"];
+  "task_complete" -> "more_tasks";
+  "more_tasks" -> "dispatch_impl" [label="yes"];
+  "more_tasks" -> "cleanup" [label="no"];
+  "cleanup" -> "finish";
 }
 ```
+
+## The Process
 
 ## Dispatch Announcements
 

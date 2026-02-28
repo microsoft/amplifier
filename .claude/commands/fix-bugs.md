@@ -10,6 +10,48 @@ Autonomous bug-fixing workflow that processes FuseCP bug reports. When multiple 
 
 **Announce at start:** "Starting FuseCP bug fix pipeline. Checking for open bugs..."
 
+## Process Graph (Authoritative)
+
+> When this graph conflicts with prose, follow the graph.
+
+```dot
+digraph fix_bugs {
+  rankdir=TB;
+
+  "fetch_bugs" [label="Fetch bugs from issue tracker\nor accept from user" shape=box];
+  "select" [label="Select bug to investigate" shape=box];
+  "investigate" [label="Investigate\n(read logs, code, stack traces)" shape=box];
+  "visual_check" [label="Visual check needed?" shape=diamond];
+  "playwright" [label="Playwright MCP\nscreenshot / interact" shape=box];
+  "analyze" [label="Form hypothesis\nidentify root cause" shape=box];
+  "fix" [label="Implement fix\n(on feature branch)" shape=box];
+  "build_test" [label="Build + run tests" shape=box];
+  "tests_pass" [label="Tests pass?" shape=diamond];
+  "iterate" [label="Iterate on fix" shape=box];
+  "deploy" [label="Deploy to test environment" shape=box];
+  "verify" [label="Verify fix in environment" shape=box];
+  "more_bugs" [label="More bugs?" shape=diamond];
+  "done" [label="Create PR\n/finish-branch" shape=box style=filled fillcolor=lightgreen];
+
+  "fetch_bugs" -> "select";
+  "select" -> "investigate";
+  "investigate" -> "visual_check";
+  "visual_check" -> "playwright" [label="yes"];
+  "playwright" -> "analyze";
+  "visual_check" -> "analyze" [label="no"];
+  "analyze" -> "fix";
+  "fix" -> "build_test";
+  "build_test" -> "tests_pass";
+  "tests_pass" -> "iterate" [label="no"];
+  "iterate" -> "fix";
+  "tests_pass" -> "deploy" [label="yes"];
+  "deploy" -> "verify";
+  "verify" -> "more_bugs";
+  "more_bugs" -> "select" [label="yes"];
+  "more_bugs" -> "done" [label="no"];
+}
+```
+
 ## Prerequisites
 
 - FuseCP API must be running at `http://localhost:5010`

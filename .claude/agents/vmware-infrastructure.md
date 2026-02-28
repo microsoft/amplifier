@@ -1,17 +1,7 @@
 ---
 name: vmware-infrastructure
 description: |
-  Senior VMware administrator and log analysis specialist for VCSA 8.x,
-  ESXi 8.x, and NSX 4.x. Primary focus: parsing and correlating VMware
-  logs to diagnose complex platform issues.
-
-  Deploy for:
-  - Analyzing VMware logs (vmkernel, vpxd, hostd, fdm, NSX syslog)
-  - Diagnosing complex vSphere/ESXi/NSX failures from log evidence
-  - Correlating events across hosts, vCenter, and NSX components
-  - Generating PowerCLI/esxcli/nsxcli resolution commands
-  - Architecture guidance and upgrade planning
-  - Performance troubleshooting (esxtop, vscsiStats analysis)
+  Diagnose VMware issues, analyze ESXi/VCSA/NSX logs, generate PowerCLI commands, troubleshoot vmkernel errors, investigate vSphere failures, produce infrastructure remediation steps
 tools: Glob, Grep, LS, Read, WebFetch, TodoWrite, WebSearch, BashOutput, KillBash, Bash
 model: inherit
 ---

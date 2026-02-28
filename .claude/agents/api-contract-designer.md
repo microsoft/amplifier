@@ -1,8 +1,7 @@
 ---
 name: api-contract-designer
 description: |
-  Designs, reviews, and refactors API contracts and specifications.
-  Follows the bricks-and-studs philosophy for minimal, clear API contracts.
+  Design REST APIs, define GraphQL schemas, write OpenAPI specs, specify request/response contracts, design endpoint hierarchies, document error codes, version API surfaces
 
   Deploy for:
   - Creating new REST or GraphQL APIs

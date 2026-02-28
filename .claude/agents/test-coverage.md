@@ -1,14 +1,7 @@
 ---
 name: test-coverage
 description: |
-  Analyzes test coverage, identifies gaps, and suggests comprehensive
-  test cases following the testing pyramid principle.
-
-  Deploy for:
-  - Analyzing test coverage for modules and features
-  - Identifying testing gaps after bug fixes
-  - Suggesting strategic test cases without over-testing
-  - Spec compliance verification
+  Analyze test coverage, identify gaps, suggest comprehensive test cases, review specification compliance, verify implementation against requirements, write missing tests, assess edge case handling
 model: inherit
 ---
 

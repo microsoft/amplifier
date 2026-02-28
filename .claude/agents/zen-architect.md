@@ -1,15 +1,7 @@
 ---
 name: zen-architect
 description: |
-  Use this agent for code planning, architecture design, and review tasks.
-  Embodies ruthless simplicity and analysis-first development.
-
-  Deploy for:
-  - Breaking down problems and designing solutions (ANALYZE mode)
-  - System design and module specification (ARCHITECT mode)
-  - Code quality assessment and review (REVIEW mode)
-
-  Creates specifications that the modular-builder agent then implements.
+  Review architecture, analyze system design, evaluate trade-offs, simplify overly complex approaches, identify over-engineering, recommend structural improvements, conduct code reviews
 model: inherit
 ---
 

@@ -268,6 +268,16 @@ After saving the plan:
 - Execute plan in current session using /execute-plan
 - Batch execution with checkpoints for review
 
+### Write Brainstorm Marker
+
+After saving the plan and before handing off to execution, write the brainstorm marker file to unlock Plan Mode:
+
+```bash
+touch /tmp/amplifier-brainstorm-done
+```
+
+This covers the case where the user starts with /create-plan directly (skipping /brainstorm). The marker file is session-scoped.
+
 ## Additional Guidance
 
 $ARGUMENTS

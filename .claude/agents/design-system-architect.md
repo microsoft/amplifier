@@ -1,9 +1,7 @@
 ---
 name: design-system-architect
 description: |
-  Use this agent when working on design system architecture, design tokens, or establishing
-  design foundations. This agent transforms user's vision into systematic, scalable design
-  infrastructure following the Nine Dimensions and Five Pillars philosophy.
+  Build design systems, define design tokens, architect theme infrastructure, create component libraries, establish visual foundations, document design patterns, enforce consistency
 
   Deploy for:
   - Design system architecture and token design

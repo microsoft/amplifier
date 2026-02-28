@@ -556,3 +556,53 @@ See `@ai_context/IMPLEMENTATION_PHILOSOPHY.md` for the full implementation philo
 ## Modular Design Philosophy
 
 See `@ai_context/MODULAR_DESIGN_PHILOSOPHY.md` for the modular design philosophy (already loaded via CLAUDE.md @imports).
+
+## Red Flags
+
+If you catch yourself thinking any of the following, stop and apply the reality check before proceeding.
+
+| If you're thinking... | Reality check |
+|-----------------------|---------------|
+| "This is simple, I'll just implement it directly" | Run /brainstorm first. Simplicity is confirmed after analysis, not assumed before it. |
+| "I already know the codebase well enough" | Dispatch agentic-search anyway. Memory of past sessions is lossy. |
+| "I'll write tests after the implementation" | /tdd exists for a reason. Tests first is not optional for non-trivial features. |
+| "I'll skip the worktree, it's a small change" | Branch first always. Main is protected; there is no "small enough to skip". |
+| "I can review my own code" | Two-stage review catches category errors that self-review misses. |
+| "The user seems in a hurry, I'll skip brainstorming" | Rushing causes design mistakes that cost 10x the time saved. |
+| "This refactor is obvious, no plan needed" | /create-plan takes 2 minutes. The blast radius of "obvious" refactors is routinely underestimated. |
+| "I'll just fix this one file" | Check blast radius with grep first. Changes propagate in ways that are not always visible from one file. |
+| "I tested it mentally, it should work" | /verify requires evidence, not claims. Mental testing has a well-documented failure rate. |
+| "I'll clean up later" | Run /post-task-cleanup now. "Later" accumulates and becomes never. |
+
+## On-Demand MCP
+
+The always-loaded MCP servers (Episodic Memory, Chrome, Playwright) are sufficient for most tasks.
+For specialized tasks requiring additional servers, use the `mcp` CLI rather than adding to the
+always-loaded configuration.
+
+### Tiered MCP Approach
+
+| Tier | Servers | Configuration |
+|------|---------|---------------|
+| Always loaded | Episodic Memory, Chrome, Playwright | `~/.claude/settings.json` (unchanged) |
+| On-demand | Additional servers as needed | `mcp` CLI invocation |
+| Project-specific | Servers for a specific repo | Project `.claude/settings.json` |
+
+### Pattern
+
+Start an MCP server on-demand:
+```bash
+mcp add <server-name> -- <command>
+```
+
+Remove it when done:
+```bash
+mcp remove <server-name>
+```
+
+### Principles
+
+- **Keep the base lean**: Only servers needed for every session belong in always-loaded config.
+- **On-demand for specialized work**: Add servers for the duration of the task, then remove.
+- **Project-specific servers**: Place in the project's `.claude/settings.json`, not global config.
+- **Never modify global config for temporary needs**: Use `mcp add/remove` instead.

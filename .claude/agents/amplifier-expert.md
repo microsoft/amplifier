@@ -1,9 +1,7 @@
 ---
 name: amplifier-expert
 description: |
-  **THE authoritative consultant for ALL Amplifier ecosystem knowledge.** Use PROACTIVELY throughout the entire lifecycle: for initial research to understand what's possible, for guidance on how to build, and for validation of ideas/plans/implementations. This agent is the source of truth for amplifier-core, modules, amplifier-foundation, bundles, patterns, and best practices.
-
-  **CRITICAL: Use this agent BEFORE implementation** to get accurate context. Use it DURING work to validate approaches. Use it AFTER to verify alignment with Amplifier philosophy.
+  Answer Amplifier questions, explain agent selection, troubleshoot command failures, guide workflow adoption, resolve confusion about skills and agents, advise on Amplifier best practices
 
   Examples:
 

@@ -10,6 +10,42 @@ Help turn ideas into fully formed designs and specs through natural collaborativ
 
 Start by understanding the current project context, then ask questions one at a time to refine the idea. Once you understand what you're building, present the design in small sections (200-300 words), checking after each section whether it looks right so far.
 
+## Process Graph (Authoritative)
+
+> When this graph conflicts with prose, follow the graph.
+
+```dot
+digraph brainstorm {
+  rankdir=TB;
+
+  "gather_context" [label="Gather Context\n(dispatch scout subagent)" shape=box];
+  "ask_questions" [label="Ask clarifying questions\n(one at a time)" shape=box];
+  "propose_approaches" [label="Propose 2-3 approaches" shape=box];
+  "present_design" [label="Present design in sections\n(200-300 words each)" shape=box];
+  "validate" [label="User validates design?" shape=diamond];
+  "revise" [label="Revise based on feedback" shape=box];
+  "write_spec" [label="Write spec to docs/specs/" shape=box];
+  "write_marker" [label="touch /tmp/amplifier-brainstorm-done" shape=box style=filled fillcolor=lightyellow];
+  "route" [label="Route to execution?" shape=diamond];
+  "simple" [label="Simple (1-2 tasks)\nUse /execute-plan directly" shape=box style=filled fillcolor=lightgreen];
+  "medium" [label="Medium (3-8 tasks)\nUse /create-plan then /subagent-dev" shape=box style=filled fillcolor=lightgreen];
+  "complex" [label="Complex (9+ tasks)\nUse /create-plan with parallel batches" shape=box style=filled fillcolor=lightgreen];
+
+  "gather_context" -> "ask_questions";
+  "ask_questions" -> "propose_approaches";
+  "propose_approaches" -> "present_design";
+  "present_design" -> "validate";
+  "validate" -> "revise" [label="needs changes"];
+  "revise" -> "present_design";
+  "validate" -> "write_spec" [label="approved"];
+  "write_spec" -> "write_marker";
+  "write_marker" -> "route";
+  "route" -> "simple" [label="simple"];
+  "route" -> "medium" [label="medium"];
+  "route" -> "complex" [label="complex"];
+}
+```
+
 ## Session Start
 
 Before diving into the idea, gather context by dispatching a **context scout subagent**. This runs all context gathering in a separate context window, returning only a concise summary to the main session.
@@ -164,6 +200,16 @@ Task(subagent_type="general-purpose", model="sonnet", max_turns=10, description=
 ```
 
 - (User preferences for spec location override the default path)
+
+### Write Brainstorm Marker
+
+After the user confirms the design is ready to proceed, write the brainstorm marker file to unlock Plan Mode:
+
+```bash
+touch /tmp/amplifier-brainstorm-done
+```
+
+This marker file enables EnterPlanMode for this terminal session. It is session-scoped: a new terminal session will require a new /brainstorm run.
 
 **Session Naming:** After the design is validated and spec written, rename this session:
 
