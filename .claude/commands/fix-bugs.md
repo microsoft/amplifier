@@ -1040,6 +1040,56 @@ mcp__playwright__browser_close()
 - Do NOT block the pipeline on smoke check failures — report the result and continue to Phase 7h.
 - If smoke check finds issues, include them in the bug comment (Phase 7f) as a note.
 
+### 7g-bis. E2E Regression Check (Optional)
+
+After the Playwright MCP smoke check, optionally run targeted E2E specs to verify the fix didn't break related features.
+
+**Run when:** The bug's `Area` is `Portal` and the fix touched UI components or API endpoints used by E2E tests.
+
+**Skip when:** The fix is backend-only (API, database, provider) with no UI impact, OR the user explicitly says "skip e2e".
+
+**Determine which E2E specs are relevant** — map the bug's Area/Page to spec file(s):
+
+| Bug Area / Page | E2E Spec(s) |
+|----------------|-------------|
+| Mailbox create/edit | `01-create-mailbox`, `02-general-tab` |
+| Email addresses | `03-email-addresses` |
+| Permissions | `04-permissions` |
+| Mail flow | `05-mail-flow` |
+| Auto reply | `06-auto-reply` |
+| Archive | `07-archive` |
+| Litigation hold | `08-litigation-hold` |
+| Contacts | `11-contacts` |
+| Distribution lists | `12-distribution-lists` |
+| AD users | `13-ad-user` |
+| Organization stats | `14-org-statistics` |
+| AD groups | `15-ad-groups` |
+| Password policy | `16-password-policy` |
+| Breadcrumbs / nav | `18-breadcrumbs` |
+| Accepted domains | `19-accepted-domains` |
+| DNS records | `20-dns-records` |
+| DNS settings | `21-dns-settings` |
+| General / multiple | `npm run test:smoke` (specs 01+02) |
+
+**Run the matching specs:**
+
+```bash
+cd /c/claude/fusecp-enterprise/tests/FuseCP.E2E && npx playwright test --project=e2e tests/{spec-file}.spec.ts 2>&1 | tail -20
+```
+
+Or for a quick general smoke:
+```bash
+cd /c/claude/fusecp-enterprise/tests/FuseCP.E2E && npm run test:smoke 2>&1 | tail -20
+```
+
+**Report result:**
+- **PASS**: All relevant E2E specs pass. Append to bug comment: "E2E regression check: PASS ({spec names})"
+- **FAIL**: Some specs fail. Report failure details but do NOT block the pipeline. Append: "E2E regression check: FAIL ({spec names}: {failure summary})"
+
+**Failure handling:**
+- If `npx` is unavailable or node_modules missing, skip: "E2E tests not installed — skipped."
+- If tests fail, this is informational only — the fix is already deployed. Log it and continue to 7h.
+
 ### 7h. Cleanup temp files
 
 ```bash
