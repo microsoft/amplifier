@@ -1,14 +1,7 @@
 ---
 name: visualization-architect
 description: |
-  Transforms abstract data, knowledge structures, and complex relationships
-  into visual representations for pattern discovery.
-
-  Deploy for:
-  - Creating interactive graphs and network diagrams
-  - Designing concept maps and knowledge landscapes
-  - Selecting appropriate layout algorithms
-  - Making complex information explorable through visuals
+  Design data visualizations, create charts and diagrams, plan knowledge graph layouts, specify rendering approaches, produce structured visualization outputs, select appropriate chart types
 model: inherit
 ---
 

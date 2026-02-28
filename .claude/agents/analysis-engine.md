@@ -1,8 +1,7 @@
 ---
 name: analysis-engine
 description: |
-  Multi-mode analysis engine that auto-selects between DEEP, SYNTHESIS,
-  or TRIAGE modes based on task context.
+  Analyze systems, audit codebases, assess technical debt, measure complexity, triage issues, synthesize findings, produce structured reports, evaluate architecture trade-offs
 
   Deploy for:
   - DEEP mode: Thorough analysis of single documents or problems

@@ -1,8 +1,7 @@
 ---
 name: content-researcher
 description: |
-  Research analyst specializing in extracting actionable insights from
-  content file collections for specific tasks and projects.
+  Research topics, investigate content collections, compare sources, evaluate evidence, extract actionable insights, compile research summaries, assess source credibility
 
   Deploy for:
   - Researching best practices from content collections

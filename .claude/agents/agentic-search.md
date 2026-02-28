@@ -1,8 +1,7 @@
 ---
 name: agentic-search
 description: |
-  Intelligent codebase search agent that systematically explores repositories
-  to answer questions about code structure, patterns, and implementation details.
+  Search codebases, find files, locate symbols, trace dependencies, explore unfamiliar code, investigate where functionality lives, understand module boundaries, discover patterns across a repository
 
   Deploy for:
   - Understanding how a feature or system works end-to-end

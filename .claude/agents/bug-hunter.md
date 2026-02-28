@@ -1,8 +1,7 @@
 ---
 name: bug-hunter
 description: |
-  Specialized debugging expert focused on finding and fixing bugs systematically.
-  Uses hypothesis-driven approach to efficiently locate root causes.
+  Debug errors, fix bugs, investigate failures, troubleshoot crashes, diagnose test failures, trace root causes, resolve exceptions, reproduce intermittent issues, identify regression sources
 
   Deploy for:
   - Reported errors or unexpected behavior

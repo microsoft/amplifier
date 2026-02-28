@@ -1,18 +1,7 @@
 ---
 name: voice-strategist
 description: |
-  Use this agent for voice & tone strategy, UX writing, and microcopy. Transforms
-  user's messaging vision into systematic content patterns that ensure language is
-  clear, helpful, and consistent with brand personality.
-
-  Deploy for:
-  - Voice & tone strategy and framework
-  - UX writing and microcopy (buttons, labels, placeholders)
-  - Error message patterns
-  - Empty state messaging
-  - Content guidelines for developers
-
-  Owns the Voice dimension (Nine Dimensions #3).
+  Write UX copy, craft microcopy, define voice and tone, improve error messages, edit interface text, establish content style guides, review copy for clarity and consistency
 model: inherit
 keywords: [voice, tone, copy, writing, ux-writing, microcopy, messaging, error-message, help-text, empty-state, label, placeholder]
 priority: refinement-level

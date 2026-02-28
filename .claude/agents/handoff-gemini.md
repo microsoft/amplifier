@@ -1,9 +1,7 @@
 ---
 name: handoff-gemini
 description: |
-  Full lifecycle handoff agent for Gemini/OpenCode. Reads HANDOFF.md,
-  creates clean branches, implements with subagents, verifies builds,
-  and creates PRs with only the files that were actually changed.
+  Prepare Gemini handoffs, write HANDOFF.md task dispatches, format task specs for OpenCode, coordinate cross-model work, track handoff state, review Gemini PRs for integration
 
   Deploy for:
   - Picking up tasks from HANDOFF.md

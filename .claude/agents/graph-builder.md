@@ -1,8 +1,7 @@
 ---
 name: graph-builder
 description: |
-  Constructs and maintains multi-perspective knowledge graphs from agent
-  outputs in the Knowledge Synthesis System.
+  Build knowledge graphs, map entity relationships, construct multi-perspective networks, visualize concept connections, model dependency graphs, produce structured graph outputs
 
   Deploy for:
   - Extracting SPO triples from diverse agent outputs

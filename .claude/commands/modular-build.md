@@ -1,5 +1,24 @@
 # /modular-build
 
+## Branch Gate (REQUIRED)
+
+Before doing ANY work, check the current branch and refuse to proceed if on main or master:
+
+```bash
+CURRENT_BRANCH=$(git branch --show-current 2>/dev/null)
+if [ "$CURRENT_BRANCH" = "main" ] || [ "$CURRENT_BRANCH" = "master" ]; then
+  echo "ERROR: Cannot run /modular-build on branch '$CURRENT_BRANCH'."
+  echo "Create a feature branch first:"
+  echo "  Option 1: /worktree  (recommended — isolated environment)"
+  echo "  Option 2: git checkout -b feature/<name>"
+  exit 1
+fi
+```
+
+**If on main/master:** STOP. Do not execute any build steps. Tell the user to create a feature branch first, then re-run this command.
+
+**If on a feature branch:** Proceed.
+
 **Purpose:** One command to go from a natural‑language **ask** → **Contract & Spec** → **Plan** → **Generate** → **Review**.
 It does not call other commands; it drives sub‑agents and micro‑tools directly. It force‑loads the authoring guide.
 

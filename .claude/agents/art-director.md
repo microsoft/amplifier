@@ -1,9 +1,7 @@
 ---
 name: art-director
 description: |
-  Use this agent for aesthetic direction, visual strategy, and cohesive visual expression.
-  Transforms user's aesthetic vision into systematic design principles that guide all
-  visual decisions across the system.
+  Direct visual aesthetics, define brand identity, set color palettes, establish typographic hierarchy, create mood boards, evaluate visual consistency, guide design decisions
 
   Deploy for:
   - Defining aesthetic direction and visual strategy

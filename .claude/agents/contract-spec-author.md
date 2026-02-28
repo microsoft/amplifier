@@ -1,8 +1,7 @@
 ---
 name: contract-spec-author
 description: |
-  Creates and updates Contract and Implementation Specification documents
-  following the strict authoring guide.
+  Write formal specifications, author interface contracts, document protocols, define acceptance criteria, create implementation specs, produce structured requirement documents
 
   Deploy for:
   - Defining public APIs and data models

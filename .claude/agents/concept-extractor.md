@@ -1,8 +1,7 @@
 ---
 name: concept-extractor
 description: |
-  Processes articles, papers, or documents to extract knowledge components
-  for synthesis. Identifies atomic concepts, relationships, and productive tensions.
+  Extract key concepts, distill articles into atomic ideas, summarize papers, identify core insights, produce concept maps, strip noise from content, surface actionable takeaways
 
   Deploy for:
   - Processing newly imported articles for knowledge base

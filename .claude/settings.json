@@ -73,6 +73,15 @@
             "command": "uv run .claude/tools/subagent-logger.py"
           }
         ]
+      },
+      {
+        "matcher": "EnterPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/tools/enforce-brainstorm.sh"
+          }
+        ]
       }
     ],
     "PostToolUse": [

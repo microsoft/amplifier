@@ -1,9 +1,7 @@
 ---
 name: animation-choreographer
 description: |
-  Use this agent when designing motion, animations, and transitions for UI elements.
-  Transforms user's motion vision into purposeful animations that communicate system
-  state and provide feedback, following Amplified Design's motion timing protocol.
+  Design animations, choreograph transitions, specify motion curves, create easing sequences, define micro-interactions, implement CSS/JS animation patterns, coordinate multi-element motion
 
   Deploy for:
   - Icon animations and micro-interactions

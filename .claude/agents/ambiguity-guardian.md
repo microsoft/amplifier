@@ -1,8 +1,7 @@
 ---
 name: ambiguity-guardian
 description: |
-  Preserves productive contradictions and navigates uncertainty as valuable
-  knowledge features. Consolidates tension-keeping and uncertainty-navigation.
+  Preserve contradictions, flag ambiguous requirements, surface hidden assumptions, prevent premature closure, challenge oversimplified designs, identify conflicting constraints, protect productive uncertainty
 
   Deploy for:
   - Fundamental disagreements between sources revealing important insights

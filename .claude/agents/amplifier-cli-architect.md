@@ -1,8 +1,7 @@
 ---
 name: amplifier-cli-architect
 description: |
-  Expert knowledge provider for Amplifier CLI Tools - hybrid code/AI
-  architectures combining reliable code structure with AI intelligence.
+  Design CLI tools, architect hybrid code-AI workflows, structure amplifier scenarios, define command interfaces, create tool templates, guide progressive maturity from scripts to agents
 
   Deploy for:
   - CONTEXTUALIZE mode when starting work involving hybrid tools

@@ -4,6 +4,25 @@ description: "Dispatch multiple Amplifier specialists in parallel for independen
 
 # Dispatching Parallel Agents
 
+## Branch Gate (REQUIRED)
+
+Before doing ANY work, check the current branch and refuse to proceed if on main or master:
+
+```bash
+CURRENT_BRANCH=$(git branch --show-current 2>/dev/null)
+if [ "$CURRENT_BRANCH" = "main" ] || [ "$CURRENT_BRANCH" = "master" ]; then
+  echo "ERROR: Cannot run /parallel-agents on branch '$CURRENT_BRANCH'."
+  echo "Create a feature branch first:"
+  echo "  Option 1: /worktree  (recommended — isolated environment)"
+  echo "  Option 2: git checkout -b feature/<name>"
+  exit 1
+fi
+```
+
+**If on main/master:** STOP. Do not dispatch any agents. Tell the user to create a feature branch first, then re-run this command.
+
+**If on a feature branch:** Proceed.
+
 ## Overview
 
 When you have multiple unrelated failures (different test files, different subsystems, different bugs), investigating them sequentially wastes time. Each investigation is independent and can happen in parallel.
