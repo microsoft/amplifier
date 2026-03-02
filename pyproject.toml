@@ -11,6 +11,8 @@ authors = [
 dependencies = [
     "amplifier-core",
     "amplifier-app-cli",
+    "networkx>=3.6.1",
+    "pyvis>=0.3.2",
 ]
 
 [project.scripts]
