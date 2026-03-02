@@ -557,6 +557,20 @@ See `@ai_context/IMPLEMENTATION_PHILOSOPHY.md` for the full implementation philo
 
 See `@ai_context/MODULAR_DESIGN_PHILOSOPHY.md` for the modular design philosophy (already loaded via CLAUDE.md @imports).
 
+## Long-Term Memory: /recall
+
+The `/recall` command provides three modes of long-term memory retrieval:
+
+- **Temporal**: `/recall yesterday` — scans native JSONL session files by date
+- **Topic**: `/recall FuseCP exchange` — BM25 keyword search across all indexed sessions
+- **Graph**: `/recall graph last week` — interactive HTML visualization of session-file relationships
+
+Every recall ends with a **One Thing** — the single highest-leverage next action.
+
+**Auto-indexing**: Sessions are automatically extracted and indexed on session end (SessionEnd hook). The FTS5 index lives at `~/.claude/recall-index.sqlite`.
+
+**Use `/recall` instead of episodic memory** for session history lookups. Episodic memory (MCP plugin) remains available as a fallback but `/recall` is faster and more comprehensive.
+
 ## Red Flags
 
 If you catch yourself thinking any of the following, stop and apply the reality check before proceeding.
