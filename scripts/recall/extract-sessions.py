@@ -15,56 +15,18 @@ and each user message as its own ## section with timestamp.
 """
 
 import json
-import os
-import re
+import sys
 import sqlite3
 import argparse
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
-CLAUDE_PROJECTS = Path.home() / ".claude" / "projects"
+# Import shared functions from the canonical module
+sys.path.insert(0, str(Path(__file__).parent))
+from recall_day import clean_content, extract_text, CLAUDE_PROJECTS
+
 DEFAULT_OUTPUT = Path.home() / ".claude" / "recall-sessions"
 FTS_DB = Path.home() / ".claude" / "recall-index.sqlite"
-
-# System tag patterns to strip from user messages
-STRIP_PATTERNS = [
-    re.compile(r"<system-reminder>.*?</system-reminder>", re.DOTALL),
-    re.compile(r"<local-command-caveat>.*?</local-command-caveat>", re.DOTALL),
-    re.compile(r"<local-command-stdout>.*?</local-command-stdout>", re.DOTALL),
-    re.compile(
-        r"<command-name>.*?</command-name>\s*<command-message>.*?</command-message>\s*(?:<command-args>.*?</command-args>)?",
-        re.DOTALL,
-    ),
-    re.compile(r"<command-message>.*?</command-message>", re.DOTALL),
-    re.compile(r"<command-name>.*?</command-name>", re.DOTALL),
-    re.compile(r"<command-args>.*?</command-args>", re.DOTALL),
-    re.compile(r"<task-notification>.*?</task-notification>", re.DOTALL),
-    re.compile(r"<teammate-message[^>]*>.*?</teammate-message>", re.DOTALL),
-]
-
-
-def clean_content(text: str) -> str:
-    """Strip system tags, keep only human-written content."""
-    if not isinstance(text, str):
-        return ""
-    for pat in STRIP_PATTERNS:
-        text = pat.sub("", text)
-    return text.strip()
-
-
-def extract_text(content) -> str:
-    """Extract text from message content (string or list of content blocks)."""
-    if isinstance(content, str):
-        return content
-    if isinstance(content, list):
-        parts = []
-        for block in content:
-            if isinstance(block, dict) and block.get("type") == "text":
-                parts.append(block.get("text", ""))
-            elif isinstance(block, str):
-                parts.append(block)
-        return "\n".join(parts)
-    return ""
 
 
 def scan_session(filepath: Path, cutoff: datetime) -> dict | None:
@@ -146,7 +108,7 @@ def write_session_md(session: dict, output_dir: Path) -> Path:
         "---",
         f"date: {ts.strftime('%Y-%m-%d')}",
         f"session_id: {session['session_id']}",
-        f"title: \"{session['title'][:200]}\"",
+        'title: "{}"'.format(session["title"][:200].replace('"', "'")),
         f"messages: {session['msg_count']}",
         "type: claude-session",
         "---",

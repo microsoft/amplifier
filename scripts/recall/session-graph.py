@@ -28,7 +28,7 @@ except ImportError:
     raise SystemExit(1)
 
 CLAUDE_PROJECTS = Path.home() / ".claude" / "projects"
-DEFAULT_OUTPUT = Path("C:/claude/amplifier/tmp/session-graph.html")
+DEFAULT_OUTPUT = Path(__file__).resolve().parent.parent.parent / "tmp" / "session-graph.html"
 
 # Import date parsing from recall-day
 import sys

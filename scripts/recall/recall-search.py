@@ -37,9 +37,9 @@ def search_fts(query: str, limit: int, db_path: Path) -> list[dict]:
 
     # FTS5 query — tokenize words for BM25 matching
     # Quote each word to prevent FTS5 operator interpretation (e.g. -V as NOT)
-    # Use OR between words for broader recall
+    # Strip embedded quotes to prevent malformed FTS5 syntax
     words = query.strip().split()
-    quoted_words = [f'"{w}"' for w in words if w]
+    quoted_words = [f'"{w.replace(chr(34), "")}"' for w in words if w.replace('"', "")]
     fts_query = " OR ".join(quoted_words)
 
     try:
@@ -83,14 +83,14 @@ def search_memory_files(query: str, limit: int) -> list[dict]:
 
     for md_file in MEMORY_DIR.glob("*.md"):
         try:
-            content = md_file.read_text(encoding="utf-8", errors="replace").lower()
+            raw = md_file.read_text(encoding="utf-8", errors="replace")
+            content = raw.lower()
             # Count word matches
             matches = sum(1 for w in words if w in content)
             if matches > 0:
                 # Get first matching line as snippet
-                lines = md_file.read_text(encoding="utf-8", errors="replace").split("\n")
                 snippet = ""
-                for line in lines:
+                for line in raw.split("\n"):
                     if any(w in line.lower() for w in words):
                         snippet = line.strip()[:120]
                         break
