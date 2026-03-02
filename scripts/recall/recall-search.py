@@ -36,9 +36,11 @@ def search_fts(query: str, limit: int, db_path: Path) -> list[dict]:
     conn = sqlite3.connect(str(db_path))
 
     # FTS5 query — tokenize words for BM25 matching
+    # Quote each word to prevent FTS5 operator interpretation (e.g. -V as NOT)
     # Use OR between words for broader recall
     words = query.strip().split()
-    fts_query = " OR ".join(words)
+    quoted_words = [f'"{w}"' for w in words if w]
+    fts_query = " OR ".join(quoted_words)
 
     try:
         rows = conn.execute(
