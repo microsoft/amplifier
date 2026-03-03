@@ -10,6 +10,18 @@ Search and browse indexed documentation across all projects. Uses FTS5 BM25 rank
 
 $ARGUMENTS
 
+## Platform Note
+
+`AMPLIFIER_HOME` must resolve to the Amplifier repo root. Detection order:
+1. Environment variable `$AMPLIFIER_HOME` if set
+2. `/opt/amplifier` (Linux)
+3. `/c/claude/amplifier` (Windows/Git Bash)
+
+If not set, detect before running commands:
+```bash
+AMPLIFIER_HOME="${AMPLIFIER_HOME:-$([ -d /opt/amplifier ] && echo /opt/amplifier || echo /c/claude/amplifier)}"
+```
+
 ## Step 1: Classify Query
 
 Parse the input and classify:
@@ -33,9 +45,9 @@ BM25 is keyword-based — expand the query into 2-3 keyword variants to improve 
 **Step 2A.2: Run ALL variants in parallel** (fast, ~0.1s each):
 
 ```bash
-cd /c/claude/amplifier && uv run python scripts/recall/docs-search.py "VARIANT_1" -n 8
-cd /c/claude/amplifier && uv run python scripts/recall/docs-search.py "VARIANT_2" -n 8
-cd /c/claude/amplifier && uv run python scripts/recall/docs-search.py "VARIANT_3" -n 8
+cd "$AMPLIFIER_HOME" && uv run python scripts/recall/docs-search.py "VARIANT_1" -n 8
+cd "$AMPLIFIER_HOME" && uv run python scripts/recall/docs-search.py "VARIANT_2" -n 8
+cd "$AMPLIFIER_HOME" && uv run python scripts/recall/docs-search.py "VARIANT_3" -n 8
 ```
 
 Run these in parallel via multiple Bash tool calls.
@@ -49,20 +61,20 @@ Optional filters (append if user specifies):
 ## Step 2B: List Docs
 
 ```bash
-cd /c/claude/amplifier && uv run python scripts/recall/docs-search.py --list PROJECT
+cd "$AMPLIFIER_HOME" && uv run python scripts/recall/docs-search.py --list PROJECT
 ```
 
 Replace `PROJECT` with the project name. Add `--category CATEGORY` if specified.
 
 If no project given, list all:
 ```bash
-cd /c/claude/amplifier && uv run python scripts/recall/docs-search.py --list
+cd "$AMPLIFIER_HOME" && uv run python scripts/recall/docs-search.py --list
 ```
 
 ## Step 2C: Recent Docs
 
 ```bash
-cd /c/claude/amplifier && uv run python scripts/recall/docs-search.py --recent N
+cd "$AMPLIFIER_HOME" && uv run python scripts/recall/docs-search.py --recent N
 ```
 
 Replace `N` with number of days. Add `--project PROJECT` if specified.
@@ -70,32 +82,29 @@ Replace `N` with number of days. Add `--project PROJECT` if specified.
 ## Step 2D: Stats
 
 ```bash
-cd /c/claude/amplifier && uv run python scripts/recall/docs-search.py --stats
+cd "$AMPLIFIER_HOME" && uv run python scripts/recall/docs-search.py --stats
 ```
 
 ## Step 3: Read Top Results
 
 For search results (Step 2A), automatically read the top 1-3 most relevant documents to provide immediate context:
 
-```bash
-# Use the path from search results — prepend the project root
-cat "C:/claude/PROJECT_NAME/PATH_FROM_RESULT"
-```
-
-Project roots:
-- amplifier → `C:/claude/amplifier/`
-- fusecp-enterprise → `C:/claude/fusecp-enterprise/`
-- universal-siem-monorepo → `C:/claude/universal-siem-monorepo/`
-- universal-siem-docs → `C:/claude/universal-siem-docs/`
-- universal-siem-agent-aot → `C:/claude/universal-siem-agent-aot/`
-- universal-siem-linux-agent → `C:/claude/universal-siem-linux-agent/`
-- universal-siem-shared → `C:/claude/universal-siem-shared/`
-- psmux → `C:/claude/psmux/`
-- webpsmux → `C:/claude/webpsmux/`
-- claude-tools → `C:/claude/claude-tools/`
-- superpowers → `C:/claude/superpowers/`
-
-Use the Read tool instead of cat for reading docs.
+# Use the path from search results — prepend the project root.
+# Use the Read tool instead of cat for reading docs.
+#
+# Project roots vary by platform. Detect the parent directory:
+#   Linux: /opt/ (most projects), /opt/monorepo-workspace/ (siem monorepo)
+#   Windows: C:/claude/ (all projects)
+#
+# Common mappings:
+#   amplifier         → Linux: /opt/amplifier/                                    | Windows: C:/claude/amplifier/
+#   universal-siem-monorepo → Linux: /opt/monorepo-workspace/universal-siem-monorepo/ | Windows: C:/claude/universal-siem-monorepo/
+#   universal-siem-docs     → Linux: /opt/universal-siem-docs/                        | Windows: C:/claude/universal-siem-docs/
+#   universal-siem-linux-agent → Linux: /opt/universal-siem-linux-agent/              | Windows: C:/claude/universal-siem-linux-agent/
+#   genetics-platform       → Linux: /opt/genetics-platform/                          | Windows: C:/claude/genetics-platform/
+#   webtmux                 → Linux: /opt/webtmux/                                    | Windows: C:/claude/webtmux/
+#
+# For other projects, check /opt/<project>/ (Linux) or C:/claude/<project>/ (Windows).
 
 ## Step 4: Present Results
 
