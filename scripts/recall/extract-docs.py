@@ -12,6 +12,7 @@ Use --full to force complete re-index.
 """
 
 import io
+import os
 import re
 import sys
 import sqlite3
@@ -24,7 +25,12 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="repla
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 DOCS_DB = Path.home() / ".claude" / "docs-index.sqlite"
-WORKSPACE_ROOT = Path("C:/claude")
+WORKSPACE_ROOT = Path(
+    os.environ.get(
+        "AMPLIFIER_WORKSPACE",
+        "C:/claude" if sys.platform == "win32" else "/opt",
+    )
+)
 
 
 def discover_project_roots(workspace: Path) -> dict[str, Path]:
@@ -38,7 +44,7 @@ def discover_project_roots(workspace: Path) -> dict[str, Path]:
     return roots
 
 
-# Auto-discover all git repos under C:\claude\
+# Auto-discover all git repos under the workspace root
 PROJECT_ROOTS = discover_project_roots(WORKSPACE_ROOT)
 
 # Directories to skip
