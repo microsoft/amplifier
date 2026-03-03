@@ -92,7 +92,7 @@ When in doubt, use `modular-builder` for building and `bug-hunter` for fixing.
 ```markdown
 # [Feature Name] Implementation Plan
 
-> **For Claude:** REQUIRED: Use /subagent-dev (if subagents available) or /execute-plan to implement this plan. Each task specifies its Agent — dispatch that Amplifier agent as the subagent for implementation. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For Claude:** REQUIRED: Use /subagent-dev to implement this plan. Each task specifies its Agent — dispatch that Amplifier agent as the subagent for implementation. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** [One sentence describing what this builds]
 
@@ -265,7 +265,7 @@ After saving the plan:
 - Fresh subagent per task + two-stage review
 
 **If harness does NOT have subagents:**
-- Execute plan in current session using /execute-plan
+- Execute plan in current session using /subagent-dev
 - Batch execution with checkpoints for review
 
 ### Write Brainstorm Marker

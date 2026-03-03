@@ -153,11 +153,10 @@ Amplifier's custom commands transform methodologies into executable processes:
 
 #### Workflow Commands
 - **/create-plan**: Generates structured implementation plans
-- **/execute-plan**: Systematically executes plans with progress tracking
-- **/review-changes**: Comprehensive review of modifications
+- **/subagent-dev**: Executes plans via specialized agents with two-stage review
+- **/review-changes**: Comprehensive review of modifications (supports optional path argument)
 
 #### Quality Commands
-- **/review-code-at-path**: Targeted code review with philosophy alignment
 - **/test-webapp-ui**: Automated UI testing workflow
 - **/commit**: Smart commit with context-aware messages
 
