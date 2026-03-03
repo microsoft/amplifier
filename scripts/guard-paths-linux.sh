@@ -7,7 +7,7 @@ INPUT=$(cat)
 TOOL=$(echo "$INPUT" | jq -r '.tool_name // empty')
 
 # --- Allowed paths ---
-ALLOWED='^(/opt/|/home/claude/|/tmp/|'"$HOME"'/.claude/)'
+ALLOWED='^(/opt/|'"$HOME"'/|/tmp/claude/|/tmp/amplifier/)'
 
 case "$TOOL" in
   Write)

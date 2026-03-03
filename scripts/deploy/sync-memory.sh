@@ -24,10 +24,12 @@ echo ""
 
 # --- Recall sessions (bidirectional) ---
 echo "[1/4] Push recall sessions → remote..."
-rsync -avz --mkpath "$CLAUDE_DIR/recall-sessions/" "$REMOTE:~/.claude/recall-sessions/" 2>/dev/null || echo "  (no recall sessions to push)"
+mkdir -p "$CLAUDE_DIR/recall-sessions/"
+ssh "$REMOTE" "mkdir -p ~/.claude/recall-sessions/" 2>/dev/null || true
+rsync -avz "$CLAUDE_DIR/recall-sessions/" "$REMOTE:~/.claude/recall-sessions/" 2>/dev/null || echo "  (no recall sessions to push)"
 
 echo "[2/4] Pull recall sessions ← remote..."
-rsync -avz --mkpath "$REMOTE:~/.claude/recall-sessions/" "$CLAUDE_DIR/recall-sessions/" 2>/dev/null || echo "  (no recall sessions to pull)"
+rsync -avz "$REMOTE:~/.claude/recall-sessions/" "$CLAUDE_DIR/recall-sessions/" 2>/dev/null || echo "  (no recall sessions to pull)"
 
 # --- Auto-memory (bidirectional, update-only to avoid overwrites) ---
 echo "[3/4] Push auto-memory → remote..."

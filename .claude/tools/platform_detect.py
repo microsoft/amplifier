@@ -24,11 +24,11 @@ _is_linux = sys.platform.startswith("linux")
 if _claudecode_env:
     IS_CLAUDE_CODE = True
     IS_OPENCODE = False
-    IS_LINUX = False
+    IS_LINUX = _is_linux
 elif _opencode_env:
     IS_CLAUDE_CODE = False
     IS_OPENCODE = True
-    IS_LINUX = False
+    IS_LINUX = _is_linux
 elif _is_linux:
     IS_CLAUDE_CODE = os.path.isdir("/opt/amplifier")
     IS_OPENCODE = False
@@ -39,10 +39,10 @@ else:
     IS_CLAUDE_CODE = os.path.isdir("C:/claude/amplifier") and not IS_OPENCODE
     IS_LINUX = False
 
-if IS_LINUX and os.path.isdir("/opt/amplifier"):
+if IS_LINUX:
     AMPLIFIER_ROOT = "/opt"
     SUPERPOWERS_FALLBACK = ""
-elif IS_CLAUDE_CODE and not IS_LINUX:
+elif IS_CLAUDE_CODE:
     AMPLIFIER_ROOT = "C:/claude"
     SUPERPOWERS_FALLBACK = "C:/claude/superpowers"
 elif IS_OPENCODE:
