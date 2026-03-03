@@ -42,6 +42,11 @@
           {
             "type": "command",
             "command": "uv run .claude/tools/hook_stop.py"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/session-end-index.sh",
+            "timeout": 30000
           }
         ]
       }
