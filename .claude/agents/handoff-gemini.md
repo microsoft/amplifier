@@ -38,6 +38,8 @@ for picking up and completing a task dispatched by Claude via HANDOFF.md.
    - **Objective** — what to build
    - **Branch** — exact branch name to create
    - **Repository** — exact repo path (e.g., `C:\claude\fusecp-enterprise`)
+
+   > **Path note:** Paths are platform-specific. Linux: `/opt/<repo>/`, Windows: `C:\claude\<repo>\`
    - **Working Directory** — where to run commands
    - **PR Target** — which repo and branch the PR targets
    - **Detailed Requirements** — what to implement
