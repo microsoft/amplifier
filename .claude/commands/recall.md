@@ -28,7 +28,7 @@ Parse the input and classify:
 Run the recall-day script:
 
 ```bash
-cd /c/claude/amplifier && uv run python scripts/recall/recall-day.py list DATE_EXPR
+cd /c/claude/amplifier && uv run python scripts/recall/recall_day.py list DATE_EXPR
 ```
 
 Replace `DATE_EXPR` with the parsed date expression. Supported:
@@ -45,7 +45,7 @@ Options:
 Present the table to the user. If they pick a session to expand:
 
 ```bash
-cd /c/claude/amplifier && uv run python scripts/recall/recall-day.py expand SESSION_ID
+cd /c/claude/amplifier && uv run python scripts/recall/recall_day.py expand SESSION_ID
 ```
 
 ## Step 2B: Topic Recall (BM25 with Query Expansion)
@@ -121,7 +121,7 @@ After generating, read the graph output stats and tell the user the node/edge co
 
 ## Notes
 
-- Temporal queries go through `recall-day.py` (native JSONL, no index needed)
+- Temporal queries go through `recall_day.py` (native JSONL, no index needed)
 - Graph queries go through `session-graph.py` (NetworkX + pyvis)
 - Topic queries use BM25 (`recall-search.py`) via SQLite FTS5
 - Run all search variants in parallel to keep response time fast

@@ -137,7 +137,7 @@ Features we're missing:
 | Script | Origin | Changes |
 |--------|--------|---------|
 | `scripts/recall/extract-sessions.py` | ArtemXTech extract-sessions.py | FTS5 indexing, Windows paths, JSONL format adaptation |
-| `scripts/recall/recall-day.py` | ArtemXTech recall-day.py | Agent session filtering, UTF-8 output, Windows paths |
+| `scripts/recall/recall_day.py` | ArtemXTech recall-day.py | Consolidated: shared functions + CLI entry point, Windows paths |
 | `scripts/recall/recall-search.py` | New (replaces QMD CLI) | Python-native FTS5 BM25 search |
 | `scripts/recall/session-graph.py` | ArtemXTech session-graph.py | Imports from recall_day module, Windows paths |
 | `.claude/commands/recall.md` | New | Three-mode /recall command with One Thing synthesis |
