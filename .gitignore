@@ -95,3 +95,16 @@ ai_working/tmp
 
 # ctags index files
 tags
+
+# Temp working directories
+tmp/
+tmp_pr*/
+
+# Old agent format (superseded by .claude/agents/*.md)
+agents/
+
+# Third-party lib bundles (local only)
+lib/
+
+# OpenCode observability clone (local dev tool)
+Przemekopencode-observability/

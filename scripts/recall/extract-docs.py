@@ -24,21 +24,22 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="repla
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 DOCS_DB = Path.home() / ".claude" / "docs-index.sqlite"
+WORKSPACE_ROOT = Path("C:/claude")
 
-# Project roots to scan — all active projects with documentation
-PROJECT_ROOTS = {
-    "amplifier": Path("C:/claude/amplifier"),
-    "fusecp-enterprise": Path("C:/claude/fusecp-enterprise"),
-    "universal-siem-monorepo": Path("C:/claude/universal-siem-monorepo"),
-    "universal-siem-docs": Path("C:/claude/universal-siem-docs"),
-    "universal-siem-agent-aot": Path("C:/claude/universal-siem-agent-aot"),
-    "universal-siem-linux-agent": Path("C:/claude/universal-siem-linux-agent"),
-    "universal-siem-shared": Path("C:/claude/universal-siem-shared"),
-    "psmux": Path("C:/claude/psmux"),
-    "webpsmux": Path("C:/claude/webpsmux"),
-    "claude-tools": Path("C:/claude/claude-tools"),
-    "superpowers": Path("C:/claude/superpowers"),
-}
+
+def discover_project_roots(workspace: Path) -> dict[str, Path]:
+    """Auto-discover git repos under the workspace directory."""
+    roots = {}
+    if not workspace.exists():
+        return roots
+    for child in sorted(workspace.iterdir()):
+        if child.is_dir() and (child / ".git").exists():
+            roots[child.name] = child
+    return roots
+
+
+# Auto-discover all git repos under C:\claude\
+PROJECT_ROOTS = discover_project_roots(WORKSPACE_ROOT)
 
 # Directories to skip
 SKIP_DIRS = {
