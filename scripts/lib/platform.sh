@@ -17,7 +17,7 @@ elif [ -d "C:/claude/amplifier" ]; then
     export AMPLIFIER_HOME="C:/claude/amplifier"
 else
     # Fallback: derive from script location if sourced from within the repo
-    _script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    _script_dir="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
     if [ -f "$_script_dir/../../CLAUDE.md" ]; then
         export AMPLIFIER_HOME="$(cd "$_script_dir/../.." && pwd)"
     else

@@ -7,7 +7,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-BACKUP_DIR="$HOME/.claude/backups/$(date +%Y-%m-%d)"
+BACKUP_DIR="$HOME/.claude/backups/$(date +%Y-%m-%d_%H%M%S)"
 
 LINKED=0
 SKIPPED=0

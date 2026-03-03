@@ -45,7 +45,7 @@ fi
 
 # Test 3: With empty input, exits gracefully (no crash)
 export MEMORY_SYSTEM_ENABLED=false
-echo '{}' | uv run python .claude/tools/hook_stop.py 2>&1 1>&2
+echo '{}' | uv run python .claude/tools/hook_stop.py > /dev/null 2>&1
 if [ $? -eq 0 ]; then
     echo "  PASS: Handles empty input gracefully"
     PASS=$((PASS + 1))
@@ -60,7 +60,7 @@ import sys; sys.path.insert(0, '.claude/tools')
 from hook_logger import HookLogger
 h = HookLogger('test')
 print('Logger OK')
-" 2>&1 1>&2
+" > /dev/null 2>&1
 if [ $? -eq 0 ]; then
     echo "  PASS: hook_logger.py is importable"
     PASS=$((PASS + 1))

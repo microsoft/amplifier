@@ -58,14 +58,42 @@ class TestPlatformDetect(unittest.TestCase):
         self.assertIsInstance(mod.IS_OPENCODE, bool)
 
     def test_opencode_env_sets_correct_root(self):
-        """OPENCODE=1 should set AMPLIFIER_ROOT to C:/Przemek."""
+        """OPENCODE=1 should set AMPLIFIER_ROOT to C:/Przemek (Windows) or /opt (Linux)."""
         mod = reload_detect({"CLAUDECODE": None, "OPENCODE": "1"})
-        self.assertEqual(mod.AMPLIFIER_ROOT, "C:/Przemek")
+        if sys.platform.startswith("linux"):
+            # On Linux, IS_LINUX takes precedence over OPENCODE for root path
+            self.assertEqual(mod.AMPLIFIER_ROOT, "/opt")
+        else:
+            self.assertEqual(mod.AMPLIFIER_ROOT, "C:/Przemek")
 
     def test_claudecode_env_sets_correct_root(self):
         """CLAUDECODE=1 should set AMPLIFIER_ROOT to C:/claude."""
         mod = reload_detect({"CLAUDECODE": "1", "OPENCODE": None})
-        self.assertEqual(mod.AMPLIFIER_ROOT, "C:/claude")
+        if sys.platform.startswith("linux"):
+            self.assertEqual(mod.AMPLIFIER_ROOT, "/opt")
+        else:
+            self.assertEqual(mod.AMPLIFIER_ROOT, "C:/claude")
+
+    def test_linux_detection_without_env_vars(self):
+        """On Linux without env vars, should detect via directory presence."""
+        mod = reload_detect({"CLAUDECODE": None, "OPENCODE": None})
+        if sys.platform.startswith("linux"):
+            self.assertTrue(mod.IS_LINUX, "Should detect Linux platform")
+            self.assertEqual(mod.AMPLIFIER_ROOT, "/opt")
+            self.assertFalse(mod.IS_OPENCODE, "Linux should not be OpenCode")
+
+    def test_linux_sets_empty_superpowers_fallback(self):
+        """On Linux, SUPERPOWERS_FALLBACK should be empty."""
+        mod = reload_detect({"CLAUDECODE": None, "OPENCODE": None})
+        if sys.platform.startswith("linux"):
+            self.assertEqual(mod.SUPERPOWERS_FALLBACK, "")
+
+    def test_claudecode_on_linux_sets_linux_flag(self):
+        """CLAUDECODE=1 on Linux should still set IS_LINUX=True."""
+        mod = reload_detect({"CLAUDECODE": "1", "OPENCODE": None})
+        if sys.platform.startswith("linux"):
+            self.assertTrue(mod.IS_LINUX, "CLAUDECODE on Linux should set IS_LINUX=True")
+            self.assertTrue(mod.IS_CLAUDE_CODE)
 
 
 if __name__ == "__main__":
