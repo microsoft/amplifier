@@ -10,6 +10,18 @@ Three modes: temporal (date-based session timeline), topic (BM25 search across i
 
 $ARGUMENTS
 
+## Platform Note
+
+`AMPLIFIER_HOME` must resolve to the Amplifier repo root. Detection order:
+1. Environment variable `$AMPLIFIER_HOME` if set
+2. `/opt/amplifier` (Linux)
+3. `/c/claude/amplifier` (Windows/Git Bash)
+
+If not set, detect before running commands:
+```bash
+AMPLIFIER_HOME="${AMPLIFIER_HOME:-$([ -d /opt/amplifier ] && echo /opt/amplifier || echo /c/claude/amplifier)}"
+```
+
 ## Step 1: Classify Query
 
 Parse the input and classify:
@@ -28,7 +40,7 @@ Parse the input and classify:
 Run the recall-day script:
 
 ```bash
-cd /c/claude/amplifier && uv run python scripts/recall/recall_day.py list DATE_EXPR
+cd "$AMPLIFIER_HOME" && uv run python scripts/recall/recall_day.py list DATE_EXPR
 ```
 
 Replace `DATE_EXPR` with the parsed date expression. Supported:
@@ -45,7 +57,7 @@ Options:
 Present the table to the user. If they pick a session to expand:
 
 ```bash
-cd /c/claude/amplifier && uv run python scripts/recall/recall_day.py expand SESSION_ID
+cd "$AMPLIFIER_HOME" && uv run python scripts/recall/recall_day.py expand SESSION_ID
 ```
 
 ## Step 2B: Topic Recall (BM25 with Query Expansion)
@@ -58,9 +70,9 @@ BM25 is keyword-based — it only finds exact word matches. The user's recall of
 **Step 2B.2: Run ALL variants in parallel** (fast, ~0.1s each):
 
 ```bash
-cd /c/claude/amplifier && uv run python scripts/recall/recall-search.py "VARIANT_1" -n 5
-cd /c/claude/amplifier && uv run python scripts/recall/recall-search.py "VARIANT_2" -n 5
-cd /c/claude/amplifier && uv run python scripts/recall/recall-search.py "VARIANT_3" -n 5
+cd "$AMPLIFIER_HOME" && uv run python scripts/recall/recall-search.py "VARIANT_1" -n 5
+cd "$AMPLIFIER_HOME" && uv run python scripts/recall/recall-search.py "VARIANT_2" -n 5
+cd "$AMPLIFIER_HOME" && uv run python scripts/recall/recall-search.py "VARIANT_3" -n 5
 ```
 
 Run these in parallel via multiple Bash tool calls.
@@ -109,7 +121,7 @@ Present as:
 Strip "graph" prefix from query to get the date expression. Run:
 
 ```bash
-cd /c/claude/amplifier && uv run python scripts/recall/session-graph.py DATE_EXPR --no-open -o C:/claude/amplifier/tmp/session-graph.html
+cd "$AMPLIFIER_HOME" && uv run python scripts/recall/session-graph.py DATE_EXPR --no-open -o "$AMPLIFIER_HOME/tmp/session-graph.html"
 ```
 
 Options:
