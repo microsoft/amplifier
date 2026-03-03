@@ -31,6 +31,8 @@ This file provides guidance to AI assistants when working with code in this repo
 
 **Remote layout**: `origin` = Gitea (primary), `github` = GitHub (read-only backup, auto-synced).
 
+**Gitea CLI**: Use `tea` for all PR operations (create, list, merge, comment). Prefer over direct API calls. Quick ref: `/docs search git workflow`.
+
 ---
 
 ## Sub-Agent Optimization Strategy
