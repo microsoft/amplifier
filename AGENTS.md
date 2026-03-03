@@ -23,78 +23,13 @@ This file provides guidance to AI assistants when working with code in this repo
 
 ---
 
-## Git Commit Message Guidelines
+## Git Workflow
 
-When creating git commit messages, always insert the following at the end of your commit message:
+**PR-first policy**: All work goes through feature branches + PRs. Never push to main. Never merge without user confirmation. Full details: `/docs search git workflow`.
 
-```
-🤖 Generated with [Amplifier](https://github.com/microsoft/amplifier)
+**Commit footer**: Always append the Amplifier co-author tag (see `docs/guides/git-workflow.md`).
 
-Co-Authored-By: Amplifier <240397093+microsoft-amplifier@users.noreply.github.com>
-```
-
----
-
-## PR-First Policy (CRITICAL)
-
-**All completed work MUST go through a Pull Request. Never commit directly to main/master.**
-
-### Rules
-
-1. **Start on a feature branch** — Before any implementation work, create or verify you're on a feature branch (`feature/<name>`, `fix/<name>`, etc.). Never start work on main.
-2. **End with a PR** — When work is complete, push the branch and create a PR via `gh pr create`. This is the default, not an option to choose.
-3. **Never push to main** — Direct pushes to main are prohibited. If you find yourself on main with uncommitted work, create a branch first.
-4. **Never merge without user confirmation** — Present the PR URL and wait for the user to approve the merge.
-
-### Enforcement Points
-
-- `/subagent-dev` has a **Branch Gate** that blocks execution on main
-- `/finish-branch` defaults to creating a PR (no menu of options)
-- `/brainstorm` → `/create-plan` → `/worktree` flow ensures a feature branch exists before implementation
-
-### Recovery (if work accidentally lands on main)
-
-```bash
-# Create feature branch at current HEAD
-git branch feature/<name>
-# Reset main to before your changes
-git reset --hard <pre-work-commit>
-# Push the feature branch
-git push -u origin feature/<name>
-# Create PR
-gh pr create --base main --head feature/<name>
-```
-
-This recovery works but is error-prone. Prevention (starting on a feature branch) is always preferred.
-
----
-
-## Git Workflow — Gitea-First (Two-Stage)
-
-**PRIMARY remote**: Gitea at https://gitea.ergonet.pl:3001/ (HTTPS, port 3001)
-**BACKUP remote**: GitHub at https://github.com/psklarkins/ (push mirror, auto-syncs on commit)
-
-### Remote Layout (all locally cloned repos)
-- `origin` → Gitea (primary, all day-to-day pushes go here)
-- `github` → GitHub (backup, never push manually — Gitea mirrors automatically)
-
-### Daily Workflow
-1. Work and commit locally as usual
-2. Push to `origin` (Gitea): `git push origin feature/my-feature`
-3. Open PR on Gitea: https://gitea.ergonet.pl:3001/admin/{repo}/pulls
-4. Merge PR on Gitea — push mirror triggers GitHub backup automatically
-5. Never push directly to `main`/`master`/`develop` — branch protection enforced
-
-### Branch Protection Rules (all 19 repos)
-- Direct push to default branch is BLOCKED
-- PR is required to merge
-- 0 approvals required (solo dev)
-- Status checks: disabled (no CI configured on Gitea yet)
-
-### GitHub Actions
-- GitHub Actions runner at C:\actions-runner\ still runs CI on GitHub
-- When Gitea push mirror syncs, GitHub Actions fires on the mirrored commits
-- This provides CI coverage without needing Gitea Actions
+**Remote layout**: `origin` = Gitea (primary), `github` = GitHub (read-only backup, auto-synced).
 
 ---
 
@@ -255,18 +190,5 @@ You're a professional tool, not a cheerleader. Users value honest, direct feedba
 
 ## Red Flags
 
-If you catch yourself thinking any of the following, stop and apply the reality check before proceeding.
-
-| If you're thinking... | Reality check |
-|-----------------------|---------------|
-| "This is simple, I'll just implement it directly" | Run /brainstorm first. Simplicity is confirmed after analysis, not assumed before it. |
-| "I already know the codebase well enough" | Dispatch agentic-search anyway. Memory of past sessions is lossy. |
-| "I'll write tests after the implementation" | /tdd exists for a reason. Tests first is not optional for non-trivial features. |
-| "I'll skip the worktree, it's a small change" | Branch first always. Main is protected; there is no "small enough to skip". |
-| "I can review my own code" | Two-stage review catches category errors that self-review misses. |
-| "The user seems in a hurry, I'll skip brainstorming" | Rushing causes design mistakes that cost 10x the time saved. |
-| "This refactor is obvious, no plan needed" | /create-plan takes 2 minutes. The blast radius of "obvious" refactors is routinely underestimated. |
-| "I'll just fix this one file" | Check blast radius with grep first. Changes propagate in ways that are not always visible from one file. |
-| "I tested it mentally, it should work" | /verify requires evidence, not claims. Mental testing has a well-documented failure rate. |
-| "I'll clean up later" | Run /post-task-cleanup now. "Later" accumulates and becomes never. |
+Metacognitive checklist for common reasoning traps. Full table: `/docs search red flags`.
 
