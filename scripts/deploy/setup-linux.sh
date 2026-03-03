@@ -76,50 +76,43 @@ mkdir -p "$CLAUDE_DIR"
 
 SETTINGS_FILE="$CLAUDE_DIR/settings.json"
 if [ -f "$SETTINGS_FILE" ]; then
-  # Back up existing settings
   cp "$SETTINGS_FILE" "${SETTINGS_FILE}.bak"
   echo "  Backed up existing settings to settings.json.bak"
 fi
 
-# Create or update settings with hooks
-cat > "$SETTINGS_FILE" << HEREDOC
+# Merge hooks into existing settings (preserves plugins, preferences, etc.)
+HOOKS_JSON=$(cat <<'HOOKEOF'
 {
   "hooks": {
     "PreToolUse": [
       {
         "matcher": "Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash $AMPLIFIER_DIR/scripts/guard-paths-linux.sh"
-          }
-        ]
+        "hooks": [{"type": "command", "command": "bash /opt/amplifier/scripts/guard-paths-linux.sh"}]
       },
       {
         "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash $AMPLIFIER_DIR/scripts/guard-paths-linux.sh"
-          }
-        ]
+        "hooks": [{"type": "command", "command": "bash /opt/amplifier/scripts/guard-paths-linux.sh"}]
       }
     ],
     "Stop": [
       {
         "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash $AMPLIFIER_DIR/.claude/hooks/session-end-index.sh"
-          }
-        ]
+        "hooks": [{"type": "command", "command": "bash /opt/amplifier/.claude/hooks/session-end-index.sh"}]
       }
     ]
   }
 }
-HEREDOC
-echo "  Hooks registered in $SETTINGS_FILE"
+HOOKEOF
+)
+
+if [ -f "${SETTINGS_FILE}.bak" ]; then
+  # Merge hooks into existing settings
+  jq -s '.[0] * .[1]' "${SETTINGS_FILE}.bak" <(echo "$HOOKS_JSON") > "$SETTINGS_FILE"
+  echo "  Merged hooks into existing settings"
+else
+  echo "$HOOKS_JSON" > "$SETTINGS_FILE"
+  echo "  Created settings with hooks"
+fi
 
 # --- Step 7: Run initial docs index ---
 echo "[7/8] Running initial docs index..."
