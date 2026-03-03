@@ -90,15 +90,37 @@ Used by superpowers skills for two-stage review:
 | `bug-hunter` | Balanced | `sonnet` | Pro |
 | `database-architect` | Balanced | `sonnet` | Pro |
 | `api-contract-designer` | Balanced | `sonnet` | Pro |
+| `contract-spec-author` | Balanced | `sonnet` | Pro |
+| `module-intent-architect` | Balanced | `sonnet` | Pro |
 | `integration-specialist` | Balanced | `sonnet` | Pro |
 | `performance-optimizer` | Balanced | `sonnet` | Pro |
 | `component-designer` | Balanced | `sonnet` | Pro |
+| `art-director` | Balanced | `sonnet` | Pro |
+| `animation-choreographer` | Balanced | `sonnet` | Pro |
+| `layout-architect` | Balanced | `sonnet` | Pro |
+| `responsive-strategist` | Balanced | `sonnet` | Pro |
+| `design-system-architect` | Balanced | `sonnet` | Pro |
+| `voice-strategist` | Fast | `haiku` | Flash |
+| `content-researcher` | Fast | `haiku` | Flash |
+| `analysis-engine` | Balanced | `sonnet` | Pro |
+| `concept-extractor` | Fast | `haiku` | Flash |
+| `insight-synthesizer` | Balanced | `sonnet` | Pro |
+| `knowledge-archaeologist` | Balanced | `sonnet` | Pro |
+| `pattern-emergence` | Balanced | `sonnet` | Pro |
+| `visualization-architect` | Balanced | `sonnet` | Pro |
+| `graph-builder` | Balanced | `sonnet` | Pro |
+| `vmware-infrastructure` | Balanced | `sonnet` | Pro |
 | `spec-reviewer` | Fast | `haiku` | Flash |
 | `code-quality-reviewer` | Balanced | `sonnet` | Pro |
 | `test-coverage` (review) | Fast | `haiku` | Flash |
 | `zen-architect` (review) | Balanced | `sonnet` | Pro |
 | `security-guardian` | Deep | `opus` | Pro |
 | `post-task-cleanup` | Fast | `haiku` | Flash |
+| `subagent-architect` | Balanced | `sonnet` | Pro |
+| `amplifier-cli-architect` | Balanced | `sonnet` | Pro |
+| `ambiguity-guardian` | Balanced | `sonnet` | Pro |
+| `amplifier-expert` | Fast | `haiku` | Flash |
+| `handoff-gemini` | Fast | `haiku` | Flash |
 
 ## Selection Rules
 

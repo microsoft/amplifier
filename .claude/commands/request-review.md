@@ -161,9 +161,9 @@ You: [Fix progress indicators]
 - Catch issues before they compound
 - Fix before moving to next task
 
-**Executing Plans (`/execute-plan`):**
-- Review after each batch (3 tasks)
-- Get feedback, apply, continue
+**Executing Plans (`/subagent-dev`):**
+- Review after each task (two-stage: spec + quality)
+- Fix before moving to next task
 
 **Ad-Hoc Development:**
 - Review before merge

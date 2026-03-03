@@ -27,7 +27,7 @@ digraph brainstorm {
   "write_spec" [label="Write spec to docs/specs/" shape=box];
   "write_marker" [label="touch /tmp/amplifier-brainstorm-done" shape=box style=filled fillcolor=lightyellow];
   "route" [label="Route to execution?" shape=diamond];
-  "simple" [label="Simple (1-2 tasks)\nUse /execute-plan directly" shape=box style=filled fillcolor=lightgreen];
+  "simple" [label="Simple (1-2 tasks)\nUse /subagent-dev directly" shape=box style=filled fillcolor=lightgreen];
   "medium" [label="Medium (3-8 tasks)\nUse /create-plan then /subagent-dev" shape=box style=filled fillcolor=lightgreen];
   "complex" [label="Complex (9+ tasks)\nUse /create-plan with parallel batches" shape=box style=filled fillcolor=lightgreen];
 

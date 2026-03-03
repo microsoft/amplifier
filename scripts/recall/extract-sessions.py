@@ -88,6 +88,21 @@ def scan_session(filepath: Path, cutoff: datetime) -> dict | None:
     if not messages or first_ts is None:
         return None
 
+    # Filter subagent sessions: typically have ≤2 user messages and
+    # first message matches delegation patterns (agent prompts)
+    if len(messages) <= 2 and session_title:
+        subagent_prefixes = (
+            "You are a",
+            "READ-ONLY MODE:",
+            "DEEP mode",
+            "Review the changes",
+            "Search codebases",
+            "Analyze ",
+            "Compare the",
+        )
+        if session_title.strip().startswith(subagent_prefixes):
+            return None
+
     return {
         "session_id": filepath.stem,
         "first_ts": first_ts,
@@ -163,8 +178,11 @@ def index_session(conn: sqlite3.Connection, session: dict, md_path: Path) -> Non
     if row:
         return
 
-    # Combine all messages into searchable content
+    # Combine all messages into searchable content (cap at 50KB to avoid
+    # polluting search with pasted code/logs from large sessions)
     content = "\n\n".join(msg["text"] for msg in session["messages"])
+    if len(content) > 50_000:
+        content = content[:50_000]
 
     conn.execute(
         "INSERT INTO sessions(session_id, date, title, content, filepath) VALUES (?, ?, ?, ?, ?)",
@@ -206,6 +224,12 @@ def main():
         type=str,
         default=None,
         help=f"FTS5 database path (default: {FTS_DB})",
+    )
+    parser.add_argument(
+        "--prune-older-than",
+        type=int,
+        default=None,
+        help="Remove sessions older than N days from FTS index and markdown output",
     )
     args = parser.parse_args()
 
@@ -264,6 +288,27 @@ def main():
             total_extracted += 1
             total_indexed += 1
             print(f"  Extracted: {out_path.name} ({session['msg_count']} messages)")
+
+    # Prune old sessions if requested
+    if args.prune_older_than:
+        prune_cutoff = datetime.now(timezone.utc) - timedelta(days=args.prune_older_than)
+        prune_date = prune_cutoff.strftime("%Y-%m-%d")
+        # Remove from FTS index
+        pruned = conn.execute(
+            "DELETE FROM sessions WHERE date < ?", (prune_date,)
+        ).rowcount
+        conn.execute(
+            "DELETE FROM indexed_sessions WHERE indexed_at < ?",
+            (prune_cutoff.isoformat(),),
+        )
+        # Remove old markdown files
+        pruned_md = 0
+        for md_file in output_dir.glob("*.md"):
+            if md_file.name[:10] < prune_date:
+                md_file.unlink()
+                pruned_md += 1
+        if pruned or pruned_md:
+            print(f"  Pruned: {pruned} from FTS index, {pruned_md} markdown files (older than {args.prune_older_than} days)")
 
     conn.commit()
     conn.close()

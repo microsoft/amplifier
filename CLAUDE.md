@@ -6,20 +6,17 @@ Amplifier is an AI-native development platform with 30+ specialized agents and 1
 
 - Workspace root: `C:\claude\amplifier\`
 - Platform: Windows Server 2025, Git Bash shell
-- Path restriction: All files must be created under `C:\claude\` only (enforced by `C:\claude\scripts\guard-paths.sh`)
-- Reserved names: Never create `nul`, `con`, `prn`, `aux`, `com1`–`com9`, `lpt1`–`lpt9` (see `C:\claude\CLAUDE.md`)
+- Safety rules: See `C:\claude\CLAUDE.md` (path restriction, reserved names, null redirection)
 - Python: UV-managed (3.13), Node.js v24
-- Null redirection: `> /dev/null` — never `> nul`
 
 ## @imports
 
 - @AGENTS.md
-- @ai_context/IMPLEMENTATION_PHILOSOPHY.md
-- @ai_context/MODULAR_DESIGN_PHILOSOPHY.md
 
-Design philosophy files are NOT always-loaded. Design agents read these on demand:
-`ai_context/DESIGN-PHILOSOPHY.md`, `ai_context/DESIGN-PRINCIPLES.md`,
-`ai_context/design/DESIGN-FRAMEWORK.md`, `ai_context/design/DESIGN-VISION.md`
+Philosophy and design files are on-demand (not always-loaded). Retrieve via `/docs search`:
+- `ai_context/IMPLEMENTATION_PHILOSOPHY.md`, `ai_context/MODULAR_DESIGN_PHILOSOPHY.md`
+- `ai_context/DESIGN-PHILOSOPHY.md`, `ai_context/DESIGN-PRINCIPLES.md`
+- `ai_context/design/DESIGN-FRAMEWORK.md`, `ai_context/design/DESIGN-VISION.md`
 
 ## Operating Principles
 
@@ -71,5 +68,5 @@ Amplifier provides native commands in `.claude/commands/` invoked via `/command-
 | `/debug` | Hypothesis-driven root cause analysis |
 | `/tdd` | Test-driven development (red-green-refactor) |
 | `/create-plan` | Structured implementation plan with agent assignments |
-| `/execute-plan` | Execute plan tasks in batches with checkpoints |
+| `/subagent-dev` | Execute plan tasks via specialized agents with two-stage review |
 | `/verify` | Evidence-based verification before claiming done |

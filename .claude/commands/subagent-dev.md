@@ -735,4 +735,4 @@ Done!
 - **/tdd** - Subagents follow TDD for each task
 
 **Alternative workflow:**
-- **/execute-plan** - Use for parallel session instead of same-session execution
+- **/create-plan** - Creates the plan this command executes
