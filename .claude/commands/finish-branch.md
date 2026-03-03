@@ -100,17 +100,14 @@ Then: Cleanup worktree (Step 5)
 ```bash
 # Push branch to Gitea (primary remote)
 git push -u origin <feature-branch>
+
+# Create PR using tea CLI
+tea pr create --repo admin/<repo> --title "<title>" --head "<feature-branch>" --base main --description "<summary>"
 ```
 
-Then create PR on Gitea using PowerShell (never use `curl` for Gitea API from Git Bash — JSON escaping breaks silently):
+Tea auto-detects the Gitea login. Use `--repo admin/<name>` to specify the repo.
 
-```bash
-powershell -File "C:/claude/scripts/gitea-create-pr.ps1" -Title "<title>" -Head "<feature-branch>" -Body "<summary>"
-```
-
-The script auto-detects the repo from `git remote get-url origin`. Pass `-Repo "owner/repo"` to override.
-
-Parse the output for `PR_URL=` line and present it to the user.
+Present the PR URL to the user.
 
 **Note:** PR lives on Gitea. GitHub mirror syncs automatically via push mirror. CI runs on GitHub Actions when the mirror triggers.
 

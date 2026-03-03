@@ -39,8 +39,47 @@ Co-Authored-By: Amplifier <240397093+microsoft-amplifier@users.noreply.github.co
 git branch feature/<name>
 git reset --hard <pre-work-commit>
 git push -u origin feature/<name>
-gh pr create --base main --head feature/<name>
+tea pr create --repo admin/<repo> --title "feat: <name>" --head feature/<name>
 ```
+
+---
+
+## Gitea CLI: tea (Preferred Tool)
+
+**Always prefer `tea` over direct API calls for Gitea operations.** The `tea` CLI handles authentication, SSL, and JSON formatting automatically.
+
+### Setup
+- Binary: `C:\claude\tools\tea.exe` (v0.12.0)
+- Login: `gitea` → `https://gitea.ergonet.pl:3001` (token-based)
+- Default login set: `tea login default gitea`
+
+### Common Operations
+
+```bash
+# List repos
+tea repos ls
+
+# Create PR
+tea pr create --repo admin/<repo> --title "feat: my change" --head feature/branch --base main --description "Details"
+
+# List PRs
+tea pr ls --repo admin/<repo>
+tea pr ls --repo admin/<repo> --state closed   # show merged/closed
+
+# View PR details
+tea pr view --repo admin/<repo> <number>
+
+# Merge PR
+tea pr merge --repo admin/<repo> <number>
+tea pr merge --repo admin/<repo> --style squash <number>   # squash merge
+
+# Comment on PR/issue
+tea comment --repo admin/<repo> <number> "Review feedback here"
+```
+
+### When to Fall Back to API
+
+Only use direct REST API calls when tea doesn't support a specific operation (rare). Never use PowerShell `Invoke-RestMethod` or `curl` for routine PR operations — tea is simpler and cross-platform.
 
 ---
 
