@@ -44,42 +44,44 @@ tea pr create --repo admin/<repo> --title "feat: <name>" --head feature/<name>
 
 ---
 
-## Gitea CLI: tea (Preferred Tool)
+## Gitea MCP Tools (Preferred)
 
-**Always prefer `tea` over direct API calls for Gitea operations.** The `tea` CLI handles authentication, SSL, and JSON formatting automatically.
-
-### Setup
-- Binary: `C:\claude\tools\tea.exe` (v0.12.0)
-- Login: `gitea` → `https://gitea.ergonet.pl:3001` (token-based)
-- Default login set: `tea login default gitea`
+**Use Gitea MCP tools (`mcp__gitea__*`) for all Gitea operations.** MCP tools are native tool calls — they support parallel execution, work in subagents without Bash, and return structured data.
 
 ### Common Operations
 
+| Operation | MCP Tool |
+|-----------|----------|
+| Create PR | `mcp__gitea__create_pull_request(owner, repo, title, body, head, base)` |
+| List PRs | `mcp__gitea__list_repo_pull_requests(owner, repo, state)` |
+| View PR | `mcp__gitea__get_pull_request_by_index(owner, repo, index)` |
+| PR diff | `mcp__gitea__get_pull_request_diff(owner, repo, index)` |
+| Merge PR | `mcp__gitea__merge_pull_request(owner, repo, index, Do)` |
+| PR review | `mcp__gitea__create_pull_request_review(owner, repo, index, body, state)` |
+| Create issue | `mcp__gitea__create_issue(owner, repo, title, body)` |
+| List issues | `mcp__gitea__list_repo_issues(owner, repo, state)` |
+| Comment | `mcp__gitea__create_issue_comment(owner, repo, index, body)` |
+| Labels | `mcp__gitea__add_issue_labels(owner, repo, index, labels)` |
+| Milestones | `mcp__gitea__list_milestones(owner, repo)` |
+| List repos | `mcp__gitea__list_my_repos()` |
+
+All `owner` params = `"admin"` for our repos. `Do` param for merge: `"merge"`, `"squash"`, or `"rebase"`.
+
+### Fallback: tea CLI
+
+Use `tea` CLI when MCP is unavailable (e.g., MCP server down, interactive terminal use).
+
+- Binary: `C:\claude\tools\tea.exe` (v0.12.0)
+- Login: `claude-gitea` → `https://gitea.ergonet.pl:3001` (token-based)
+
 ```bash
-# List repos
-tea repos ls
-
-# Create PR
 tea pr create --repo admin/<repo> --title "feat: my change" --head feature/branch --base main --description "Details"
-
-# List PRs
 tea pr ls --repo admin/<repo>
-tea pr ls --repo admin/<repo> --state closed   # show merged/closed
-
-# View PR details
-tea pr view --repo admin/<repo> <number>
-
-# Merge PR
-tea pr merge --repo admin/<repo> <number>
-tea pr merge --repo admin/<repo> --style squash <number>   # squash merge
-
-# Comment on PR/issue
+tea pr merge --repo admin/<repo> --style squash <number>
 tea comment --repo admin/<repo> <number> "Review feedback here"
 ```
 
-### When to Fall Back to API
-
-Only use direct REST API calls when tea doesn't support a specific operation (rare). Never use PowerShell `Invoke-RestMethod` or `curl` for routine PR operations — tea is simpler and cross-platform.
+Never use PowerShell `Invoke-RestMethod` or `curl` for routine Gitea operations.
 
 ---
 

@@ -2,13 +2,17 @@
 # Smoke tests for hook_stop.py
 # Run: bash tests/hooks/test_hook_stop.sh
 
-HOOK="C:/claude/amplifier/.claude/tools/hook_stop.py"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+. "$REPO_ROOT/scripts/lib/platform.sh"
+
+HOOK="$AMPLIFIER_HOME/.claude/tools/hook_stop.py"
 PASS=0
 FAIL=0
 
 echo "=== hook_stop.py smoke tests ==="
 
-cd /c/claude/amplifier
+cd "$AMPLIFIER_HOME"
 
 # Test 1: Script compiles without syntax errors
 uv run python -m py_compile .claude/tools/hook_stop.py 2>/dev/null
@@ -22,9 +26,11 @@ fi
 
 # Test 2: With memory disabled, exits gracefully with valid JSON
 export MEMORY_SYSTEM_ENABLED=false
-output=$(echo '{"transcript_path":"/nonexistent/path.jsonl"}' | uv run python .claude/tools/hook_stop.py 2>/dev/null)
-if echo "$output" | python -m json.tool > /dev/null 2>&1; then
-    disabled=$(echo "$output" | python -c "import sys,json; print(json.load(sys.stdin).get('metadata',{}).get('disabled',False))" 2>/dev/null)
+mkdir -p /tmp/amplifier
+output=$(echo '{"transcript_path":"/nonexistent/path.jsonl"}' | uv run python .claude/tools/hook_stop.py 2>/tmp/amplifier/hook_stop_err.txt)
+json_valid=$(echo "$output" | python -c "import sys,json; json.loads(sys.stdin.read()); print('ok')" 2>/tmp/amplifier/hook_stop_err.txt)
+if [ "$json_valid" = "ok" ]; then
+    disabled=$(echo "$output" | python -c "import sys,json; print(json.load(sys.stdin).get('metadata',{}).get('disabled',False))" 2>&1)
     if [ "$disabled" = "True" ]; then
         echo "  PASS: Returns valid JSON with disabled=true when memory system off"
         PASS=$((PASS + 1))
@@ -54,7 +60,7 @@ import sys; sys.path.insert(0, '.claude/tools')
 from hook_logger import HookLogger
 h = HookLogger('test')
 print('Logger OK')
-" 2>/dev/null
+" > /dev/null 2>&1
 if [ $? -eq 0 ]; then
     echo "  PASS: hook_logger.py is importable"
     PASS=$((PASS + 1))

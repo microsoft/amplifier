@@ -13,9 +13,9 @@ This document defines how **Claude Code** and **Gemini via OpenCode** collaborat
 
 | Path | Owner | Purpose |
 |------|-------|---------|
-| `C:\claude\amplifier\` | Shared (git repo) | Source of truth for all code |
-| `C:\claude\amplifier\.claude\` | Claude ONLY | Agents, commands, tools, skills |
-| `C:\Przemek\` | Gemini ONLY | OPENCODE.md, agents (SKILL.md format), private memory |
+| Linux: `/opt/amplifier/` / Windows: `C:\claude\amplifier\` | Shared (git repo) | Source of truth for all code |
+| `<amplifier>/.claude/` | Claude ONLY | Agents, commands, tools, skills |
+| `C:\Przemek\` (Windows only) | Gemini ONLY | OPENCODE.md, agents (SKILL.md format), private memory |
 
 ## Branch Ownership
 
@@ -132,7 +132,7 @@ git remote set-url origin https://gemini:GeminiDev2026%21@gitea.ergonet.pl:3001/
 **Gemini creates PRs** via Gitea web UI at `https://gitea.ergonet.pl:3001/admin/<repo>/pulls/new/<branch>`
 or via API token: `GITEA_GEMINI_TOKEN=5ac28f2a987782a15ffe7664d39d2d48908b4cec`
 
-**Claude reviews/merges PRs** via PowerShell scripts at `C:\claude\scripts\gitea-*.ps1`
+**Claude reviews/merges PRs** via Gitea MCP tools (`mcp__gitea__*`). Fallback: `tea` CLI (`C:\claude\tools\tea.exe`).
 
 **Never use `gh` CLI for PR operations** — all PRs live on Gitea, not GitHub.
 
@@ -157,11 +157,11 @@ or via API token: `GITEA_GEMINI_TOKEN=5ac28f2a987782a15ffe7664d39d2d48908b4cec`
 ## Agent Sync Process
 
 Source of truth: `.claude/agents/*.md` (Claude Code format)
-Gemini copies: `C:\Przemek\agents\<name>\SKILL.md` (OpenCode format)
+Gemini copies: `C:\Przemek\agents\<name>\SKILL.md` (OpenCode format, Windows only)
 
 When Claude updates agents:
 ```bash
-bash /c/Przemek/scripts/sync-agents.sh
+bash "${PRZEMEK_HOME:-/c/Przemek}/scripts/sync-agents.sh"  # Windows only
 ```
 
 This converts format, adds `recommended_model`, `tier` marking, and boundary reminders.

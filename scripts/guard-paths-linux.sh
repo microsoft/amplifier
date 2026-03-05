@@ -32,7 +32,7 @@ case "$TOOL" in
     # Check output redirection outside allowed paths
     if echo "$CMD" | grep -qE '>\s*/[a-z]'; then
       TARGET=$(echo "$CMD" | grep -oE '>\s*/[a-zA-Z][a-zA-Z0-9_/-]*' | sed 's|^>\s*||' | head -1)
-      if [ -n "$TARGET" ] && ! echo "$TARGET" | grep -qE "$ALLOWED"; then
+      if [ -n "$TARGET" ] && [ "$TARGET" != "/dev/null" ] && ! echo "$TARGET" | grep -qE "$ALLOWED"; then
         echo "BLOCKED: Redirect to '$TARGET' — not in allowed paths." >&2
         exit 2
       fi

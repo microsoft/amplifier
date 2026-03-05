@@ -4,9 +4,9 @@ Amplifier is an AI-native development platform with 30+ specialized agents and 1
 
 ## Identity and Environment
 
-- Workspace root: `C:\claude\amplifier\`
-- Platform: Windows Server 2025, Git Bash shell
-- Safety rules: See `C:\claude\CLAUDE.md` (path restriction, reserved names, null redirection)
+- Workspace root: Linux: `/opt/amplifier/` | Windows: `C:\claude\amplifier\`
+- Platform: Ubuntu Linux (primary), Windows Server 2025 (secondary)
+- Safety rules: Linux: `scripts/guard-paths-linux.sh` | Windows: `C:\claude\CLAUDE.md`
 - Python: UV-managed (3.13), Node.js v24
 
 ## @imports

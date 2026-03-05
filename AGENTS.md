@@ -31,7 +31,7 @@ This file provides guidance to AI assistants when working with code in this repo
 
 **Remote layout**: `origin` = Gitea (primary), `github` = GitHub (read-only backup, auto-synced).
 
-**Gitea CLI**: Use `tea` for all PR operations (create, list, merge, comment). Prefer over direct API calls. Quick ref: `/docs search git workflow`.
+**Gitea operations**: Use Gitea MCP tools (`mcp__gitea__*`) for all Gitea operations — PRs, issues, labels, milestones, reviews. MCP tools support parallel calls and work natively in subagents. Fallback: `tea` CLI when MCP is unavailable. Quick ref: `/docs search git workflow`.
 
 ---
 
