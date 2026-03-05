@@ -100,12 +100,14 @@ Then: Cleanup worktree (Step 5)
 ```bash
 # Push branch to Gitea (primary remote)
 git push -u origin <feature-branch>
-
-# Create PR using tea CLI
-tea pr create --repo admin/<repo> --title "<title>" --head "<feature-branch>" --base main --description "<summary>"
 ```
 
-Tea auto-detects the Gitea login. Use `--repo admin/<name>` to specify the repo.
+Create PR using Gitea MCP (preferred):
+```
+mcp__gitea__create_pull_request(owner="admin", repo="<repo>", title="<title>", head="<feature-branch>", base="main", body="<summary>")
+```
+
+Fallback (tea CLI): `tea pr create --repo admin/<repo> --title "<title>" --head "<feature-branch>" --base main --description "<summary>"`
 
 Present the PR URL to the user.
 

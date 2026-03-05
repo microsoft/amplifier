@@ -132,7 +132,7 @@ git remote set-url origin https://gemini:GeminiDev2026%21@gitea.ergonet.pl:3001/
 **Gemini creates PRs** via Gitea web UI at `https://gitea.ergonet.pl:3001/admin/<repo>/pulls/new/<branch>`
 or via API token: `GITEA_GEMINI_TOKEN=5ac28f2a987782a15ffe7664d39d2d48908b4cec`
 
-**Claude reviews/merges PRs** via bash scripts at `scripts/gitea/gitea-*.sh` (or `tea` CLI directly)
+**Claude reviews/merges PRs** via Gitea MCP tools (`mcp__gitea__*`). Fallback: `tea` CLI (`C:\claude\tools\tea.exe`).
 
 **Never use `gh` CLI for PR operations** — all PRs live on Gitea, not GitHub.
 
