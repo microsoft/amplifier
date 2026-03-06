@@ -101,7 +101,7 @@ Authentication? [1] API key [2] Azure CLI (az login): 2
 ✓ Using DefaultAzureCredential
   (Works with 'az login' locally or managed identity in Azure)
 
-Deployment name: gpt-5.2
+Deployment name: gpt-5.4
   Note: Use your Azure deployment name, not model name
 ✓ Configured
 
@@ -121,8 +121,8 @@ API key: ••••••••
   Get one: https://platform.openai.com/api-keys
 ✓ Saved
 
-Model? [1] gpt-5.2 [2] gpt-5.1-codex [3] gpt-5.2-pro [4] custom: 1
-✓ Using gpt-5.2
+Model? [1] gpt-5.4 [2] gpt-5.4-codex [3] gpt-5.4-pro [4] custom: 1
+✓ Using gpt-5.4
 
 Ready! Starting chat...
 >
@@ -197,7 +197,7 @@ amplifier provider use openai
 
 # Or explicit
 amplifier provider use anthropic --model claude-opus-4-6
-amplifier provider use azure-openai --deployment gpt-5.2
+amplifier provider use azure-openai --deployment gpt-5.4
 ```
 
 > **Note**: We've done most of our early testing with Anthropic Claude. Other providers are supported but may have rough edges we're actively smoothing out.
@@ -332,10 +332,10 @@ amplifier provider use anthropic --model claude-opus-4-6
 amplifier provider use azure-openai
   Azure endpoint: https://my-resource.openai.azure.com/
   Auth? [1] API key [2] Azure CLI: 2
-  Deployment: gpt-5.2
+  Deployment: gpt-5.4
 
 # Configure where to save
-amplifier provider use openai --model gpt-5.2 --local      # Just you
+amplifier provider use openai --model gpt-5.4 --local      # Just you
 amplifier provider use anthropic --model claude-opus-4-6 --project  # Team
 
 # See what's active
