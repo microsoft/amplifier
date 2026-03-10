@@ -1,0 +1,62 @@
+name: Update Homebrew Formula
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version tag (e.g., v0.1.0)"
+        required: true
+
+jobs:
+  update-formula:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download and hash release tarball
+        id: hash
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          URL="https://github.com/microsoft/amplifier/archive/refs/tags/${TAG}.tar.gz"
+          curl -sL "$URL" -o release.tar.gz
+          SHA=$(shasum -a 256 release.tar.gz | awk '{print $1}')
+          echo "sha256=${SHA}" >> "$GITHUB_OUTPUT"
+          echo "url=${URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Update formula
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          VERSION="${TAG#v}"
+          SHA="${{ steps.hash.outputs.sha256 }}"
+          URL="${{ steps.hash.outputs.url }}"
+
+          FORMULA="homebrew-amplifier/Formula/amplifier.rb"
+
+          sed -i "s|url \".*\"|url \"${URL}\"|" "$FORMULA"
+          sed -i "s|sha256 \".*\"|sha256 \"${SHA}\"|" "$FORMULA"
+
+          # Update version if present in the formula
+          echo "Updated formula to version ${VERSION} (sha256: ${SHA})"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          title: "Update Homebrew formula to ${{ steps.version.outputs.tag }}"
+          body: |
+            Automated update of the Homebrew formula for Amplifier.
+
+            - Version: `${{ steps.version.outputs.tag }}`
+            - SHA256: `${{ steps.hash.outputs.sha256 }}`
+          branch: "update-formula-${{ steps.version.outputs.tag }}"
+          commit-message: "Update Homebrew formula to ${{ steps.version.outputs.tag }}"
