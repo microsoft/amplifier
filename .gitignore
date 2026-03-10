@@ -1,3 +1,6 @@
+# Worktrees
+.worktrees/
+
 # Private settings
 **/certs/*.pem
 **/certs/config.json
