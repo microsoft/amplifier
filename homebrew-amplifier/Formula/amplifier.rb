@@ -2,6 +2,8 @@ class Amplifier < Formula
   desc "AI-powered modular development assistant"
   homepage "https://github.com/microsoft/amplifier"
   url "https://github.com/microsoft/amplifier/archive/refs/tags/v0.1.0.tar.gz"
+  # TODO: Update SHA256 after v0.1.0 is tagged. Calculate with:
+  #   curl -sL https://github.com/microsoft/amplifier/archive/refs/tags/v0.1.0.tar.gz | shasum -a 256
   sha256 "PLACEHOLDER_SHA256"
   license "MIT"
 

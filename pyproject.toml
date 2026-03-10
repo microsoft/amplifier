@@ -22,7 +22,10 @@ classifiers = [
 ]
 dependencies = [
     "amplifier-core",
-    "amplifier-app-cli",
+    # amplifier-app-cli will be published to PyPI before this PR merges
+    # During development, it resolves via git reference in [tool.uv.sources]
+    # Note: Ensure amplifier-app-cli is versioned >= 0.1.0 before PyPI publish
+    "amplifier-app-cli>=0.1.0",
 ]
 
 [project.urls]
