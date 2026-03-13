@@ -52,11 +52,6 @@
             "type": "command",
             "command": "bash C:/claude/amplifier/.claude/hooks/session-end-index.sh",
             "timeout": 30000
-          },
-          {
-            "type": "command",
-            "command": "bash C:/claude/amplifier/scripts/observers/cost-tracker.sh",
-            "timeout": 5000
           }
         ]
       }
