@@ -108,3 +108,6 @@ lib/
 
 # OpenCode observability clone (local dev tool)
 Przemekopencode-observability/
+
+# Foreman fleet state (runtime, per-session)
+.foreman/

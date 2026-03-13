@@ -1,0 +1,90 @@
+# Routing Matrix — Single source of truth for agent-to-model mapping
+#
+# The orchestrator reads this when dispatching agents.
+# Agent dispatches still show the resolved model name explicitly.
+# To change all scouts from haiku to sonnet, update one line here.
+#
+# Roles define semantic categories. Agents map to roles.
+# The resolved model is: agents.<name> -> roles.<role>.model
+
+roles:
+  scout:
+    model: haiku
+    description: "Quick lookups, context gathering, file searches"
+    max_turns: 8
+  research:
+    model: sonnet
+    description: "Codebase exploration, documentation analysis"
+    max_turns: 12
+  implement:
+    model: sonnet
+    description: "Code writing, file creation, editing"
+    max_turns: 20
+  architect:
+    model: opus
+    description: "System design, complex analysis, deep reasoning"
+    max_turns: 15
+  review:
+    model: sonnet
+    description: "Code review, test coverage, security checks"
+    max_turns: 12
+  security:
+    model: opus
+    description: "Security audits, vulnerability assessment"
+    max_turns: 12
+  fast:
+    model: haiku
+    description: "Lightweight tasks, copy editing, cleanup"
+    max_turns: 8
+
+# Agent-to-role mapping
+# Format: agent_name: role
+# Agents not listed here default to 'implement'
+agents:
+  # Core Development
+  agentic-search: scout
+  zen-architect: architect
+  modular-builder: implement
+  bug-hunter: research          # needs investigation before fixing
+  test-coverage: scout
+  security-guardian: security
+  post-task-cleanup: fast
+  performance-optimizer: research
+  integration-specialist: implement
+  spec-reviewer: scout
+  code-quality-reviewer: review
+
+  # API & Data
+  api-contract-designer: implement
+  database-architect: implement
+  contract-spec-author: implement
+  module-intent-architect: architect
+
+  # Design
+  component-designer: implement
+  art-director: implement
+  animation-choreographer: implement
+  layout-architect: implement
+  responsive-strategist: implement
+  design-system-architect: architect
+  voice-strategist: fast
+
+  # Knowledge & Analysis
+  content-researcher: scout
+  analysis-engine: research
+  concept-extractor: scout
+  insight-synthesizer: research
+  knowledge-archaeologist: research
+  pattern-emergence: research
+  visualization-architect: implement
+  graph-builder: implement
+
+  # Infrastructure
+  vmware-infrastructure: research
+
+  # Meta
+  subagent-architect: implement
+  amplifier-cli-architect: implement
+  ambiguity-guardian: research
+  amplifier-expert: fast
+  handoff-gemini: fast
