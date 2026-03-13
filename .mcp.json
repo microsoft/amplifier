@@ -25,8 +25,8 @@
       ]
     },
     "autocontext": {
-      "command": "cmd",
-      "args": ["/c", "cd", "C:\\claude\\autocontext\\autocontext", "&&", "uv", "run", "autoctx", "mcp-serve"],
+      "command": "uv",
+      "args": ["run", "--directory", "C:\\claude\\autocontext\\autocontext", "autoctx", "mcp-serve"],
       "env": {
         "AUTOCONTEXT_AGENT_PROVIDER": "anthropic"
       }
