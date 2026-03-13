@@ -25,7 +25,7 @@
       ]
     },
     "autocontext": {
-      "command": "uv",
+      "command": "C:\\Users\\Administrator.ERGOLAB\\.local\\bin\\uv.exe",
       "args": ["run", "--directory", "C:\\claude\\autocontext\\autocontext", "autoctx", "mcp-serve"],
       "env": {
         "AUTOCONTEXT_AGENT_PROVIDER": "anthropic"
