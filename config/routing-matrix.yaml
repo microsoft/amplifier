@@ -46,12 +46,12 @@ agents:
   zen-architect: architect
   modular-builder: implement
   bug-hunter: research          # needs investigation before fixing
-  test-coverage: scout
+  test-coverage: review
   security-guardian: security
   post-task-cleanup: fast
   performance-optimizer: research
   integration-specialist: implement
-  spec-reviewer: scout
+  spec-reviewer: review
   code-quality-reviewer: review
 
   # API & Data
