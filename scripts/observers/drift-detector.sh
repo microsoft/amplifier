@@ -7,6 +7,9 @@
 
 set -euo pipefail
 
+# Require jq for safe JSON output
+if ! command -v jq &>/dev/null; then exit 0; fi
+
 # Consume stdin (hooks always pipe JSON, even if we don't need it)
 cat > /dev/null
 

@@ -110,10 +110,10 @@ Used by superpowers skills for two-stage review:
 | `visualization-architect` | Balanced | `sonnet` | Pro |
 | `graph-builder` | Balanced | `sonnet` | Pro |
 | `vmware-infrastructure` | Balanced | `sonnet` | Pro |
-| `spec-reviewer` | Fast | `haiku` | Flash |
+| `spec-reviewer` | Balanced | `sonnet` | Pro |
 | `code-quality-reviewer` | Balanced | `sonnet` | Pro |
-| `test-coverage` (review) | Fast | `haiku` | Flash |
-| `zen-architect` (review) | Balanced | `sonnet` | Pro |
+| `test-coverage` (review) | Balanced | `sonnet` | Pro |
+| `zen-architect` (review/architecture) | Deep | `opus` | Pro |
 | `security-guardian` | Deep | `opus` | Pro |
 | `post-task-cleanup` | Fast | `haiku` | Flash |
 | `subagent-architect` | Balanced | `sonnet` | Pro |

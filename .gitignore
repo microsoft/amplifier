@@ -111,3 +111,4 @@ Przemekopencode-observability/
 
 # Foreman fleet state (runtime, per-session)
 .foreman/
+.foreman-archive-*/

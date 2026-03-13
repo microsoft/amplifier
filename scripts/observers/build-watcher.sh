@@ -8,6 +8,9 @@
 
 set -euo pipefail
 
+# Require jq for safe JSON output
+if ! command -v jq &>/dev/null; then exit 0; fi
+
 OBS_FILE="/tmp/amplifier-observations.jsonl"
 
 # Read hook input from stdin

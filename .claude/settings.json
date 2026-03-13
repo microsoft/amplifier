@@ -18,7 +18,7 @@
     ]
   },
   "enableAllProjectMcpServers": false,
-  "enabledMcpjsonServers": ["playwright", "context7", "deepwiki", "repomix", "gitea"],
+  "enabledMcpjsonServers": ["playwright", "context7", "deepwiki", "repomix", "gitea", "autocontext"],
   "hooks": {
     "SessionStart": [
       {
