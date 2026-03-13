@@ -49,14 +49,14 @@ Every Task dispatch must include a `max_turns` parameter. Use these starting val
 
 | Agent Role | max_turns | Examples |
 |------------|-----------|----------|
-| Quick tasks | 5-8 | Haiku scouts, context gathering, file searches |
-| Research / exploration | 8-10 | Codebase exploration, documentation lookup |
-| Review | 10-12 | test-coverage, security-guardian, code review |
-| Analysis | 12-15 | zen-architect, bug-hunter, design analysis |
-| Implementation | 15-20 | modular-builder, file creation and editing |
-| Deep diagnostics | 20-25 | vmware-infrastructure (log correlation, KB lookup, command generation) |
+| Quick tasks | 8-12 | Haiku scouts, context gathering, file searches |
+| Research / exploration | 12-15 | Codebase exploration, documentation lookup |
+| Review | 12-15 | test-coverage, security-guardian, code review |
+| Analysis | 15-20 | zen-architect, bug-hunter, design analysis |
+| Implementation | 20-30 | modular-builder, file creation and editing |
+| Deep diagnostics | 25-35 | vmware-infrastructure (log correlation, KB lookup, command generation) |
 
-These values are tuned through observation. If an agent consistently needs resume cycles, increase its budget. If it finishes well under budget, decrease it.
+These values are tuned for **Opus 4.6 with 1M context**. With large context windows, prefer giving agents more room over decomposing into tiny tasks. If an agent consistently needs resume cycles, increase its budget. If it finishes well under budget, decrease it.
 
 ### Read-Only Research Constraint
 
@@ -97,16 +97,16 @@ This prevents the failure mode where an agent uses all turns on tool calls (Glob
 
 ### Task Decomposition Guidelines
 
-Right-size tasks before dispatch to prevent context exhaustion upstream:
+Right-size tasks before dispatch. With 1M context, agents can handle larger scope — prefer fewer, meatier tasks over many tiny ones:
 
 | Dimension | Guideline |
 |-----------|-----------|
-| Files to read | 3-5 per agent |
-| Files to modify | 1-3 per agent |
-| Objectives | 1 per agent — single clear deliverable |
-| Output scope | One component, module, or focused concern |
+| Files to read | 5-15 per agent |
+| Files to modify | 1-5 per agent |
+| Objectives | 1-2 per agent — clear deliverables |
+| Output scope | One feature or focused concern |
 
-**Decompose large tasks:**
+**When to decompose** (still worth splitting):
 - "Implement the authentication system" → 4 agents: token generation, middleware, login endpoint, session storage
 - "Review all changed files" → 2 agents by concern: "review auth changes", "review API changes"
 

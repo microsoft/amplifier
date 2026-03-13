@@ -259,3 +259,5 @@ When routing to execution, these are the key commands:
 | `/worktree` | Isolated git workspace for feature development |
 | `/finish-branch` | Cleanup and merge/PR when implementation is done |
 | `/request-review` | Formal code review before merging |
+| `/evaluate` | Score agent output against quality rubrics |
+| `/self-eval brainstorm` | Evaluate this brainstorm's design quality |

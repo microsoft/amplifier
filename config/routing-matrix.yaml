@@ -7,35 +7,36 @@
 # Roles define semantic categories. Agents map to roles.
 # The resolved model is: agents.<name> -> roles.<role>.model
 
+# Tuned for Opus 4.6 with 1M context — prefer generous budgets over tiny tasks
 roles:
   scout:
     model: haiku
     description: "Quick lookups, context gathering, file searches"
-    max_turns: 8
+    max_turns: 12
   research:
     model: sonnet
     description: "Codebase exploration, documentation analysis"
-    max_turns: 12
+    max_turns: 15
   implement:
     model: sonnet
     description: "Code writing, file creation, editing"
-    max_turns: 20
+    max_turns: 25
   architect:
     model: opus
     description: "System design, complex analysis, deep reasoning"
-    max_turns: 15
+    max_turns: 20
   review:
     model: sonnet
     description: "Code review, test coverage, security checks"
-    max_turns: 12
+    max_turns: 15
   security:
     model: opus
     description: "Security audits, vulnerability assessment"
-    max_turns: 12
+    max_turns: 15
   fast:
     model: haiku
     description: "Lightweight tasks, copy editing, cleanup"
-    max_turns: 8
+    max_turns: 10
 
 # Agent-to-role mapping
 # Format: agent_name: role

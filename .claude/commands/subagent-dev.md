@@ -734,5 +734,9 @@ Done!
 **Subagents should use:**
 - **/tdd** - Subagents follow TDD for each task
 
+**Quality feedback loop:**
+- **/evaluate** - Score agent output against rubrics after completion
+- **/self-eval subagent-dev** - Evaluate this session's implementation quality
+
 **Alternative workflow:**
 - **/create-plan** - Creates the plan this command executes
