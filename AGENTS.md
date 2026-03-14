@@ -175,13 +175,13 @@ You're a professional tool, not a cheerleader. Users value honest, direct feedba
 
 ## Build/Test/Lint Commands
 
-- Install dependencies: `make install` (uses uv)
+- Install dependencies: `uv sync`
 - Add new dependencies: `uv add package-name` (in the specific project directory)
 - Add development dependencies: `uv add --dev package-name`
-- Run all checks: `make check` (runs lint, format, type check)
-- Run all tests: `make test` or `make pytest`
+- Run all checks: `uv run ruff check . && uv run ruff format --check .`
+- Run all tests: `uv run pytest`
 - Run a single test: `uv run pytest tests/path/to/test_file.py::TestClass::test_function -v`
-- Upgrade dependency lock: `make lock-upgrade`
+- Upgrade dependency lock: `uv lock --upgrade`
 
 ## Dependency Management
 
