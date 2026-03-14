@@ -39,8 +39,20 @@ digraph when_to_use {
 Each task in the plan has an `Agent:` field. Use it as the `subagent_type` when dispatching:
 
 1. Read the task's `Agent:` field (e.g., `modular-builder`, `bug-hunter`, `database-architect`)
-2. **Dispatch using Task tool with `subagent_type` set to the Agent: field value.** Example: if the plan says `Agent: modular-builder`, call `Task(subagent_type="modular-builder", model="haiku", max_turns=15, description="Implement Task N: ...", prompt="...")` — set `model` per the task's **Model:** field if present; otherwise use the Model Selection table below. The task's explicit Model field always takes precedence.
-   - **Turn budgets (always include `max_turns`):** Implementation agents: 15-20, review agents: 10-12, specialists: 12-15, quick tasks: 5-8
+2. **Resolve effort and turns** using the routing matrix (`config/routing-matrix.yaml`):
+   - Look up the agent's role → get `model`, `effort`, and `turns: {min, default, max}`
+   - **Score task complexity** to adjust effort within the role's range:
+     - File count 1 → 0 | 2-4 → +1 | 5+ → +2
+     - Keywords in task: "security", "auth", "migration", "refactor", "architecture" → +1
+     - Keywords: "rename", "config", "typo", "frontmatter" → -1
+     - Previous attempt BLOCKED or NEEDS_CONTEXT → +2
+     - TDD steps present → +1
+     - Multi-subsystem scope (3+ directories) → +1
+   - **Map score to effort:** ≤0 → low (min turns) | 1-2 → medium (default turns) | ≥3 → high (max turns)
+   - **Cap by session /effort:** `resolved = min(session_effort, max(role_effort, task_score))`
+   - **At effort=max:** use max turns + auto-resume up to 3 cycles
+   - Task's explicit **Model:** field overrides routing matrix if present
+3. **Dispatch** using Task tool: `Task(subagent_type="modular-builder", model="sonnet", max_turns=25, ...)`
    - **If agent returns incomplete:** Resume with `Task(resume=agent_id, prompt="Continue your work...")` — max 3 resume cycles
 3. Pass the full task text + context in the prompt (never make subagent read the plan file)
 4. The agent brings domain expertise to the implementation — `modular-builder` builds clean modules, `bug-hunter` does hypothesis-driven debugging, `database-architect` designs schemas
@@ -256,28 +268,25 @@ Example:
 
 **Never dispatch silently.**
 
-## Model Selection
+## Model & Effort Selection
 
-Use the least powerful model that can handle each role.
+**Source of truth:** `config/routing-matrix.yaml` — defines model, effort tier, and elastic turn ranges per role.
 
-**Claude Code** — map to the `model` parameter on the Task tool:
+**Quick reference (from routing matrix):**
 
-| Tier | Claude `model` | Gemini equivalent | When |
-|------|---------------|-------------------|------|
-| Fast | `haiku` | Flash | Mechanical implementation: 1-2 files, clear spec, config change |
-| Balanced | `sonnet` | Pro | Standard: multi-file, integration, pattern matching, debugging |
-| Deep | `opus` | Pro | Architecture/design/review: broad judgment, security review |
+| Role | Model | Effort | Turns (min/default/max) |
+|------|-------|--------|------------------------|
+| scout | haiku | low | 8 / 12 / 20 |
+| research | sonnet | medium | 10 / 15 / 25 |
+| implement | sonnet | medium | 15 / 25 / 40 |
+| architect | opus | high | 15 / 20 / 35 |
+| review | sonnet | medium | 10 / 15 / 25 |
+| security | opus | high | 12 / 15 / 25 |
+| fast | haiku | low | 5 / 10 / 15 |
 
-**Concrete mapping by agent type:**
-- `modular-builder` with clear spec → `haiku` / Flash (upgrade to `sonnet` / Pro if multi-file)
-- `bug-hunter` → `sonnet` / Pro (needs reasoning about root causes)
-- `database-architect` → `sonnet` / Pro (schema design needs judgment)
-- `test-coverage` (spec review) → `haiku` / Flash (checklist comparison)
-- `zen-architect` (quality review) → `sonnet` / Pro (needs architecture judgment)
-- `security-guardian` → `opus` / Pro (security requires deepest analysis)
-- `post-task-cleanup` → `haiku` / Flash (mechanical cleanup)
+**Effort resolution:** Score the task's complexity signals (see Amplifier Agent Dispatch step 2), map to effort level, pick turns from range. Session `/effort` is the ceiling.
 
-**When to upgrade:** If a `haiku`/Flash agent returns BLOCKED or NEEDS_CONTEXT, re-dispatch with `sonnet`/Pro. If `sonnet`/Pro is blocked, try `opus`.
+**When to upgrade:** If a `haiku` agent returns BLOCKED or NEEDS_CONTEXT, re-dispatch with `sonnet` and bump to `max` turns. If `sonnet` is blocked, try `opus`.
 
 ## Context Assessment
 

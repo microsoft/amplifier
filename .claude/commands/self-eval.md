@@ -133,9 +133,30 @@ If `command_name` is `all`:
 **Session Average: 82/100**
 ```
 
-### Step 7: Accumulate Learnings
+### Step 7: Record Effort Metadata
 
-After evaluation, check if score patterns exist:
+After evaluation, record the effort context alongside the score. This feeds the adaptive effort steering loop.
+
+```
+Call: autocontext_record_feedback(
+  task_name=<task_name>,
+  feedback="{
+    \"score\": <overall_score>,
+    \"effort\": \"<resolved effort level: low/medium/high/max>\",
+    \"turns_used\": <actual turns agent used>,
+    \"turns_budget\": <max_turns that was set>,
+    \"file_count\": <number of files in task>,
+    \"agent_role\": \"<role from routing-matrix>\",
+    \"model\": \"<model used>\",
+    \"had_resume\": <true/false>,
+    \"session_effort\": \"<current /effort setting>\"
+  }"
+)
+```
+
+### Step 8: Accumulate Learnings
+
+Check if score patterns exist:
 
 ```
 Call: autocontext_get_best_output(task_name=<task_name>)
@@ -145,14 +166,21 @@ If this evaluation improves on previous best, note it. If score is consistently 
 
 > "Pattern detected: /brainstorm consistently scores low on Agent Allocation (avg 68). Consider reviewing agent catalog before finalizing designs."
 
+**Effort patterns to surface:**
+- "Implementation tasks with 3+ files score 20% higher at high effort vs medium"
+- "Review tasks show no quality difference between medium and high — save the budget"
+- "Scout tasks above low effort waste turns with no score improvement"
+
 ## The Flywheel
 
 ```
-Command runs → /self-eval scores it → AutoContext accumulates learnings
-    → playbook improves → command prompt updated → better output next time
+Command runs → /self-eval scores it (with effort metadata)
+    → AutoContext accumulates learnings
+    → playbook identifies optimal effort per task type
+    → effort resolver reads playbook → better effort selection next time
 ```
 
-**Future (not in this PR):** Observer hook auto-runs `/self-eval` on SessionEnd.
+**Future:** Observer hook auto-runs `/self-eval` on SessionEnd.
 
 ## Common Mistakes
 

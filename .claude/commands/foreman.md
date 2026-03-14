@@ -142,13 +142,19 @@ cat .foreman/sessions/<name>.md
 
 **2. Update status to `working`** in fleet.yaml.
 
-**3. Dispatch agent via Task tool:**
+**3. Resolve effort and turns** from routing matrix:
+- Look up agent's role in `config/routing-matrix.yaml` → get model, effort, turns range
+- Score task complexity: count files in scope, check for security/migration keywords, check retry state
+- Map score to effort: ≤0 → low (min turns) | 1-2 → medium (default turns) | ≥3 → high (max turns)
+- Cap by session `/effort` setting
+
+**4. Dispatch agent via Task tool:**
 
 ```
 Task(
   subagent_type="<agent_type>",
   model="<model>",
-  max_turns=<from routing-matrix role>,
+  max_turns=<resolved from effort + turns range>,
   description="Foreman: <name> — <assignment>",
   prompt="
     You are a Foreman sub-assistant. You maintain persistent context across dispatches.

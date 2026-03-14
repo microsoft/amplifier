@@ -85,9 +85,13 @@ Group failures by what's broken:
 
 Each domain is independent - fixing tool approval doesn't affect abort tests.
 
-### 2. Select Amplifier Specialist per Domain
+### 2. Select Amplifier Specialist and Resolve Effort
 
-Match each domain to the right agent from the mapping table above. Each specialist brings domain expertise — a `bug-hunter` uses hypothesis-driven analysis, a `security-guardian` checks OWASP patterns, a `performance-optimizer` measures before fixing.
+Match each domain to the right agent from the mapping table above. Then resolve effort and turns from `config/routing-matrix.yaml`:
+- Look up agent's role → get model, effort tier, turns range `{min, default, max}`
+- Score task complexity: file count, keywords (security/migration → +1, rename/config → -1), retry state
+- Map score to effort: ≤0 → low (min turns) | 1-2 → medium (default turns) | ≥3 → high (max turns)
+- Cap by session `/effort` setting
 
 ### 3. Announce and Dispatch in Parallel
 
