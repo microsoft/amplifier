@@ -1,3 +1,7 @@
+---
+description: "Test a web application UI: discover app, launch browser, run interactive tests, report findings."
+---
+
 ## Usage
 
 `/test-webapp-ui <url_or_description> [test-focus]`
