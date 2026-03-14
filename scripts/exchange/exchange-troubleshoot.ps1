@@ -2,8 +2,8 @@ param(
     [Parameter(Mandatory=$true)]
     [ValidateSet("mail-flow","replication","content-index","database","certificate","performance")]
     [string]$Symptom,
-    [string]$Server = "EXCHANGELAB.lab.ergonet.pl",
-    [string]$Username = "ERGOLAB\Administrator",
+    [string]$Server = "EXCHANGELAB",
+    [string]$Auth = "Kerberos",
     [int]$EventCount = 20
 )
 
@@ -12,14 +12,11 @@ param(
 # Returns structured data for agent analysis
 
 $ErrorActionPreference = "SilentlyContinue"
-$secPass = ConvertTo-SecureString "Exchange@Lab2026" -AsPlainText -Force
-$cred = New-Object System.Management.Automation.PSCredential($Username, $secPass)
 
 try {
     $session = New-PSSession -ConfigurationName Microsoft.Exchange `
         -ConnectionUri "http://$Server/PowerShell/" `
-        -Authentication Credssp `
-        -Credential $cred `
+        -Authentication $Auth `
         -ErrorAction Stop
 } catch {
     Write-Output "SECTION|CONNECTION|FAIL|$($_.Exception.Message)"

@@ -1,32 +1,29 @@
 param(
     [Parameter(Mandatory=$true)]
     [string]$TargetServer,
-    [string]$ExchangeServer = "EXCHANGELAB.lab.ergonet.pl",
-    [string]$Username = "ERGOLAB\Administrator"
+    [string]$ExchangeServer = "EXCHANGELAB",
+    [string]$Auth = "Kerberos"
 )
 
 # Enter Exchange Maintenance Mode — 6-step procedure
 # Usage: .\exchange-maintenance-on.ps1 -TargetServer "EXCHANGELAB"
 
 $ErrorActionPreference = "Stop"
-$secPass = ConvertTo-SecureString "Exchange@Lab2026" -AsPlainText -Force
-$cred = New-Object System.Management.Automation.PSCredential($Username, $secPass)
 
 # Connect to a server that is NOT the target (so we keep our session alive)
-$connectTo = if ($TargetServer -match "EXCHANGELAB2") { "EXCHANGELAB.lab.ergonet.pl" } else { "EXCHANGELAB2.lab.ergonet.pl" }
+$connectTo = if ($TargetServer -match "EXCHANGELAB2") { "EXCHANGELAB" } else { "EXCHANGELAB2" }
 
 try {
     $session = New-PSSession -ConfigurationName Microsoft.Exchange `
         -ConnectionUri "http://$connectTo/PowerShell/" `
-        -Authentication Credssp `
-        -Credential $cred `
+        -Authentication $Auth `
         -ErrorAction Stop
 } catch {
     Write-Output "PHASE|CONNECTION|FAIL|$($_.Exception.Message)"
     exit 1
 }
 
-$fqdn = "$TargetServer.lab.ergonet.pl"
+$fqdn = "$TargetServer"
 
 # Step 1: Drain transport queues
 Write-Output "PHASE|STEP1|START|Draining transport queues on $TargetServer"

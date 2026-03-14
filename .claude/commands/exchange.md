@@ -62,14 +62,16 @@ Three tiers for Exchange cmdlet reference:
 ### Quick Health (default)
 
 ```bash
-powershell -File "C:/claude/amplifier/scripts/exchange/exchange-health-quick.ps1"
+C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -File "C:/claude/amplifier/scripts/exchange/exchange-health-quick.ps1"
 ```
 
 ### Full Health
 
 ```bash
-powershell -File "C:/claude/amplifier/scripts/exchange/exchange-health.ps1"
+C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -File "C:/claude/amplifier/scripts/exchange/exchange-health.ps1"
 ```
+
+**Note:** Exchange Management Shell requires **Windows PowerShell 5.1** (not pwsh 7). Always use the full path `C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe`. Default auth is Kerberos (implicit credentials). For DAG cross-node operations requiring double-hop, pass `-Auth Credssp`.
 
 ### Present Results
 

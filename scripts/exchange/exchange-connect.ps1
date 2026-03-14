@@ -1,6 +1,6 @@
 param(
-    [string]$Server = "EXCHANGELAB.lab.ergonet.pl",
-    [string]$Username = "ERGOLAB\Administrator",
+    [string]$Server = "EXCHANGELAB",
+    [string]$Auth = "Kerberos",
     [string]$PasswordFile = "C:\claude\amplifier\scripts\exchange\.cred"
 )
 
@@ -12,19 +12,15 @@ $ErrorActionPreference = "Stop"
 
 # Build credential
 if (Test-Path $PasswordFile) {
-    $secPass = Get-Content $PasswordFile | ConvertTo-SecureString
 } else {
     # Fallback: prompt or use default lab password
-    $secPass = ConvertTo-SecureString "Exchange@Lab2026" -AsPlainText -Force
 }
-$cred = New-Object System.Management.Automation.PSCredential($Username, $secPass)
 
 # Connect via CredSSP (required for double-hop: DEV → Exchange → AD)
 try {
     $session = New-PSSession -ConfigurationName Microsoft.Exchange `
         -ConnectionUri "http://$Server/PowerShell/" `
-        -Authentication Credssp `
-        -Credential $cred `
+        -Authentication $Auth `
         -ErrorAction Stop
 
     Write-Output "CONNECTED|$Server|$($session.Id)"

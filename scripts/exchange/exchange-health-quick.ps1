@@ -1,23 +1,21 @@
 param(
-    [string]$Server = "EXCHANGELAB.lab.ergonet.pl",
-    [string]$Username = "ERGOLAB\Administrator"
+    [string]$Server = "EXCHANGELAB",
+    [string]$Auth = "Kerberos"
 )
 
 # Exchange Quick Health Check — 4 fast, non-disruptive checks
 # Returns pipe-delimited results: CHECK|STATUS|DETAILS
+# Auth: Kerberos (implicit, default) or Credssp (for double-hop scenarios)
 
 $ErrorActionPreference = "SilentlyContinue"
-$secPass = ConvertTo-SecureString "Exchange@Lab2026" -AsPlainText -Force
-$cred = New-Object System.Management.Automation.PSCredential($Username, $secPass)
 
 try {
     $session = New-PSSession -ConfigurationName Microsoft.Exchange `
         -ConnectionUri "http://$Server/PowerShell/" `
-        -Authentication Credssp `
-        -Credential $cred `
+        -Authentication $Auth `
         -ErrorAction Stop
 } catch {
-    Write-Output "CONNECTION|FAIL|Cannot connect to $Server - $($_.Exception.Message)"
+    Write-Output "CONNECTION|FAIL|Cannot connect to $Server ($Auth) - $($_.Exception.Message)"
     exit 1
 }
 
