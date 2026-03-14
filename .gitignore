@@ -112,3 +112,9 @@ Przemekopencode-observability/
 # Foreman fleet state (runtime, per-session)
 .foreman/
 .foreman-archive-*/
+
+# WiX Toolset cache
+.wix/
+
+# Scheduled tasks lock
+.claude/scheduled_tasks.lock
