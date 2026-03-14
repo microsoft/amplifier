@@ -46,7 +46,7 @@ agents:
   agentic-search: scout
   zen-architect: architect
   modular-builder: implement
-  bug-hunter: research          # needs investigation before fixing
+  bug-hunter: implement          # fixes code; investigation uses agentic-search
   test-coverage: review
   security-guardian: security
   post-task-cleanup: fast
@@ -71,7 +71,7 @@ agents:
   voice-strategist: fast
 
   # Knowledge & Analysis
-  content-researcher: scout
+  content-researcher: research
   analysis-engine: research
   concept-extractor: scout
   insight-synthesizer: research

@@ -101,7 +101,7 @@ Used by superpowers skills for two-stage review:
 | `responsive-strategist` | Balanced | `sonnet` | Pro |
 | `design-system-architect` | Balanced | `sonnet` | Pro |
 | `voice-strategist` | Fast | `haiku` | Flash |
-| `content-researcher` | Fast | `haiku` | Flash |
+| `content-researcher` | Balanced | `sonnet` | Pro |
 | `analysis-engine` | Balanced | `sonnet` | Pro |
 | `concept-extractor` | Fast | `haiku` | Flash |
 | `insight-synthesizer` | Balanced | `sonnet` | Pro |
