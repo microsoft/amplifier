@@ -301,6 +301,7 @@ steps:
     output: "scope_check"
     parse_json: true
     timeout: 60
+    on_error: "fail"
 
   # ==========================================================================
   # Step 1b: Interpret activity scope (LLM - only for complex cases)
@@ -348,6 +349,7 @@ steps:
     output: "user_info_llm"
     parse_json: true
     timeout: 60
+    on_error: "fail"
 
   # ==========================================================================
   # Step 1c: Use precomputed scope (only runs if LLM was skipped)
@@ -360,6 +362,7 @@ steps:
     output: "user_info"
     parse_json: true
     timeout: 10
+    on_error: "fail"
 
   # ==========================================================================
   # Step 1d: Use LLM scope (only runs if LLM step ran)
@@ -374,6 +377,7 @@ steps:
     output: "user_info"
     parse_json: true
     timeout: 10
+    on_error: "fail"
 
   # ==========================================================================
   # Step 2: Parse date range (LLM for natural language flexibility)
@@ -445,6 +449,7 @@ steps:
     output: "parsed_date"
     parse_json: true
     timeout: 60
+    on_error: "fail"
 
   # ==========================================================================
   # Step 3: Fetch MODULES.md
@@ -469,6 +474,7 @@ steps:
       fi
     output: "modules_content"
     timeout: 120
+    on_error: "fail"
 
   # ==========================================================================
   # Step 4: Extract repos using grep (reliable extraction)
@@ -588,6 +594,7 @@ steps:
       }' filtered-repos.json
     output: "filtered_repos"
     timeout: 60
+    on_error: "fail"
 
   # ==========================================================================
   # Step 6: Quick activity check (BATCH - bash loop with rate limiting)
@@ -723,6 +730,7 @@ steps:
       echo "]"
     output: "activity_checks"
     timeout: 1800
+    on_error: "continue"
 
   # ==========================================================================
   # Step 7: Filter to repos with activity
@@ -748,6 +756,7 @@ steps:
       cat active-repos.json
     output: "active_repos"
     timeout: 60
+    on_error: "fail"
 
   # ==========================================================================
   # Step 8: Show discovery summary (Bash for speed and determinism)
@@ -991,6 +1000,7 @@ steps:
     output: "analysis_validation"
     parse_json: true
     timeout: 60
+    on_error: "continue"
 
   # ==========================================================================
   # Step 9e: Final validation (copy analysis_validation to final_validation)
@@ -1027,6 +1037,7 @@ steps:
     output: "final_validation"
     parse_json: true
     timeout: 60
+    on_error: "continue"
 
   # ==========================================================================
   # Step 10a: Calculate report statistics (DETERMINISTIC)
@@ -1097,6 +1108,7 @@ steps:
     output: "report_stats"
     parse_json: true
     timeout: 60
+    on_error: "fail"
 
   # ==========================================================================
   # Step 10b: Write executive summary and highlights (QUALITATIVE)
@@ -1167,6 +1179,7 @@ steps:
     output: "executive_summary"
     parse_json: true
     timeout: 300
+    on_error: "fail"
 
   # ==========================================================================
   # Step 10c: Write per-repo sections and cross-cutting observations
@@ -1236,6 +1249,7 @@ steps:
     output: "repo_sections"
     parse_json: true
     timeout: 600
+    on_error: "fail"
 
   # ==========================================================================
   # Step 10d: Assemble final report (DETERMINISTIC)
@@ -1417,6 +1431,7 @@ steps:
     output: "final_report"
     parse_json: true
     timeout: 120
+    on_error: "fail"
 
   # ==========================================================================
   # Step 10e: Verify report was written

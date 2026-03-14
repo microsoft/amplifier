@@ -188,6 +188,7 @@ steps:
     output: "date_check"
     parse_json: true
     timeout: 10
+    on_error: "fail"
 
   # Step 2b: LLM date parsing (only if precomputed not available)
   # Model: haiku - simple NL→ISO date transformation, no deep reasoning needed
@@ -234,6 +235,7 @@ steps:
     output: "parsed_date_llm"
     parse_json: true
     timeout: 60
+    on_error: "fail"
 
   # Step 2c: Use precomputed date (skips if LLM was needed)
   - id: "use-precomputed-date"
@@ -244,6 +246,7 @@ steps:
     output: "parsed_date"
     parse_json: true
     timeout: 10
+    on_error: "fail"
 
   # Step 2d: Use LLM-parsed date (only runs if LLM step ran)
   - id: "use-llm-date"
@@ -254,6 +257,7 @@ steps:
     output: "parsed_date"
     parse_json: true
     timeout: 10
+    on_error: "fail"
 
   # ==========================================================================
   # Step 3: Fetch commits with token-based chunking

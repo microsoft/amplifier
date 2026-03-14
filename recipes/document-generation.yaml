@@ -1433,6 +1433,7 @@ stages:
         output: "di_v0_voice_feedback"
         parse_json: true
         timeout: 300
+        on_error: "continue"
 
       - id: "di-v0-structure-feedback"
         agent: "design-intelligence:layout-architect"
@@ -1497,6 +1498,7 @@ stages:
         output: "di_v0_structure_feedback"
         parse_json: true
         timeout: 300
+        on_error: "continue"
 
       - id: "save-di-v0-feedback"
         type: "bash"
@@ -1533,6 +1535,7 @@ stages:
           
           echo "Design Intelligence v0 feedback saved to {{working_dir}}/state/di_v0_feedback.json"
         output: "di_v0_feedback_saved"
+        on_error: "continue"
 
       # ========================================================================
       # END DESIGN INTELLIGENCE FEEDBACK ON v0
@@ -1677,6 +1680,7 @@ stages:
           
           echo "Saved v1_structural (passed: $passed_json)"
         output: "v1_saved"
+        on_error: "fail"
 
   # ==========================================================================
   # STAGE 4: VALIDATION - CONTENT (Parallel: accuracy, completeness, instructions)
@@ -2069,6 +2073,7 @@ stages:
           
           echo "Saved v2_content (all_passed: $passed_json, issues: {{aggregated_content_issues.total_issue_count}})"
         output: "v2_saved"
+        on_error: "fail"
 
   # ==========================================================================
   # STAGE 5: VALIDATION - QUALITY (Parallel: depth, coherence, crossrefs, consistency, tone)
@@ -2476,6 +2481,7 @@ stages:
           
           echo "Saved v3_quality (all_passed: $passed_json, issues: {{aggregated_quality_issues.total_issue_count}})"
         output: "v3_saved"
+        on_error: "fail"
 
   # ==========================================================================
   # STAGE 6: FINALIZATION
@@ -2608,6 +2614,7 @@ stages:
         output: "di_voice_feedback"
         parse_json: true
         timeout: 300
+        on_error: "continue"
 
       - id: "di-structure-feedback"
         agent: "design-intelligence:layout-architect"
@@ -2671,6 +2678,7 @@ stages:
         output: "di_structure_feedback"
         parse_json: true
         timeout: 300
+        on_error: "continue"
 
       - id: "di-outline-feedback"
         agent: "design-intelligence:layout-architect"
@@ -2727,6 +2735,7 @@ stages:
         output: "di_outline_feedback"
         parse_json: true
         timeout: 300
+        on_error: "continue"
 
       - id: "save-di-feedback"
         type: "bash"
@@ -2770,6 +2779,7 @@ stages:
           
           echo "Design Intelligence feedback saved to {{working_dir}}/state/di_feedback.json"
         output: "di_feedback_saved"
+        on_error: "continue"
 
       # ========================================================================
       # END DESIGN INTELLIGENCE FEEDBACK
@@ -2806,6 +2816,7 @@ stages:
           
           echo "Final document saved to {{final_output_path}}"
         output: "final_doc_saved"
+        on_error: "fail"
 
       - id: "save-v-final-version"
         type: "bash"
@@ -2952,6 +2963,7 @@ stages:
         output: "report_result"
         parse_json: true
         timeout: 300
+        on_error: "continue"
 
       - id: "print-completion-summary"
         type: "bash"
