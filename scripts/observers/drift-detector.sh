@@ -14,7 +14,7 @@ if ! command -v jq &>/dev/null; then exit 0; fi
 cat > /dev/null
 
 OBS_FILE="/tmp/amplifier-observations.jsonl"
-REPO_ROOT="${REPO_ROOT:-C:/claude/amplifier}"
+REPO_ROOT="${REPO_ROOT:-/opt/amplifier}"
 
 cd "$REPO_ROOT" 2>/dev/null || exit 0
 
