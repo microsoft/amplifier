@@ -358,15 +358,8 @@ Task(subagent_type="agentic-search", model="sonnet", max_turns=20, description="
      ```bash
      grep -i '{keyword}' C:/claude/fusecp-enterprise/tags | head -20
      ```
-  3. Area-to-code mapping (search in these locations based on Area):
-     - Portal → src/FuseCP.Portal/Components/Pages/ (Blazor .razor files)
-     - Exchange → src/FuseCP.Providers.Exchange/ and src/FuseCP.EnterpriseServer/Endpoints/ExchangeEndpoints.cs
-     - AD → src/FuseCP.Providers.AD/ and src/FuseCP.EnterpriseServer/Endpoints/ADEndpoints.cs
-     - DNS → src/FuseCP.Providers.DNS/ and src/FuseCP.EnterpriseServer/Endpoints/DNSEndpoints.cs
-     - HyperV → src/FuseCP.Providers.HyperV/ and src/FuseCP.EnterpriseServer/Endpoints/HyperVEndpoints.cs
-     - API → src/FuseCP.EnterpriseServer/Endpoints/
-  4. Trace the FULL code path top to bottom:
-     - Blazor page (.razor) → Portal service (Services/*.cs) → API endpoint (Endpoints/*.cs) → Repository (Database/Repositories/*.cs) → Provider (Providers.*/)
+  3. Read C:\claude\fusecp-enterprise\ARCHITECTURE.md for area-to-code mapping and trace pattern
+  4. Trace the FULL code path using the Request Flow from ARCHITECTURE.md (Portal → Services → API → Repository → Provider)
   5. Look specifically for what the previous investigation missed
   6. Consider: is this a symptom of a deeper architectural issue?
 
@@ -507,21 +500,10 @@ Task(subagent_type="agentic-search", model=<from routing-matrix: scout role>, ma
   Use ctags for fast symbol lookup:
     grep -i '{keyword}' C:/claude/fusecp-enterprise/tags | head -20
 
-  Area-to-code mapping (search in these locations based on Area):
-  - Portal → src/FuseCP.Portal/Components/Pages/ (Blazor .razor files)
-  - Exchange → src/FuseCP.Providers.Exchange/ and src/FuseCP.EnterpriseServer/Endpoints/ExchangeEndpoints.cs
-  - AD → src/FuseCP.Providers.AD/ and src/FuseCP.EnterpriseServer/Endpoints/ADEndpoints.cs
-  - DNS → src/FuseCP.Providers.DNS/ and src/FuseCP.EnterpriseServer/Endpoints/DNSEndpoints.cs
-  - HyperV → src/FuseCP.Providers.HyperV/ and src/FuseCP.EnterpriseServer/Endpoints/HyperVEndpoints.cs
-  - API → src/FuseCP.EnterpriseServer/Endpoints/
+  Read C:\claude\fusecp-enterprise\ARCHITECTURE.md for the area-to-code mapping table and request flow trace pattern. Use the File Patterns section to locate files by Area.
 
   ## Phase 2: Targeted Search (max 8 file reads)
-  Architecture layers (trace top to bottom):
-  1. Blazor page (.razor) — UI component with @onclick handlers
-  2. Portal service (Services/*.cs) — HTTP client calling API
-  3. API endpoint (Endpoints/*.cs) — Minimal API route handler
-  4. Repository (Database/Repositories/*.cs) — SQL/Dapper data access
-  5. Provider (Providers.*/) — External system integration (Exchange/AD/DNS/HyperV)
+  Follow the Request Flow from ARCHITECTURE.md (Portal → Services → API → Repository → Provider).
 
   Read the identified files and trace the bug through the layers.
 
