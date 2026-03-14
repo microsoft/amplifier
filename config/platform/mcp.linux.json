@@ -30,6 +30,11 @@
       "env": {
         "AUTOCONTEXT_AGENT_PROVIDER": "anthropic"
       }
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["chrome-devtools-mcp@latest", "--acceptInsecureCerts", "--headless"],
+      "disabled": true
     }
   }
 }

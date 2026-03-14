@@ -42,7 +42,7 @@ fi
 
 if [[ ! -f "$SETTINGS_OUT" ]] || [[ "$FORCE" == true ]] || [[ "${FORCE_SETTINGS:-false}" == true ]]; then
     # Determine enabled MCP servers per platform
-    ENABLED_MCP='["playwright", "context7", "deepwiki", "repomix", "gitea", "autocontext"]'
+    ENABLED_MCP='["playwright", "context7", "deepwiki", "repomix", "gitea", "autocontext", "chrome-devtools"]'
 
     # Use AMPLIFIER_HOME with forward slashes (Git Bash on Windows uses forward slashes)
     AMP_PATH="$AMPLIFIER_HOME"
