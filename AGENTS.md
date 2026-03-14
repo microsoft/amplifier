@@ -161,6 +161,22 @@ When appropriate for long-running batch processes with multiple sub-processors:
 - Support selective retry — re-run only failed processors, not entire items
 - Report comprehensively — show success rates per processor and items needing attention
 
+## AutoContext Quality Gates
+
+When completing significant work, use AutoContext to evaluate and improve output quality:
+
+**After implementation tasks:** Run `/evaluate implementation` on the output. If score < 80, run `/improve` before presenting to user.
+
+**After bug fixes:** `/fix-bugs` Phase 6c auto-evaluates fix quality. Scores and effort metadata feed the adaptive loop.
+
+**After brainstorm/planning:** Run `/self-eval brainstorm` or `/self-eval create-plan` to score design quality.
+
+**Weekly maintenance:** Run `/self-improve` to read accumulated evidence and propose instruction updates to CLAUDE.md, AGENTS.md, and routing-matrix.yaml.
+
+**Before fixing recurring problems:** Check `autocontext_skill_discover(query="<problem area>")` for learned strategies. Don't repeat past mistakes.
+
+**Knowledge bridge:** AutoContext exports skills to `.claude/skills/`. The recall indexer picks them up on session end. Use `/recall` to find past learnings.
+
 ## Decision Tracking System
 
 Decisions are documented in `ai_working/decisions/`. Consult before proposing major changes or questioning existing patterns. Create new records for architectural choices, approach selection, pattern adoption, or reversals. Format: see `ai_working/decisions/README.md`.

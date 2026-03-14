@@ -1,6 +1,6 @@
 # CLAUDE.md — Amplifier
 
-Amplifier is an AI-native development platform with 30+ specialized agents and 15+ slash commands.
+Amplifier is a self-improving AI development platform with 36 specialized agents, 31 slash commands, effort steering, and AutoContext-powered quality evaluation.
 
 ## Identity and Environment
 
@@ -44,6 +44,26 @@ Before asking the user for context, run a `/recall` or `/docs search` query to c
 
 **Priority:** Use `/recall` for session history lookups. Episodic memory (MCP plugin) remains available as a fallback but `/recall` is faster and more comprehensive.
 
+## AutoContext — Quality & Self-Improvement
+
+AutoContext MCP server (`mcp__autocontext__*`) provides evaluation, improvement, and strategy evolution. It bridges with `/recall` via `.claude/skills/` indexing.
+
+| Command | When to use |
+|---------|-------------|
+| `/evaluate <task>` | Score any agent output against a rubric (code-review, implementation, spec-writing) |
+| `/improve <task>` | Iteratively refine output until quality threshold met |
+| `/solve <description>` | Build reusable strategy for recurring problems |
+| `/self-eval <command>` | Score Amplifier's own command outputs for continuous improvement |
+| `/self-improve` | Read accumulated evidence, propose CLAUDE.md/AGENTS.md edits |
+
+**Integration points:**
+- `/fix-bugs` checks `autocontext_skill_discover` before fixing (Phase 6b) and evaluates fix quality after deploy (Phase 6c)
+- `/self-eval` records effort metadata to AutoContext for adaptive effort steering
+- `/self-improve` reads all sources and proposes evidence-based instruction updates
+- Recall indexer indexes `.claude/skills/` so AutoContext learnings are findable via `/recall`
+
+**Self-improvement flywheel:** Commands run → `/self-eval` scores → AutoContext accumulates → `/self-improve` proposes edits → instructions evolve → better outputs → higher scores.
+
 ## LLM-Friendly Documentation (llms.txt)
 
 Each project provides two files at the repo root for LLM consumption:
@@ -73,3 +93,6 @@ Amplifier provides native commands in `.claude/commands/` invoked via `/command-
 | `/create-plan` | Structured implementation plan with agent assignments |
 | `/subagent-dev` | Execute plan tasks via specialized agents with two-stage review |
 | `/verify` | Evidence-based verification before claiming done |
+| `/evaluate` | Score agent output against quality rubrics (AutoContext) |
+| `/self-eval` | Evaluate Amplifier command quality for self-improvement |
+| `/self-improve` | Propose evidence-based updates to CLAUDE.md/AGENTS.md |
