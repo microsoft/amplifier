@@ -8,6 +8,22 @@ Amplifier is a self-improving AI development platform with 36 specialized agents
 - Platform: Ubuntu Linux (primary), Windows Server 2025 (secondary)
 - Safety rules: Linux: `scripts/guard-paths-linux.sh` | Windows: `C:\claude\CLAUDE.md`
 - Python: UV-managed (3.13), Node.js v24
+- Platform switching: `bash scripts/setup-platform-config.sh --force` or `/platform setup`
+
+### Linux Configuration (172.31.250.2)
+
+| Component | Path / Detail |
+|-----------|--------------|
+| Amplifier | `/opt/amplifier` |
+| AutoContext | `/opt/autocontext/autocontext` (global MCP via `~/.claude.json`) |
+| uv | `/home/claude/.local/bin/uv` (source `~/.local/bin/env` for shell) |
+| Global MCP | `~/.claude.json`: autocontext, gitea, chrome-devtools, obsidian, cipher |
+| Project MCP | `.mcp.json`: playwright, context7, deepwiki, repomix, autocontext |
+| Claude Code | v2.1.76+, `/usr/local/bin/claude` |
+| Gitea tools | `/usr/local/bin/gitea-mcp`, `/usr/local/bin/tea` |
+| Chrome | Headless via Xvfb on DISPLAY=:2 |
+
+**Key difference from Windows:** Global MCP servers registered via `claude mcp add -s user` (writes to `~/.claude.json`), not `~/.claude/mcp.json`. Use absolute paths for `uv` since `~/.local/bin` is not in default PATH.
 
 ## @imports
 
@@ -74,4 +90,13 @@ Amplifier provides native commands in `.claude/commands/` invoked via `/command-
 | `/self-eval` | Evaluate Amplifier command quality for self-improvement |
 | `/self-improve` | Propose evidence-based updates to CLAUDE.md/AGENTS.md |
 
-All 31 commands listed in system prompt skills section. Check before starting work.
+All commands listed in system prompt skills section. Check before starting work.
+
+**FuseCP-specific commands** (run in `C:\claude\fusecp-enterprise` session, NOT in Amplifier):
+
+| Command | Purpose |
+|---------|---------|
+| `/fix-bugs` | Autonomous bug-fixing pipeline — fetch, triage, investigate, fix, deploy |
+| `/test-verified` | Backend-Verified E2E auto-fix — run suite, classify failures, apply patterns, dispatch agents |
+
+These commands reference FuseCP project structure (`ARCHITECTURE.md`), bugfix scripts, and E2E test infrastructure. They are part of the Amplifier command catalog but execute against FuseCP code.
