@@ -20,11 +20,11 @@ if [[ ! -f "$MATRIX" ]]; then
     exit 1
 fi
 
-# 2. Extract agents from routing matrix (lines under "agents:" with "name: role" format)
-MATRIX_AGENTS=$(grep -E "^  [a-z]" "$MATRIX" | sed 's/:.*//' | tr -d ' ' | sort)
+# 2. Extract agents from routing matrix (only lines after "agents:" section, skip role definitions)
+MATRIX_AGENTS=$(sed -n '/^agents:/,$ p' "$MATRIX" | grep -E "^  [a-z]" | sed 's/:.*//' | tr -d ' ' | sort)
 
-# 3. Extract agents from catalog (backtick-wrapped names in pipe-delimited tables, first column only)
-CATALOG_AGENTS=$(grep -E '^\| `[a-z]' "$CATALOG" | sed 's/.*`\([a-z][a-z_-]*\)`.*/\1/' | sed 's/ .*//' | sort -u)
+# 3. Extract agents from catalog (backtick-wrapped names from agent tables, skip Model Tier Mapping)
+CATALOG_AGENTS=$(sed '/## Model Tier Mapping/,$ d' "$CATALOG" | grep -E '^\| `[a-z]' | sed 's/.*`\([a-z][a-z_-]*\)`.*/\1/' | sed 's/ .*//' | sort -u)
 
 # 4. Extract agent definition files
 if [[ -d "$AGENTS_DIR" ]]; then

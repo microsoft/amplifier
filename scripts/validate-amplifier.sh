@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # validate-amplifier.sh — Amplifier health check
 # Validates commands, hooks, agents, and config integrity.
+# No -e: arithmetic ((PASS++)) returns exit code 1 when PASS was 0, which would abort
 set -uo pipefail
 
 REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
@@ -39,18 +40,19 @@ for cmd in .claude/commands/*.md; do
 done
 echo ""
 
-# 2. Hook scripts exist
+# 2. Hook scripts exist (use process substitution to avoid subshell counter loss)
 echo "--- Hook Scripts ---"
-HOOK_SCRIPTS=$(grep -oE '"command": "[^"]*"' .claude/settings.json | sed 's/"command": "//;s/"$//' | grep -v "uv run\|callback" | sed 's/.*&& //')
-echo "$HOOK_SCRIPTS" | while read -r script; do
+while read -r script; do
     # Extract just the script path (after bash or cd commands)
-    script_path=$(echo "$script" | sed 's/^bash //' | sed 's/^cd .* && //')
+    script_path=$(echo "$script" | sed 's/^bash //' | sed "s/^bash -c '.*//")
+    # Skip empty lines or inline bash -c commands
+    [[ -z "$script_path" || "$script_path" == *"-c "* ]] && continue
     if [[ -f "$script_path" ]]; then
         check "$(basename "$script_path"): exists" "pass"
     else
         check "$(basename "$script_path"): NOT FOUND ($script_path)" "fail"
     fi
-done
+done < <(grep -oE '"command": "[^"]*"' .claude/settings.json | sed 's/"command": "//;s/"$//' | grep -v "uv run\|callback" | sed 's/.*&& //')
 echo ""
 
 # 3. Routing matrix
