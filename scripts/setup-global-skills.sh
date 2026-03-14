@@ -79,6 +79,11 @@ for src in "$REPO_ROOT/.claude/agents/"*.md; do
     echo "  $(basename "$src")"
 done
 
+# Generate platform-specific configs (.claude/settings.json + .mcp.json)
+echo ""
+echo "Platform configs:"
+bash "$REPO_ROOT/scripts/setup-platform-config.sh" --force 2>&1 | sed 's/^/  /'
+
 echo ""
 echo "=== Done ==="
 echo "Linked: $LINKED | Skipped (already correct): $SKIPPED | Backed up: $BACKED_UP"
