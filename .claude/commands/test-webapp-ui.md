@@ -96,6 +96,16 @@ Where:
 - **Interaction**: Hover states, transitions, user feedback
 - **Accessibility**: Keyboard navigation, contrast ratios
 
+## Chrome DevTools MCP Integration (Chrome 146+)
+
+When `chrome-devtools` MCP server is enabled, additional testing capabilities are available:
+
+- **Lighthouse audit**: Run `mcp__chrome-devtools__lighthouse(url=<url>)` for performance/a11y/SEO scores
+- **Accessibility snapshot**: Run `mcp__chrome-devtools__accessibility_snapshot()` for comprehensive a11y audit
+- **Screencast recording** (experimental): Capture video of test runs via CDP screencast (requires ffmpeg)
+
+Use these to supplement Playwright-based interaction testing with deeper quality metrics.
+
 ## Common App Types
 
 - **Static sites**: Serve any index.html with `python3 -m http.server`

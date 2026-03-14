@@ -45,6 +45,9 @@ We maintain our own `.claude/agents/` and `.claude/commands/` with heavy customi
 | 2026-03-13 | ntfy.sh notification hook | `scripts/notify.sh` — push notifications when long-running agents complete. Inspired by upstream `amplifier-bundle-notify`. |
 | 2026-03-13 | `/browser-audit` command | Automated web page audit with screenshots, DOM extraction, console/network checks. Inspired by upstream `amplifier-bundle-browser-tester`. |
 | 2026-03-13 | Upstream bundle catalog review | Reviewed 20+ bundles in MODULES.md. Key additions to watch list: foreman, observers, recipes, stories. |
+| 2026-03-14 | Chrome DevTools MCP Server v0.20.0 | `chrome-devtools-mcp` registered in platform configs. Provides Lighthouse audits, a11y checks, performance profiling via MCP. Disabled by default (opt-in). |
+| 2026-03-14 | AutoContext MCP integration | `autocontext` MCP server registered. 4 commands: `/evaluate`, `/improve`, `/solve`, `/self-eval`. Self-improvement flywheel. |
+| 2026-03-14 | Effort steering | Three-layer effort control (session/role/task) with elastic turn budgets in `routing-matrix.yaml`. |
 | 2026-03-02 | amplifier-core from PyPI | Removed git source, now `amplifier-core==1.0.0` from PyPI. Faster installs. |
 
 ### What we skipped (with rationale)
