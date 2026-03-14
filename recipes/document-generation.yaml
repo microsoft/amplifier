@@ -1788,7 +1788,7 @@ stages:
             "issue_count": <number>,
             "passed": true/false
           }
-        output: "check_result"
+        output: "content_check_result"
         parse_json: true
         timeout: 600
         collect: "content_check_results"
@@ -2195,7 +2195,7 @@ stages:
             "issue_count": <number>,
             "passed": true/false
           }
-        output: "check_result"
+        output: "quality_check_result"
         parse_json: true
         timeout: 600
         collect: "quality_check_results"
