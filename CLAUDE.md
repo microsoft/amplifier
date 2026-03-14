@@ -1,6 +1,6 @@
 # CLAUDE.md — Amplifier
 
-Amplifier is an AI-native development platform with 30+ specialized agents and 15+ slash commands.
+Amplifier is a self-improving AI development platform with 36 specialized agents, 31 slash commands, effort steering, and AutoContext-powered quality evaluation.
 
 ## Identity and Environment
 
@@ -23,7 +23,7 @@ Philosophy and design files are on-demand (not always-loaded). Retrieve via `/do
 
 1. **Plan before implementing.** Use TodoWrite for any task with more than one step. Ultra-think when populating the list. Start new work with `/brainstorm`, debug with `/debug`, build test-first with `/tdd`.
 
-2. **Delegate to subagents — but not for small tasks.** With 1M context, prefer inline execution over subagent delegation for tasks under 10 tool calls. Reserve subagents for truly parallel work or tasks needing isolation. Check `.claude/AGENTS_CATALOG.md` and `config/routing-matrix.yaml` for agent-to-model mapping. If a needed specialist doesn't exist, stop and ask the user to create it via the `/agents` command.
+2. **Delegate to the right model, not the biggest.** When routing-matrix says haiku or sonnet, dispatch as a subagent — cheaper without sacrificing quality. Only use Opus inline for deep reasoning. See `AGENTS.md` Sub-Agent Optimization Strategy for the dispatch table.
 
 3. **Effort steering is automatic.** The routing matrix defines effort tiers (low/medium/high) and elastic turn ranges per role. When dispatching agents, pick turns from the range based on task complexity. The user's `/effort` setting is the ceiling. See `AGENTS.md` Turn Budgets for the resolution formula.
 
@@ -44,6 +44,10 @@ Before asking the user for context, run a `/recall` or `/docs search` query to c
 
 **Priority:** Use `/recall` for session history lookups. Episodic memory (MCP plugin) remains available as a fallback but `/recall` is faster and more comprehensive.
 
+## Self-Improvement Flywheel
+
+Commands run → `/self-eval` scores (with effort metadata) → AutoContext accumulates patterns → `/self-improve` proposes instruction edits → CLAUDE.md/AGENTS.md evolve → better outputs → higher scores. See `AGENTS.md` AutoContext Quality Gates for practical guidance.
+
 ## LLM-Friendly Documentation (llms.txt)
 
 Each project provides two files at the repo root for LLM consumption:
@@ -53,14 +57,6 @@ Each project provides two files at the repo root for LLM consumption:
 
 Regenerate: `bash scripts/generate-llms.sh`. Update `llms.txt` manually when doc structure changes. Never hand-edit `llms-full.txt`. To add/remove docs, edit the `FILES` array in `scripts/generate-llms.sh`.
 
-## Context Strategy
-
-- Subagents fork context; use them to conserve the main session's window.
-- Research agents run in **read-only mode**: Glob, Grep, Read, LS only — no Edit, Write, or Bash.
-- Turn budgets are defined in `AGENTS.md` (Subagent Resilience Protocol section).
-- If a needed specialized agent does not exist, stop and ask the user to create it via the `/agents` command; provide a detailed description.
-- Code style guidance is on-demand: `/docs search code style` retrieves `docs/guides/code-style.md`.
-
 ## Amplifier Commands
 
 Amplifier provides native commands in `.claude/commands/` invoked via `/command-name`. Available commands are listed in the system prompt's skills section. Before starting work, check if an applicable command exists.
@@ -68,8 +64,14 @@ Amplifier provides native commands in `.claude/commands/` invoked via `/command-
 | Command | Purpose |
 |---------|---------|
 | `/brainstorm` | Start new work — explore intent, design, route to execution |
-| `/debug` | Hypothesis-driven root cause analysis |
-| `/tdd` | Test-driven development (red-green-refactor) |
 | `/create-plan` | Structured implementation plan with agent assignments |
 | `/subagent-dev` | Execute plan tasks via specialized agents with two-stage review |
+| `/debug` | Hypothesis-driven root cause analysis |
+| `/tdd` | Test-driven development (red-green-refactor) |
 | `/verify` | Evidence-based verification before claiming done |
+| `/evaluate` | Score output against quality rubrics (AutoContext) |
+| `/improve` | Iteratively refine output until threshold met |
+| `/self-eval` | Evaluate Amplifier command quality for self-improvement |
+| `/self-improve` | Propose evidence-based updates to CLAUDE.md/AGENTS.md |
+
+All 31 commands listed in system prompt skills section. Check before starting work.

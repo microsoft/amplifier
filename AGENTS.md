@@ -37,6 +37,17 @@ This file provides guidance to AI assistants when working with code in this repo
 
 ## Sub-Agent Optimization Strategy
 
+**Cost-effective model selection:** The session runs on Opus, but most tasks don't need Opus-level reasoning. Use the routing matrix to dispatch at the right tier:
+
+| Task type | Model | Dispatch as |
+|-----------|-------|-------------|
+| File searches, context gathering, cleanup | haiku | Subagent (always) |
+| Implementation, review, research | sonnet | Subagent (always) |
+| Architecture, security, complex debugging | opus | Inline or subagent |
+| Quick 1-2 line edits, config changes | opus (inline) | Inline (cheaper than subagent overhead) |
+
+**Rule of thumb:** If the routing matrix says haiku or sonnet for the agent's role, dispatch as a subagent — don't run it inline on Opus. The quality is the same and the cost is lower. Only use Opus inline for tasks that genuinely need deep reasoning.
+
 Always check `.claude/AGENTS_CATALOG.md` before starting. Proactively delegate to specialized agents. Propose new agents when a task lacks a specialist — agent creation is cheap and pays off immediately.
 
 ## Subagent Resilience Protocol
@@ -45,32 +56,13 @@ Subagents launched via the Task tool have their own context windows that can fil
 
 ### Turn Budgets (Elastic)
 
-Turn budgets are **elastic** — each role defines a range `{min, default, max}` in `config/routing-matrix.yaml`. The orchestrator picks within the range based on task complexity and the current `/effort` setting.
-
-| Role | Effort | Turns (min/default/max) | Examples |
-|------|--------|------------------------|----------|
-| scout | low | 8 / 12 / 20 | Haiku scouts, context gathering, file searches |
-| research | medium | 10 / 15 / 25 | Codebase exploration, documentation lookup |
-| review | medium | 10 / 15 / 25 | test-coverage, security-guardian, code review |
-| architect | high | 15 / 20 / 35 | zen-architect, design analysis |
-| implement | medium | 15 / 25 / 40 | modular-builder, file creation and editing |
-| security | high | 12 / 15 / 25 | security-guardian (audits, vulnerability assessment) |
-| fast | low | 5 / 10 / 15 | post-task-cleanup, copy editing |
-
-**Effort resolution (three layers):**
-1. **Session `/effort`** — user sets ceiling (low/medium/high/max)
-2. **Role effort** — default from routing-matrix (above table)
-3. **Task signals** — orchestrator adjusts based on file count, keywords, retry state
+Turn budgets are **elastic** — defined as `{min, default, max}` per role in `config/routing-matrix.yaml` (always-loaded via @import). The orchestrator picks within the range using effort steering:
 
 `resolved_effort = min(session_effort, max(role_effort, task_signals))`
 
-**Effort → turns mapping:**
-- `low` → use `min` turns
-- `medium` → use `default` turns
-- `high` → use `max` turns
-- `max` → use `max` turns + auto-resume up to 3 cycles (effectively unlimited)
+- `low` → `min` turns | `medium` → `default` | `high` → `max` | `max` → `max` + auto-resume (3 cycles)
 
-These values are tuned for **Opus 4.6 with 1M context**. With large context windows, prefer giving agents more room over decomposing into tiny tasks. If an agent consistently needs resume cycles, increase its budget. If it finishes well under budget, decrease it.
+Tuned for **Opus 4.6 with 1M context**. Prefer generous budgets over tiny task decomposition.
 
 ### Read-Only Research Constraint
 
@@ -150,6 +142,22 @@ When appropriate for long-running batch processes with multiple sub-processors:
 - Support selective retry — re-run only failed processors, not entire items
 - Report comprehensively — show success rates per processor and items needing attention
 
+## AutoContext Quality Gates
+
+When completing significant work, use AutoContext to evaluate and improve output quality:
+
+**After implementation tasks:** Run `/evaluate implementation` on the output. If score < 80, run `/improve` before presenting to user.
+
+**After bug fixes:** `/fix-bugs` Phase 6c auto-evaluates fix quality. Scores and effort metadata feed the adaptive loop.
+
+**After brainstorm/planning:** Run `/self-eval brainstorm` or `/self-eval create-plan` to score design quality.
+
+**Weekly maintenance:** Run `/self-improve` to read accumulated evidence and propose instruction updates to CLAUDE.md, AGENTS.md, and routing-matrix.yaml.
+
+**Before fixing recurring problems:** Check `autocontext_skill_discover(query="<problem area>")` for learned strategies. Don't repeat past mistakes.
+
+**Knowledge bridge:** AutoContext exports skills to `.claude/skills/`. The recall indexer picks them up on session end. Use `/recall` to find past learnings.
+
 ## Decision Tracking System
 
 Decisions are documented in `ai_working/decisions/`. Consult before proposing major changes or questioning existing patterns. Create new records for architectural choices, approach selection, pattern adoption, or reversals. Format: see `ai_working/decisions/README.md`.
@@ -160,7 +168,7 @@ Decisions CAN change, but should change with full understanding of why they were
 
 Every configuration setting should have exactly ONE authoritative location. All other uses reference or derive from that single source.
 
-**Hierarchy**: `pyproject.toml` (primary) → `ruff.toml` (ruff-specific) → `.vscode/settings.json` (IDE) → `Makefile` (commands).
+**Hierarchy**: `pyproject.toml` (primary) → `ruff.toml` (ruff-specific) → `.vscode/settings.json` (IDE) → `config/routing-matrix.yaml` (agent dispatch).
 
 **Key locations**: Python deps in `pyproject.toml` only (via uv). Code exclusions in `[tool.pyright]`. Formatting in `ruff.toml`.
 

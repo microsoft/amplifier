@@ -6,6 +6,10 @@
 #
 # Roles define semantic categories. Agents map to roles.
 # The resolved model is: agents.<name> -> roles.<role>.model
+#
+# Cost-effective dispatch: when the matrix says haiku or sonnet,
+# ALWAYS dispatch as a subagent — don't burn Opus tokens inline.
+# Only use Opus inline for tasks that need deep reasoning.
 
 # Tuned for Opus 4.6 with 1M context — prefer generous budgets over tiny tasks
 #

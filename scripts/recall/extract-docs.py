@@ -67,6 +67,7 @@ CATEGORY_PATTERNS = [
     (re.compile(r"^docs/reports/"), "report"),
     (re.compile(r"^\.claude/agents/"), "agent"),
     (re.compile(r"^\.claude/commands/"), "command"),
+    (re.compile(r"^\.claude/skills/"), "skill"),
     (re.compile(r"^\.claude/context/"), "context"),
     (re.compile(r"^ai_context/"), "philosophy"),
     (re.compile(r"^context/"), "context"),
