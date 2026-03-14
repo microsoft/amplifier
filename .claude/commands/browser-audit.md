@@ -13,7 +13,7 @@ Automated web page audit using the browser-user agent. Navigates to a URL, captu
 ## Usage
 
 ```
-/browser-audit <url> [--full] [--viewport=mobile|tablet|desktop]
+/browser-audit <url> [--full] [--viewport=mobile|tablet|desktop] [--lighthouse] [--a11y] [--slim]
 ```
 
 - `<url>` — required, the page to audit (e.g., `https://fusecp.ergonet.pl/`)
@@ -21,6 +21,11 @@ Automated web page audit using the browser-user agent. Navigates to a URL, captu
 - `--viewport=mobile` — emulate mobile viewport (375x667, touch enabled)
 - `--viewport=tablet` — emulate tablet viewport (768x1024)
 - `--viewport=desktop` — default (1920x1080)
+- `--lighthouse` — run Lighthouse performance/a11y/SEO audit via Chrome DevTools MCP
+- `--a11y` — run accessibility audit via Chrome DevTools MCP
+- `--slim` — use DevTools MCP slim mode (navigate + screenshot + JS only — fast, low token cost)
+
+**DevTools MCP flags** require `chrome-devtools` MCP server to be enabled (disabled by default). Enable: edit `.mcp.json`, set `chrome-devtools.disabled` to `false`, restart Claude Code.
 
 ## The Process
 
@@ -149,19 +154,69 @@ If `NTFY_TOPIC` is set, send a notification with the verdict:
 
 $ARGUMENTS
 
+## Chrome DevTools MCP Audits (when --lighthouse or --a11y)
+
+**Prerequisite:** `chrome-devtools` MCP server must be enabled (disabled by default). If `mcp__chrome-devtools__*` tools are unavailable, report: "Chrome DevTools MCP not enabled. Edit .mcp.json, set chrome-devtools.disabled to false, restart session."
+
+### Lighthouse Audit (--lighthouse)
+
+Navigate to the URL via DevTools MCP, then run Lighthouse:
+```
+Call: mcp__chrome-devtools__lighthouse(url="<target-url>")
+```
+
+Append to the report:
+```
+## Lighthouse Audit
+
+| Category | Score |
+|----------|-------|
+| Performance | XX |
+| Accessibility | XX |
+| Best Practices | XX |
+| SEO | XX |
+
+### Key Opportunities
+<top 3 performance opportunities from Lighthouse>
+```
+
+### Accessibility Audit (--a11y)
+
+```
+Call: mcp__chrome-devtools__accessibility_snapshot()
+```
+
+Append to the report:
+```
+## Accessibility Audit
+
+### Issues Found
+<list a11y violations with element refs and severity>
+
+### Summary
+PASS: X checks | WARN: X checks | FAIL: X checks
+```
+
+### Slim Mode (--slim)
+
+When `--slim` is specified, use DevTools MCP in slim mode (3 tools only: navigate, execute JS, screenshot). This is faster and uses fewer tokens. Good for quick post-deploy checks.
+
 ## Integration
 
 **Pairs with:**
 - `/test-webapp-ui` — More comprehensive UI testing with interaction flows
 - `/verify` — Include browser audit as part of verification evidence
 - `/finish-branch` — Run audit on deployed staging before PR
+- `/fix-bugs` Phase 7g — Post-deploy smoke check
 
-**Agents used:**
-- Browser tools (mcp__claude-in-chrome__*) — All captures
-- No subagents — this command runs directly in main context (fast, low overhead)
+**Tools used:**
+- Browser tools (mcp__claude-in-chrome__*) — Screenshots, DOM, console
+- Chrome DevTools MCP (mcp__chrome-devtools__*) — Lighthouse, a11y, performance (opt-in)
+- No subagents — runs directly in main context
 
 ## Requirements
 
-- Superpowers Chrome plugin v1.8.0+ (for viewport emulation and full-page screenshots)
-- Chrome browser running with DevTools Protocol enabled
+- Chrome 146+ (for DevTools MCP v0.20.0 features)
+- Superpowers Chrome plugin (for viewport emulation and full-page screenshots)
+- Chrome DevTools MCP server (optional — for --lighthouse and --a11y flags)
 - Target URL must be accessible from the dev machine
