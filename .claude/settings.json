@@ -119,7 +119,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd C:/claude/amplifier && uv run .claude/tools/hook_post_tool_use.py"
+            "command": "bash -c 'if [ \"${MEMORY_SYSTEM_ENABLED:-false}\" = \"true\" ]; then cd C:/claude/amplifier && uv run .claude/tools/hook_post_tool_use.py; fi'"
           }
         ]
       }
