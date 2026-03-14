@@ -2,9 +2,7 @@
   "mcpServers": {
     "playwright": {
       "command": "npx",
-      "args": [
-        "@playwright/mcp@latest"
-      ]
+      "args": ["@playwright/mcp@latest"]
     },
     "context7": {
       "command": "npx",
@@ -17,6 +15,14 @@
     "repomix": {
       "command": "npx",
       "args": ["-y", "repomix", "--mcp"]
+    },
+    "gitea": {
+      "command": "gitea-mcp",
+      "args": [
+        "-t", "stdio",
+        "--host", "https://gitea.ergonet.pl:3001",
+        "--token", "8b07dad95e88429dd611b7f82c2ceb46dc18f507"
+      ]
     }
   }
 }

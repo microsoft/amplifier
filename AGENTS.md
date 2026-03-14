@@ -43,20 +43,34 @@ Always check `.claude/AGENTS_CATALOG.md` before starting. Proactively delegate t
 
 Subagents launched via the Task tool have their own context windows that can fill up during execution. When this happens, agents either stop abruptly with partial results or shift into "summary mode" instead of completing actual work. This protocol prevents both failure modes.
 
-### Turn Budgets
+### Turn Budgets (Elastic)
 
-Every Task dispatch must include a `max_turns` parameter. Use these starting values:
+Turn budgets are **elastic** — each role defines a range `{min, default, max}` in `config/routing-matrix.yaml`. The orchestrator picks within the range based on task complexity and the current `/effort` setting.
 
-| Agent Role | max_turns | Examples |
-|------------|-----------|----------|
-| Quick tasks | 5-8 | Haiku scouts, context gathering, file searches |
-| Research / exploration | 8-10 | Codebase exploration, documentation lookup |
-| Review | 10-12 | test-coverage, security-guardian, code review |
-| Analysis | 12-15 | zen-architect, bug-hunter, design analysis |
-| Implementation | 15-20 | modular-builder, file creation and editing |
-| Deep diagnostics | 20-25 | vmware-infrastructure (log correlation, KB lookup, command generation) |
+| Role | Effort | Turns (min/default/max) | Examples |
+|------|--------|------------------------|----------|
+| scout | low | 8 / 12 / 20 | Haiku scouts, context gathering, file searches |
+| research | medium | 10 / 15 / 25 | Codebase exploration, documentation lookup |
+| review | medium | 10 / 15 / 25 | test-coverage, security-guardian, code review |
+| architect | high | 15 / 20 / 35 | zen-architect, design analysis |
+| implement | medium | 15 / 25 / 40 | modular-builder, file creation and editing |
+| security | high | 12 / 15 / 25 | security-guardian (audits, vulnerability assessment) |
+| fast | low | 5 / 10 / 15 | post-task-cleanup, copy editing |
 
-These values are tuned through observation. If an agent consistently needs resume cycles, increase its budget. If it finishes well under budget, decrease it.
+**Effort resolution (three layers):**
+1. **Session `/effort`** — user sets ceiling (low/medium/high/max)
+2. **Role effort** — default from routing-matrix (above table)
+3. **Task signals** — orchestrator adjusts based on file count, keywords, retry state
+
+`resolved_effort = min(session_effort, max(role_effort, task_signals))`
+
+**Effort → turns mapping:**
+- `low` → use `min` turns
+- `medium` → use `default` turns
+- `high` → use `max` turns
+- `max` → use `max` turns + auto-resume up to 3 cycles (effectively unlimited)
+
+These values are tuned for **Opus 4.6 with 1M context**. With large context windows, prefer giving agents more room over decomposing into tiny tasks. If an agent consistently needs resume cycles, increase its budget. If it finishes well under budget, decrease it.
 
 ### Read-Only Research Constraint
 
@@ -97,16 +111,16 @@ This prevents the failure mode where an agent uses all turns on tool calls (Glob
 
 ### Task Decomposition Guidelines
 
-Right-size tasks before dispatch to prevent context exhaustion upstream:
+Right-size tasks before dispatch. With 1M context, agents can handle larger scope — prefer fewer, meatier tasks over many tiny ones:
 
 | Dimension | Guideline |
 |-----------|-----------|
-| Files to read | 3-5 per agent |
-| Files to modify | 1-3 per agent |
-| Objectives | 1 per agent — single clear deliverable |
-| Output scope | One component, module, or focused concern |
+| Files to read | 5-15 per agent |
+| Files to modify | 1-5 per agent |
+| Objectives | 1-2 per agent — clear deliverables |
+| Output scope | One feature or focused concern |
 
-**Decompose large tasks:**
+**When to decompose** (still worth splitting):
 - "Implement the authentication system" → 4 agents: token generation, middleware, login endpoint, session storage
 - "Review all changed files" → 2 agents by concern: "review auth changes", "review API changes"
 
@@ -175,13 +189,13 @@ You're a professional tool, not a cheerleader. Users value honest, direct feedba
 
 ## Build/Test/Lint Commands
 
-- Install dependencies: `make install` (uses uv)
+- Install dependencies: `uv sync`
 - Add new dependencies: `uv add package-name` (in the specific project directory)
 - Add development dependencies: `uv add --dev package-name`
-- Run all checks: `make check` (runs lint, format, type check)
-- Run all tests: `make test` or `make pytest`
+- Run all checks: `uv run ruff check . && uv run ruff format --check .`
+- Run all tests: `uv run pytest`
 - Run a single test: `uv run pytest tests/path/to/test_file.py::TestClass::test_function -v`
-- Upgrade dependency lock: `make lock-upgrade`
+- Upgrade dependency lock: `uv lock --upgrade`
 
 ## Dependency Management
 

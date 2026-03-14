@@ -1,3 +1,7 @@
+---
+description: "Load project context: install dependencies, run checks and tests, prime the session for development."
+---
+
 ## Usage
 
 `/prime <ADDITIONAL_GUIDANCE>`

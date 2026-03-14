@@ -1,0 +1,110 @@
+# Routing Matrix — Single source of truth for agent-to-model mapping
+#
+# The orchestrator reads this when dispatching agents.
+# Agent dispatches still show the resolved model name explicitly.
+# To change all scouts from haiku to sonnet, update one line here.
+#
+# Roles define semantic categories. Agents map to roles.
+# The resolved model is: agents.<name> -> roles.<role>.model
+
+# Tuned for Opus 4.6 with 1M context — prefer generous budgets over tiny tasks
+#
+# Effort Steering (three layers):
+#   Session: /effort switch (low/medium/high/max) — user controls ceiling
+#   Role:    effort field below — default per agent role
+#   Task:    signal-based adjustment — orchestrator bumps within turns range
+#
+# Resolution: resolved_effort = min(session_effort, max(role_effort, task_signals))
+#
+# Elastic turns: { min, default, max } — orchestrator picks based on task complexity
+#   low effort  → min turns    | high effort → max turns
+#   max effort  → max turns + auto-resume (up to 3 cycles)
+
+roles:
+  scout:
+    model: haiku
+    effort: low
+    description: "Quick lookups, context gathering, file searches"
+    turns: { min: 8, default: 12, max: 20 }
+  research:
+    model: sonnet
+    effort: medium
+    description: "Codebase exploration, documentation analysis"
+    turns: { min: 10, default: 15, max: 25 }
+  implement:
+    model: sonnet
+    effort: medium
+    description: "Code writing, file creation, editing"
+    turns: { min: 15, default: 25, max: 40 }
+  architect:
+    model: opus
+    effort: high
+    description: "System design, complex analysis, deep reasoning"
+    turns: { min: 15, default: 20, max: 35 }
+  review:
+    model: sonnet
+    effort: medium
+    description: "Code review, test coverage, security checks"
+    turns: { min: 10, default: 15, max: 25 }
+  security:
+    model: opus
+    effort: high
+    description: "Security audits, vulnerability assessment"
+    turns: { min: 12, default: 15, max: 25 }
+  fast:
+    model: haiku
+    effort: low
+    description: "Lightweight tasks, copy editing, cleanup"
+    turns: { min: 5, default: 10, max: 15 }
+
+# Agent-to-role mapping
+# Format: agent_name: role
+# Agents not listed here default to 'implement'
+agents:
+  # Core Development
+  agentic-search: scout
+  zen-architect: architect
+  modular-builder: implement
+  bug-hunter: implement          # fixes code; investigation uses agentic-search
+  test-coverage: review
+  security-guardian: security
+  post-task-cleanup: fast
+  performance-optimizer: research
+  integration-specialist: implement
+  spec-reviewer: review
+  code-quality-reviewer: review
+
+  # API & Data
+  api-contract-designer: implement
+  database-architect: implement
+  contract-spec-author: implement
+  module-intent-architect: architect
+
+  # Design
+  component-designer: implement
+  art-director: implement
+  animation-choreographer: implement
+  layout-architect: implement
+  responsive-strategist: implement
+  design-system-architect: architect
+  voice-strategist: fast
+
+  # Knowledge & Analysis
+  content-researcher: research
+  analysis-engine: research
+  concept-extractor: scout
+  insight-synthesizer: research
+  knowledge-archaeologist: research
+  pattern-emergence: research
+  visualization-architect: implement
+  graph-builder: implement
+
+  # Infrastructure
+  vmware-infrastructure: research
+
+  # Meta
+  subagent-architect: implement
+  amplifier-cli-architect: implement
+  ambiguity-guardian: research
+  amplifier-expert: fast
+  handoff-gemini: fast

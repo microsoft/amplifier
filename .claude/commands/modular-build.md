@@ -1,3 +1,7 @@
+---
+description: "Build implementation from a specification using the modular-builder agent pattern. Self-contained module construction."
+---
+
 # /modular-build
 
 ## Branch Gate (REQUIRED)
