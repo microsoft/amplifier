@@ -100,6 +100,24 @@ API_KEY=fusecp-admin-key-2026
 
 All curl commands use: `curl -sk -H "X-Api-Key: fusecp-admin-key-2026"`
 
+## Effort Steering
+
+All agent dispatches in this pipeline use the routing matrix for model and turn resolution:
+- **agentic-search** (investigation): role=scout → haiku, elastic turns 8-20
+- **analysis-engine** (triage): role=research → sonnet, elastic turns 10-25
+- **bug-hunter** (fix): role=implement → sonnet, elastic turns 15-40
+- **code-quality-reviewer** (review): role=review → sonnet, elastic turns 10-25
+
+Score task complexity to pick within each role's turn range (see AGENTS.md Turn Budgets). For critical-priority bugs, bump effort to `high` (max turns).
+
+## Playwright Login Helper
+
+When Playwright navigates to a FuseCP page and lands on the login form, authenticate with:
+```
+snapshot → click username → type "serveradmin" → click password → type "Fusecp@2026" → click Login → wait 3s → navigate to target
+```
+This sequence is used in Phase 3b (visual investigation), Phase 7g (smoke check), and Phase 7g-bis (E2E). Do NOT duplicate the full login code — reference this section.
+
 ## Phase 1: Fetch Open Bugs
 
 ```bash
@@ -466,7 +484,7 @@ powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/set-bug-status.ps1"
 Dispatch `agentic-search` agent with structured three-phase methodology (Reconnaissance → Targeted Search → Synthesis). This agent has built-in output budgets and always produces a final synthesis — unlike generic Explore which can exhaust turns on tool calls with no summary.
 
 ```
-Task(subagent_type="agentic-search", model="sonnet", max_turns=20, description="Investigate bug #{id}: {title}", prompt="
+Task(subagent_type="agentic-search", model=<from routing-matrix: scout role>, max_turns=<elastic: 8-20 based on bug complexity>, description="Investigate bug #{id}: {title}", prompt="
   **READ-ONLY MODE: Use ONLY Read, Glob, Grep, LS, and search tools. Do NOT use Edit, Write, Bash, or any tool that modifies files.**
 
   Search the FuseCP codebase at C:\claude\fusecp-enterprise to find the root cause of this bug.
@@ -584,27 +602,7 @@ If the bug has screenshots (ScreenshotCount > 0):
    mcp__playwright__browser_navigate(url="{pageUrl}")
    ```
 
-5. **Handle login (if redirected to `/auth/login`)**
-
-   Take a snapshot to check if the page is a login form:
-   ```
-   mcp__playwright__browser_snapshot()
-   ```
-
-   If login form is present, authenticate using the snapshot's element refs:
-   ```
-   mcp__playwright__browser_click(ref="{username-field-ref}", element="Username input")
-   mcp__playwright__browser_type(ref="{username-field-ref}", text="serveradmin", submit=false)
-   mcp__playwright__browser_click(ref="{password-field-ref}", element="Password input")
-   mcp__playwright__browser_type(ref="{password-field-ref}", text="Fusecp@2026", submit=false)
-   mcp__playwright__browser_click(ref="{login-button-ref}", element="Login button")
-   ```
-
-   Wait for navigation, then go to the target page:
-   ```
-   mcp__playwright__browser_wait_for(time=3000)
-   mcp__playwright__browser_navigate(url="{pageUrl}")
-   ```
+5. **Handle login (if redirected to `/auth/login`)** — use the Playwright Login Helper sequence (see top of file).
 
 6. **Wait for Blazor to stabilize and take baseline screenshot**
 
@@ -678,7 +676,7 @@ Before dispatching the fix agent, compile everything learned:
 Dispatch `bug-hunter` with the full investigation context:
 
 ```
-Task(subagent_type="bug-hunter", model="sonnet", max_turns=20, description="Fix bug #{id}: {title}", prompt="
+Task(subagent_type="bug-hunter", model=<from routing-matrix: implement role>, max_turns=<elastic: 15-40 based on file count + priority>, description="Fix bug #{id}: {title}", prompt="
   Fix this FuseCP bug. The investigation has already been done — go straight to implementing the fix.
 
   ## Bug Report
@@ -792,6 +790,37 @@ Present a complete summary:
 ```
 
 **STOP HERE and wait for user confirmation.** Do NOT deploy without explicit approval.
+
+## Phase 6b: Knowledge Lookup (Before Fix)
+
+Before implementing, check if AutoContext has a learned strategy for this bug type:
+
+```
+Call: autocontext_skill_discover(query="{area} {bug symptom keywords}")
+```
+
+If a relevant skill is found, include its playbook insights in the bug-hunter prompt. This prevents repeating mistakes from prior fix attempts on similar bugs.
+
+## Phase 6c: Evaluate Fix Quality (After Deploy)
+
+After successful deploy, evaluate the fix quality via AutoContext:
+
+```
+Call: autocontext_evaluate_output(
+  task_name="bug-fix",
+  output="Bug #{id}: {title}\nRoot cause: {root cause}\nFix: {changes summary}\nFiles: {file count}\nBuild: PASS\nTests: PASS\nSmoke: {PASS/WARN/FAIL}"
+)
+```
+
+If score < 70, flag: "Fix quality below threshold — consider `/improve` or `/solve` to build a reusable strategy for {area} bugs."
+
+Record effort metadata for the adaptive loop:
+```
+Call: autocontext_record_feedback(
+  task_name="bug-fix",
+  feedback='{"score": <score>, "effort": "<effort>", "area": "{area}", "priority": "{priority}", "was_reopened": <true/false>, "file_count": <N>}'
+)
+```
 
 ## Phase 7: Commit, PR & Deploy (User-Confirmed)
 
@@ -977,27 +1006,7 @@ After deploy, run an automated smoke check on the fixed page using Playwright MC
 mcp__playwright__browser_navigate(url="{pageUrl}")
 ```
 
-**Step 2: Handle login (if redirected to `/auth/login`)**
-
-Take a snapshot to check if the page is a login form:
-```
-mcp__playwright__browser_snapshot()
-```
-
-If login form is present, authenticate using the snapshot's element refs:
-```
-mcp__playwright__browser_click(ref="{username-field-ref}", element="Username input")
-mcp__playwright__browser_type(ref="{username-field-ref}", text="serveradmin", submit=false)
-mcp__playwright__browser_click(ref="{password-field-ref}", element="Password input")
-mcp__playwright__browser_type(ref="{password-field-ref}", text="Fusecp@2026", submit=false)
-mcp__playwright__browser_click(ref="{login-button-ref}", element="Login button")
-```
-
-Wait for navigation, then go to the target page:
-```
-mcp__playwright__browser_wait_for(time=3000)
-mcp__playwright__browser_navigate(url="{pageUrl}")
-```
+**Step 2: Handle login (if redirected to `/auth/login`)** — use the Playwright Login Helper sequence (see top of file).
 
 **Step 3: Wait for Blazor to stabilize**
 
