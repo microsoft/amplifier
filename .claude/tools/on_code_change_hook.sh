@@ -4,6 +4,18 @@
 # Intelligently finds and runs 'make check' from the appropriate directory
 # Handles virtual environment issues in git worktrees
 
+# Debounce: skip if make check ran within the last 30 seconds
+DEBOUNCE_FILE="/tmp/amplifier-code-change-debounce"
+if [[ -f "$DEBOUNCE_FILE" ]]; then
+    LAST_RUN=$(cat "$DEBOUNCE_FILE" 2>/dev/null || echo 0)
+    NOW=$(date +%s)
+    ELAPSED=$(( NOW - LAST_RUN ))
+    if [[ "$ELAPSED" -lt 30 ]]; then
+        exit 0
+    fi
+fi
+date +%s > "$DEBOUNCE_FILE"
+
 # Ensure proper environment for make to find /bin/sh
 export PATH="/bin:/usr/bin:$PATH"
 export SHELL="/bin/bash"
