@@ -23,6 +23,13 @@
         "--host", "https://gitea.ergonet.pl:3001",
         "--token", "8b07dad95e88429dd611b7f82c2ceb46dc18f507"
       ]
+    },
+    "autocontext": {
+      "command": "uv",
+      "args": ["run", "--directory", "/opt/autocontext/autocontext", "autoctx", "mcp-serve"],
+      "env": {
+        "AUTOCONTEXT_AGENT_PROVIDER": "anthropic"
+      }
     }
   }
 }
