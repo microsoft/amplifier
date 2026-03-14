@@ -231,10 +231,14 @@ Check if Gemini has started work and show active worktrees:
 ```bash
 # Check for feature branch
 git branch -a | grep "feature/"
+```
 
-# Check for open PR on Gitea
-tea pr ls --repo admin/<repo> --state open
+Check for open PR on Gitea using MCP:
+```
+mcp__gitea__list_repo_pull_requests(owner="admin", repo="<repo>", state="open")
+```
 
+```bash
 # Show active worktrees (if any)
 git worktree list
 ```
@@ -299,9 +303,9 @@ Include active worktree status in report (same as WAITING_FOR_GEMINI).
 
 **4a. Find the PR on Gitea:**
 
-```bash
-# List open PRs on Gitea
-tea pr ls --repo admin/<repo> --state open --fields index,title,head,additions,deletions
+List open PRs on Gitea using MCP:
+```
+mcp__gitea__list_repo_pull_requests(owner="admin", repo="<repo>", state="open")
 ```
 
 Match by branch name from HANDOFF.md. If no PR found, report error.
@@ -323,9 +327,10 @@ cd ../..  # Return to main checkout
 **Why a worktree?** The main checkout stays on master. If Claude has a parallel work worktree, checking out the PR branch on master would disrupt it. Review worktrees keep everything isolated.
 
 If build fails → post build errors as PR comment on Gitea, request changes, clean up worktree, stay at PR_READY:
+```
+mcp__gitea__create_issue_comment(owner="admin", repo="<repo>", index=<number>, body="Build failed. Errors: <paste errors>. Please fix and push.")
+```
 ```bash
-# Post comment on Gitea PR
-tea comment --repo admin/<repo> <number> "Build failed. Errors: <paste errors>. Please fix and push."
 git worktree remove .worktrees/review-pr-<number> --force
 ```
 
@@ -333,11 +338,13 @@ If build passes → proceed to code review (keep review worktree for now).
 
 **4c. Fetch PR details:**
 
-```bash
-# View PR details on Gitea
-tea pr view --repo admin/<repo> <number>
+View PR details using MCP:
+```
+mcp__gitea__get_pull_request_by_index(owner="admin", repo="<repo>", index=<number>)
+```
 
-# Get the diff (use git directly — more detail than tea output)
+```bash
+# Get the diff (use git directly — more detail than MCP output)
 git fetch origin
 git diff main...origin/<branch-name>
 ```
@@ -411,8 +418,8 @@ Recommendation: Approve / Request Changes
   4. Proceed to REVIEWING → DEPLOYING.
 
 - **Request changes (Critical issues only)** → Post review comment on Gitea PR:
-  ```bash
-  tea comment --repo admin/<repo> <number> "<consolidated review feedback>"
+  ```
+  mcp__gitea__create_issue_comment(owner="admin", repo="<repo>", index=<number>, body="<consolidated review feedback>")
   ```
   Stay at PR_READY. Only use this for Critical issues that would be harder for Claude to fix than for Gemini to redo (e.g., fundamentally wrong approach, needs complete rewrite).
 
@@ -424,10 +431,12 @@ Recommendation: Approve / Request Changes
 
 **5a. Merge the PR on Gitea and clean up review worktree:**
 
-```bash
-# Merge PR on Gitea using tea CLI
-tea pr merge --repo admin/<repo> <number>
+Merge PR on Gitea using MCP:
+```
+mcp__gitea__merge_pull_request(owner="admin", repo="<repo>", index=<number>, Do="squash")
+```
 
+```bash
 # Pull merged changes locally
 git pull origin main
 
