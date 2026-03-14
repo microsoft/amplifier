@@ -18,20 +18,25 @@
     ]
   },
   "enableAllProjectMcpServers": false,
-  "enabledMcpjsonServers": ["playwright", "context7", "deepwiki", "repomix"],
+  "enabledMcpjsonServers": ["playwright", "context7", "deepwiki", "repomix", "gitea", "autocontext"],
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "uv run .claude/tools/hook_session_start.py",
+            "command": "cd C:/claude/amplifier && uv run .claude/tools/hook_session_start.py",
             "timeout": 10000
           },
           {
             "type": "command",
-            "command": "uv run .claude/tools/hook_memory_sync.py",
+            "command": "cd C:/claude/amplifier && uv run .claude/tools/hook_memory_sync.py",
             "timeout": 20000
+          },
+          {
+            "type": "command",
+            "command": "bash C:/claude/amplifier/scripts/observers/drift-detector.sh",
+            "timeout": 5000
           }
         ]
       }
@@ -41,11 +46,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run .claude/tools/hook_stop.py"
+            "command": "cd C:/claude/amplifier && uv run .claude/tools/hook_stop.py"
           },
           {
             "type": "command",
-            "command": "bash .claude/hooks/session-end-index.sh",
+            "command": "bash C:/claude/amplifier/.claude/hooks/session-end-index.sh",
             "timeout": 30000
           }
         ]
@@ -56,7 +61,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run .claude/tools/hook_stop.py"
+            "command": "cd C:/claude/amplifier && uv run .claude/tools/hook_stop.py"
           }
         ]
       },
@@ -64,7 +69,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run .claude/tools/subagent-validator.py"
+            "command": "cd C:/claude/amplifier && uv run .claude/tools/subagent-validator.py"
           }
         ]
       }
@@ -75,7 +80,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run .claude/tools/subagent-logger.py"
+            "command": "cd C:/claude/amplifier && uv run .claude/tools/subagent-logger.py"
           }
         ]
       },
@@ -84,7 +89,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/tools/enforce-brainstorm.sh"
+            "command": "bash C:/claude/amplifier/.claude/tools/enforce-brainstorm.sh"
           }
         ]
       }
@@ -95,7 +100,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/tools/on_code_change_hook.sh"
+            "command": "bash C:/claude/amplifier/.claude/tools/on_code_change_hook.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash C:/claude/amplifier/scripts/observers/build-watcher.sh",
+            "timeout": 3000
           }
         ]
       },
@@ -104,7 +119,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run .claude/tools/hook_post_tool_use.py"
+            "command": "bash -c 'if [ \"${MEMORY_SYSTEM_ENABLED:-false}\" = \"true\" ]; then cd C:/claude/amplifier && uv run .claude/tools/hook_post_tool_use.py; fi'"
           }
         ]
       }
@@ -114,7 +129,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run .claude/tools/on_notification_hook.py"
+            "command": "cd C:/claude/amplifier && uv run .claude/tools/on_notification_hook.py"
           }
         ]
       }
@@ -125,7 +140,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run .claude/tools/hook_precompact.py",
+            "command": "cd C:/claude/amplifier && uv run .claude/tools/hook_precompact.py",
             "timeout": 30000
           }
         ]

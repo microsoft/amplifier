@@ -1,3 +1,7 @@
+---
+description: "Transform raw design ideas into refined solutions through collaborative intelligence. Routes to specialized design agents."
+---
+
 # Designer Command
 
 **Transform raw design ideas into refined solutions through collaborative intelligence.**

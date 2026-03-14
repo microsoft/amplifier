@@ -42,15 +42,15 @@ Trigger words: diagram, architecture, flowchart, explain visually, diff review, 
 
 → Use the appropriate visual-explainer command:
 
-| Intent | Command |
-|--------|---------|
-| Diagram / architecture / flowchart | `/generate-web-diagram` |
-| Implementation plan visualization | `/generate-visual-plan` |
-| Slide deck / presentation | `/generate-slides` |
-| Diff / code review | `/diff-review` |
-| Plan vs codebase review | `/plan-review` |
-| Project context recap | `/project-recap` |
-| Verify doc against code | `/fact-check` |
+| Intent | Skill |
+|--------|-------|
+| Diagram / architecture / flowchart | `generate-web-diagram` |
+| Implementation plan visualization | `generate-visual-plan` |
+| Slide deck / presentation | `generate-slides` |
+| Diff / code review | `diff-review` |
+| Plan vs codebase review | `plan-review` |
+| Project context recap | `project-recap` |
+| Verify doc against code | `fact-check` |
 
 ### Ambiguous Cases
 
@@ -76,7 +76,7 @@ Args: [user's topic/arguments]
 
 This skill also triggers proactively (without being invoked) when:
 
-1. You're about to render a table with **4+ rows or 3+ columns** → use `/generate-web-diagram` to render it as styled HTML instead of ASCII
+1. You're about to render a table with **4+ rows or 3+ columns** → use skill `generate-web-diagram` to render it as styled HTML instead of ASCII
 2. You're explaining a complex system architecture → offer: "Want me to render this as a visual diagram?"
 3. You're reviewing a diff or plan → offer the visual review variant
 

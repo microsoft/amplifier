@@ -12,6 +12,7 @@ Amplifier is an AI-native development platform with 30+ specialized agents and 1
 ## @imports
 
 - @AGENTS.md
+- @config/routing-matrix.yaml
 
 Philosophy and design files are on-demand (not always-loaded). Retrieve via `/docs search`:
 - `ai_context/IMPLEMENTATION_PHILOSOPHY.md`, `ai_context/MODULAR_DESIGN_PHILOSOPHY.md`
@@ -22,11 +23,13 @@ Philosophy and design files are on-demand (not always-loaded). Retrieve via `/do
 
 1. **Plan before implementing.** Use TodoWrite for any task with more than one step. Ultra-think when populating the list. Start new work with `/brainstorm`, debug with `/debug`, build test-first with `/tdd`.
 
-2. **Delegate to subagents.** Check `.claude/AGENTS_CATALOG.md` before starting. Use the Task tool. Launch agents in parallel by sending multiple Task calls in a single message. If a needed specialist doesn't exist, stop and ask the user to create it via the `/agents` command.
+2. **Delegate to subagents — but not for small tasks.** With 1M context, prefer inline execution over subagent delegation for tasks under 10 tool calls. Reserve subagents for truly parallel work or tasks needing isolation. Check `.claude/AGENTS_CATALOG.md` and `config/routing-matrix.yaml` for agent-to-model mapping. If a needed specialist doesn't exist, stop and ask the user to create it via the `/agents` command.
 
-3. **Parallel execution is the default.** Sequential tool use requires justification. Never read files one at a time when they can be read in parallel. Send ONE message with MULTIPLE tool calls.
+3. **Effort steering is automatic.** The routing matrix defines effort tiers (low/medium/high) and elastic turn ranges per role. When dispatching agents, pick turns from the range based on task complexity. The user's `/effort` setting is the ceiling. See `AGENTS.md` Turn Budgets for the resolution formula.
 
-4. **Ask when uncertain.** If the goal is ambiguous, ask clarifying questions before writing any code. Prefer multiple-choice questions when possible.
+4. **Parallel execution is the default.** Sequential tool use requires justification. Never read files one at a time when they can be read in parallel. Send ONE message with MULTIPLE tool calls.
+
+5. **Ask when uncertain.** If the goal is ambiguous, ask clarifying questions before writing any code. Prefer multiple-choice questions when possible.
 
 ## Memory and Documentation Tools
 

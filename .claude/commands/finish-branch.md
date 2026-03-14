@@ -212,3 +212,5 @@ git worktree remove <worktree-path>
 - `/worktree` - Cleans up worktree created by that command
 - `/verify` - Pre-merge verification
 - `/request-review` - Code review workflow
+- `/self-eval finish-branch` - Evaluate this branch completion quality
+- `/self-eval all` - Evaluate all command outputs from this session

@@ -1,22 +1,35 @@
 {
   "mcpServers": {
     "playwright": {
-      "command": "npx",
-      "args": [
-        "@playwright/mcp@latest"
-      ]
+      "command": "cmd",
+      "args": ["/c", "npx", "@playwright/mcp@latest"]
     },
     "context7": {
-      "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp"]
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@upstash/context7-mcp"]
     },
     "deepwiki": {
       "type": "http",
       "url": "https://mcp.deepwiki.com/mcp"
     },
     "repomix": {
-      "command": "npx",
-      "args": ["-y", "repomix", "--mcp"]
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "repomix", "--mcp"]
+    },
+    "gitea": {
+      "command": "C:\\claude\\gitea-mcp-bin\\gitea-mcp.exe",
+      "args": [
+        "-t", "stdio",
+        "--host", "https://gitea.ergonet.pl:3001",
+        "--token", "8b07dad95e88429dd611b7f82c2ceb46dc18f507"
+      ]
+    },
+    "autocontext": {
+      "command": "C:\\Users\\Administrator.ERGOLAB\\.local\\bin\\uv.exe",
+      "args": ["run", "--directory", "C:\\claude\\autocontext\\autocontext", "autoctx", "mcp-serve"],
+      "env": {
+        "AUTOCONTEXT_AGENT_PROVIDER": "anthropic"
+      }
     }
   }
 }

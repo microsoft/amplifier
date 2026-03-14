@@ -122,7 +122,7 @@ API key: ••••••••
   Get one: https://platform.openai.com/api-keys
 ✓ Saved
 
-Model? [1] gpt-5.2 [2] gpt-5.1-codex [3] gpt-5.2-pro [4] custom: 1
+Model? [1] gpt-5.2 [2] gpt-5.1-codex [3] gpt-5.2-pro [4] gpt-5.4 [5] custom: 1
 ✓ Using gpt-5.2
 
 Ready! Starting chat...
@@ -186,7 +186,7 @@ amplifier-log-viewer
 Amplifier works with multiple AI providers:
 
 - **Anthropic Claude** - Recommended, most tested (Sonnet 4.5, Opus 4.6, Haiku 4.5)
-- **OpenAI** - Good alternative (GPT-5.2, GPT-5.2-Pro, GPT-5.1-Codex)
+- **OpenAI** - Good alternative (GPT-5.2, GPT-5.2-Pro, GPT-5.1-Codex, GPT-5.4)
 - **Azure OpenAI** - Enterprise users with Azure subscriptions (supports managed identity)
 - **Ollama** - Local, free, no API key needed (llama3, codellama, etc.)
 

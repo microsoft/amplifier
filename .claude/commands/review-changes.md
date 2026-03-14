@@ -1,3 +1,7 @@
+---
+description: "Run build checks and tests on code changes. Quick validation: install deps, lint, format, type-check, test."
+---
+
 # Review and test code changes
 
 Everything below assumes you are in the repo root directory, change there if needed before running.

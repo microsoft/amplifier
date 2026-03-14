@@ -12,14 +12,8 @@ else
 fi
 cd "$AMPLIFIER_DIR" || exit 0
 
-# Index recent sessions (last 3 days covers any session that just ended)
-uv run python scripts/recall/extract-sessions.py --days 3 2>/dev/null
-
-# Index recently modified docs (last 3 days)
-uv run python scripts/recall/extract-docs.py --recent 3 2>/dev/null
-
-# Regenerate doc registry for cold-start context
-uv run python scripts/recall/generate-doc-registry.py 2>/dev/null
+# Index sessions, docs, and regenerate registry in one Python process
+uv run python scripts/recall/index-all.py 2>/dev/null
 
 # Log completion
 mkdir -p tmp
