@@ -23,7 +23,7 @@ Philosophy and design files are on-demand (not always-loaded). Retrieve via `/do
 
 1. **Plan before implementing.** Use TodoWrite for any task with more than one step. Ultra-think when populating the list. Start new work with `/brainstorm`, debug with `/debug`, build test-first with `/tdd`.
 
-2. **Delegate to subagents — but not for small tasks.** With 1M context, prefer inline execution over subagent delegation for tasks under 10 tool calls. Reserve subagents for truly parallel work or tasks needing isolation. Check `.claude/AGENTS_CATALOG.md` and `config/routing-matrix.yaml` for agent-to-model mapping. If a needed specialist doesn't exist, stop and ask the user to create it via the `/agents` command.
+2. **Delegate to the right model, not the biggest.** The session runs on Opus but most tasks don't need Opus reasoning. When the routing matrix maps a task to haiku or sonnet, **dispatch as a subagent** — even for small tasks. This is cheaper without sacrificing quality. Only run inline (Opus) when the task genuinely needs deep reasoning (architecture, security, complex debugging). Check `config/routing-matrix.yaml` for role-to-model mapping. If a needed specialist doesn't exist, stop and ask the user to create it via the `/agents` command.
 
 3. **Effort steering is automatic.** The routing matrix defines effort tiers (low/medium/high) and elastic turn ranges per role. When dispatching agents, pick turns from the range based on task complexity. The user's `/effort` setting is the ceiling. See `AGENTS.md` Turn Budgets for the resolution formula.
 

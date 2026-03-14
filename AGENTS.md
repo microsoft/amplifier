@@ -37,6 +37,17 @@ This file provides guidance to AI assistants when working with code in this repo
 
 ## Sub-Agent Optimization Strategy
 
+**Cost-effective model selection:** The session runs on Opus, but most tasks don't need Opus-level reasoning. Use the routing matrix to dispatch at the right tier:
+
+| Task type | Model | Dispatch as |
+|-----------|-------|-------------|
+| File searches, context gathering, cleanup | haiku | Subagent (always) |
+| Implementation, review, research | sonnet | Subagent (always) |
+| Architecture, security, complex debugging | opus | Inline or subagent |
+| Quick 1-2 line edits, config changes | opus (inline) | Inline (cheaper than subagent overhead) |
+
+**Rule of thumb:** If the routing matrix says haiku or sonnet for the agent's role, dispatch as a subagent — don't run it inline on Opus. The quality is the same and the cost is lower. Only use Opus inline for tasks that genuinely need deep reasoning.
+
 Always check `.claude/AGENTS_CATALOG.md` before starting. Proactively delegate to specialized agents. Propose new agents when a task lacks a specialist — agent creation is cheap and pays off immediately.
 
 ## Subagent Resilience Protocol
