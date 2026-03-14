@@ -470,6 +470,32 @@ powershell -File "C:/claude/fusecp-enterprise/scripts/bugfix/set-bug-status.ps1"
 
 **IMPORTANT:** The `set-bug-status.ps1` script uses the `/status` endpoint (not full PUT), which preserves screenshot data.
 
+## Phase 2b: Infrastructure Health Check (before Exchange/AD/DNS bugs)
+
+**Run when:** The bug's `Area` is Exchange, AD, DNS, or HyperV — or the bug description mentions backend operations.
+
+**Skip when:** The bug is Portal-only (UI, CSS, JavaScript) with no backend component.
+
+Check if the backend infrastructure is healthy before investigating — if Exchange is down, the bug might be an infrastructure issue, not a code bug.
+
+```bash
+curl -s -H "X-Verifier-Key: verifier-lab-key-2026" "http://172.31.251.100:5050/health/ready" 2>/dev/null
+```
+
+Parse the response:
+- If verification service is unreachable → skip with note: "Backend Verification Service not running — infrastructure status unknown"
+- If `allGreen: true` → proceed normally
+- If any critical check is red → warn the user:
+  ```
+  ⚠ Infrastructure issue detected:
+  - {check name}: {status} — {message}
+
+  This bug may be caused by infrastructure problems, not code. Investigate anyway?
+  ```
+  Wait for user confirmation before proceeding.
+
+This prevents wasting time debugging code when the real issue is a crashed Exchange service or unmounted database.
+
 ## Phase 3: Investigate
 
 ### 3a. Code Investigation
@@ -686,7 +712,7 @@ Task(subagent_type="bug-hunter", model=<from routing-matrix: implement role>, ma
   2. Implement the MINIMAL fix — don't refactor surrounding code
   3. If the fix requires changes to multiple files, make all changes
   4. Follow existing code patterns and conventions
-  5. The codebase is C# (.NET 8) with Blazor Server for Portal, Minimal APIs for backend
+  5. The codebase is C# (.NET 10) with Blazor Server for Portal, Minimal APIs for backend
 
   ## FuseCP Project Structure
   - Portal (Blazor): src/FuseCP.Portal/
@@ -1104,6 +1130,66 @@ cd /c/claude/fusecp-enterprise/tests/FuseCP.E2E && npm run test:smoke 2>&1 | tai
 **Failure handling:**
 - If `npx` is unavailable or node_modules missing, skip: "E2E tests not installed — skipped."
 - If tests fail, this is informational only — the fix is already deployed. Log it and continue to 7h.
+
+### 7g-ter. Backend Verification Check (when fix touches Exchange/AD/DNS)
+
+After E2E regression check, run targeted backend-verified tests to confirm the fix didn't break backend state or tenant isolation.
+
+**Run when:** The fix touched any of these areas:
+- Exchange provider (`src/FuseCP.Providers.Exchange/`)
+- AD provider (`src/FuseCP.Providers.AD/`)
+- DNS provider (`src/FuseCP.Providers.DNS/`)
+- HyperV provider (`src/FuseCP.Providers.HyperV/`)
+- Organization provisioning (`src/FuseCP.EnterpriseServer/Services/OrganizationProvisioningService.cs`)
+- Any endpoint in `src/FuseCP.EnterpriseServer/Endpoints/`
+
+**Skip when:** Fix is Portal-only (Blazor components, CSS, JavaScript) with no backend changes.
+
+**Step 1: Pre-flight health check**
+```bash
+curl -s -H "X-Verifier-Key: verifier-lab-key-2026" "http://172.31.251.100:5050/health/ready" | python -c "import sys,json; d=json.load(sys.stdin); print('AllGreen:', d['allGreen'])"
+```
+If verification service is unreachable, skip with note: "Backend Verification Service not running — verified tests skipped."
+
+**Step 2: Run targeted verified tests based on bug area**
+
+| Bug Area / Changed Files | Verified Test Command |
+|--------------------------|----------------------|
+| Exchange (mailbox, DL, contacts) | `npm run test:verified:exchange` |
+| AD (users, groups, OUs) | `npm run test:verified:ad` |
+| DNS (records, zones) | `npm run test:verified:dns` |
+| HyperV (VMs, cluster) | `npm run test:verified:hyperv` |
+| Tenant isolation / org provisioning | `npm run test:verified:isolation` |
+| Multiple areas or uncertain | `npm run test:verified:smoke` (CRUD tests only) |
+
+```bash
+cd /c/claude/fusecp-enterprise/tests/FuseCP.E2E && npm run test:verified:{area} 2>&1 | tail -10
+```
+
+**Step 3: Always run isolation tests for Exchange/AD changes**
+
+If the fix touched Exchange or AD code, ALWAYS run isolation tests regardless of bug area — tenant isolation is the highest-priority invariant:
+```bash
+cd /c/claude/fusecp-enterprise/tests/FuseCP.E2E && npm run test:verified:isolation 2>&1 | tail -10
+```
+
+**Report result:**
+- **PASS**: Append to bug comment: "Backend verification: PASS ({area} + isolation)"
+- **FAIL**: Report failure details. If isolation tests fail → **CRITICAL**: "ISOLATION BREACH DETECTED — fix may have broken tenant isolation. Review immediately."
+- Isolation failures BLOCK the pipeline — do NOT proceed to next bug until isolation is confirmed passing.
+
+**Step 4: Check fix patterns registry**
+
+After a successful fix + verified test pass, check if this fix pattern should be recorded:
+```bash
+cat C:/claude/fusecp-enterprise/tests/FuseCP.E2E/verified/.fix-patterns.json
+```
+If the root cause matches an existing pattern, skip. If it's new, append a new entry to the registry for future `/test-verified` runs.
+
+**Failure handling:**
+- Backend verification service unreachable → skip with note, continue to 7h
+- Verified tests fail on NON-isolation tests → informational, continue to 7h
+- Verified tests fail on ISOLATION tests → STOP, escalate to user
 
 ### 7h. Cleanup temp files
 
