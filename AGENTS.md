@@ -56,32 +56,13 @@ Subagents launched via the Task tool have their own context windows that can fil
 
 ### Turn Budgets (Elastic)
 
-Turn budgets are **elastic** — each role defines a range `{min, default, max}` in `config/routing-matrix.yaml`. The orchestrator picks within the range based on task complexity and the current `/effort` setting.
-
-| Role | Effort | Turns (min/default/max) | Examples |
-|------|--------|------------------------|----------|
-| scout | low | 8 / 12 / 20 | Haiku scouts, context gathering, file searches |
-| research | medium | 10 / 15 / 25 | Codebase exploration, documentation lookup |
-| review | medium | 10 / 15 / 25 | test-coverage, security-guardian, code review |
-| architect | high | 15 / 20 / 35 | zen-architect, design analysis |
-| implement | medium | 15 / 25 / 40 | modular-builder, file creation and editing |
-| security | high | 12 / 15 / 25 | security-guardian (audits, vulnerability assessment) |
-| fast | low | 5 / 10 / 15 | post-task-cleanup, copy editing |
-
-**Effort resolution (three layers):**
-1. **Session `/effort`** — user sets ceiling (low/medium/high/max)
-2. **Role effort** — default from routing-matrix (above table)
-3. **Task signals** — orchestrator adjusts based on file count, keywords, retry state
+Turn budgets are **elastic** — defined as `{min, default, max}` per role in `config/routing-matrix.yaml` (always-loaded via @import). The orchestrator picks within the range using effort steering:
 
 `resolved_effort = min(session_effort, max(role_effort, task_signals))`
 
-**Effort → turns mapping:**
-- `low` → use `min` turns
-- `medium` → use `default` turns
-- `high` → use `max` turns
-- `max` → use `max` turns + auto-resume up to 3 cycles (effectively unlimited)
+- `low` → `min` turns | `medium` → `default` | `high` → `max` | `max` → `max` + auto-resume (3 cycles)
 
-These values are tuned for **Opus 4.6 with 1M context**. With large context windows, prefer giving agents more room over decomposing into tiny tasks. If an agent consistently needs resume cycles, increase its budget. If it finishes well under budget, decrease it.
+Tuned for **Opus 4.6 with 1M context**. Prefer generous budgets over tiny task decomposition.
 
 ### Read-Only Research Constraint
 
@@ -187,7 +168,7 @@ Decisions CAN change, but should change with full understanding of why they were
 
 Every configuration setting should have exactly ONE authoritative location. All other uses reference or derive from that single source.
 
-**Hierarchy**: `pyproject.toml` (primary) → `ruff.toml` (ruff-specific) → `.vscode/settings.json` (IDE) → `Makefile` (commands).
+**Hierarchy**: `pyproject.toml` (primary) → `ruff.toml` (ruff-specific) → `.vscode/settings.json` (IDE) → `config/routing-matrix.yaml` (agent dispatch).
 
 **Key locations**: Python deps in `pyproject.toml` only (via uv). Code exclusions in `[tool.pyright]`. Formatting in `ruff.toml`.
 
