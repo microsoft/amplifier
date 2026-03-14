@@ -8,7 +8,7 @@ description: "Complete development branch with cleanup, verification, and merge/
 
 Guide completion of development work by presenting clear options and handling chosen workflow.
 
-**Core principle:** Verify tests → Create PR (default) → Clean up.
+**Core principle:** Verify tests → Quality gate → Create PR (default) → Clean up.
 
 **Announce at start:** "I'm using the finish-branch command to complete this work."
 
@@ -44,7 +44,73 @@ Stop. Don't proceed to Step 2.
 
 **If tests pass:** Continue to Step 2.
 
-### Step 2: Determine Base Branch
+### Step 2: Quality Gate
+
+After tests pass, dispatch **2 agents in parallel** (single message, two Task calls) to review all files changed on this branch:
+
+```bash
+# Get list of changed files for agent prompts
+git diff --name-only main...HEAD
+```
+
+#### Agent 1: Code Quality Review
+
+```
+Task(subagent_type="code-quality-reviewer", model="sonnet", max_turns=10)
+
+Review these changed files for code quality issues:
+[changed file list from git diff]
+
+Check: type annotations, code style, dead code, stubs/placeholders, unused imports.
+Focus on the diff only — do not flag pre-existing issues.
+Return VERDICT: PASS or FAIL with specific findings.
+```
+
+#### Agent 2: Cleanup Review
+
+```
+Task(subagent_type="post-task-cleanup", model="sonnet", max_turns=10)
+
+Review git status and these changed files for cleanup issues:
+[changed file list from git diff]
+
+Check: temp files, debug statements, commented-out code, artifacts, philosophy violations.
+Return Status: CLEAN or NEEDS_ATTENTION with specific findings.
+```
+
+#### Gate Logic
+
+**If code-quality-reviewer returns FAIL with BLOCKING findings:**
+```
+Quality gate failed. Fix these before PR:
+
+[Show BLOCKING findings with file:line references]
+
+Cannot proceed until issues are resolved.
+```
+Stop. Don't proceed to Step 3.
+
+**If code-quality-reviewer returns FAIL with only SUGGESTION/NITPICK:**
+```
+Quality review warnings (non-blocking):
+[Show findings]
+
+Proceeding to PR creation. Consider addressing these in a follow-up.
+```
+Continue to Step 3.
+
+**If post-task-cleanup returns NEEDS_ATTENTION:**
+```
+Cleanup suggestions found:
+[Show findings]
+
+Fix these first, or proceed to PR? (fix/proceed)
+```
+Wait for user choice. If "fix", stop and let user address. If "proceed", continue to Step 3.
+
+**If both pass:** Continue silently to Step 3.
+
+### Step 3: Determine Base Branch
 
 ```bash
 # Try common base branches
@@ -53,7 +119,7 @@ git merge-base HEAD main 2>/dev/null || git merge-base HEAD master 2>/dev/null
 
 Or ask: "This branch split from main - is that correct?"
 
-### Step 3: Default Action — Create PR
+### Step 4: Default Action — Create PR
 
 **The default completion action is always to create a Pull Request.** Do not present a menu of options. Instead:
 
@@ -72,7 +138,7 @@ Creating feature branch from current HEAD, then resetting main.
 ```
 Then: create branch, reset main, push branch, create PR. This is the recovery path — it works but is messy. The Branch Gate in /subagent-dev should prevent this.
 
-### Step 4: Execute Choice
+### Step 5: Execute Choice
 
 #### Option 1: Merge Locally
 
@@ -93,7 +159,7 @@ git merge <feature-branch>
 git branch -d <feature-branch>
 ```
 
-Then: Cleanup worktree (Step 5)
+Then: Cleanup worktree (Step 6)
 
 #### Option 2: Push and Create PR (Gitea-First)
 
@@ -113,7 +179,7 @@ Present the PR URL to the user.
 
 **Note:** PR lives on Gitea. GitHub mirror syncs automatically via push mirror. CI runs on GitHub Actions when the mirror triggers.
 
-Then: Cleanup worktree (Step 5)
+Then: Cleanup worktree (Step 6)
 
 #### Option 3: Keep As-Is
 
@@ -141,9 +207,9 @@ git checkout <base-branch>
 git branch -D <feature-branch>
 ```
 
-Then: Cleanup worktree (Step 5)
+Then: Cleanup worktree (Step 6)
 
-### Step 5: Cleanup Worktree and Final Hygiene
+### Step 6: Cleanup Worktree and Final Hygiene
 
 **For Options 1, 2, 4:**
 
@@ -159,7 +225,7 @@ git worktree remove <worktree-path>
 
 **For Option 3:** Keep worktree.
 
-**Dispatch `post-task-cleanup` agent** to perform final hygiene: remove stale branches, prune worktrees, verify no orphaned artifacts remain.
+**Note:** `post-task-cleanup` already ran in Step 2 (Quality Gate). This step only handles worktree/branch cleanup. If Step 2 was skipped (e.g., user chose Option 4: Discard), dispatch `post-task-cleanup` here as a fallback to prune stale branches and worktrees.
 
 ## Quick Reference
 
@@ -214,3 +280,4 @@ git worktree remove <worktree-path>
 - `/request-review` - Code review workflow
 - `/self-eval finish-branch` - Evaluate this branch completion quality
 - `/self-eval all` - Evaluate all command outputs from this session
+- `/techdebt` - Run before finishing to catch accumulated debt
