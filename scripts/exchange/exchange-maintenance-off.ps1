@@ -1,31 +1,28 @@
 param(
     [Parameter(Mandatory=$true)]
     [string]$TargetServer,
-    [string]$ExchangeServer = "EXCHANGELAB.lab.ergonet.pl",
-    [string]$Username = "ERGOLAB\Administrator"
+    [string]$ExchangeServer = "EXCHANGELAB",
+    [string]$Auth = "Kerberos"
 )
 
 # Exit Exchange Maintenance Mode — reverse of maintenance-on
 # Usage: .\exchange-maintenance-off.ps1 -TargetServer "EXCHANGELAB"
 
 $ErrorActionPreference = "Stop"
-$secPass = ConvertTo-SecureString "Exchange@Lab2026" -AsPlainText -Force
-$cred = New-Object System.Management.Automation.PSCredential($Username, $secPass)
 
-$connectTo = if ($TargetServer -match "EXCHANGELAB2") { "EXCHANGELAB.lab.ergonet.pl" } else { "EXCHANGELAB2.lab.ergonet.pl" }
+$connectTo = if ($TargetServer -match "EXCHANGELAB2") { "EXCHANGELAB" } else { "EXCHANGELAB2" }
 
 try {
     $session = New-PSSession -ConfigurationName Microsoft.Exchange `
         -ConnectionUri "http://$connectTo/PowerShell/" `
-        -Authentication Credssp `
-        -Credential $cred `
+        -Authentication $Auth `
         -ErrorAction Stop
 } catch {
     Write-Output "PHASE|CONNECTION|FAIL|$($_.Exception.Message)"
     exit 1
 }
 
-$fqdn = "$TargetServer.lab.ergonet.pl"
+$fqdn = "$TargetServer"
 
 # Step 1: Set server components back to Active
 Write-Output "PHASE|STEP1|START|Activating server components on $TargetServer"

@@ -1,20 +1,17 @@
 param(
-    [string]$Server = "EXCHANGELAB.lab.ergonet.pl",
-    [string]$Username = "ERGOLAB\Administrator"
+    [string]$Server = "EXCHANGELAB",
+    [string]$Auth = "Kerberos"
 )
 
 # Exchange Full Health Check — all 8 checks
 # Returns pipe-delimited results: CHECK|STATUS|DETAILS
 
 $ErrorActionPreference = "SilentlyContinue"
-$secPass = ConvertTo-SecureString "Exchange@Lab2026" -AsPlainText -Force
-$cred = New-Object System.Management.Automation.PSCredential($Username, $secPass)
 
 try {
     $session = New-PSSession -ConfigurationName Microsoft.Exchange `
         -ConnectionUri "http://$Server/PowerShell/" `
-        -Authentication Credssp `
-        -Credential $cred `
+        -Authentication $Auth `
         -ErrorAction Stop
 } catch {
     Write-Output "CONNECTION|FAIL|Cannot connect to $Server - $($_.Exception.Message)"

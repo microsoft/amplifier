@@ -2,22 +2,19 @@ param(
     [Parameter(Mandatory=$true)]
     [string]$Database,
     [string]$TargetServer,
-    [string]$ExchangeServer = "EXCHANGELAB.lab.ergonet.pl",
-    [string]$Username = "ERGOLAB\Administrator"
+    [string]$ExchangeServer = "EXCHANGELAB",
+    [string]$Auth = "Kerberos"
 )
 
 # Exchange Database Switchover — Move active database to another DAG node
 # Usage: .\exchange-switchover.ps1 -Database "DAG-DB01" [-TargetServer "EXCHANGELAB2"]
 
 $ErrorActionPreference = "Stop"
-$secPass = ConvertTo-SecureString "Exchange@Lab2026" -AsPlainText -Force
-$cred = New-Object System.Management.Automation.PSCredential($Username, $secPass)
 
 try {
     $session = New-PSSession -ConfigurationName Microsoft.Exchange `
         -ConnectionUri "http://$ExchangeServer/PowerShell/" `
-        -Authentication Credssp `
-        -Credential $cred `
+        -Authentication $Auth `
         -ErrorAction Stop
 } catch {
     Write-Output "PHASE|CONNECTION|FAIL|$($_.Exception.Message)"
