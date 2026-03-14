@@ -154,6 +154,26 @@ Call: autocontext_record_feedback(
 )
 ```
 
+### Step 7b: Write Recall-Indexable Summary
+
+Write a brief markdown summary so `/recall` can find self-eval results:
+
+```bash
+mkdir -p .claude/skills/amplifier-self-improvement
+cat > .claude/skills/amplifier-self-improvement/latest-eval.md << EVALEOF
+# Self-Eval: /<command_name> — $(date +%Y-%m-%d)
+
+**Score:** <overall_score>/100
+**Effort:** <effort level> | **Turns:** <used>/<budget> | **Model:** <model>
+**Dimensions:** <dim1>=<score>, <dim2>=<score>, ...
+
+## Key Findings
+<strengths and improvement suggestions — 2-3 bullets>
+EVALEOF
+```
+
+This file gets indexed by the recall doc indexer (category: `skill`), making self-eval results searchable via `/recall self-eval` or `/recall brainstorm score`.
+
 ### Step 8: Accumulate Learnings
 
 Check if score patterns exist:
