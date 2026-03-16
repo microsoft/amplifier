@@ -133,6 +133,28 @@ From observed failure patterns:
 - Implications of success
 - ANY communication suggesting completion/correctness
 
+## Outcome Capture (Flywheel)
+
+After verification succeeds, if this is the final verification for a task or branch, append a lightweight outcome record to the self-improvement file:
+
+```bash
+mkdir -p .claude/skills/amplifier-self-improvement
+cat >> .claude/skills/amplifier-self-improvement/latest-eval.md << EVALEOF
+
+## Outcome: <domain-keyword>
+- **Strategy:** agent=<primary-agent>, model=<tier>, command=verify
+- **Domain:** <domain keyword>
+- **Score:** 100/100 (pass) or <actual score>/100 if evaluation was run
+- **Retries:** <0-N>
+- **Corrections:** <0-N, post-fix edits needed>
+- **Lesson:** <1 sentence>
+EVALEOF
+```
+
+This is optional and lightweight — only append when completing a meaningful task (not for intermediate checks). The outcome feeds `/recall` for future strategy learning.
+
+---
+
 ## The Bottom Line
 
 **No shortcuts for verification.**

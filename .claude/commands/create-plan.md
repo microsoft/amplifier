@@ -15,7 +15,11 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 **Before planning:** Gather context to avoid contradicting established architecture:
 1. Search episodic memory for `knowledge_base.decisions` using the `mcp__plugin_episodic-memory_episodic-memory__search` tool
 2. Search episodic memory for `knowledge_base.patterns` using the `mcp__plugin_episodic-memory_episodic-memory__search` tool
-3. **If modifying existing code**, dispatch `agentic-search` to understand the current architecture before writing tasks:
+3. **Strategy lookup:** Search recall for `Outcome:` entries matching the domain (e.g., `/recall Outcome: exchange`, `/recall Outcome: api-design`). If past outcomes exist, use them to inform agent and model tier selection:
+   - Past retries > 1 at haiku → assign sonnet for similar tasks
+   - Past score > 85 at sonnet → keep sonnet (don't over-provision to opus)
+   - Past lesson mentions missing context → add that context to task prompts
+4. **If modifying existing code**, dispatch `agentic-search` to understand the current architecture before writing tasks:
    ```
    Task(subagent_type="agentic-search", model="haiku", max_turns=12, description="Understand [area] before planning", prompt="
      **READ-ONLY MODE: Use ONLY Read, Glob, Grep, LS, and search tools. Do NOT use Edit, Write, Bash, or any tool that modifies files.**
@@ -102,6 +106,27 @@ When in doubt, use `modular-builder` for building and `bug-hunter` for fixing.
 
 ---
 ```
+
+## Pre-Dispatch Prompt Quality Gate
+
+When generating task prompts for the plan (the text each agent will receive), apply the same silent quality check used by `/subagent-dev`:
+
+| Dimension | Question | Target |
+|-----------|----------|--------|
+| Clarity | Is the task unambiguous? Could the agent misinterpret scope? | >= 7/10 |
+| Specificity | Are file paths, function names, and expected behavior concrete? | >= 7/10 |
+| Structure | Does it have: goal, context, constraints, success criteria? | >= 7/10 |
+| Constraints | Are boundaries explicit (what NOT to do, what's out of scope)? | >= 7/10 |
+
+**Average >= 7:** write to plan as-is.
+**Average 5-6:** strengthen before writing — add missing file paths, boundaries, or examples.
+**Average < 5:** rewrite the task prompt — it will produce poor agent output and waste a dispatch cycle.
+
+Vague task prompts cause agent retries downstream which cost more than the time spent strengthening the prompt now.
+
+This is a mental checkpoint, not a visible output. Silent unless it changes the plan content.
+
+---
 
 ## Context-Efficient Plan Generation
 
