@@ -15,7 +15,7 @@ Runs tests across universal-siem-monorepo services, classifies failures by type,
 ```
 /test-siem                    # full stack (all services + frontend)
 /test-siem backend            # all backend services
-/test-siem frontend           # vitest + optional playwright
+/test-siem frontend           # vitest (1712 tests)
 /test-siem log-service        # single service
 /test-siem auth-service       # single service
 /test-siem anomaly-service    # single service
@@ -24,7 +24,8 @@ Runs tests across universal-siem-monorepo services, classifies failures by type,
 /test-siem devices-service    # single service
 /test-siem m365-service       # single service
 /test-siem integration        # integration tests only
-/test-siem --health           # pre-flight health check only, no test run
+/test-siem --health           # pre-flight health check (default: production)
+/test-siem --health staging   # pre-flight health check (staging)
 /test-siem --report           # generate report from last results.json, no test run
 ```
 
@@ -72,21 +73,22 @@ digraph test_siem {
 This runs on **Linux** (mcp server, 172.31.250.2):
 
 - **Working directory:** `/opt/monorepo-workspace/universal-siem-monorepo/`
-- **Python:** Use `uv run pytest` (uv-managed environments per service)
+- **Python:** All pytest commands run from `backend/` directory (shared `pyproject.toml` + `uv.lock`)
 - **Node:** Use `npm run test` from `frontend/`
-- **K8s:** `kubectl` configured for local K3s cluster
-- **DB:** PostgreSQL on `172.31.250.30:5432`
+- **K8s staging:** `kubectl get pods -n siem-staging` (local, 172.31.250.2)
+- **K8s production:** `ssh -i ~/.ssh/staging_deploy claude@172.31.250.60 "kubectl get pods -n siem-production"`
+- **DB:** PostgreSQL on `172.31.250.30:5432` (shared by both environments)
 
 ## Configuration
 
 ```
 SIEM_ROOT=/opt/monorepo-workspace/universal-siem-monorepo
+BACKEND_DIR=$SIEM_ROOT/backend
 DB_HOST=172.31.250.30
 DB_PORT=5432
 DB_NAME=siem_timeseries
 DB_USER=siem_user
 DB_PASS=7oBuuQ1fmKQMjNI0Hro6s9RShMwCDOzc
-K8S_NAMESPACE=siem-staging
 RESULTS_DIR=$SIEM_ROOT/.test-siem
 RESULTS_FILE=$SIEM_ROOT/.test-siem/results.json
 PATTERNS_FILE=$SIEM_ROOT/.test-siem/.fix-patterns.json
@@ -96,39 +98,49 @@ Ensure `.test-siem/` directory exists before first run: `mkdir -p $SIEM_ROOT/.te
 
 ---
 
-## Scope-to-Path Mapping
+## Scope-to-Path Mapping (CRITICAL: all pytest runs from backend/)
 
-| Scope | Test Directory | Runner |
-|-------|---------------|--------|
-| `backend` | `backend/tests/` + all `backend/services/*/tests/` + `backend/auth-service/tests/` + `backend/m365-service/tests/` | pytest |
-| `frontend` | `frontend/` | vitest |
-| `log-service` | `backend/services/log-service/tests/` | pytest |
-| `anomaly-service` | `backend/services/anomaly-service/tests/` | pytest |
-| `snort-service` | `backend/services/snort-service/tests/` | pytest |
-| `agents-service` | `backend/services/agents-service/tests/` | pytest |
-| `devices-service` | `backend/services/devices-service/tests/` | pytest |
-| `auth-service` | `backend/auth-service/tests/` | pytest |
-| `m365-service` | `backend/m365-service/tests/` | pytest |
-| `integration` | `tests/integration/api/` | pytest |
+All backend pytest commands MUST run from `$SIEM_ROOT/backend/` because all services share one `pyproject.toml` and `uv.lock`. The test path is relative to `backend/`.
+
+| Scope | Pytest Path (relative to backend/) | Runner |
+|-------|-----------------------------------|--------|
+| `backend` | `tests/` + `services/*/tests/` + `auth-service/tests/` + `m365-service/tests/` | pytest |
+| `frontend` | N/A — runs from `$SIEM_ROOT/frontend/` | vitest |
+| `log-service` | `services/log-service/tests/` | pytest |
+| `anomaly-service` | `services/anomaly-service/tests/` | pytest |
+| `snort-service` | `services/snort-service/tests/` | pytest |
+| `agents-service` | `services/agents-service/tests/` | pytest |
+| `devices-service` | `services/devices-service/tests/` | pytest |
+| `auth-service` | `auth-service/tests/` | pytest |
+| `m365-service` | `m365-service/tests/` | pytest |
+| `integration` | `tests/integration/` | pytest |
 | (no arg) | backend then frontend | both |
 
 ---
 
 ## Phase 0: Pre-flight Health Check
 
+Default environment: **production**. Use `--health staging` for staging.
+
 ```bash
-# Database check
+# Database check (shared across environments)
 PGPASSWORD='7oBuuQ1fmKQMjNI0Hro6s9RShMwCDOzc' psql -U siem_user -h 172.31.250.30 -d siem_timeseries -c "SELECT 1" 2>&1
 
-# K8s pod check
-kubectl get pods -n siem-staging -o json | python3 -c "
+# K8s pod check — PRODUCTION (default)
+ssh -i ~/.ssh/staging_deploy claude@172.31.250.60 "kubectl get pods -n siem-production -o json" | python3 -c "
 import sys, json
 data = json.load(sys.stdin)
+ready = sum(1 for p in data['items'] if any(c.get('status')=='True' for c in p.get('status',{}).get('conditions',[]) if c.get('type')=='Ready'))
+total = len(data['items'])
 for pod in data['items']:
     name = pod['metadata']['name']
-    ready = any(c.get('status') == 'True' for c in pod.get('status', {}).get('conditions', []) if c.get('type') == 'Ready')
-    print(f\"  {'✓' if ready else '✗'} {name}\")
+    is_ready = any(c.get('status')=='True' for c in pod.get('status',{}).get('conditions',[]) if c.get('type')=='Ready')
+    print(f\"  {'✓' if is_ready else '✗'} {name}\")
+print(f'\n  {ready}/{total} pods ready')
 "
+
+# K8s pod check — STAGING (when --health staging)
+kubectl get pods -n siem-staging -o json | python3 -c "..." # same parser
 ```
 
 **Decision logic:**
@@ -137,9 +149,9 @@ for pod in data['items']:
 - `--health` flag → print full status table and stop
 
 ```
-SIEM Health Check:
+SIEM Health Check (production):
   database     ✓ reachable (172.31.250.30:5432)
-  K8s pods     ✓ 13/13 ready (siem-staging)
+  K8s pods     ✓ 14/14 ready (siem-production)
 Ready to run tests.
 ```
 
@@ -147,40 +159,98 @@ Ready to run tests.
 
 ## Phase 1: Run Suite
 
-Execute test commands based on scope. For each pytest scope:
+**CRITICAL:** All pytest commands run from `$SIEM_ROOT/backend/` directory.
 
+For each pytest scope:
 ```bash
-cd $SIEM_ROOT/<service-path>
-uv run pytest tests/ -v --tb=short --json-report --json-report-file=$SIEM_ROOT/.test-siem/pytest-report.json
+cd /opt/monorepo-workspace/universal-siem-monorepo/backend
+uv run pytest <relative-test-path> -v --tb=short --json-report --json-report-file=../.test-siem/pytest-report.json
+```
+
+Examples:
+```bash
+# Single service
+cd /opt/monorepo-workspace/universal-siem-monorepo/backend
+uv run pytest auth-service/tests/ -v --tb=short --json-report --json-report-file=../.test-siem/pytest-report.json
+
+# Another service
+uv run pytest services/log-service/tests/ -v --tb=short --json-report --json-report-file=../.test-siem/pytest-report.json
+
+# Integration tests
+uv run pytest tests/integration/ -v --tb=short --json-report --json-report-file=../.test-siem/pytest-report.json
+```
+
+For `backend` scope, run ALL test paths in a single pytest invocation:
+```bash
+cd /opt/monorepo-workspace/universal-siem-monorepo/backend
+uv run pytest tests/ services/log-service/tests/ services/anomaly-service/tests/ services/snort-service/tests/ services/agents-service/tests/ services/devices-service/tests/ auth-service/tests/ m365-service/tests/ -v --tb=short --json-report --json-report-file=../.test-siem/pytest-report.json
 ```
 
 For frontend:
 ```bash
-cd $SIEM_ROOT/frontend
-npm run test -- --run --reporter=json > $SIEM_ROOT/.test-siem/vitest-report.json 2>&1
+cd /opt/monorepo-workspace/universal-siem-monorepo/frontend
+npm run test -- --run --reporter=json 2>&1 > ../.test-siem/vitest-report.json
 ```
 
-For `backend` scope, run each service sequentially and merge results. Capture exit codes. Initialize cycle counter: `cycle = 1`.
+Capture exit codes. Initialize cycle counter: `cycle = 1`.
 
 ---
 
 ## Phase 2: Parse Results
 
-Read runner-specific JSON output and normalize into unified format in `.test-siem/results.json`:
+Read runner-specific JSON output and normalize into unified format in `.test-siem/results.json`.
 
+**Pytest JSON report structure** (from `pytest-json-report`):
+```json
+{
+  "summary": { "passed": 10, "failed": 1, "error": 18, "total": 29 },
+  "tests": [
+    {
+      "nodeid": "auth-service/tests/test_forward_auth.py::test_forward_auth_no_token_returns_401",
+      "outcome": "passed|failed|error",
+      "call": { "longrepr": "error text..." },
+      "setup": { "longrepr": "..." }
+    }
+  ]
+}
+```
+
+**IMPORTANT:** pytest reports `outcome: "error"` for import/setup failures (not `"failed"`). Both `"failed"` and `"error"` outcomes must be treated as failures. For `"error"` outcomes, the error text is in `setup.longrepr` or `call.longrepr` (check both).
+
+**Vitest JSON report structure:**
+```json
+{
+  "numPassedTests": 1712,
+  "numFailedTests": 0,
+  "testResults": [
+    {
+      "name": "/path/to/test.tsx",
+      "assertionResults": [
+        {
+          "fullName": "Component should render",
+          "status": "passed|failed",
+          "failureMessages": ["..."]
+        }
+      ]
+    }
+  ]
+}
+```
+
+Normalize to unified format:
 ```json
 {
   "timestamp": "2026-03-16T13:00:00Z",
-  "scope": "backend",
+  "scope": "auth-service",
   "cycle": 1,
-  "duration_s": 45,
-  "summary": { "passed": 82, "failed": 7, "skipped": 3 },
+  "duration_s": 10,
+  "summary": { "passed": 10, "failed": 1, "error": 18, "skipped": 0 },
   "failures": [
     {
-      "test": "test_log_ingestion_bulk",
-      "file": "backend/services/log-service/tests/test_ingestion.py",
-      "service": "log-service",
-      "error": "ModuleNotFoundError: No module named 'log_service.parsers.cef'",
+      "test": "test_forward_auth_no_token_returns_401",
+      "file": "auth-service/tests/test_forward_auth.py",
+      "service": "auth-service",
+      "error": "ImportError: email-validator is not installed",
       "traceback": "...",
       "class": null
     }
@@ -188,25 +258,13 @@ Read runner-specific JSON output and normalize into unified format in `.test-sie
 }
 ```
 
-**Pytest JSON report mapping:**
-- `tests[].nodeid` → `test` (function name) + `file` (path)
-- `tests[].outcome` → passed/failed/skipped
-- `tests[].call.longrepr` → `error` + `traceback`
-
-**Vitest JSON mapping:**
-- `testResults[].name` → `file`
-- `testResults[].assertionResults[].title` → `test`
-- `testResults[].assertionResults[].failureMessages` → `error`
-
-Derive `service` from file path: `backend/services/<name>/` → `<name>`, `backend/auth-service/` → `auth-service`, `backend/m365-service/` → `m365-service`, `frontend/` → `frontend`.
-
 Print quick tally:
 ```
-Run 1 results: 82 passed, 7 failed, 3 skipped
-Failures in: log-service (3), auth-service (2), anomaly-service (2)
+Run 1 results: 10 passed, 1 failed, 18 errors, 0 skipped
+Failures in: auth-service (19)
 ```
 
-If `failed === 0`: skip to Phase 7.
+If `failed + error === 0`: skip to Phase 7.
 
 Group failing tests by file path.
 
@@ -214,7 +272,7 @@ Group failing tests by file path.
 
 ## Phase 3: Classify Failures
 
-For each failing test, examine `error` + `traceback` and classify using these patterns (evaluated in order, first match wins):
+For each failing test (outcome = `"failed"` or `"error"`), examine `error` + `traceback` and classify using these patterns (evaluated in order, first match wins):
 
 | Class | Regex Patterns |
 |-------|---------------|
@@ -223,18 +281,20 @@ For each failing test, examine `error` + `traceback` and classify using these pa
 | `AUTH_ERROR` | `status.*40[13]`, `token.*invalid`, `permission denied`, `AuthenticationError` |
 | `ASYNC_TIMING` | `asyncio.*TimeoutError`, `Event loop`, `RuntimeError.*event loop`, `TimeoutError` |
 | `INFRA_ERROR` | `ConnectionRefusedError`, `ConnectionError.*refused`, `pod.*not ready`, `ECONNREFUSED` |
-| `ASSERTION` | `AssertionError`, `AssertionError`, `assert.*==`, `expect\(` |
+| `ASSERTION` | `AssertionError`, `assert.*==`, `expect\(` |
 | `UNKNOWN` | Anything else |
 
 Classification populates each failure's `class` field in results.json.
 
 Print classification summary:
 ```
-Classifications: IMPORT_ERROR=3, ASSERTION=2, DB_SCHEMA=1, ASYNC_TIMING=1
+Classifications: IMPORT_ERROR=18, ASSERTION=1
 INFRA_ERROR failures (0) will be reported but not auto-fixed.
 ```
 
 Skip `INFRA_ERROR` failures from fix phases.
+
+**IMPORT_ERROR special handling:** If all failures in a service are IMPORT_ERROR with the same missing module, this is likely a missing dependency — not a test file bug. Report it as: "Missing dependency: {module}. Run: cd backend && uv add {package}" and do NOT dispatch agents for it.
 
 ---
 
@@ -247,7 +307,7 @@ Also search episodic memory for learned patterns:
 mcp__plugin_episodic-memory_episodic-memory__search(query="siem-test-fix pattern")
 ```
 
-For each non-INFRA failure:
+For each non-INFRA, non-dependency failure:
 1. Test each pattern's `errorSignature` (treat as regex) against the failure's error text
 2. If match: apply the fix described in `pattern.fix` directly using the Edit tool
 3. Mark the test as `pattern-applied` with the pattern `id`
@@ -276,9 +336,9 @@ For each agent dispatch, build this context package:
 FAILING TEST FILE: [read full content of the failing test file]
 ERRORS: [paste error messages + tracebacks for all failures in this file]
 SERVICE SOURCE: [read relevant source files from the service being tested]
-  - log-service failures → backend/services/log-service/src/
-  - auth-service failures → backend/auth-service/src/
-  - anomaly-service failures → backend/services/anomaly-service/src/
+  - log-service failures → backend/services/log-service/
+  - auth-service failures → backend/auth-service/
+  - anomaly-service failures → backend/services/anomaly-service/
   - frontend failures → frontend/src/ (relevant component)
 CONFTEST: [read the service's test conftest.py for fixture context]
 KNOWN PATTERNS: [paste .fix-patterns.json content as context]
@@ -300,8 +360,8 @@ Agent parameters:
 Rerun only the previously-failing test files:
 
 ```bash
-cd $SIEM_ROOT/<service-path>
-uv run pytest tests/test_specific_file.py -v --tb=short --json-report --json-report-file=$SIEM_ROOT/.test-siem/pytest-report.json
+cd /opt/monorepo-workspace/universal-siem-monorepo/backend
+uv run pytest auth-service/tests/test_forward_auth.py auth-service/tests/test_health.py -v --tb=short --json-report --json-report-file=../.test-siem/pytest-report.json
 ```
 
 **Regression check:** Compare new results against previous run.
@@ -316,7 +376,7 @@ For each test that went from failing to passing:
 3. Write memory entry (see Memory Recording section)
 
 **Cycle decision:**
-- If `failed === 0` or `cycle >= 3`: proceed to Phase 7
+- If `failed + error === 0` or `cycle >= 3`: proceed to Phase 7
 - Otherwise: `cycle++`, go to Phase 3 with remaining failures
 
 Print cycle update:
@@ -331,15 +391,15 @@ Cycle 1 → Cycle 2: 3 failures remain after applying 4 fixes
 Print terminal summary:
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SIEM Test Results (/test-siem backend)
+SIEM Test Results (/test-siem auth-service)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Passed: 89   Failed: 0   Skipped: 3
-  Duration: 1m 32s
+  Passed: 29   Failed: 0   Errors: 0   Skipped: 0
+  Duration: 10s
 
 Fix Summary:
-  Cycles run:        2
-  Known patterns:    2 applied
-  Agents dispatched: 3
+  Cycles run:        1
+  Known patterns:    0 applied
+  Agents dispatched: 1
   Regressions:       0
 
 Remaining failures: none
@@ -349,8 +409,8 @@ Remaining failures: none
 If failures remain after max cycles:
 ```
 NEEDS ATTENTION — 2 failures after 3 cycles:
-  - backend/services/log-service/tests/test_parsers.py::test_cef_v2 → UNKNOWN (no pattern match)
-  - backend/auth-service/tests/test_rbac.py::test_tenant_isolation → INFRA_ERROR (DB unreachable)
+  - auth-service/tests/test_redis_cache.py::test_redis_url_without_password → ASSERTION
+  - auth-service/tests/test_health.py::test_ready_returns_ready_when_db_ok → IMPORT_ERROR (missing dep)
 ```
 
 If `--report` flag: read existing `results.json`, print summary, stop (no test run or fixes).
@@ -406,6 +466,7 @@ Also append to `.test-siem/.fix-patterns.json`:
 6. **Regression guard** — always compare pass counts before and after each rerun; revert if regressions detected
 7. **INFRA_ERROR class** — never attempt to fix these with test changes; report as infrastructure issues
 8. **Never modify results.json directly** — it is written only by test runners
+9. **Missing dependency errors** — report with install command, do NOT attempt to fix via test edits
 
 ---
 
