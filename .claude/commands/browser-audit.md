@@ -140,7 +140,7 @@ Evaluate observable UX quality against the checklist priorities:
 |----------|----------|-------|-------------|
 | 1 | Accessibility | ?/10 | [contrast, alt text, heading hierarchy, focus rings] |
 | 3 | Performance | ?/10 | [image optimization, CLS, font loading, lazy load] |
-| 4 | Style Consistency | ?/10 | [icon consistency, shadow/radius coherence, CTA clarity] |
+| 4 | Style Selection | ?/10 | [icon consistency, shadow/radius coherence, CTA clarity] |
 | 5 | Layout & Responsive | ?/10 | [viewport meta, mobile-first, spacing, no h-scroll] |
 | 6 | Typography & Color | ?/10 | [font size, line height, contrast, semantic colors] |
 | 8 | Forms & Feedback | ?/10 | [labels, error placement, required indicators] |
