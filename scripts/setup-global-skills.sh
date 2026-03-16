@@ -45,14 +45,45 @@ echo "=== Amplifier Global Skills Setup ==="
 echo "Source: $REPO_ROOT"
 echo ""
 
+# Load platform exclusions
+_saved_home_setup="${AMPLIFIER_HOME:-}"
+unset AMPLIFIER_HOME 2>/dev/null || true
+set +u
+. "$REPO_ROOT/scripts/lib/platform.sh"
+set -u
+: "${AMPLIFIER_HOME:=$_saved_home_setup}"
+
+EXCLUDE_FILE="$REPO_ROOT/config/platform/exclude.${AMPLIFIER_PLATFORM}.txt"
+EXCLUDED=0
+is_excluded() {
+    local name="$1"
+    if [ -f "$EXCLUDE_FILE" ]; then
+        grep -qx "$name" "$EXCLUDE_FILE" 2>/dev/null && return 0
+    fi
+    return 1
+}
+
 # Symlink commands (top-level .md files)
 echo "Commands:"
 mkdir -p "$HOME/.claude/commands"
 for src in "$REPO_ROOT/.claude/commands/"*.md; do
     [ -f "$src" ] || continue
-    dest="$HOME/.claude/commands/$(basename "$src")"
+    local_name="$(basename "$src")"
+    if is_excluded "$local_name"; then
+        # Remove existing symlink if present (was previously linked, now excluded)
+        dest="$HOME/.claude/commands/$local_name"
+        if [ -L "$dest" ]; then
+            rm "$dest"
+            echo "  $local_name (removed — excluded on $AMPLIFIER_PLATFORM)"
+        else
+            echo "  $local_name (skipped — excluded on $AMPLIFIER_PLATFORM)"
+        fi
+        EXCLUDED=$((EXCLUDED + 1))
+        continue
+    fi
+    dest="$HOME/.claude/commands/$local_name"
     link_file "$src" "$dest"
-    echo "  $(basename "$src")"
+    echo "  $local_name"
 done
 
 # Symlink command subdirectories (e.g., commands/ddd/)
@@ -86,5 +117,5 @@ bash "$REPO_ROOT/scripts/setup-platform-config.sh" --force 2>&1 | sed 's/^/  /'
 
 echo ""
 echo "=== Done ==="
-echo "Linked: $LINKED | Skipped (already correct): $SKIPPED | Backed up: $BACKED_UP"
+echo "Linked: $LINKED | Skipped (already correct): $SKIPPED | Excluded (platform): $EXCLUDED | Backed up: $BACKED_UP"
 [ "$BACKED_UP" -gt 0 ] && echo "Backups at: $BACKUP_DIR"

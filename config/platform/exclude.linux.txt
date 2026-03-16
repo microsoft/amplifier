@@ -1,0 +1,7 @@
+# Commands and agents excluded on Linux
+# One filename per line (basename only, e.g. fix-bugs.md)
+# These are FuseCP-specific commands that only work in the Windows monorepo environment
+
+# Commands
+fix-bugs.md
+test-verified.md

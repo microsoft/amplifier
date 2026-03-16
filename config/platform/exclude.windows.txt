@@ -1,0 +1,3 @@
+# Commands and agents excluded on Windows
+# One filename per line (basename only, e.g. example.md)
+# Currently no exclusions
