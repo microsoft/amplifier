@@ -1,6 +1,6 @@
 # CLAUDE.md — Amplifier
 
-Amplifier is a self-improving AI development platform with 36 specialized agents, 31 slash commands, effort steering, and AutoContext-powered quality evaluation.
+Amplifier is a self-improving AI development platform with 36 specialized agents, 35 slash commands, effort steering, and AutoContext-powered quality evaluation.
 
 ## Identity and Environment
 
