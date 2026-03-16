@@ -1,5 +1,5 @@
 ---
-description: "Execute implementation plans by dispatching specialized Amplifier agents per task with two-stage review. Fresh agent per task for clean context."
+description: "Execute plans task-by-task with specialized agents and two-stage review."
 ---
 
 # Subagent-Driven Development

@@ -1,5 +1,5 @@
 ---
-description: "Automated run → parse → classify → fix → rerun → report cycle for FuseCP Backend-Verified E2E tests. Applies known fix patterns inline, dispatches bug-hunter agents for novel failures, learns and persists fixes. Max 3 cycles. Never modifies API code."
+description: "Auto-fix FuseCP E2E test failures. Classifies, applies known patterns, dispatches agents for novel failures. Max 3 cycles."
 ---
 
 # /test-verified — FuseCP Verified E2E Auto-Fix Pipeline

@@ -1,5 +1,5 @@
 ---
-description: "Command authoring with TDD methodology. Use when creating new Amplifier commands, editing existing commands, or verifying commands work before deployment."
+description: "Author or edit Amplifier commands with TDD methodology."
 ---
 
 # Writing Commands

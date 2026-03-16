@@ -1,5 +1,5 @@
 ---
-description: "Build a reusable strategy for recurring problems. AutoContext evolves a solution through its multi-agent loop and exports a portable skill package."
+description: "Build reusable strategy for recurring problems via AutoContext multi-agent loop."
 ---
 
 # Solve — Evolve Reusable Strategies

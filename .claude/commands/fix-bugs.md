@@ -1,5 +1,5 @@
 ---
-description: "Autonomous bug-fixing pipeline for FuseCP. Fetches open bugs from the portal API, investigates with agentic-search + visual analysis, fixes with bug-hunter, builds/tests, and deploys with user confirmation."
+description: "Autonomous FuseCP bug-fix pipeline: fetch, triage, investigate, fix, test, deploy."
 ---
 
 # FuseCP Bug Fix Pipeline

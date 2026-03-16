@@ -1,5 +1,5 @@
 ---
-description: "Show current platform config and regenerate if needed. Use after cloning on a new machine or switching between Windows and Linux."
+description: "Show or regenerate platform config. Use after cloning or switching OS."
 ---
 
 # Platform — Configuration Management

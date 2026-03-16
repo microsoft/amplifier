@@ -1,5 +1,5 @@
 ---
-description: "Self-improving CLAUDE.md — reads AutoContext learnings, session observations, and self-eval scores to propose evidence-based updates to project instructions."
+description: "Propose evidence-based CLAUDE.md updates from AutoContext learnings and self-eval scores."
 ---
 
 # Self-Improve — Evidence-Based Instruction Updates

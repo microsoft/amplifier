@@ -1,5 +1,5 @@
 ---
-description: "Search and browse project documentation across all repos. BM25 keyword search with project/category filters. Use instead of manual file searches."
+description: "Search project docs across repos. BM25 keyword search with filters."
 ---
 
 # Docs — Cross-Project Documentation Search

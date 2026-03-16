@@ -1,5 +1,5 @@
 ---
-description: "Route visual output requests to the right tool. Interactive config → playground skill. Diagrams, reviews, slides, explanations → visual-explainer skill. Use when the user wants any visual HTML output."
+description: "Route to visual tools: interactive → playground, diagrams/slides/reviews → visual-explainer."
 ---
 
 # Visual — Unified Visual Output Router

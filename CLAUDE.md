@@ -100,3 +100,16 @@ All commands listed in system prompt skills section. Check before starting work.
 | `/test-verified` | Backend-Verified E2E auto-fix — run suite, classify failures, apply patterns, dispatch agents |
 
 These commands reference FuseCP project structure (`ARCHITECTURE.md`), bugfix scripts, and E2E test infrastructure. They are part of the Amplifier command catalog but execute against FuseCP code.
+
+## Compact Instructions
+
+When context is compressed (automatic or via `/compact`), preserve in priority order:
+
+1. **Architecture decisions** — NEVER summarize; keep exact rationale and constraints
+2. **Modified files** — paths and key changes (not full diffs, just what changed and why)
+3. **Verification status** — which tests/checks passed or failed, exact commands used
+4. **Open TODOs and blockers** — unfinished work, known issues, rollback notes
+5. **Agent dispatch results** — which agents ran, their verdicts (PASS/FAIL), key findings
+6. **Tool outputs** — can delete content, but keep pass/fail status and error messages
+
+Delete freely: file contents already read, intermediate search results, verbose tool output, exploratory dead ends that led nowhere.

@@ -1,5 +1,5 @@
 ---
-description: "Evaluate Amplifier's own command outputs for continuous self-improvement. Scores brainstorm designs, plans, implementations against command-specific rubrics."
+description: "Score Amplifier command outputs against rubrics for self-improvement."
 ---
 
 # Self-Eval — Amplifier Self-Improvement
