@@ -160,7 +160,7 @@ Write a brief markdown summary so `/recall` can find self-eval results, AND appe
 
 ```bash
 mkdir -p .claude/skills/amplifier-self-improvement
-cat > .claude/skills/amplifier-self-improvement/latest-eval.md << EVALEOF
+cat >> .claude/skills/amplifier-self-improvement/latest-eval.md << EVALEOF
 # Self-Eval: /<command_name> — $(date +%Y-%m-%d)
 
 **Score:** <overall_score>/100

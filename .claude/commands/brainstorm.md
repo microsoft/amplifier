@@ -50,7 +50,7 @@ digraph brainstorm {
 
 Before dispatching scouts or starting interviews, classify the request:
 
-### Quick Mode — skip to execution routing
+### Quick Mode — skip to execution routing (evaluated FIRST)
 
 When ALL of the following are true:
 - < 25 words (excluding code blocks and file paths)
@@ -59,11 +59,13 @@ When ALL of the following are true:
 - No conjunctions (and, or, plus, also)
 - No vague modifiers (better, improved, some, maybe, kind of)
 
+**Quick Mode takes priority.** If all conditions above are met, use Quick Mode regardless of Force Full signals below. Example: "update the README badge" meets all Quick Mode criteria even though "update" appears in Force Full signals — Quick Mode wins.
+
 → Skip scout, skip interview, skip design.
 → Respond: "Quick task detected. Recommended: [agent] on [target]. Proceed, or need to discuss first?"
 → If user confirms, route directly to execution (single agent dispatch or `/tdd`).
 
-### Force Full Brainstorm — when ANY signal present
+### Force Full Brainstorm — when ANY signal present (and Quick Mode did NOT match)
 
 | Signal | Examples |
 |--------|----------|
@@ -73,7 +75,7 @@ When ALL of the following are true:
 | Vague scope | "it", "this", "that" without clear referent in same sentence |
 | Comprehensiveness | comprehensive, complete, full, end-to-end, overall |
 | Multi-domain | 2+ distinct domains detected (frontend+backend, API+DB, etc.) |
-| Ownership/state | our, existing, the current, fresh, updated |
+| Vague ownership | "our system", "the current platform", "existing infrastructure" (only when target is a broad-scope noun, NOT when target is specific like "the current config.yaml") |
 
 → Force full brainstorm with explicit note: "This has [signal] — running full brainstorm to scope it properly."
 

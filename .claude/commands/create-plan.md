@@ -109,7 +109,7 @@ When in doubt, use `modular-builder` for building and `bug-hunter` for fixing.
 
 ## Pre-Dispatch Prompt Quality Gate
 
-When generating task prompts for the plan (the text each agent will receive), apply a silent quality check:
+When generating task prompts for the plan (the text each agent will receive), apply the same silent quality check used by `/subagent-dev`:
 
 | Dimension | Question | Target |
 |-----------|----------|--------|
@@ -118,7 +118,11 @@ When generating task prompts for the plan (the text each agent will receive), ap
 | Structure | Does it have: goal, context, constraints, success criteria? | >= 7/10 |
 | Constraints | Are boundaries explicit (what NOT to do, what's out of scope)? | >= 7/10 |
 
-If any task prompt scores below 7 average, strengthen it before writing to the plan — add file paths, boundaries, or examples. Vague task prompts cause agent retries downstream which cost more than the time spent strengthening the prompt now.
+**Average >= 7:** write to plan as-is.
+**Average 5-6:** strengthen before writing — add missing file paths, boundaries, or examples.
+**Average < 5:** rewrite the task prompt — it will produce poor agent output and waste a dispatch cycle.
+
+Vague task prompts cause agent retries downstream which cost more than the time spent strengthening the prompt now.
 
 This is a mental checkpoint, not a visible output. Silent unless it changes the plan content.
 

@@ -144,7 +144,7 @@ cat >> .claude/skills/amplifier-self-improvement/latest-eval.md << EVALEOF
 ## Outcome: <domain-keyword>
 - **Strategy:** agent=<primary-agent>, model=<tier>, command=verify
 - **Domain:** <domain keyword>
-- **Score:** pass
+- **Score:** 100/100 (pass) or <actual score>/100 if evaluation was run
 - **Retries:** <0-N>
 - **Corrections:** <0-N, post-fix edits needed>
 - **Lesson:** <1 sentence>
