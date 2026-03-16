@@ -2,11 +2,16 @@
   "mcpServers": {
     "playwright": {
       "command": "npx",
-      "args": ["@playwright/mcp@latest"]
+      "args": [
+        "@playwright/mcp@latest"
+      ]
     },
     "context7": {
       "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp"]
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ]
     },
     "deepwiki": {
       "type": "http",
@@ -14,7 +19,11 @@
     },
     "repomix": {
       "command": "npx",
-      "args": ["-y", "repomix", "--mcp"]
+      "args": [
+        "-y",
+        "repomix",
+        "--mcp"
+      ]
     },
     "gitea": {
       "command": "gitea-mcp",
@@ -25,15 +34,25 @@
       ]
     },
     "autocontext": {
-      "command": "uv",
-      "args": ["run", "--directory", "/opt/autocontext/autocontext", "autoctx", "mcp-serve"],
+      "command": "/home/claude/.local/bin/uv",
+      "args": [
+        "run",
+        "--directory",
+        "/opt/autocontext/autocontext",
+        "autoctx",
+        "mcp-serve"
+      ],
       "env": {
         "AUTOCONTEXT_AGENT_PROVIDER": "anthropic"
       }
     },
     "chrome-devtools": {
       "command": "npx",
-      "args": ["chrome-devtools-mcp@latest", "--acceptInsecureCerts", "--headless"],
+      "args": [
+        "chrome-devtools-mcp@latest",
+        "--acceptInsecureCerts",
+        "--headless"
+      ],
       "disabled": true
     }
   }
