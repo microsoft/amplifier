@@ -13,33 +13,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Extract diff and PR context
         id: context
         run: |
-          # Get PR number from merge commit message
+          # Get PR number from merge commit message (POSIX-compatible regex)
           COMMIT_MSG=$(git log -1 --format="%s")
-          PR_NUM=$(echo "$COMMIT_MSG" | grep -oP "'?#\K[0-9]+" | head -1 || echo "")
+          PR_NUM=$(echo "$COMMIT_MSG" | sed -n 's/.*#\([0-9]*\).*/\1/p' | head -1)
           COMMIT_SHA=$(git log -1 --format="%h")
           DIFF_STAT=$(git diff HEAD~1 --stat)
-          DIFF=$(git diff HEAD~1)
           FILES_CHANGED=$(git diff HEAD~1 --name-only | wc -l)
 
           # Skip audit for docs-only changes
           NON_DOC_FILES=$(git diff HEAD~1 --name-only | grep -v '\.md$\|\.txt$\|docs/' | wc -l)
           if [ "$NON_DOC_FILES" -eq 0 ]; then
-            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "skip=true" >> "$GITHUB_OUTPUT"
             echo "Skipping audit: docs-only change"
             exit 0
           fi
 
-          echo "skip=false" >> $GITHUB_OUTPUT
-          echo "pr_num=$PR_NUM" >> $GITHUB_OUTPUT
-          echo "commit_sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
-          echo "files_changed=$FILES_CHANGED" >> $GITHUB_OUTPUT
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "pr_num=$PR_NUM" >> "$GITHUB_OUTPUT"
+          echo "commit_sha=$COMMIT_SHA" >> "$GITHUB_OUTPUT"
+          echo "files_changed=$FILES_CHANGED" >> "$GITHUB_OUTPUT"
 
-          # Save diff for review (truncate at 8000 chars to stay within prompt limits)
+          # Save diff for review (truncate at line boundary, ~200 lines)
           {
             echo "Commit: $COMMIT_SHA"
             echo "Message: $COMMIT_MSG"
@@ -48,8 +47,8 @@ jobs:
             echo "$DIFF_STAT"
             echo ""
             echo "Diff:"
-            echo "$DIFF"
-          } | head -c 8000 > /tmp/audit-diff.txt
+            git diff HEAD~1
+          } | head -n 200 > /tmp/audit-diff.txt
 
       - name: Run audit review
         if: steps.context.outputs.skip != 'true'
@@ -81,34 +80,37 @@ jobs:
 
           $DIFF_CONTENT" 2>/dev/null || echo "REVIEW_FAILED")
 
-          # Determine if findings are actionable
-          if echo "$REVIEW" | grep -q "^CLEAN$"; then
-            COMMENT_BODY="## Post-Merge Audit — $COMMIT_SHA\n\nNo actionable issues found."
+          # Determine if findings are actionable (trim whitespace for robust check)
+          REVIEW_TRIMMED=$(echo "$REVIEW" | tr -d '[:space:]')
+          if [ "$REVIEW_TRIMMED" = "CLEAN" ]; then
+            COMMENT_BODY="## Post-Merge Audit — ${COMMIT_SHA}\n\nNo actionable issues found."
             CREATE_ISSUE=false
-          elif echo "$REVIEW" | grep -q "REVIEW_FAILED"; then
-            COMMENT_BODY="## Post-Merge Audit — $COMMIT_SHA\n\nAudit failed to run. Check runner logs."
+          elif echo "$REVIEW_TRIMMED" | grep -q "REVIEW_FAILED"; then
+            COMMENT_BODY="## Post-Merge Audit — ${COMMIT_SHA}\n\nAudit failed to run. Check runner logs."
             CREATE_ISSUE=false
           else
-            COMMENT_BODY="## Post-Merge Audit — $COMMIT_SHA\n\n$REVIEW"
+            COMMENT_BODY="## Post-Merge Audit — ${COMMIT_SHA}\n\n${REVIEW}"
             CREATE_ISSUE=true
           fi
 
-          # Post PR comment (if we have a PR number)
+          # Post PR comment using jq for safe JSON construction
           if [ -n "$PR_NUM" ]; then
-            curl -sk -X POST \
+            BODY_JSON=$(printf '%s' "$COMMENT_BODY" | jq -Rs .)
+            curl -s -X POST \
               -H "Authorization: token $GITEA_TOKEN" \
               -H "Content-Type: application/json" \
-              -d "$(printf '{"body": "%s"}' "$(echo -e "$COMMENT_BODY" | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')")" \
+              -d "{\"body\": $BODY_JSON}" \
               "$GITEA_URL/api/v1/repos/$REPO/issues/$PR_NUM/comments"
             echo "Posted comment on PR #$PR_NUM"
           fi
 
-          # Create issue if actionable findings
+          # Create issue with audit label if actionable findings
           if [ "$CREATE_ISSUE" = "true" ] && [ -n "$PR_NUM" ]; then
-            curl -sk -X POST \
+            TITLE_JSON=$(printf '[Audit] Findings in PR #%s (%s)' "$PR_NUM" "$COMMIT_SHA" | jq -Rs .)
+            curl -s -X POST \
               -H "Authorization: token $GITEA_TOKEN" \
               -H "Content-Type: application/json" \
-              -d "$(printf '{"title": "[Audit] Findings in PR #%s (%s)", "body": "%s"}' "$PR_NUM" "$COMMIT_SHA" "$(echo -e "$COMMENT_BODY" | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')")" \
+              -d "{\"title\": $TITLE_JSON, \"body\": $BODY_JSON, \"labels\": [19]}" \
               "$GITEA_URL/api/v1/repos/$REPO/issues"
             echo "Created audit issue for PR #$PR_NUM"
           fi
