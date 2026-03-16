@@ -1,5 +1,5 @@
 ---
-description: "Audit a deployed web page: navigate, capture screenshots, extract DOM summary, return structured quality report. Use for post-deploy verification or UI testing."
+description: "Audit a deployed web page with screenshots, DOM extraction, UX scoring, and quality report."
 ---
 
 # Browser Audit

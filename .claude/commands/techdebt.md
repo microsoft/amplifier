@@ -1,5 +1,5 @@
 ---
-description: "Scan for technical debt: dead code, duplication, complexity hotspots, outdated patterns. Use for periodic codebase hygiene or before major refactors."
+description: "Scan for technical debt: dead code, duplication, complexity, outdated patterns."
 ---
 
 # Technical Debt Scanner

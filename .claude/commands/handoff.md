@@ -1,5 +1,5 @@
 ---
-description: "Manage the full Claude ↔ Gemini handoff workflow. Auto-detects state from HANDOFF.md and executes the right phase: dispatch, monitor, review, merge, deploy, close."
+description: "Claude ↔ Gemini handoff workflow. Auto-detects state, executes dispatch/monitor/review/merge."
 ---
 
 # Handoff — Claude ↔ Gemini Task Workflow

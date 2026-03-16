@@ -1,5 +1,5 @@
 ---
-description: "Create comprehensive implementation plans with Amplifier agent allocation, TDD structure, and bite-sized tasks. Use when you have a spec or requirements for a multi-step task."
+description: "Create implementation plans with agent allocation and TDD tasks. Use after brainstorm or with a spec."
 ---
 
 # Writing Plans

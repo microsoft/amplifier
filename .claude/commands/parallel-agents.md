@@ -1,5 +1,5 @@
 ---
-description: "Dispatch multiple Amplifier specialists in parallel for independent analysis or implementation tasks. Use when facing 2+ independent tasks with no shared state."
+description: "Dispatch multiple agents in parallel for 2+ independent tasks with no shared state."
 ---
 
 # Dispatching Parallel Agents

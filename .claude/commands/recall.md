@@ -1,5 +1,5 @@
 ---
-description: "Load context from long-term memory. Temporal queries (yesterday, last week) scan native JSONL. Topic queries use BM25 search. Graph mode visualizes session-file relationships."
+description: "Load context from long-term memory. Temporal, topic (BM25), or graph queries."
 ---
 
 # Recall — Long-Term Memory

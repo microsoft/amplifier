@@ -1,5 +1,5 @@
 ---
-description: "Explores user intent, requirements and design before implementation. Recommended starting point for most creative work — creating features, building components, adding functionality, or modifying behavior."
+description: "Explore intent and design before implementation. Start here for new features, components, or behavior changes."
 ---
 
 # Brainstorming Ideas Into Designs
