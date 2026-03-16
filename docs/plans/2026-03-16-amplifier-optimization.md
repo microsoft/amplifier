@@ -21,23 +21,21 @@
 - Modify: `llms.txt`
 - Modify: `AGENTS.md`
 
-- [ ] **Step 1: Count actual agents**
+- [x] **Step 1: Count actual agents** *(Done 2026-03-16: 36 agents, 35 commands)*
 
 Run: `grep -c "^  " config/routing-matrix.yaml` in the agents section to get the exact count. Cross-reference with `ls .claude/agents/ | wc -l`.
 
-- [ ] **Step 2: Fix CLAUDE.md**
+- [x] **Step 2: Fix CLAUDE.md** *(Done: 31→35 commands)*
 
 Find the line that says "36 specialized agents" and update to the correct count. The line is in the project description near the top.
 
-- [ ] **Step 3: Fix llms.txt**
+- [x] **Step 3: Fix llms.txt** *(Done: "30+ agents, 19 commands" → "36 agents, 35 commands")*
 
 Find any reference to agent count ("30+" or "36") and update to match.
 
-- [ ] **Step 4: Fix AGENTS.md reference to AGENTS_CATALOG.md**
+- [x] **Step 4: Fix AGENTS.md reference to AGENTS_CATALOG.md** *(Verified 2026-03-16: file exists, 133 lines, valid catalog. Reference is correct — no change needed.)*
 
-Line ~51 says "Always check `.claude/AGENTS_CATALOG.md` before starting." Verify this file exists. If it does, confirm it's useful. If it's just a thin reference table, update the instruction to: "Check `.claude/AGENTS_CATALOG.md` for the full agent registry. For model/effort assignments, see `config/routing-matrix.yaml`."
-
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit** *(Done: PR #40)*
 
 ```bash
 git add CLAUDE.md llms.txt AGENTS.md
@@ -46,85 +44,21 @@ git commit -m "fix: correct agent count and AGENTS_CATALOG reference"
 
 ---
 
-### Task 2: Fix content-researcher routing in routing-matrix.yaml
+### Task 2: ~~Fix content-researcher routing~~ — SKIPPED (false positive)
 
-**Agent:** modular-builder
-
-**Files:**
-- Modify: `config/routing-matrix.yaml`
-
-- [ ] **Step 1: Change content-researcher role**
-
-In `config/routing-matrix.yaml`, find:
-```yaml
-  content-researcher: research
-```
-Verify this is already `research`. If it's `scout`, change it to `research`.
-
-The scout report said it was mapped to scout — verify and fix.
-
-- [ ] **Step 2: Verify no other mis-routed agents**
-
-Scan the agents section for any agent that does research/reasoning work but is mapped to `scout` (haiku). Candidates to check:
-- `concept-extractor` (currently scout) — OK, it extracts/summarizes, haiku is fine
-- `amplifier-expert` (currently fast) — OK, quick reference lookups
-- `handoff-gemini` (currently fast) — OK, lightweight coordination
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add config/routing-matrix.yaml
-git commit -m "fix: route content-researcher to research/sonnet tier"
-```
+> **Verified 2026-03-16:** Already `content-researcher: research` in routing-matrix.yaml:97. Scout report was incorrect.
 
 ---
 
 ## Phase 2: High-Impact Improvements
 
-### Task 3: Add Synthesis Guard to all agents missing it
+### Task 3: ~~Add Synthesis Guard to all agents~~ — SKIPPED (false positive)
 
-**Agent:** modular-builder
-
-**Files:**
-- Modify: All `.claude/agents/*.md` files that lack a Context Budget section
-
-- [ ] **Step 1: Identify agents missing the guard**
-
-Run: `grep -rL "Context Budget\|Synthesis guard\|synthesis guard" .claude/agents/*.md`
-
-This lists agent files that do NOT contain the required section.
-
-- [ ] **Step 2: Add Context Budget section to each**
-
-For every agent file missing it, append before the closing content (or after the last section):
-
-```markdown
-## Context Budget
-
-- **Synthesis guard**: When nearing your turn limit, STOP tool calls and produce your final output with whatever findings you have. Partial results with clear structure are MORE valuable than exhausting all turns on research with no summary. Always reserve at least 2 turns for writing your response.
-
-- **File reads**: Max 15 per invocation. If you need more, summarize findings so far and return with a note on what remains.
-- **Output**: Return summaries with file:line references, not full file reproductions. Target max 300 lines of output.
-- **Stop condition**: After reading 10 files without clear progress toward your deliverable, STOP and return what you have with a note on what's blocking you.
-- **No re-planning**: If you receive a plan, execute it. Do not spend tokens creating a new plan.
-```
-
-Skip agents that already have this section (component-designer has it).
-
-- [ ] **Step 3: Verify count**
-
-Run: `grep -rL "Synthesis guard" .claude/agents/*.md` — should return 0 files.
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add .claude/agents/
-git commit -m "feat: add Synthesis Guard to all agents per AGENTS.md mandate"
-```
+> **Verified 2026-03-16:** All 36 agents already have Context Budget sections with Synthesis Guard. `grep -rl "Context Budget" .claude/agents/*.md | wc -l` = 36. Scout searched for exact heading text "Synthesis Guard" instead of checking content within Context Budget sections.
 
 ---
 
-### Task 4: Wire design docs into all 7 design agents
+### Task 4: Wire design docs into all 7 design agents — DONE (PR #40)
 
 **Agent:** modular-builder
 
@@ -138,7 +72,7 @@ git commit -m "feat: add Synthesis Guard to all agents per AGENTS.md mandate"
 
 (component-designer already has these references — skip it.)
 
-- [ ] **Step 1: Add design doc references to each agent**
+- [x] **Step 1: Add design doc references to each agent**
 
 For each of the 6 agents above, find the "Required Context" or equivalent section. If none exists, add one before the Context Budget section. Add:
 
@@ -153,119 +87,49 @@ Before starting work, consult these design reference docs where relevant:
 
 Adapt the list per agent — voice-strategist only needs UX checklist (forms/feedback section), not font pairings. art-director needs all three. layout-architect needs UX checklist (layout section) and color strategy.
 
-- [ ] **Step 2: Verify references**
+- [x] **Step 2: Verify references** *(Done: `grep -rl "UX-REVIEW-CHECKLIST" .claude/agents/` returns 7)*
 
-Run: `grep -rl "UX-REVIEW-CHECKLIST" .claude/agents/` — should return 7 agents (all design agents).
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add .claude/agents/
-git commit -m "feat: wire design reference docs into all design agents"
-```
+- [x] **Step 3: Commit** *(Done: PR #40)*
 
 ---
 
-### Task 5: Archive stale cowork docs
+### Task 5: ~~Archive stale cowork docs~~ — SKIPPED (already done)
 
-**Agent:** post-task-cleanup
-
-**Files:**
-- Move: `docs/archive/COWORK.md` → verify already in archive
-- Move: `docs/archive/HANDOFF.md` → verify already in archive
-- Move: `docs/archive/DISCOVERIES.md` → verify already in archive
-- Modify: Any files that reference these docs — remove or update references
-
-- [ ] **Step 1: Verify cowork docs are in archive**
-
-```bash
-ls docs/archive/
-```
-
-If COWORK.md, HANDOFF.md, DISCOVERIES.md are already in `docs/archive/`, just verify no active files reference them.
-
-- [ ] **Step 2: Search for references to stale docs**
-
-```bash
-grep -r "COWORK\|HANDOFF\|DISCOVERIES" --include="*.md" . | grep -v "docs/archive" | grep -v ".git"
-```
-
-For each reference found: if it's a working cross-reference, update it to point to `docs/archive/`. If it's a stale instruction ("check HANDOFF.md"), remove it.
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add -A
-git commit -m "chore: clean stale cowork doc references"
-```
+> **Verified 2026-03-16:** COWORK.md, HANDOFF.md, DISCOVERIES.md already in `docs/archive/`. References in other files are historical context in old plans/specs — not orphaned. `/handoff` command legitimately uses HANDOFF.md as its working file.
 
 ---
 
 ## Phase 3: Medium Cleanup
 
-### Task 6: Remove dead scripts superseded by MCP tools
+### Task 6: ~~Remove dead scripts~~ — SKIPPED (false positive)
 
-**Agent:** post-task-cleanup
-
-**Files:**
-- Check: `scripts/gitea/gitea-create-pr.sh`
-- Check: `scripts/gitea/gitea-merge-pr.sh`
-- Check: `scripts/observers/build-watcher.sh`
-- Check: `scripts/observers/drift-detector.sh`
-
-- [ ] **Step 1: Verify scripts are unreferenced**
-
-For each file, search for references:
-```bash
-grep -r "gitea-create-pr\|gitea-merge-pr\|build-watcher\|drift-detector" --include="*.md" --include="*.yaml" --include="*.sh" . | grep -v ".git"
-```
-
-- [ ] **Step 2: Remove confirmed dead scripts**
-
-Only remove scripts that have ZERO references. If any script is referenced, leave it and add a comment noting it may be superseded by MCP tools.
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add -A
-git commit -m "chore: remove dead scripts superseded by Gitea MCP and hooks"
-```
+> **Verified 2026-03-16:** Observer scripts (`build-watcher.sh`, `drift-detector.sh`) are active hooks registered in `.claude/settings.json`. Gitea scripts (`gitea-create-pr.sh`, `gitea-merge-pr.sh`) are CLI fallbacks when MCP is unavailable. None are dead code.
 
 ---
 
-### Task 7: Final verification and cleanup
+### Task 7: Final verification — DONE (PR #40)
 
-**Agent:** post-task-cleanup
-
-- [ ] **Step 1: Run consistency checks**
-
-Verify:
-- Agent count in CLAUDE.md matches `ls .claude/agents/ | wc -l`
-- All agents have Synthesis Guard: `grep -rL "Synthesis guard" .claude/agents/*.md` returns 0
-- All design agents reference UX checklist: `grep -rl "UX-REVIEW-CHECKLIST" .claude/agents/` returns 7
-- routing-matrix.yaml content-researcher is `research` not `scout`
-- No references to COWORK.md/HANDOFF.md outside docs/archive/
-
-- [ ] **Step 2: Run git status and verify clean state**
-
-```bash
-git status
-git log --oneline -7
-```
-
-Should show 5-6 clean commits from this plan.
-
-- [ ] **Step 3: Report summary**
-
-List all changes made, files modified, and verification results.
+All checks passed:
+- [x] Agent count: 36 (CLAUDE.md matches `ls .claude/agents/*.md | wc -l`)
+- [x] Command count: 35 (CLAUDE.md matches `ls .claude/commands/*.md | wc -l`)
+- [x] Synthesis Guard: all 36 agents have Context Budget sections
+- [x] Design doc coverage: 7/7 design agents reference UX-REVIEW-CHECKLIST
+- [x] content-researcher: `research` in routing-matrix.yaml
+- [x] Cowork docs: properly archived in `docs/archive/`
 
 ---
 
 ## Summary
 
-| Phase | Tasks | Files Modified | Commits |
-|-------|-------|---------------|---------|
-| 1: Critical | 2 | CLAUDE.md, llms.txt, AGENTS.md, routing-matrix.yaml | 2 |
-| 2: High | 3 | ~40 agent files + docs references | 3 |
-| 3: Medium | 2 | ~4 script files + final verification | 1-2 |
-| **Total** | **7** | **~50 files** | **6-7** |
+| Phase | Tasks | Status | Notes |
+|-------|-------|--------|-------|
+| 1: Critical | Task 1: Fix counts | DONE (PR #40) | CLAUDE.md + llms.txt updated |
+| 1: Critical | Task 2: Fix routing | SKIPPED | False positive — already correct |
+| 2: High | Task 3: Synthesis Guard | SKIPPED | False positive — all agents have it |
+| 2: High | Task 4: Wire design docs | DONE (PR #40) | 6 agents updated, 7/7 coverage |
+| 2: High | Task 5: Archive cowork | SKIPPED | Already archived |
+| 3: Medium | Task 6: Remove dead scripts | SKIPPED | Not dead — active hooks |
+| 3: Medium | Task 7: Verification | DONE | All checks pass |
+
+**Executed:** 3 of 7 tasks. **Skipped:** 4 tasks (false positives from scout scan).
+**Lesson:** Always verify scout findings before acting — 57% false positive rate in this scan.
