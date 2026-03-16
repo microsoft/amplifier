@@ -519,6 +519,9 @@ Before starting work, read these design philosophy files for project design guid
 - `ai_context/design/DESIGN-FRAMEWORK.md`
 - `ai_context/design/DESIGN-VISION.md`
 
+**Frontend reference docs** (consult for responsive/touch UX rules):
+- `ai_context/design/UX-REVIEW-CHECKLIST.md` — Priority 2: Touch targets, Priority 5: Layout & Responsive, Priority 9: Navigation
+
 ## Context Budget
 
 - **Synthesis guard**: When nearing your turn limit, STOP tool calls and produce your final output with whatever findings you have. Partial results with clear structure are MORE valuable than exhausting all turns on research with no summary. Always reserve at least 2 turns for writing your response.

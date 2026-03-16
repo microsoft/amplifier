@@ -1,6 +1,6 @@
 # Amplifier (Claude Code Integration)
 
-> AI-powered modular development assistant with 30+ specialized agents, 19 slash commands, and design philosophy docs. Uses Claude Code as the agent runtime. Built on Microsoft Amplifier v2.
+> AI-powered modular development assistant with 36 specialized agents, 35 slash commands, and design philosophy docs. Uses Claude Code as the agent runtime. Built on Microsoft Amplifier v2.
 
 ## Core Project Files
 
