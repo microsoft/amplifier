@@ -101,7 +101,7 @@ mcp__claude-in-chrome__read_network_requests()
 
 ### Step 5: Analyze and Report
 
-Synthesize all captures into a structured report:
+Synthesize all captures into a structured report. **Use `ai_context/design/UX-REVIEW-CHECKLIST.md` as the evaluation framework** — score against its priority categories based on what's observable from the page captures:
 
 ```markdown
 # Browser Audit Report — <url>
@@ -132,12 +132,30 @@ Synthesize all captures into a structured report:
 - Interactive elements: N
 - [Key content visible on page]
 
+## UX Quality (from UX-REVIEW-CHECKLIST.md)
+
+Evaluate observable UX quality against the checklist priorities:
+
+| Priority | Category | Score | Key Findings |
+|----------|----------|-------|-------------|
+| 1 | Accessibility | ?/10 | [contrast, alt text, heading hierarchy, focus rings] |
+| 3 | Performance | ?/10 | [image optimization, CLS, font loading, lazy load] |
+| 4 | Style Selection | ?/10 | [icon consistency, shadow/radius coherence, CTA clarity] |
+| 5 | Layout & Responsive | ?/10 | [viewport meta, mobile-first, spacing, no h-scroll] |
+| 6 | Typography & Color | ?/10 | [font size, line height, contrast, semantic colors] |
+| 8 | Forms & Feedback | ?/10 | [labels, error placement, required indicators] |
+| 9 | Navigation | ?/10 | [nav consistency, active state, back behavior] |
+
+*Priorities 2 (Touch), 7 (Animation), 10 (Charts) require interaction testing — note if not assessable from static capture.*
+
+**UX Score: X/10** (average of assessed categories)
+
 ## Issues Found
 ### Critical
-- [Issues that indicate broken functionality]
+- [Issues that indicate broken functionality or accessibility violations]
 
 ### Warning
-- [Issues that degrade experience]
+- [UX checklist violations that degrade experience]
 
 ### Info
 - [Observations worth noting]
