@@ -1,0 +1,114 @@
+name: Post-Merge Audit
+
+on:
+  push:
+    branches: [main]
+
+env:
+  GITEA_URL: https://gitea.ergonet.pl:3001
+
+jobs:
+  audit-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Extract diff and PR context
+        id: context
+        run: |
+          # Get PR number from merge commit message
+          COMMIT_MSG=$(git log -1 --format="%s")
+          PR_NUM=$(echo "$COMMIT_MSG" | grep -oP "'?#\K[0-9]+" | head -1 || echo "")
+          COMMIT_SHA=$(git log -1 --format="%h")
+          DIFF_STAT=$(git diff HEAD~1 --stat)
+          DIFF=$(git diff HEAD~1)
+          FILES_CHANGED=$(git diff HEAD~1 --name-only | wc -l)
+
+          # Skip audit for docs-only changes
+          NON_DOC_FILES=$(git diff HEAD~1 --name-only | grep -v '\.md$\|\.txt$\|docs/' | wc -l)
+          if [ "$NON_DOC_FILES" -eq 0 ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "Skipping audit: docs-only change"
+            exit 0
+          fi
+
+          echo "skip=false" >> $GITHUB_OUTPUT
+          echo "pr_num=$PR_NUM" >> $GITHUB_OUTPUT
+          echo "commit_sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
+          echo "files_changed=$FILES_CHANGED" >> $GITHUB_OUTPUT
+
+          # Save diff for review (truncate at 8000 chars to stay within prompt limits)
+          {
+            echo "Commit: $COMMIT_SHA"
+            echo "Message: $COMMIT_MSG"
+            echo ""
+            echo "Files changed:"
+            echo "$DIFF_STAT"
+            echo ""
+            echo "Diff:"
+            echo "$DIFF"
+          } | head -c 8000 > /tmp/audit-diff.txt
+
+      - name: Run audit review
+        if: steps.context.outputs.skip != 'true'
+        env:
+          GITEA_TOKEN: ${{ secrets.AUDIT_GITEA_TOKEN }}
+        run: |
+          DIFF_CONTENT=$(cat /tmp/audit-diff.txt)
+          PR_NUM="${{ steps.context.outputs.pr_num }}"
+          COMMIT_SHA="${{ steps.context.outputs.commit_sha }}"
+          REPO="${{ gitea.repository }}"
+
+          # Run Claude review via CLI (non-interactive)
+          REVIEW=$(claude -p "You are a post-merge code auditor. Review this merged diff for a production codebase.
+
+          Focus ONLY on:
+          1. Bugs — logic errors, off-by-one, null/undefined risks
+          2. Security — injection, auth bypass, secret exposure, unsafe input
+          3. Missed edge cases — error paths not handled, race conditions
+          4. Breaking changes — API contract changes, schema drift
+
+          DO NOT comment on: style, formatting, naming preferences, or nice-to-haves.
+          DO NOT repeat the diff back. Be concise.
+
+          If no actionable issues found, respond with exactly: CLEAN
+
+          If issues found, respond with:
+          FINDINGS
+          - [severity: bug|security|edge-case|breaking] file:line — description
+
+          $DIFF_CONTENT" 2>/dev/null || echo "REVIEW_FAILED")
+
+          # Determine if findings are actionable
+          if echo "$REVIEW" | grep -q "^CLEAN$"; then
+            COMMENT_BODY="## Post-Merge Audit — $COMMIT_SHA\n\nNo actionable issues found."
+            CREATE_ISSUE=false
+          elif echo "$REVIEW" | grep -q "REVIEW_FAILED"; then
+            COMMENT_BODY="## Post-Merge Audit — $COMMIT_SHA\n\nAudit failed to run. Check runner logs."
+            CREATE_ISSUE=false
+          else
+            COMMENT_BODY="## Post-Merge Audit — $COMMIT_SHA\n\n$REVIEW"
+            CREATE_ISSUE=true
+          fi
+
+          # Post PR comment (if we have a PR number)
+          if [ -n "$PR_NUM" ]; then
+            curl -sk -X POST \
+              -H "Authorization: token $GITEA_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "$(printf '{"body": "%s"}' "$(echo -e "$COMMENT_BODY" | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')")" \
+              "$GITEA_URL/api/v1/repos/$REPO/issues/$PR_NUM/comments"
+            echo "Posted comment on PR #$PR_NUM"
+          fi
+
+          # Create issue if actionable findings
+          if [ "$CREATE_ISSUE" = "true" ] && [ -n "$PR_NUM" ]; then
+            curl -sk -X POST \
+              -H "Authorization: token $GITEA_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "$(printf '{"title": "[Audit] Findings in PR #%s (%s)", "body": "%s"}' "$PR_NUM" "$COMMIT_SHA" "$(echo -e "$COMMENT_BODY" | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')")" \
+              "$GITEA_URL/api/v1/repos/$REPO/issues"
+            echo "Created audit issue for PR #$PR_NUM"
+          fi
