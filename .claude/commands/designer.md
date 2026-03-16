@@ -603,17 +603,47 @@ Ship
 
 ---
 
+## Stack Detection (Auto)
+
+Before routing to agents, detect the project's frontend stack from the working directory:
+
+| Signal | Stack | Agent Guidance |
+|--------|-------|---------------|
+| `package.json` has `@shadcn/ui` or `components/ui/` dir | **Tailwind + shadcn** | Use shadcn component patterns, Tailwind utilities, `cn()` helper. Reference context7 MCP for latest shadcn docs. |
+| `tailwind.config.*` or `@tailwindcss` in deps | **Tailwind CSS** | Utility-first classes, design tokens via `@theme`, responsive prefixes |
+| `*.razor` files or `_Imports.razor` | **Blazor / .NET** | CSS variables for tokens, component parameter pattern, CSS isolation |
+| `pyproject.toml` or `requirements.txt` with Flask/Django + templates | **Python + templates** | Minimal CSS, progressive enhancement, server-rendered HTML |
+| None detected | **Ask user** | "What's your frontend stack? This affects component patterns and styling approach." |
+
+**Stack affects:**
+- Component code patterns (React JSX vs Blazor Razor vs plain HTML)
+- Styling approach (Tailwind utilities vs CSS variables vs CSS modules)
+- Token format (CSS custom properties vs Tailwind theme vs shadcn CSS variables)
+- Reference docs to load (shadcn via context7 MCP, or project-specific CSS)
+
+When stack is detected, pass it to the routed agent: "This project uses [stack]. Generate patterns accordingly."
+
+---
+
 ## Key References
 
 Agents reference these files:
-- `../../ai_context/design/DESIGN-FRAMEWORK.md` - Nine Dimensions + Four Layers
-- `../../ai_context/DESIGN-PHILOSOPHY.md` - Five Pillars deep dive
-- `../../ai_context/DESIGN-PRINCIPLES.md` - Quick reference
-- `../../ai_context/design/DESIGN-VISION.md` - Beyond the artifact
-- `../../CLAUDE.md` - Implementation standards
-- `../../docs/design/protocols/COMPONENT-CREATION-PROTOCOL.md` - Component checklist
-- `../../docs/design/protocols/` - Design protocols and guidelines
-- `[project]/app/globals.css` - Design tokens (project-specific)
+
+**Design philosophy:**
+- `ai_context/design/DESIGN-FRAMEWORK.md` - Nine Dimensions + Four Layers
+- `ai_context/DESIGN-PHILOSOPHY.md` - Five Pillars deep dive
+- `ai_context/DESIGN-PRINCIPLES.md` - Quick reference
+- `ai_context/design/DESIGN-VISION.md` - Beyond the artifact
+
+**Frontend reference (stack-agnostic):**
+- `ai_context/design/UX-REVIEW-CHECKLIST.md` - Prioritized UX quality checklist
+- `ai_context/design/FONT-PAIRINGS.md` - 20 curated font pairings by mood/use case
+- `ai_context/design/COLOR-STRATEGY.md` - Semantic tokens, dark mode, accessible pairs
+
+**Project-specific:**
+- `CLAUDE.md` - Implementation standards
+- `docs/design/protocols/COMPONENT-CREATION-PROTOCOL.md` - Component checklist
+- `[project]/app/globals.css` or `[project]/tailwind.config.*` - Design tokens
 
 ---
 
