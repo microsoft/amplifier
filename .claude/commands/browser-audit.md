@@ -101,7 +101,7 @@ mcp__claude-in-chrome__read_network_requests()
 
 ### Step 5: Analyze and Report
 
-Synthesize all captures into a structured report. **Use `ai_context/design/UX-REVIEW-CHECKLIST.md` as the evaluation framework** — score against its priority categories based on what's observable from the page captures:
+Synthesize all captures into a structured report. **Use `ai_context/design/UX-REVIEW-CHECKLIST.md` for UX scoring and `ai_context/design/WEB-CODE-ANTIPATTERNS.md` for code-level checks** (anti-patterns visible in DOM: missing aria-labels, outline-none, images without dimensions, etc.):
 
 ```markdown
 # Browser Audit Report — <url>
