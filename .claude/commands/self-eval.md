@@ -154,9 +154,9 @@ Call: autocontext_record_feedback(
 )
 ```
 
-### Step 7b: Write Recall-Indexable Summary
+### Step 7b: Write Recall-Indexable Summary + Outcome Record
 
-Write a brief markdown summary so `/recall` can find self-eval results:
+Write a brief markdown summary so `/recall` can find self-eval results, AND append a structured outcome block that feeds the strategy learning flywheel:
 
 ```bash
 mkdir -p .claude/skills/amplifier-self-improvement
@@ -169,8 +169,18 @@ cat > .claude/skills/amplifier-self-improvement/latest-eval.md << EVALEOF
 
 ## Key Findings
 <strengths and improvement suggestions — 2-3 bullets>
+
+## Outcome: <domain-keyword>
+- **Strategy:** agent=<agent>, model=<tier>, command=<command_name>
+- **Domain:** <domain keyword, e.g., exchange-admin, api-design, frontend, bugfix>
+- **Score:** <overall_score>/100
+- **Retries:** <0-N, how many agent re-dispatches were needed>
+- **Corrections:** <0-N, post-completion edits before user accepted>
+- **Lesson:** <1 sentence — what worked or what should change next time>
 EVALEOF
 ```
+
+The `## Outcome:` block is the flywheel record. `/recall Outcome: <domain>` retrieves it in future sessions, allowing `/brainstorm` and `/create-plan` to learn from past strategies. Each session that runs `/self-eval` makes future sessions smarter.
 
 This file gets indexed by the recall doc indexer (category: `skill`), making self-eval results searchable via `/recall self-eval` or `/recall brainstorm score`.
 

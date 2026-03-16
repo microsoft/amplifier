@@ -46,6 +46,43 @@ digraph brainstorm {
 }
 ```
 
+## Step 0: Triage Gate (before anything else)
+
+Before dispatching scouts or starting interviews, classify the request:
+
+### Quick Mode — skip to execution routing
+
+When ALL of the following are true:
+- < 25 words (excluding code blocks and file paths)
+- Exactly 1 action verb from: add, fix, remove, rename, move, delete, update, create
+- Single named target (specific file, function, component, or identifier — NOT a broad-scope noun)
+- No conjunctions (and, or, plus, also)
+- No vague modifiers (better, improved, some, maybe, kind of)
+
+→ Skip scout, skip interview, skip design.
+→ Respond: "Quick task detected. Recommended: [agent] on [target]. Proceed, or need to discuss first?"
+→ If user confirms, route directly to execution (single agent dispatch or `/tdd`).
+
+### Force Full Brainstorm — when ANY signal present
+
+| Signal | Examples |
+|--------|----------|
+| Broad-scope nouns | system, platform, pipeline, dashboard, module, suite, management |
+| Compound tasks | 2+ independent clauses, comma-separated actions, "and"/"also"/"as well as" |
+| Integration verbs | integrate, merge, connect, combine, sync |
+| Vague scope | "it", "this", "that" without clear referent in same sentence |
+| Comprehensiveness | comprehensive, complete, full, end-to-end, overall |
+| Multi-domain | 2+ distinct domains detected (frontend+backend, API+DB, etc.) |
+| Ownership/state | our, existing, the current, fresh, updated |
+
+→ Force full brainstorm with explicit note: "This has [signal] — running full brainstorm to scope it properly."
+
+### Normal — everything else
+
+Proceed through standard brainstorm flow below.
+
+---
+
 ## Session Start
 
 Before diving into the idea, gather context by dispatching a **context scout subagent**. This runs all context gathering in a separate context window, returning only a concise summary to the main session.
@@ -88,6 +125,12 @@ Task(subagent_type="general-purpose", model="haiku", max_turns=8, description="G
 
   ## Existing Specs
   [any related design docs — list or 'None found']
+
+  ## Past Outcomes (Strategy Learning)
+  Search recall for 'Outcome:' entries matching the domain keywords.
+  [If found: list date, agent, model tier, score, retries, lesson — bullet list]
+  [If not found: 'No prior outcomes for this domain']
+  Use these to inform agent and model tier recommendations.
 ")
 ```
 

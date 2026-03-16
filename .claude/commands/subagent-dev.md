@@ -34,6 +34,26 @@ digraph when_to_use {
 - Two-stage review after each task: spec compliance first, then code quality
 - Faster iteration (no human-in-loop between tasks)
 
+## Pre-Dispatch Prompt Quality Gate
+
+Before sending any prompt to a subagent, run a silent self-check on the prompt you're about to dispatch:
+
+| Dimension | Question | Target |
+|-----------|----------|--------|
+| Clarity | Is the task unambiguous? Could the agent misinterpret scope? | >= 7/10 |
+| Specificity | Are file paths, function names, and expected behavior concrete? | >= 7/10 |
+| Structure | Does it have: goal, context, constraints, success criteria? | >= 7/10 |
+| Constraints | Are boundaries explicit (what NOT to do, what's out of scope)? | >= 7/10 |
+
+**Average >= 7:** dispatch as-is.
+**Average 5-6:** strengthen the prompt before dispatch — add missing file paths, boundaries, or examples.
+**Average < 5:** rewrite the prompt — it will produce poor output and waste a dispatch cycle.
+
+This is a mental checkpoint, not a visible table. Silent unless it triggers a rewrite — then note:
+"Strengthened the agent prompt before dispatch (added [missing element])."
+
+---
+
 ## Amplifier Agent Dispatch
 
 Each task in the plan has an `Agent:` field. Use it as the `subagent_type` when dispatching:

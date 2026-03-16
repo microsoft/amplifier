@@ -17,13 +17,29 @@ Parse the user's request and classify into one of two tracks:
 ### Track A: Interactive Playground
 The user wants to **configure, explore, or tweak** something visually with controls and live preview.
 
-Trigger words: playground, explorer, interactive, configure, tweak, controls, sliders, presets, try different, compare options, prompt builder
+Trigger words: playground, explorer, interactive, configure, tweak, controls, sliders, presets, try different, compare options, prompt builder, query builder, concept map, review document, annotate, approve/reject
+
+The playground skill has **6 specialized templates** — match the user's intent to the right one:
+
+| Intent | Playground template | Example requests |
+|--------|-------------------|------------------|
+| Visual design (components, layouts, color, typography) | `design-playground` | "button style explorer", "tweak card shadows", "typography scale playground" |
+| Data & query building (SQL, APIs, pipelines, regex) | `data-explorer` | "SQL query builder", "regex tester", "API parameter explorer" |
+| Learning & exploration (concept maps, knowledge gaps) | `concept-map` | "concept map for Kubernetes", "explore the auth domain", "map what I don't know" |
+| Document review (suggestions with approve/reject) | `document-critique` | "review this RFC interactively", "let me annotate the proposal" |
+| Code review (diffs with line-by-line commenting) | `diff-review` | "interactive diff explorer", "let me comment on these changes" |
+| Codebase architecture (components, data flow, layers) | `code-map` | "interactive architecture map", "explore component relationships" |
 
 **Examples:**
-- "make a playground for CSS border-radius"
-- "interactive color palette explorer"
-- "build a prompt configurator for image generation"
-- "let me tweak the API parameters visually"
+- "make a playground for CSS border-radius" → design-playground
+- "interactive color palette explorer" → design-playground
+- "build a prompt configurator for image generation" → design-playground
+- "let me tweak the API parameters visually" → data-explorer
+- "SQL query builder playground" → data-explorer
+- "concept map for microservices" → concept-map
+- "let me review this doc interactively" → document-critique
+- "interactive diff review with comments" → diff-review (playground)
+- "explore the codebase architecture interactively" → code-map
 
 → Use the `playground` skill. Invoke: `/playground` with the user's topic.
 
@@ -55,6 +71,12 @@ Trigger words: diagram, architecture, flowchart, explain visually, diff review, 
 ### Ambiguous Cases
 
 If unclear, default to **Track B** (visual explanation) — it's the more common need. If the user says "interactive" or "playground" explicitly, always use Track A.
+
+**Overlap: diff-review and code-map exist in both tracks.** Disambiguate by intent:
+- "show me the diff" / "review my changes" → Track B (static visual page)
+- "let me explore the diff" / "interactive diff with comments" → Track A (playground)
+- "show the architecture" / "diagram the system" → Track B (static diagram)
+- "interactive architecture map" / "explore component relationships" → Track A (playground)
 
 ## Step 2: Dispatch
 
