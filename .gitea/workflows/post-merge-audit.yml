@@ -3,9 +3,11 @@ name: Post-Merge Audit
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 env:
   GITEA_URL: https://gitea.ergonet.pl:3001
+  GIT_SSL_NO_VERIFY: "true"
 
 jobs:
   audit-review:
@@ -96,7 +98,7 @@ jobs:
           # Post PR comment using jq for safe JSON construction
           if [ -n "$PR_NUM" ]; then
             BODY_JSON=$(printf '%s' "$COMMENT_BODY" | jq -Rs .)
-            curl -s -X POST \
+            curl -sk -X POST \
               -H "Authorization: token $GITEA_TOKEN" \
               -H "Content-Type: application/json" \
               -d "{\"body\": $BODY_JSON}" \
@@ -107,7 +109,7 @@ jobs:
           # Create issue with audit label if actionable findings
           if [ "$CREATE_ISSUE" = "true" ] && [ -n "$PR_NUM" ]; then
             TITLE_JSON=$(printf '[Audit] Findings in PR #%s (%s)' "$PR_NUM" "$COMMIT_SHA" | jq -Rs .)
-            curl -s -X POST \
+            curl -sk -X POST \
               -H "Authorization: token $GITEA_TOKEN" \
               -H "Content-Type: application/json" \
               -d "{\"title\": $TITLE_JSON, \"body\": $BODY_JSON, \"labels\": [19]}" \
