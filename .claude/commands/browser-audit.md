@@ -41,15 +41,21 @@ If unreachable, report error and stop.
 
 ### Step 2: Get Browser Context
 
-First, get current tab state:
+Get current tab state and look for an existing tab with the target URL:
 ```
 mcp__claude-in-chrome__tabs_context_mcp()
 ```
 
-Create a new tab for the audit (never reuse existing tabs):
-```
-mcp__claude-in-chrome__tabs_create_mcp(url="<url>")
-```
+**Tab reuse logic:** Search the returned tabs for one whose URL matches the target (exact match or same origin+path, ignoring query params and fragments).
+
+- **If matching tab found:** Reuse it. Navigate to the exact target URL to ensure fresh state:
+  ```
+  mcp__claude-in-chrome__navigate(url="<url>", tabId=<matching_tab_id>)
+  ```
+- **If no matching tab:** Create a new one:
+  ```
+  mcp__claude-in-chrome__tabs_create_mcp(url="<url>")
+  ```
 
 ### Step 3: Set Viewport (if specified)
 

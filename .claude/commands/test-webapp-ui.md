@@ -19,6 +19,7 @@ Where:
 ## Process
 
 1. **Setup** - Identify target app (report findings at each step):
+   - **Check existing tabs first:** Call `mcp__claude-in-chrome__tabs_context_mcp()` and search for a tab whose URL matches the target (exact match or same origin+path, ignoring query params/fragments). If found, reuse it — navigate to refresh state. Only create a new tab if no match exists.
    - If URL provided: Use directly
    - If description provided,
      - **Try make first**: If no URL provided, check for `Makefile` with `make start` or `make dev` or similar
