@@ -1,6 +1,6 @@
 # Amplifier (Claude Code Integration)
 
-> AI-powered modular development assistant with 36 specialized agents, 35 slash commands, and design philosophy docs. Uses Claude Code as the agent runtime. Built on Microsoft Amplifier v2.
+> AI-powered modular development assistant with 36 specialized agents, 40 slash commands, and design philosophy docs. Uses Claude Code as the agent runtime. Built on Microsoft Amplifier v2.
 
 ## Core Project Files
 
@@ -16,11 +16,26 @@
 - [Design Principles](ai_context/DESIGN-PRINCIPLES.md): Zero-BS, no stubs, incremental processing patterns
 - [Design Framework](ai_context/design/DESIGN-FRAMEWORK.md): Nine Dimensions and Five Pillars design system
 - [Design Vision](ai_context/design/DESIGN-VISION.md): Visual direction and goals
+- [Web Code Anti-Patterns](ai_context/design/WEB-CODE-ANTIPATTERNS.md): Code-level anti-patterns for frontend review
+- [Color Strategy](ai_context/design/COLOR-STRATEGY.md): Semantic color tokens and dark mode strategy
+- [Font Pairings](ai_context/design/FONT-PAIRINGS.md): 20 curated font pairings by mood
+- [UX Review Checklist](ai_context/design/UX-REVIEW-CHECKLIST.md): 10-priority UX quality checklist
 
 ## Agents & Commands
 
-- [Agents Catalog](.claude/AGENTS_CATALOG.md): Complete reference for all 30+ specialized agents with dispatch keywords
+- [Agents Catalog](.claude/AGENTS_CATALOG.md): Complete reference for all 36 specialized agents with dispatch keywords
 - [Agent Prompt Include](.claude/AGENT_PROMPT_INCLUDE.md): Shared context included in all agent prompts
+
+## Design Skills
+
+- [Frontend Design Skill](.claude/skills/frontend-design/SKILL.md): Core anti-slop design principles, AI Slop Test, aesthetic DO/DON'T
+- [Typography Reference](.claude/skills/frontend-design/reference/typography.md): Modular scales, fluid sizing, font pairings
+- [Color & Contrast Reference](.claude/skills/frontend-design/reference/color-and-contrast.md): OKLCH, tinted neutrals, semantic tokens
+- [Spatial Design Reference](.claude/skills/frontend-design/reference/spatial-design.md): Grid systems, spacing scales, container queries
+- [Motion Design Reference](.claude/skills/frontend-design/reference/motion-design.md): Timing, easing curves, reduced motion
+- [Interaction Design Reference](.claude/skills/frontend-design/reference/interaction-design.md): Forms, focus, loading patterns
+- [Responsive Design Reference](.claude/skills/frontend-design/reference/responsive-design.md): Mobile-first, breakpoints, fluid patterns
+- [UX Writing Reference](.claude/skills/frontend-design/reference/ux-writing.md): Labels, errors, empty states, microcopy
 
 ## Developer Guides
 

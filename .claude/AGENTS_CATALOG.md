@@ -1,6 +1,6 @@
 # Amplifier Agents Catalog
 
-Complete reference for all specialized agents. Each agent is defined in `.claude/agents/<name>.md`.
+Complete reference for all 36 specialized agents. Each agent is defined in `.claude/agents/<name>.md`.
 
 ## Core Development Agents
 
@@ -121,6 +121,19 @@ Used by superpowers skills for two-stage review:
 | `ambiguity-guardian` | Balanced | `sonnet` | Pro |
 | `amplifier-expert` | Fast | `haiku` | Flash |
 | `handoff-gemini` | Fast | `haiku` | Flash |
+
+## Key Commands (dispatch agents)
+
+These slash commands orchestrate agent dispatch. Listed here for discoverability.
+
+| Command | Purpose | Agents Used |
+|---------|---------|-------------|
+| `/frontend-design` | 14-mode frontend design with anti-slop detection | component-designer, art-director, animation-choreographer, layout-architect |
+| `/design-interface` | Parallel "Design It Twice" — 3+ radically different proposals | zen-architect (3 parallel) |
+| `/retro` | Development retrospective — velocity, churn, quality metrics | general-purpose (haiku scout) |
+| `/create-plan` | Structured plans with scope challenge + vertical slices | zen-architect, agentic-search |
+| `/techdebt` | Technical debt scan including module depth analysis | agentic-search (3 parallel) |
+| `/test-verified` | E2E auto-fix with Exchange EWS verification | bug-hunter, exchange-ews MCP |
 
 ## Selection Rules
 
