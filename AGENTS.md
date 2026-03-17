@@ -123,6 +123,21 @@ Right-size tasks before dispatch. With 1M context, agents can handle larger scop
 - Amplifier commands that dispatch agents: `/create-plan`, `/subagent-dev`, `/parallel-agents`
 - Any skill or workflow that creates Task calls with agent delegation
 
+## Session Persistence (Memory Flush)
+
+Auto-save progress at these triggers — don't wait for session end:
+
+**After every commit:** Update session context with what was built, key decisions made, and what's next.
+
+**After every plan decision:** When the user picks an approach (scope mode, architecture choice, tech stack), record it immediately. Mid-session crashes should not lose decisions.
+
+**On exit signals:** When the user says "that's all", "done for today", "heading out", "closing", or similar — immediately:
+1. Commit any uncommitted work (ask first)
+2. Save key decisions and progress to memory
+3. Note unfinished work and next steps
+
+**Why:** An AI remembering past decisions outperforms a smarter AI starting fresh. If the session crashes or compresses, decisions survive.
+
 ## Incremental Processing Pattern
 
 When building batch processing systems:
@@ -202,6 +217,28 @@ When asking the user to make a decision (in `/brainstorm`, `/create-plan`, `/des
 
 ---
 
+## URL Fetch Routing
+
+When fetching content from URLs, pick the optimal tool by platform. Don't blindly use WebFetch — it fails on social platforms and authenticated services.
+
+| Platform | First choice | Fallback |
+|----------|-------------|----------|
+| GitHub repos/PRs/issues | `gh` CLI via Bash | Gitea MCP tools (if Gitea URL) |
+| Gitea repos/PRs/issues | Gitea MCP tools (`mcp__gitea__*`) | WebFetch |
+| Twitter/X (single post) | WebFetch | Playwright navigate |
+| General articles/blogs | WebFetch | Playwright for JS-heavy SPAs |
+| Authenticated services (Jira, Confluence, Google Docs) | Specialized MCP tool if available | Ask user to paste content |
+| npm/PyPI packages | WebFetch on registry page | `context7` MCP for docs |
+| GitHub raw files | WebFetch on raw.githubusercontent.com | `gh api` via Bash |
+
+**Rules:**
+- Never try >2 tools on the same URL — 2 failures → tell user, change approach
+- Never use WebFetch as first choice for social platforms (always fails)
+- For GitHub, prefer `gh` CLI — it handles auth and rate limits
+- For Gitea, ALWAYS use MCP tools — never `gh` CLI (talks to GitHub, not Gitea)
+
+---
+
 ## Response Authenticity Guidelines
 
 **CRITICAL**: Professional, authentic communication. No sycophancy.
@@ -222,6 +259,20 @@ You're a professional tool, not a cheerleader. Users value honest, direct feedba
 **YAGNI**: Don't create unused parameters, don't build for hypothetical futures.
 
 **The test**: "Does this code DO something useful right now?" If no — implement it fully or remove it.
+
+## Banned Completion Phrases
+
+Never use these when claiming work is done:
+
+- "Should be fine" / "Should work now"
+- "Probably passes" / "I think it's fixed"
+- "Seems correct" / "Looks good to me"
+- "Theoretically correct"
+- "I fixed it, you try"
+
+**Instead:** Run the verification command, read the output, cite the evidence. "Tests pass (14/14, 0 failures). Build succeeds (exit code 0). Ready for review."
+
+These phrases signal incomplete verification — the #1 AI coding failure mode.
 
 ## Build/Test/Lint Commands
 
