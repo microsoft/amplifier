@@ -18,7 +18,7 @@ Parse `$ARGUMENTS`:
 
 Before ANY mode executes:
 
-1. **Load core principles**: Read `.claude/skills/frontend-design/SKILL.md` — contains design guidelines, anti-patterns, and the AI Slop Test
+1. **Load core principles**: Read `.claude/skills/frontend-design/PRINCIPLES.md` — contains design guidelines, anti-patterns, and the AI Slop Test
 2. **Check loaded instructions**: Look for a `## Design Context` section in CLAUDE.md or project instructions — if found, use it as design context
 3. **Check for .impeccable.md**: Read `.impeccable.md` at project root — if found, load it for brand/audience/aesthetic context
 4. **Handle missing context**:
@@ -33,7 +33,7 @@ Modes that dispatch subagents inject these files as needed:
 
 | Ref | Path | Used by |
 |-----|------|---------|
-| SKILL | `.claude/skills/frontend-design/SKILL.md` | All modes |
+| SKILL | `.claude/skills/frontend-design/PRINCIPLES.md` | All modes |
 | ANTIPATTERNS | `ai_context/design/WEB-CODE-ANTIPATTERNS.md` | build, audit, harden |
 | UX-CHECKLIST | `ai_context/design/UX-REVIEW-CHECKLIST.md` | audit, critique |
 | TYPOGRAPHY | `.claude/skills/frontend-design/reference/typography.md` | typeset, build |
@@ -59,7 +59,7 @@ Procedure:
 2. **Design direction**: Commit to a BOLD aesthetic direction — purpose, tone, constraints, differentiation. Choose an extreme and execute with precision. Never converge on safe defaults.
 3. **Propose approach**: Describe the visual direction and key design decisions. If ambiguous, ask user to pick between 2-3 directions.
 4. **Implement**: Build production-grade, working code. Match implementation complexity to the aesthetic vision. Use distinctive fonts, intentional color, varied spacing, purposeful motion.
-5. **AI Slop Test**: Review ALL DON'T guidelines from SKILL.md. If the interface looks like generic AI output (cyan-on-dark, gradient text, glassmorphism, identical card grids, Inter/Roboto), fix it before presenting.
+5. **AI Slop Test**: Review ALL DON'T guidelines from PRINCIPLES.md. If the interface looks like generic AI output (cyan-on-dark, gradient text, glassmorphism, identical card grids, Inter/Roboto), fix it before presenting.
 6. **Verify**: Accessibility (WCAG AA contrast, 44px touch targets, keyboard nav, reduced motion), performance (transform/opacity only, no layout animation), responsiveness.
 
 ### teach
@@ -135,7 +135,7 @@ Scan dimensions:
 2. **Performance** — layout thrashing, expensive animations, missing lazy loading, bundle size, re-renders
 3. **Theming** — hardcoded colors, broken dark mode, inconsistent tokens
 4. **Responsive** — fixed widths, small touch targets, horizontal scroll, missing breakpoints
-5. **Anti-Patterns** — check ALL DON'T guidelines from SKILL.md for AI slop tells
+5. **Anti-Patterns** — check ALL DON'T guidelines from PRINCIPLES.md for AI slop tells
 
 **Report structure**:
 
@@ -284,7 +284,7 @@ Procedure:
 **Dispatch**: Sonnet subagent, `implement` role, 20-30 turns
 **Inject**: SKILL + .impeccable.md
 
-**WARNING — AI SLOP TRAP**: When asked to make things "bolder," AI defaults to cyan gradients, glassmorphism, neon accents on dark backgrounds, gradient text. These are the OPPOSITE of bold — they're generic. Review ALL DON'T guidelines from SKILL.md before proceeding. Bold means distinctive, not "more effects."
+**WARNING — AI SLOP TRAP**: When asked to make things "bolder," AI defaults to cyan gradients, glassmorphism, neon accents on dark backgrounds, gradient text. These are the OPPOSITE of bold — they're generic. Review ALL DON'T guidelines from PRINCIPLES.md before proceeding. Bold means distinctive, not "more effects."
 
 Procedure:
 
