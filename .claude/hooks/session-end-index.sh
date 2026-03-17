@@ -2,7 +2,9 @@
 # Auto-index Claude Code sessions and docs into FTS5 on session end.
 # Runs as a Stop hook — keep it fast (timeout 30s).
 
-AMPLIFIER_DIR="${AMPLIFIER_HOME:-/opt/amplifier}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+. "$SCRIPT_DIR/../../scripts/lib/platform.sh" 2>/dev/null || true
+AMPLIFIER_DIR="${AMPLIFIER_HOME:?AMPLIFIER_HOME not set}"
 cd "$AMPLIFIER_DIR" || exit 0
 
 # Index sessions, docs, and regenerate registry in one Python process

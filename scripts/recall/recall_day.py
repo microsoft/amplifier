@@ -20,6 +20,9 @@ import argparse
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from scripts.lib.platform import get_project_dir
+
 # Force UTF-8 output on Windows
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
@@ -127,10 +130,9 @@ def get_project_dirs(all_projects: bool) -> list[Path]:
     """Get project directories to scan."""
     if all_projects:
         return [d for d in CLAUDE_PROJECTS.iterdir() if d.is_dir()]
-    for name in ("-opt-amplifier", "C--claude-amplifier"):
-        candidate = CLAUDE_PROJECTS / name
-        if candidate.exists():
-            return [candidate]
+    amplifier = get_project_dir("amplifier")
+    if amplifier.exists():
+        return [amplifier]
     return [d for d in CLAUDE_PROJECTS.iterdir() if d.is_dir()]
 
 
