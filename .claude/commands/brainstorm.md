@@ -109,6 +109,9 @@ Task(subagent_type="general-purpose", model="haiku", max_turns=8, description="G
      (The tags file at repo root has pre-indexed class/function/method definitions)
   7. If the topic involves existing code, use Grep to find related files:
      Grep pattern='[keyword]' output_mode='files_with_matches' head_limit=15
+  8. Scan for existing pain points in related files:
+     Grep pattern='TODO|FIXME|HACK|XXX' output_mode='content' head_limit=20
+     (Shows unresolved technical debt that may affect the design)
 
   If any step fails, skip it and continue.
 
@@ -127,6 +130,9 @@ Task(subagent_type="general-purpose", model="haiku", max_turns=8, description="G
 
   ## Existing Specs
   [any related design docs — list or 'None found']
+
+  ## Known Pain Points
+  [TODO/FIXME/HACK comments in related files — bullet list or 'None found']
 
   ## Past Outcomes (Strategy Learning)
   Search recall for 'Outcome:' entries matching the domain keywords.

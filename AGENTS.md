@@ -174,6 +174,22 @@ Every configuration setting should have exactly ONE authoritative location. All 
 
 **When duplication is acceptable**: Performance-critical paths, build scripts that must work before dependencies are installed, emergency fallbacks.
 
+## Interactive Question Format
+
+When asking the user to make a decision (in `/brainstorm`, `/create-plan`, `/design-interface`, or any interactive command):
+
+1. **One issue per question** — never batch multiple decisions
+2. **Lead with your recommendation**: "We recommend B: [one-line reason]"
+3. **Present 2-3 lettered options**: A) ... B) ... C) ...
+4. **Include "do nothing" when reasonable** — sometimes the best action is no action
+5. **Keep options to one sentence** — the user should be able to pick in under 5 seconds
+6. **Map reasoning to context** — connect your recommendation to project constraints or stated preferences
+
+**Anti-pattern**: Open-ended "what do you think?" or "should we X?" without options.
+**Anti-pattern**: Batching 5 decisions into one message and asking "thoughts?"
+
+---
+
 ## Response Authenticity Guidelines
 
 **CRITICAL**: Professional, authentic communication. No sycophancy.
