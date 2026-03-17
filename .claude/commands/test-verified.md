@@ -1,5 +1,6 @@
 ---
 description: "Auto-fix FuseCP E2E test failures. Classifies, applies known patterns, dispatches agents for novel failures. Max 3 cycles."
+platforms: ["windows"]
 ---
 
 # /test-verified — FuseCP Verified E2E Auto-Fix Pipeline

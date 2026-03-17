@@ -1,5 +1,6 @@
 ---
 description: "Exchange Server 2019 administration: health monitoring, DAG operations, maintenance mode, troubleshooting. Three modes: health, admin, troubleshoot."
+platforms: ["windows"]
 ---
 
 # /exchange — Exchange Server Administration

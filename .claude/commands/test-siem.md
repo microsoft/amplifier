@@ -1,5 +1,6 @@
 ---
 description: "SIEM test auto-fix pipeline: run tests, classify failures, apply known patterns, dispatch agents for novel failures. Max 3 cycles. Never modifies application code."
+platforms: ["linux"]
 ---
 
 # /test-siem — SIEM Test Auto-Fix Pipeline
