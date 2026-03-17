@@ -18,7 +18,7 @@ Parse `$ARGUMENTS`:
 
 Before ANY mode executes:
 
-1. **Load core principles**: Read `.claude/skills/frontend-design/SKILL.md` — contains design guidelines, anti-patterns, and the AI Slop Test
+1. **Load core principles**: Read `.claude/skills/frontend-design/PRINCIPLES.md` — contains design guidelines, anti-patterns, and the AI Slop Test
 2. **Check loaded instructions**: Look for a `## Design Context` section in CLAUDE.md or project instructions — if found, use it as design context
 3. **Check for .impeccable.md**: Read `.impeccable.md` at project root — if found, load it for brand/audience/aesthetic context
 4. **Handle missing context**:
@@ -33,7 +33,7 @@ Modes that dispatch subagents inject these files as needed:
 
 | Ref | Path | Used by |
 |-----|------|---------|
-| SKILL | `.claude/skills/frontend-design/SKILL.md` | All modes |
+| SKILL | `.claude/skills/frontend-design/PRINCIPLES.md` | All modes |
 | ANTIPATTERNS | `ai_context/design/WEB-CODE-ANTIPATTERNS.md` | build, audit, harden |
 | UX-CHECKLIST | `ai_context/design/UX-REVIEW-CHECKLIST.md` | audit, critique |
 | TYPOGRAPHY | `.claude/skills/frontend-design/reference/typography.md` | typeset, build |

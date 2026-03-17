@@ -1,12 +1,6 @@
----
-name: frontend-design
-description: |
-  Core design principles for building distinctive, production-grade frontend interfaces.
-  Anti-slop detection, aesthetic guidelines, and quality dimensions.
-  Loaded by all /frontend-design modes before execution.
----
-
 # Frontend Design — Core Principles
+
+> Reference document loaded by `/frontend-design` command. Not a standalone skill.
 
 ## Context Gathering Protocol
 
