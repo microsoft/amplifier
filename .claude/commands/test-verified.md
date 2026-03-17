@@ -33,29 +33,33 @@ digraph test_verified {
   "preflight"    [label="Phase 0: Pre-flight\nhealth check" shape=box];
   "health_ok"    [label="All critical checks\ngreen?" shape=diamond];
   "abort"        [label="Print failing backends\nABORT" shape=box style=filled fillcolor=lightsalmon];
+  "ews_smoke"    [label="Phase 0.5: Exchange\nsmoke test (EWS MCP)" shape=box style=filled fillcolor=lightyellow];
   "run_suite"    [label="Phase 1: Run suite\nnpx playwright test" shape=box];
   "parse"        [label="Phase 2: Parse results.json\ncount pass/fail/skip" shape=box];
   "any_fail"     [label="Failures > 0?" shape=diamond];
-  "classify"     [label="Phase 3: Classify failures\nAPI_MISMATCH / INFRA / BACKEND / UNKNOWN" shape=box];
+  "classify"     [label="Phase 3: Classify failures\nAPI_MISMATCH / INFRA / BACKEND\nPHANTOM_PASS / UNKNOWN" shape=box];
   "patterns"     [label="Phase 4: Check known patterns\napply inline with Edit tool" shape=box];
   "agents"       [label="Phase 5: Dispatch bug-hunter\nper spec file (max 3 parallel)" shape=box];
   "rerun"        [label="Phase 6: Rerun failing specs\ncheck for regression" shape=box];
   "cycle_check"  [label="Still failing?\nCycles < 3?" shape=diamond];
+  "ews_verify"   [label="Phase 6.5: EWS\npost-fix verification" shape=box style=filled fillcolor=lightyellow];
   "report"       [label="Phase 7: Generate report\nprint summary" shape=box style=filled fillcolor=lightgreen];
 
   "preflight"   -> "health_ok";
-  "health_ok"   -> "abort"     [label="critical red"];
-  "health_ok"   -> "run_suite" [label="green"];
+  "health_ok"   -> "abort"      [label="critical red"];
+  "health_ok"   -> "ews_smoke"  [label="green"];
+  "ews_smoke"   -> "run_suite";
   "run_suite"   -> "parse";
   "parse"       -> "any_fail";
-  "any_fail"    -> "report"    [label="0 failures"];
-  "any_fail"    -> "classify"  [label="failures exist"];
+  "any_fail"    -> "ews_verify" [label="0 failures"];
+  "any_fail"    -> "classify"   [label="failures exist"];
   "classify"    -> "patterns";
   "patterns"    -> "agents";
   "agents"      -> "rerun";
   "rerun"       -> "cycle_check";
-  "cycle_check" -> "classify"  [label="yes — next cycle"];
-  "cycle_check" -> "report"    [label="no more cycles or all fixed"];
+  "cycle_check" -> "classify"   [label="yes — next cycle"];
+  "cycle_check" -> "ews_verify" [label="no more cycles or all fixed"];
+  "ews_verify"  -> "report";
 }
 ```
 
@@ -112,6 +116,44 @@ All backends ready.
 
 ---
 
+## Phase 0.5: Exchange Smoke Test (EWS MCP)
+
+**Only runs when:** scope includes `exchange` (i.e., `/test-verified` or `/test-verified exchange`). Skip for `ad`, `dns`, `isolation` scopes.
+
+**Requires:** `exchange-ews` MCP server running (registered globally via `~/.claude.json`).
+
+Uses the Exchange EWS MCP tools to verify Exchange is actually functional before running the test suite. This catches "Exchange is down but health check says green" scenarios.
+
+**Test accounts:**
+- ContosoCorp: `admin@contoso.lab.ergonet.pl` (test tenant, PackageID=101)
+- FabrikamInc: `admin@fabrikam.lab.ergonet.pl` (isolation tenant, PackageID=105)
+
+**Steps:**
+
+1. **Mail flow test:** `mcp__exchange-ews__mail_flow_test(from="admin@contoso.lab.ergonet.pl", to="admin@fabrikam.lab.ergonet.pl", timeout=30)`
+   - PASS → Exchange transport is functional, proceed
+   - FAIL → warn: "Exchange mail flow failed (delivery timeout). Exchange tests may fail due to infrastructure, not spec drift."
+
+2. **Inbox access:** `mcp__exchange-ews__inbox(email="admin@contoso.lab.ergonet.pl", limit=1)`
+   - PASS → EWS connectivity confirmed
+   - FAIL → warn: "EWS connection failed. Exchange backend may be unreachable."
+
+3. **Folder structure:** `mcp__exchange-ews__folders(email="admin@contoso.lab.ergonet.pl")`
+   - Verify Inbox, Sent Items, Deleted Items exist → basic mailbox structure intact
+
+Print smoke test results:
+```
+Exchange Smoke Test:
+  Mail flow (Contoso → Fabrikam):  ✓ delivered in 4.2s
+  EWS inbox access:                ✓ connected
+  Folder structure:                ✓ 12 folders found
+Exchange is functional.
+```
+
+If any smoke test fails, continue to Phase 1 but pre-tag exchange failures as likely `INFRA_ERROR` in Phase 3.
+
+---
+
 ## Phase 1: Run Suite
 
 ```bash
@@ -156,6 +198,7 @@ For each failing test, examine `error.message` and classify:
 | `API_MISMATCH` | `isSuccess.*false` OR `toBe\(true\)` on an API response | Wrong request body fields, method, or path |
 | `INFRA_ERROR` | `Backend verification failed` OR `401` OR `405` from verifier host | Infrastructure / auth problem — NOT fixable by spec changes |
 | `BACKEND_MISMATCH` | `toContain` OR `toEqual` on `verify\.` result | Verifier response shape differs from spec expectation |
+| `PHANTOM_PASS` | API test passed but EWS verification shows no real Exchange object | API contract matches but Exchange didn't execute the operation |
 | `UNKNOWN` | Anything else | Novel — needs agent investigation |
 
 Group by class. Print classification summary:
@@ -256,6 +299,50 @@ Print cycle update:
 ```
 Cycle 1 → Cycle 2: 4 failures remain after applying 8 fixes
 ```
+
+---
+
+## Phase 6.5: Exchange EWS Verification (Post-Fix)
+
+**Only runs when:** scope includes `exchange` AND exchange specs were fixed in Phases 4-6. Skip if no exchange specs were modified.
+
+After bug-hunter agents fix exchange specs and the rerun passes, verify the test results match reality in Exchange via EWS MCP.
+
+**Verification checks by operation type:**
+
+1. **Mailbox existence:** If the test created/verified a mailbox, use `mcp__exchange-ews__inbox(email="<test-mailbox>", limit=1)` to confirm the mailbox is accessible via EWS.
+
+2. **Mail flow:** If the test involved sending mail, use `mcp__exchange-ews__search(email="<recipient>", subject="<test-subject>", days_back=1)` to confirm the message actually arrived.
+
+3. **Folder structure:** If the test verified mailbox structure, use `mcp__exchange-ews__folders(email="<test-mailbox>")` to confirm folder state.
+
+4. **Password change:** If the test changed a mailbox password, verify by attempting `mcp__exchange-ews__send_message(from="<changed-user>", to="<test-recipient>", subject="[PasswordVerify] ...")`. If EWS authenticates with the new credentials (Kerberos impersonation), the password change was applied. If auth fails, the password change didn't propagate.
+
+5. **Distribution list / group membership:** If the test modified DL members, use `mcp__exchange-ews__search(email="<dl-address>", ...)` or send to the DL and verify all members received via inbox checks.
+
+6. **Mailbox properties (quota, size, alias):** If the test set mailbox properties, use `mcp__exchange-ews__folders(email="<mailbox>")` to verify folder counts reflect expected state (e.g., quota enforcement blocking new mail).
+
+**Outcome classification:**
+
+- **API test passed + EWS confirms** → genuine pass, high confidence
+- **API test passed + EWS shows no object** → `PHANTOM_PASS` — the API contract matches but Exchange didn't execute. Flag as:
+  ```
+  ⚠ PHANTOM_PASS: exchange-mailboxes.spec.ts#createMailbox
+    API returned success but EWS shows no mailbox for user@domain
+    Likely cause: backend verifier mock, API stub, or Exchange rollback
+  ```
+- **EWS unavailable** → skip verification, note: "EWS verification skipped (MCP unavailable)"
+
+Print verification summary:
+```
+Exchange EWS Verification:
+  Verified: 5 operations
+  Confirmed: 4 genuine passes
+  Phantom:   1 (createMailbox — mailbox not found via EWS)
+  Skipped:   0
+```
+
+`PHANTOM_PASS` findings are included in the Phase 7 report under "NEEDS ATTENTION" — they indicate the test infrastructure may be masking real failures.
 
 ---
 
