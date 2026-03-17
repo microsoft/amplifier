@@ -26,7 +26,7 @@ Ask ONE clarifying question if the description is ambiguous. If clear enough, pr
 If the target is an existing module, dispatch an agentic-search subagent (haiku, read-only, 8 turns) to understand current interfaces, callers, and patterns:
 
 ```
-Task(subagent_type="general-purpose", model="haiku", max_turns=8, description="Scout existing interfaces for [module]", prompt="
+Task(subagent_type="agentic-search", model="haiku", max_turns=8, description="Scout existing interfaces for [module]", prompt="
   **READ-ONLY MODE: Use ONLY Read, Glob, Grep, LS, and search tools. Do NOT use Edit, Write, Bash, or any tool that modifies files.**
 
   Find the current interface for [module]. Return:
@@ -41,7 +41,7 @@ Skip this step for greenfield modules.
 
 ## Step 3: Generate Designs (3 parallel agents)
 
-Dispatch 3 zen-architect subagents in parallel (sonnet, 15 turns each). All receive the same requirements but a DIFFERENT constraint:
+Dispatch 3 zen-architect subagents in parallel (opus per routing matrix, 15 turns each). All receive the same requirements but a DIFFERENT constraint. Each agent prompt must include: "When nearing your turn limit, STOP tool calls and produce your final output with the required 5-point structure. Reserve at least 2 turns for writing your response."
 
 **Agent A — Minimal:**
 > "Design the smallest possible interface. Aim for 1-3 methods/functions max. Hide everything else. Optimize for the common case. If a caller needs something rare, they can work around it."

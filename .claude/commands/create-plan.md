@@ -80,7 +80,7 @@ Task 3: Remaining endpoints following the pattern
 2. Each subsequent task expands from the proven pattern
 3. Every task should leave the codebase in a working, testable state
 4. If a task only touches one layer (e.g., "add all migrations"), split it into vertical slices instead
-5. Mark the first tracer-bullet task as `[TRACER]` — it has highest priority and must complete before parallel work begins
+5. Mark the first tracer-bullet task as `[TRACER]` — advisory marker indicating highest priority. The orchestrator or user should execute this task first before parallelizing remaining work
 
 ## Amplifier Agent Assignment
 

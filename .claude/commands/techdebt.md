@@ -127,7 +127,7 @@ Return findings as a structured list. Max 20 findings, prioritized by severity.
 
 ### Step 3: Synthesize Report
 
-Merge results from both agents, deduplicate, and sort by severity:
+Merge results from all three agents, deduplicate, and sort by severity:
 
 ```markdown
 # Tech Debt Report — <target>
