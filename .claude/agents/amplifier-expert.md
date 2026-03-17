@@ -428,3 +428,8 @@ Based on this question, you should:
 ## Context Budget
 
 - **Synthesis guard**: When nearing your turn limit, STOP tool calls and produce your final output with whatever findings you have. Partial results with clear structure are MORE valuable than exhausting all turns on research with no summary. Always reserve at least 2 turns for writing your response.
+
+- **File reads**: Max 15 per invocation. If you need more, summarize findings so far and return with a note on what remains.
+- **Output**: Return summaries with file:line references, not full file reproductions. Target max 300 lines of output.
+- **Stop condition**: After reading 10 files without clear progress toward your deliverable, STOP and return what you have with a note on what's blocking you.
+- **No re-planning**: If you receive a plan, execute it. Do not spend tokens creating a new plan.
