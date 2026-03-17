@@ -131,75 +131,32 @@ Auto-save progress at these triggers — don't wait for session end:
 
 **After every plan decision:** When the user picks an approach (scope mode, architecture choice, tech stack), record it immediately. Mid-session crashes should not lose decisions.
 
-**On exit signals:** When the user says "that's all", "done for today", "heading out", "closing", or similar — immediately:
+**On exit signals:** When the user says "that's all", "done for today", "heading out", "closing", or any message implying departure (gratitude-only "thanks"/"ty", time references "tomorrow"/"later"/"next week", ambiguous closers with no follow-up question) — immediately:
 1. Commit any uncommitted work (ask first)
 2. Save key decisions and progress to memory
 3. Note unfinished work and next steps
 
-**Why:** An AI remembering past decisions outperforms a smarter AI starting fresh. If the session crashes or compresses, decisions survive.
+**Catch-all — context pressure:** When context usage is high and compression is imminent, persist all unsaved decisions before compression occurs. Don't wait for a signal that may never come.
 
-## Incremental Processing Pattern
+## Batch Processing Patterns
 
-When building batch processing systems:
-
-- Save results after each item, not at intervals or completion
-- Use fixed filenames that overwrite, not timestamps
-- Enable interruption without losing processed items
-- Support incremental updates without reprocessing existing ones
-
-## Partial Failure Handling Pattern
-
-When appropriate for long-running batch processes with multiple sub-processors:
-
-- Continue on failure — don't stop the entire batch for individual processor failures
-- Save partial results — better than nothing
-- Track failure reasons — distinguish "legitimately empty" from "extraction failed"
-- Support selective retry — re-run only failed processors, not entire items
-- Report comprehensively — show success rates per processor and items needing attention
+For batch/pipeline systems: save after each item (not at end), continue on failure (don't stop the batch), track failure reasons, support selective retry, use fixed filenames that overwrite. Details in `/fix-bugs` and `/test-verified` command files.
 
 ## AutoContext Quality Gates
 
-When completing significant work, use AutoContext to evaluate and improve output quality:
+After significant work: `/evaluate implementation` (score < 80 → `/improve`). After brainstorm/planning: `/self-eval`. Weekly: `/self-improve` for instruction updates. Before recurring problems: `autocontext_skill_discover(query="...")` for learned strategies. Knowledge bridge: AutoContext → `.claude/skills/` → `/recall`.
 
-**After implementation tasks:** Run `/evaluate implementation` on the output. If score < 80, run `/improve` before presenting to user.
+## Decision Tracking
 
-**After bug fixes:** `/fix-bugs` Phase 6c auto-evaluates fix quality. Scores and effort metadata feed the adaptive loop.
-
-**After brainstorm/planning:** Run `/self-eval brainstorm` or `/self-eval create-plan` to score design quality.
-
-**Weekly maintenance:** Run `/self-improve` to read accumulated evidence and propose instruction updates to CLAUDE.md, AGENTS.md, and routing-matrix.yaml.
-
-**Before fixing recurring problems:** Check `autocontext_skill_discover(query="<problem area>")` for learned strategies. Don't repeat past mistakes.
-
-**Knowledge bridge:** AutoContext exports skills to `.claude/skills/`. The recall indexer picks them up on session end. Use `/recall` to find past learnings.
-
-## Decision Tracking System
-
-Decisions are documented in `ai_working/decisions/`. Consult before proposing major changes or questioning existing patterns. Create new records for architectural choices, approach selection, pattern adoption, or reversals. Format: see `ai_working/decisions/README.md`.
-
-Decisions CAN change, but should change with full understanding of why they were originally made.
+Decisions in `ai_working/decisions/`. Consult before proposing major changes. Create new records for architectural choices or reversals (format: `ai_working/decisions/README.md`). Decisions CAN change — with full understanding of why they were originally made.
 
 ## Configuration Management: Single Source of Truth
 
-Every configuration setting should have exactly ONE authoritative location. All other uses reference or derive from that single source.
-
-**Hierarchy**: `pyproject.toml` (primary) → `ruff.toml` (ruff-specific) → `.vscode/settings.json` (IDE) → `config/routing-matrix.yaml` (agent dispatch).
-
-**Key locations**: Python deps in `pyproject.toml` only (via uv). Code exclusions in `[tool.pyright]`. Formatting in `ruff.toml`.
-
-**When duplication is acceptable**: Performance-critical paths, build scripts that must work before dependencies are installed, emergency fallbacks.
+Every setting has ONE authoritative location. Hierarchy: `pyproject.toml` → `ruff.toml` → `.vscode/settings.json` → `config/routing-matrix.yaml`. Python deps via `uv` only. Duplication acceptable only for: performance-critical paths, pre-dependency build scripts, emergency fallbacks.
 
 ## Always-Loaded File Budgets
 
-These files are loaded into every session via @imports. Keep them lean:
-
-| File | Target | Current | Action if exceeded |
-|------|--------|---------|-------------------|
-| CLAUDE.md | <150 lines | ~120 | Run `/self-improve prune` before adding |
-| AGENTS.md | <250 lines | ~240 | Move context-specific content to commands |
-| routing-matrix.yaml | <120 lines | ~115 | Only add agents that are in AGENTS_CATALOG |
-
-New content in these files must justify its always-loaded cost. Ask: "Does every session need this, or only sessions that invoke a specific command?" If the latter, put it in the command file.
+Always-loaded files: CLAUDE.md (<150 lines), AGENTS.md (<250 lines), routing-matrix.yaml (<120 lines). If exceeded, run `/self-improve prune` or move context-specific content to command files. Test: "Does every session need this?" If no → put it in the command file.
 
 ## Interactive Question Format
 
@@ -223,16 +180,17 @@ When fetching content from URLs, pick the optimal tool by platform. Don't blindl
 
 | Platform | First choice | Fallback |
 |----------|-------------|----------|
-| GitHub repos/PRs/issues | `gh` CLI via Bash | Gitea MCP tools (if Gitea URL) |
+| GitHub repos/PRs/issues | `gh` CLI via Bash | WebFetch |
 | Gitea repos/PRs/issues | Gitea MCP tools (`mcp__gitea__*`) | WebFetch |
 | Twitter/X (single post) | WebFetch | Playwright navigate |
 | General articles/blogs | WebFetch | Playwright for JS-heavy SPAs |
 | Authenticated services (Jira, Confluence, Google Docs) | Specialized MCP tool if available | Ask user to paste content |
 | npm/PyPI packages | WebFetch on registry page | `context7` MCP for docs |
 | GitHub raw files | WebFetch on raw.githubusercontent.com | `gh api` via Bash |
+| **All other URLs** | WebFetch | Playwright navigate (for JS-heavy/paywalled) |
 
 **Rules:**
-- Never try >2 tools on the same URL — 2 failures → tell user, change approach
+- Never try >2 tools on the same URL — 2 failures → tell user what was tried, what failed, suggest they paste content
 - Never use WebFetch as first choice for social platforms (always fails)
 - For GitHub, prefer `gh` CLI — it handles auth and rate limits
 - For Gitea, ALWAYS use MCP tools — never `gh` CLI (talks to GitHub, not Gitea)
@@ -260,19 +218,11 @@ You're a professional tool, not a cheerleader. Users value honest, direct feedba
 
 **The test**: "Does this code DO something useful right now?" If no — implement it fully or remove it.
 
-## Banned Completion Phrases
+## Verification-First Completion
 
-Never use these when claiming work is done:
+**Never claim work is complete without citing specific verification evidence.** Every completion claim MUST include at least one of: test results with pass/fail counts, command output with exit codes, or specific file/line references showing the change works.
 
-- "Should be fine" / "Should work now"
-- "Probably passes" / "I think it's fixed"
-- "Seems correct" / "Looks good to me"
-- "Theoretically correct"
-- "I fixed it, you try"
-
-**Instead:** Run the verification command, read the output, cite the evidence. "Tests pass (14/14, 0 failures). Build succeeds (exit code 0). Ready for review."
-
-These phrases signal incomplete verification — the #1 AI coding failure mode.
+Phrases that express confidence without evidence are banned — including but not limited to: "should be fine", "probably passes", "I think it's fixed", "seems correct", "theoretically correct", "I fixed it, you try", "that should do it", "everything looks good". The test: does your claim contain verifiable evidence, or just an opinion?
 
 ## Build/Test/Lint Commands
 
