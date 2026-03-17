@@ -347,6 +347,28 @@ Before finalizing the plan, verify:
 - [ ] **Nothing deferred is vague** — anything deferred has a concrete TODO with context
 - [ ] **Scope mode honored** — no silent drift from the chosen mode
 
+## Plan Validation (before presenting to user)
+
+After generating the plan, validate it against the spec/requirements:
+
+1. **Dispatch a reviewer** (haiku, read-only, 8 turns) to check:
+   - Does every requirement in the spec map to at least one task?
+   - Are there tasks that don't trace back to any requirement? (scope creep)
+   - Are there requirements with no corresponding task? (gaps)
+
+2. **If gaps found:** Add missing tasks to cover them. If scope creep found: flag for user decision (keep or cut).
+
+3. **Print coverage matrix:**
+```
+Requirement → Task Mapping:
+  ✓ Auth endpoint → Task 2
+  ✓ Database schema → Task 1
+  ✗ Error handling → NO TASK (gap!)
+  ? Rate limiting → Task 5 (not in spec — scope creep?)
+```
+
+Skip this step if no spec/requirements document was provided (ad-hoc plans).
+
 ## Plan Review Loop
 
 After completing each chunk of the plan:

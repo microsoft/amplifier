@@ -127,20 +127,17 @@ Right-size tasks before dispatch. With 1M context, agents can handle larger scop
 - Amplifier commands that dispatch agents: `/create-plan`, `/subagent-dev`, `/parallel-agents`
 - Any skill or workflow that creates Task calls with agent delegation
 
-## Session Persistence (Memory Flush)
+## Session Persistence (STATE.md)
 
-Auto-save progress at these triggers — don't wait for session end:
+Maintain `STATE.md` in project root — the first file the next session reads. Update at these triggers:
 
-**After every commit:** Update session context with what was built, key decisions made, and what's next.
+**After every commit:** Update STATE.md with: Current Task, Decisions Made, Blockers, Next Steps, Last Updated timestamp. Create the file if missing.
 
-**After every plan decision:** When the user picks an approach (scope mode, architecture choice, tech stack), record it immediately. Mid-session crashes should not lose decisions.
+**After plan decisions:** Append to Decisions section immediately when user picks scope mode, architecture, tech stack.
 
-**On exit signals:** When the user says "that's all", "done for today", "heading out", "closing", or any message implying departure (gratitude-only "thanks"/"ty", time references "tomorrow"/"later"/"next week", ambiguous closers with no follow-up question) — immediately:
-1. Commit any uncommitted work (ask first)
-2. Save key decisions and progress to memory
-3. Note unfinished work and next steps
+**On exit signals** ("that's all", "done for today", "heading out", any departure signal): commit work (ask first), update STATE.md with final state and unfinished items.
 
-**Catch-all — context pressure:** When context usage is high and compression is imminent, persist all unsaved decisions before compression occurs. Don't wait for a signal that may never come.
+**Context pressure:** When compression is imminent, update STATE.md before it occurs. STATE.md survives compression — git history doesn't.
 
 ## Batch Processing Patterns
 

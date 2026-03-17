@@ -133,6 +133,30 @@ From observed failure patterns:
 - Implications of success
 - ANY communication suggesting completion/correctness
 
+## Spec-Backward Verification (when spec exists)
+
+If the work was planned from a spec (docs/specs/*.md or brainstorm output):
+
+1. Read the original spec
+2. Extract every requirement/acceptance criterion
+3. For each requirement, verify:
+   - Is there code that implements it? (grep/read)
+   - Is there a test that covers it? (search test files)
+   - Does it actually work? (run the test or manual check)
+
+4. **Print verification matrix:**
+```
+Spec Verification:
+  ✓ User login works — test passes (auth.test.ts:45)
+  ✓ Error messages shown — verified in component
+  ✗ Password reset flow — NOT IMPLEMENTED
+  ~ Rate limiting — implemented but no test
+```
+
+This catches the "spec says X but we forgot to build it" failure mode that forward-only verification misses.
+
+---
+
 ## Outcome Capture (Flywheel)
 
 After verification succeeds, if this is the final verification for a task or branch, append a lightweight outcome record to the self-improvement file:

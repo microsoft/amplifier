@@ -262,6 +262,34 @@ digraph subagent_dev {
 }
 ```
 
+## Wave-Based Parallel Execution
+
+Before executing tasks sequentially, analyze the plan for parallelization opportunities:
+
+1. **Build dependency graph** — which tasks depend on which? A task depends on another if it modifies files the other creates, or explicitly states a dependency.
+2. **Assign waves:**
+   - **Wave 0**: [TRACER] task runs alone first — proves the architecture
+   - **Wave 1**: All independent tasks with no dependencies (parallel)
+   - **Wave 2**: Tasks depending only on Wave 1 outputs (parallel)
+   - **Wave N**: Tasks depending on previous waves
+3. **Execute per wave:**
+   - Within each wave, dispatch all tasks in parallel using `/parallel-agents`
+   - Wait for all tasks in the wave to complete before starting the next wave
+   - If any task in a wave fails, pause and report — don't start the next wave
+
+**When to use waves:**
+- Plan has 4+ tasks with some independence → use waves
+- Plan has 3 or fewer tasks → sequential is fine
+- All tasks modify the same files → sequential only
+
+**Print wave plan before executing:**
+```
+Wave 0 (solo):     Task 1 [TRACER]
+Wave 1 (parallel): Task 2, Task 3 (independent)
+Wave 2 (parallel): Task 4, Task 5 (depend on Wave 1)
+Wave 3 (sequential): Task 6 (depends on Task 4 + Task 5)
+```
+
 ## The Process
 
 ## Dispatch Announcements
@@ -718,7 +746,7 @@ Done!
 - Start implementation on main/master branch without explicit user consent
 - Skip reviews entirely (even Level 1 tasks need self-review; Level 2+ need spec compliance)
 - Proceed with unfixed issues
-- Dispatch multiple implementation subagents in parallel (conflicts)
+- Dispatch multiple implementation subagents touching the SAME files in parallel (use wave analysis to prevent conflicts — see Wave-Based Parallel Execution)
 - Make subagent read plan file (provide full text instead)
 - Skip scene-setting context (subagent needs to understand where task fits)
 - Ignore subagent questions (answer before letting them proceed)
