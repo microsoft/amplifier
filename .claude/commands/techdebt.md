@@ -98,6 +98,8 @@ Return findings as a structured list. Max 30 findings, prioritized by severity.
 
 #### Agent 3: Module Depth Scanner
 
+**Graph-enhanced depth analysis:** If `code-review-graph` MCP is available, use `mcp__code-review-graph__query_graph_tool` to get precise dependency counts per module. A module with high fan-in (many dependents) but low fan-out (few dependencies) is deep and healthy. A module with high fan-out is potentially shallow. The graph provides exact edge counts instead of grep-based estimates.
+
 ```
 Task(subagent_type="agentic-search", model="sonnet", max_turns=12)
 

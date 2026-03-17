@@ -54,6 +54,10 @@
         "--headless"
       ],
       "disabled": true
+    },
+    "code-review-graph": {
+      "command": "code-review-graph",
+      "args": ["serve"]
     }
   }
 }

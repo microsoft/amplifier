@@ -22,6 +22,13 @@ source .venv/bin/activate
 make check
 make test
 
+### Code Review Graph
+Update the codebase knowledge graph for blast radius analysis:
+```bash
+code-review-graph update  # incremental, <2s for most repos
+```
+If the graph doesn't exist yet, this will do a full build (~10s for 500 files). The graph is stored in `.code-review-graph/graph.db` (gitignored).
+
 ## Additional Guidance
 
 $ARGUMENTS

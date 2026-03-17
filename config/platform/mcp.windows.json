@@ -35,6 +35,10 @@
       "command": "cmd",
       "args": ["/c", "npx", "chrome-devtools-mcp@latest", "--acceptInsecureCerts", "--headless"],
       "disabled": true
+    },
+    "code-review-graph": {
+      "command": "code-review-graph",
+      "args": ["serve"]
     }
   }
 }
