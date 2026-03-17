@@ -34,6 +34,31 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 **Save plans to:** `docs/plans/YYYY-MM-DD-<feature-name>.md`
 - (User preferences for plan location override this default)
 
+## Step 0: Scope Challenge
+
+Before structuring the plan, challenge its premises. This step is NON-OPTIONAL.
+
+### 0A. Existing Code Leverage
+1. What existing code already partially or fully solves each sub-problem?
+2. Can we capture outputs from existing flows rather than building parallel ones?
+3. Is this plan rebuilding anything that already exists? If so, why rebuild instead of refactor?
+
+### 0B. Complexity Check
+If the plan touches more than 8 files or introduces more than 2 new classes/modules, that's a smell. Challenge whether the same goal can be achieved with fewer moving parts. Minimal diff: achieve the goal with the fewest new abstractions.
+
+### 0C. Mode Selection
+Present the user with three options:
+
+**A) SCOPE EXPANSION** — Push scope UP. "What would make this 10x better for 2x the effort?" Dream big, find delight opportunities, build for the 12-month vision. Use when exploring new product territory.
+
+**B) HOLD SCOPE** (default) — Maximum rigor within the stated scope. Bulletproof the plan — catch every failure mode, test every edge case. Do not silently reduce OR expand. Use for most feature work.
+
+**C) SCOPE REDUCTION** — Surgeon mode. Cut to the absolute minimum viable version that delivers core user value. Ruthlessly defer everything else. Use when time-pressured or scope-crept.
+
+**Critical:** Once the user selects a mode, COMMIT to it. Do not silently drift. If EXPANSION, don't argue for less work later. If REDUCTION, don't sneak scope back in.
+
+If the user doesn't explicitly choose, default to HOLD SCOPE and note this.
+
 ## Scope Check
 
 If the spec covers multiple independent subsystems, it should have been broken into sub-project specs during brainstorming. If it wasn't, suggest breaking this into separate plans — one per subsystem. Each plan should produce working, testable software on its own.
@@ -82,6 +107,27 @@ Task 3: Remaining endpoints following the pattern
 4. If a task only touches one layer (e.g., "add all migrations"), split it into vertical slices instead
 5. Mark the first tracer-bullet task as `[TRACER]` — advisory marker indicating highest priority. The orchestrator or user should execute this task first before parallelizing remaining work
 
+### Error Map (for plans with new codepaths)
+
+When the plan introduces new services, API endpoints, external integrations, or data flows, require an error map:
+
+**What Can Go Wrong:**
+```
+CODEPATH                | WHAT CAN FAIL           | ERROR TYPE
+------------------------|-------------------------|------------------
+ExternalAPI.call()      | Timeout                 | TimeoutError
+                        | Rate limited (429)      | RateLimitError
+                        | Malformed response      | ParseError
+Database.write()        | Unique constraint       | ConflictError
+                        | Connection lost         | ConnectionError
+```
+
+**Shadow Path Tracing:** Every data flow has a happy path plus three shadow paths: nil/null input, empty input, and upstream error. All four must be addressed in the plan.
+
+**Rescue Status:** For each error type, the plan must specify: Is it handled? What happens? What does the user see? Any unhandled error is a plan gap.
+
+Skip this section for plans that only modify existing codepaths without introducing new failure modes.
+
 ## Amplifier Agent Assignment
 
 Each task gets an `Agent:` field specifying which Amplifier agent will handle it during execution. Read `.claude/AGENTS_CATALOG.md` for the full catalog (31 agents across 5 categories).
@@ -121,6 +167,16 @@ When in doubt, use `modular-builder` for building and `bug-hunter` for fixing.
 - "Implement the minimal code to make the test pass" - step
 - "Run the tests and make sure they pass" - step
 - "Commit" - step
+
+### Diagrams
+
+For plans involving any of the following, include ASCII diagrams:
+- **Data flows**: Show input → validation → transform → persist → output
+- **State machines**: Show all states and transitions (including invalid ones)
+- **Dependency graphs**: Show new components and their relationships to existing ones
+- **Processing pipelines**: Show multi-step flows with error/retry paths
+
+Diagram maintenance: when the plan modifies code that has existing diagrams (in comments, docs, or architecture files), flag stale diagrams that need updating as part of the plan.
 
 ## Plan Document Header
 
@@ -279,6 +335,15 @@ Include explicit review tasks in the plan for security-sensitive or complex impl
 - Reference relevant skills with @ syntax
 - DRY, YAGNI, TDD, frequent commits
 - Every task has an Agent: field
+
+### Plan Quality Checklist
+
+Before finalizing the plan, verify:
+- [ ] **Zero silent failures** — every failure mode is visible to the system, team, or user
+- [ ] **Every error has a name** — specific types, not generic "handle errors"
+- [ ] **Observability is scope** — new codepaths have logs, metrics, or traces planned
+- [ ] **Nothing deferred is vague** — anything deferred has a concrete TODO with context
+- [ ] **Scope mode honored** — no silent drift from the chosen mode
 
 ## Plan Review Loop
 

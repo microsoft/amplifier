@@ -91,6 +91,7 @@ Amplifier provides native commands in `.claude/commands/` invoked via `/command-
 | `/improve` | Iteratively refine output until threshold met |
 | `/self-eval` | Evaluate Amplifier command quality for self-improvement |
 | `/self-improve` | Propose evidence-based updates to CLAUDE.md/AGENTS.md |
+| `/retro` | Development retrospective — commit history, velocity, quality metrics |
 
 All commands listed in system prompt skills section. Check before starting work.
 
