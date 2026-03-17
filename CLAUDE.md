@@ -82,6 +82,7 @@ Amplifier provides native commands in `.claude/commands/` invoked via `/command-
 | `/brainstorm` | Start new work — explore intent, design, route to execution |
 | `/create-plan` | Structured implementation plan with agent assignments |
 | `/subagent-dev` | Execute plan tasks via specialized agents with two-stage review |
+| `/frontend-design` | Build, refine, and evaluate frontend with anti-slop design (14 modes) |
 | `/debug` | Hypothesis-driven root cause analysis |
 | `/tdd` | Test-driven development (red-green-refactor) |
 | `/verify` | Evidence-based verification before claiming done |
