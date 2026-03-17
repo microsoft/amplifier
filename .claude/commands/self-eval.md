@@ -212,6 +212,28 @@ Command runs → /self-eval scores it (with effort metadata)
 
 **Future:** Observer hook auto-runs `/self-eval` on SessionEnd.
 
+### Binary Eval Mode (for skill optimization)
+
+When evaluating a skill for optimization (vs. one-time scoring), use binary evals instead of rubric scales:
+
+**Why binary:** Scales (0-100) compound variability across runs. A skill that scores 75 on one run might score 65 or 85 on the next — too noisy to tell if a change helped. Binary evals (pass/fail) give clean signal.
+
+**How to use:**
+1. Define 3-6 binary yes/no checks (see `/optimize-skill` for the eval guide)
+2. Run the skill N times (minimum 3)
+3. Score each output against each eval: pass = 1, fail = 0
+4. Total score = sum of all passes. Max = evals × runs.
+5. Pass rate = total / max × 100%
+
+**When to use binary mode:**
+- Before running `/optimize-skill` to establish baseline
+- When comparing two versions of a skill
+- When user reports inconsistent skill quality
+
+**When to use rubric mode (default):**
+- One-time quality assessment of a command's output
+- Scoring against AutoContext templates (code-review, implementation, spec-writing)
+
 ## Common Mistakes
 
 **Evaluating partial outputs**
