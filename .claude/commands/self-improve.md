@@ -103,6 +103,20 @@ For each identified improvement, produce a structured proposal:
 - High: operating principle change, affects all sessions
 ```
 
+### One-Mutation-at-a-Time Discipline
+
+When proposing changes to CLAUDE.md, AGENTS.md, or skill files:
+
+1. **Propose changes individually** — never batch 5 changes into one proposal. Each change is a separate decision.
+2. **For each proposed change, state:**
+   - What it changes (exact section and current text)
+   - Why (evidence from eval scores, user feedback, or failure patterns)
+   - Expected impact (which behaviors should improve)
+3. **If measuring improvement:** change ONE thing, re-run the affected workflow, compare before/after scores. Only keep changes with measurable improvement or clear user confirmation.
+4. **Discard changes that don't improve scores** — even if they "seem right." Added complexity without measured benefit is net negative.
+
+This discipline prevents the failure mode where 5 changes are applied at once, 1 helps, 2 are neutral, and 2 hurt — but you can't tell which is which.
+
 ### Step 4: Present Proposals to User
 
 Group proposals by risk level (Low first, then Medium, then High):
