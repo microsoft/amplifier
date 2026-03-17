@@ -1,5 +1,5 @@
 ---
-description: "Scan for technical debt: dead code, duplication, complexity, outdated patterns."
+description: "Scan for technical debt: dead code, duplication, complexity, outdated patterns, shallow modules."
 ---
 
 # Technical Debt Scanner
@@ -41,7 +41,7 @@ If scope exceeds 30 files, warn the user and suggest narrowing.
 
 ### Step 2: Dispatch Parallel Scans
 
-Launch **2 agents in parallel** (single message, two Task calls):
+Launch **3 agents in parallel** (single message, three Task calls):
 
 #### Agent 1: Structural Debt Scanner
 
@@ -96,6 +96,35 @@ For each finding, report:
 Return findings as a structured list. Max 30 findings, prioritized by severity.
 ```
 
+#### Agent 3: Module Depth Scanner
+
+```
+Task(subagent_type="agentic-search", model="sonnet", max_turns=12)
+
+**READ-ONLY MODE: Use ONLY Read, Glob, Grep, LS tools. Do NOT use Edit, Write, Bash.**
+
+Scan these files for MODULE DEPTH issues that confuse AI agents and reduce code quality.
+Based on Ousterhout's "deep vs shallow modules" concept.
+[file list]
+
+Look for:
+1. **Scattered concepts** — A single concept (e.g., "authentication") split across 5+ small files under 50 lines each. Agents lose context jumping between files.
+2. **Shallow modules** — Large public interfaces with thin implementations. Signs: more exported functions/types than internal ones, most functions under 10 lines, module is mostly re-exports or thin wrappers.
+3. **Testability-driven extraction anti-pattern** — Pure functions extracted solely for testability, creating many small files that hide integration bugs.
+4. **Tight coupling clusters** — Modules that can't be understood independently. Signs: circular imports, shared mutable state, functions reaching into other modules' internals, changes rippling across 2+ modules.
+5. **Agent confusion signals** — Files over 500 lines, deep nesting (4+ levels), mixed concerns (UI + business logic + data access), inconsistent naming for the same concept.
+
+For each finding, report:
+- Category (scattered-concept | shallow-module | testability-extraction | tight-coupling | agent-confusion)
+- File path and line number
+- Depth score: shallow / medium / deep
+- One-line description of the problem
+- Impact on agents: how this hurts AI-generated code quality
+- Recommendation: deepen by combining modules, or split into focused modules
+
+Return findings as a structured list. Max 20 findings, prioritized by severity.
+```
+
 ### Step 3: Synthesize Report
 
 Merge results from both agents, deduplicate, and sort by severity:
@@ -112,6 +141,14 @@ Merge results from both agents, deduplicate, and sort by severity:
 ## Medium (improve when touching)
 - `file:line` — [category] Description
 
+## Module Depth (agent-friendliness)
+
+#### [Module/File Path]
+- **Depth score**: shallow / medium / deep
+- **Problem**: [specific issue]
+- **Impact on agents**: [how this hurts AI-generated code quality]
+- **Recommendation**: [deepen by combining X+Y, or split Z into focused modules]
+
 ## Metrics
 | Metric | Count |
 |--------|-------|
@@ -120,6 +157,7 @@ Merge results from both agents, deduplicate, and sort by severity:
 | Critical | X |
 | High | Y |
 | Medium | Z |
+| Shallow modules | N |
 | Auto-fixable | N |
 ```
 
@@ -173,4 +211,5 @@ Remaining items by priority:
 **Agents used:**
 - `agentic-search` — Structural scanning (read-only)
 - `code-quality-reviewer` — Code-level scanning (read-only)
+- `agentic-search` (sonnet) — Module depth / agent-friendliness scanning (read-only)
 - `modular-builder` — Auto-fix (write, only with --fix)

@@ -162,9 +162,28 @@ This gives you precise file:line references to ground your design in reality, no
 - If the project is too large for a single spec, help the user decompose into sub-projects: what are the independent pieces, how do they relate, what order should they be built? Then brainstorm the first sub-project through the normal design flow. Each sub-project gets its own spec → plan → implementation cycle.
 - For appropriately-scoped projects, ask questions one at a time to refine the idea
 - Prefer multiple choice questions when possible, but open-ended is fine too
-- Only one question per message - if a topic needs more exploration, break it into multiple questions
+- Only one question per message — but for complex topics (Force Full Brainstorm), expect 15-30 questions total. Thoroughness prevents rework.
 - Focus on understanding: purpose, constraints, success criteria
 - Before proposing a design, search episodic memory for existing architectural constraints and decisions.
+
+### Deep Interview Mode (Complex Topics)
+
+When the triage gate classified this as "Force Full Brainstorm", activate deep interview mode:
+
+**Mindset shift**: Do NOT try to converge quickly. Your job is to walk the ENTIRE design tree — every branch, every decision point, every dependency between decisions — before proposing anything.
+
+**Interview protocol (from Frederick P. Brooks' "The Design of Design"):**
+
+1. **Walk the design tree systematically** — each question explores one branch. When a branch has sub-decisions, follow them down before moving to the next branch.
+2. **If a question can be answered by exploring the codebase, explore the codebase instead of asking.** Dispatch agentic-search to verify assertions rather than taking them at face value.
+3. **Resolve dependencies between decisions** — if decision B depends on decision A, resolve A first. Don't ask about API design before understanding data model.
+4. **Push back on vague answers** — "it should be fast" → "what's the latency budget? 100ms? 1s? 10s?" / "it should scale" → "to how many users? 100? 10,000? 1M?"
+5. **Expect 15-30 questions** for complex topics. Don't apologize for the length — thoroughness now prevents rework later.
+6. **Track covered branches** — mentally maintain which areas have been resolved vs. unexplored. Before moving to design, explicitly state: "Here's what we've resolved: [list]. Anything I missed?"
+
+**Signal to exit deep interview**: All major branches explored, no unresolved dependencies, user signals readiness ("looks good", "let's design this", "I think we've covered it").
+
+**Anti-pattern**: Asking 3-4 polite questions then jumping to a design proposal. If the topic was complex enough to trigger full brainstorm, it needs thorough exploration first.
 
 **Exploring approaches:**
 - When the topic touches existing code, use `agentic-search` results to ground your proposals in actual architecture — don't propose changes to code you haven't examined

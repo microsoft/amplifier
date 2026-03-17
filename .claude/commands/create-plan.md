@@ -49,6 +49,39 @@ Before defining tasks, map out which files will be created or modified and what 
 
 This structure informs the task decomposition. Each task should produce self-contained changes that make sense independently.
 
+### Task Decomposition: Vertical Slices (Tracer Bullets)
+
+When breaking features into tasks, use **vertical slices** that cut through all layers, not horizontal slices that build one layer at a time.
+
+**Horizontal (AVOID):**
+```
+Task 1: Build all API endpoints
+Task 2: Build all database migrations
+Task 3: Build all UI components
+Task 4: Connect everything together
+```
+
+**Vertical (REQUIRED):**
+```
+Task 1: One endpoint + its migration + its UI → working end-to-end
+Task 2: Next endpoint + its migration + its UI → working end-to-end
+Task 3: Remaining endpoints following the pattern
+```
+
+**Why this matters for agents:** Each vertical slice:
+- Validates architectural assumptions early (the first slice proves the pattern)
+- Produces testable, demoable output at every step
+- Gives agents a fresh context window between slices
+- Allows the pattern established in slice 1 to be followed in slices 2-N
+- Prevents "big bang integration" where nothing works until everything works
+
+**Rules:**
+1. The FIRST task should be the thinnest possible end-to-end slice — a "tracer bullet" that proves the architecture
+2. Each subsequent task expands from the proven pattern
+3. Every task should leave the codebase in a working, testable state
+4. If a task only touches one layer (e.g., "add all migrations"), split it into vertical slices instead
+5. Mark the first tracer-bullet task as `[TRACER]` — it has highest priority and must complete before parallel work begins
+
 ## Amplifier Agent Assignment
 
 Each task gets an `Agent:` field specifying which Amplifier agent will handle it during execution. Read `.claude/AGENTS_CATALOG.md` for the full catalog (31 agents across 5 categories).
