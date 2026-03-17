@@ -59,7 +59,9 @@ Present the user with three options:
 
 If the user doesn't explicitly choose, default to HOLD SCOPE and note this.
 
-## Scope Check
+After scope challenge, proceed to Subsystem Decomposition Check below to verify the spec doesn't need splitting into separate plans.
+
+## Subsystem Decomposition Check
 
 If the spec covers multiple independent subsystems, it should have been broken into sub-project specs during brainstorming. If it wasn't, suggest breaking this into separate plans — one per subsystem. Each plan should produce working, testable software on its own.
 

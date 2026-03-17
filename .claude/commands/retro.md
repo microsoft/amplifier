@@ -23,43 +23,40 @@ Examples: `/retro` | `/retro 24h` | `/retro 14d vs-previous` | `/retro 30d excha
 
 ### Step 1: Gather Raw Data
 
-Dispatch a **haiku scout subagent** (read-only, 12 turns) to collect git metrics from the current repo.
+Dispatch a haiku scout subagent (read-only, 12 turns) to collect git metrics:
 
-**READ-ONLY MODE: Use ONLY Bash (git commands), Glob, Grep. Do NOT modify any files.**
-
-Run these git commands (adjust `--since` to the parsed window):
-
-```bash
-# Commit log
-git log --oneline --since="[window]" --no-merges
-
-# Dated commit log for velocity calculation
-git log --format="%h %ad %s" --date=short --since="[window]" --no-merges
-
-# Most-changed files (top 30)
-git log --since="[window]" --no-merges --format="" --name-only | sort | uniq -c | sort -rn | head -30
-
-# Authors
-git shortlog -sn --since="[window]" --no-merges
-
-# Churn hotspots (modified files only, top 20)
-git log --since="[window]" --no-merges --format="" --diff-filter=M --name-only | sort | uniq -c | sort -rn | head -20
-
-# Lines added/removed summary
-git log --since="[window]" --no-merges --stat --format=""
-
-# TODO/FIXME introduced
-git log --since="[window]" --no-merges -p | grep -c "^\+.*\(TODO\|FIXME\|HACK\|XXX\)" || echo "0"
-
-# Merge/PR activity
-git log --since="[window]" --merges --oneline
-
-# New files created
-git log --since="[window]" --no-merges --diff-filter=A --format="" --name-only | wc -l
-
-# Files deleted
-git log --since="[window]" --no-merges --diff-filter=D --format="" --name-only | wc -l
 ```
+Task(subagent_type="general-purpose", model="haiku", max_turns=12, description="Gather retro metrics for [window]", prompt="
+  **READ-ONLY MODE: Use ONLY Bash for read-only git commands (git log, git shortlog, git diff --stat; NO git checkout, git reset, git push, or file-modifying commands), Glob, and Grep. Do NOT modify any files.**
+
+  When nearing your turn limit, STOP tool calls and produce your summary with whatever data you have collected. Partial metrics are more valuable than no output. Reserve at least 2 turns for writing your response.
+
+  Run these git commands (adjust --since to the parsed window):
+
+  # Commit log
+  git log --oneline --since='[window]' --no-merges
+
+  # Dated commit log for velocity calculation
+  git log --format='%h %ad %s' --date=short --since='[window]' --no-merges
+  # Most-changed files (top 30)
+  git log --since='[window]' --no-merges --format='' --name-only | sort | uniq -c | sort -rn | head -30
+  # Authors
+  git shortlog -sn --since='[window]' --no-merges
+  # Churn hotspots (modified files only, top 20)
+  git log --since='[window]' --no-merges --format='' --diff-filter=M --name-only | sort | uniq -c | sort -rn | head -20
+  # Lines added/removed summary
+  git log --since='[window]' --no-merges --stat --format=''
+  # TODO/FIXME introduced
+  git log --since='[window]' --no-merges -p | grep -c '^\+.*TODO\|FIXME\|HACK\|XXX' || echo '0'
+  # Merge/PR activity
+  git log --since='[window]' --merges --oneline
+  # New files created
+  git log --since='[window]' --no-merges --diff-filter=A --format='' --name-only | wc -l
+  # Files deleted
+  git log --since='[window]' --no-merges --diff-filter=D --format='' --name-only | wc -l
+
+  Return a structured summary (MAX 600 words) with: commit count, lines +/-, top 10 changed files, author breakdown, churn hotspots, TODO count, merge count, new/deleted file counts.
+")
 
 If **vs-previous** mode: run the same commands for the prior period (e.g., 7d window → `--since="14 days ago" --until="7 days ago"`).
 
