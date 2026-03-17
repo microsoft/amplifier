@@ -86,6 +86,7 @@ Amplifier provides native commands in `.claude/commands/` invoked via `/command-
 | `/tdd` | Test-driven development (red-green-refactor) |
 | `/verify` | Evidence-based verification before claiming done |
 | `/evaluate` | Score output against quality rubrics (AutoContext) |
+| `/frontend-design` | Build, refine, and evaluate frontend with anti-slop design (14 modes) |
 | `/improve` | Iteratively refine output until threshold met |
 | `/self-eval` | Evaluate Amplifier command quality for self-improvement |
 | `/self-improve` | Propose evidence-based updates to CLAUDE.md/AGENTS.md |
