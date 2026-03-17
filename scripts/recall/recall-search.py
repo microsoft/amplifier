@@ -23,7 +23,19 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="repla
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 FTS_DB = Path.home() / ".claude" / "recall-index.sqlite"
-MEMORY_DIR = Path.home() / ".claude" / "projects" / "C--claude-amplifier" / "memory"
+
+
+def _find_memory_dir() -> Path:
+    """Find amplifier memory directory (platform-agnostic)."""
+    base = Path.home() / ".claude" / "projects"
+    for name in ("-opt-amplifier", "C--claude-amplifier"):
+        candidate = base / name / "memory"
+        if candidate.is_dir():
+            return candidate
+    return base / "-opt-amplifier" / "memory"
+
+
+MEMORY_DIR = _find_memory_dir()
 
 
 def search_fts(query: str, limit: int, db_path: Path) -> list[dict]:
@@ -110,9 +122,13 @@ def search_memory_files(query: str, limit: int) -> list[dict]:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="BM25 search across Claude Code sessions")
+    parser = argparse.ArgumentParser(
+        description="BM25 search across Claude Code sessions"
+    )
     parser.add_argument("query", help="Search query")
-    parser.add_argument("-n", "--limit", type=int, default=5, help="Max results (default: 5)")
+    parser.add_argument(
+        "-n", "--limit", type=int, default=5, help="Max results (default: 5)"
+    )
     parser.add_argument(
         "-c",
         "--collection",
@@ -120,7 +136,9 @@ def main():
         default="all",
         help="Collection to search (default: all)",
     )
-    parser.add_argument("--db", type=str, default=None, help=f"FTS5 database path (default: {FTS_DB})")
+    parser.add_argument(
+        "--db", type=str, default=None, help=f"FTS5 database path (default: {FTS_DB})"
+    )
     args = parser.parse_args()
 
     db_path = Path(args.db) if args.db else FTS_DB

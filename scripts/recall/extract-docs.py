@@ -49,9 +49,18 @@ PROJECT_ROOTS = discover_project_roots(WORKSPACE_ROOT)
 
 # Directories to skip
 SKIP_DIRS = {
-    "node_modules", ".venv", ".git", "vendor", "__pycache__",
-    ".tox", ".mypy_cache", ".ruff_cache", "dist", "build",
-    ".claude-worktrees", "worktrees",
+    "node_modules",
+    ".venv",
+    ".git",
+    "vendor",
+    "__pycache__",
+    ".tox",
+    ".mypy_cache",
+    ".ruff_cache",
+    "dist",
+    "build",
+    ".claude-worktrees",
+    "worktrees",
 }
 
 # Files to skip
@@ -65,10 +74,6 @@ CATEGORY_PATTERNS = [
     (re.compile(r"^docs/testing/"), "testing"),
     (re.compile(r"^docs/reviews/"), "review"),
     (re.compile(r"^docs/reports/"), "report"),
-    (re.compile(r"^\.claude/agents/"), "agent"),
-    (re.compile(r"^\.claude/commands/"), "command"),
-    (re.compile(r"^\.claude/skills/"), "skill"),
-    (re.compile(r"^\.claude/context/"), "context"),
     (re.compile(r"^ai_context/"), "philosophy"),
     (re.compile(r"^context/"), "context"),
     (re.compile(r"^scripts/"), "script"),
@@ -102,7 +107,9 @@ def should_skip_dir(dirname: str) -> bool:
     return dirname in SKIP_DIRS or dirname.startswith(".")
 
 
-def collect_md_files(project: str, root: Path, recent_days: int | None = None) -> list[dict]:
+def collect_md_files(
+    project: str, root: Path, recent_days: int | None = None
+) -> list[dict]:
     """Collect all .md files from a project directory."""
     if not root.exists():
         return []
@@ -146,15 +153,17 @@ def collect_md_files(project: str, root: Path, recent_days: int | None = None) -
         title = extract_title(content, md_file.name)
         category = detect_category(rel_path)
 
-        results.append({
-            "project": project,
-            "path": rel_path,
-            "abs_path": str(md_file),
-            "title": title,
-            "category": category,
-            "content": content,
-            "mtime": mtime,
-        })
+        results.append(
+            {
+                "project": project,
+                "path": rel_path,
+                "abs_path": str(md_file),
+                "title": title,
+                "category": category,
+                "content": content,
+                "mtime": mtime,
+            }
+        )
 
     return results
 
@@ -240,11 +249,15 @@ def main():
         "--full", action="store_true", help="Force full re-index of all docs"
     )
     parser.add_argument(
-        "--recent", type=int, default=None,
+        "--recent",
+        type=int,
+        default=None,
         help="Only index docs modified in last N days (default: all)",
     )
     parser.add_argument(
-        "--db", type=str, default=None,
+        "--db",
+        type=str,
+        default=None,
         help=f"Database path (default: {DOCS_DB})",
     )
     args = parser.parse_args()
@@ -259,7 +272,6 @@ def main():
     conn = init_db(db_path)
 
     total_new = 0
-    total_updated = 0
     total_skipped = 0
 
     for project, root in sorted(PROJECT_ROOTS.items()):
