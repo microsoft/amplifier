@@ -35,6 +35,13 @@ FILES=(
   "context/ecosystem-overview.md"
   "context/development-hygiene.md"
   "context/recipes-usage.md"
+  ".claude/skills/frontend-design/SKILL.md"
+  "ai_context/design/WEB-CODE-ANTIPATTERNS.md"
+  "ai_context/design/COLOR-STRATEGY.md"
+  "ai_context/design/FONT-PAIRINGS.md"
+  "ai_context/design/UX-REVIEW-CHECKLIST.md"
+  "config/routing-matrix.yaml"
+  "docs/guides/git-workflow.md"
   "README.md"
 )
 

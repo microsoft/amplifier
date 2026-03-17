@@ -5,7 +5,7 @@
 > [!NOTE]
 > **This is the `amplifier-claude-v2` branch** - a unified integration of Amplifier v2 (from `main`) with our Claude Code customizations (from `amplifier-claude`). It uses Claude Code as the agent runtime while adopting v2's improved agent definitions, recipes, and organizational patterns.
 >
-> **What's here**: 30 specialized agents, 19 slash commands, 7 hooks, 4 MCP servers (playwright, context7, deepwiki, repomix), 6 YAML recipes, design philosophy docs, and full v2 ecosystem context.
+> **What's here**: 36 specialized agents, 40 slash commands, 7 hooks, 5 MCP servers (playwright, context7, deepwiki, repomix, exchange-ews), design skill pack with anti-slop detection, and full v2 ecosystem context.
 >
 > For the standalone Amplifier CLI, see the [`main`](https://github.com/microsoft/amplifier/tree/main) branch.
 
