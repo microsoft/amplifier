@@ -109,13 +109,8 @@ PRE-FLIGHT COMPLETE
   Report dir: <report-dir> (writable)
 ```
 
----
+### 0.7 Verify Page Loaded
 
-## Phase 1: CONNECT
-
-Already done in pre-flight (steps 0.1-0.3). The tab is open and navigated.
-
-Verify page is fully loaded:
 ```
 Call: mcp__claude-in-chrome__javascript_tool(
   action="javascript_exec",
@@ -128,11 +123,11 @@ If not "complete", wait 2s and retry (max 3 times).
 
 ---
 
-## Phase 2: DISCOVER
+## Phase 1: DISCOVER
 
 Build a **site model** through three-phase discovery.
 
-### Phase 2a: Visual Scan
+### Phase 1a: Visual Scan
 
 Take a screenshot and reason about it:
 
@@ -146,7 +141,7 @@ From the screenshot, determine:
 - **Visual state**: loaded normally, error state, loading spinner, empty state
 - **Auth state**: logged in, login wall, public content
 
-### Phase 2b: Structural Scan
+### Phase 1b: Structural Scan
 
 Get interactive elements:
 ```
@@ -167,7 +162,7 @@ Build an **element inventory**:
 
 Tag each element with its likely purpose based on text, aria-label, placeholder, and surrounding context.
 
-### Phase 2c: API Scan
+### Phase 1c: API Scan
 
 ```
 Call: mcp__claude-in-chrome__read_network_requests(tabId=<tabId>)
@@ -206,7 +201,7 @@ If `--depth deep` is specified:
 
 ---
 
-## Phase 3: PLAN
+## Phase 2: PLAN
 
 Generate test scenarios from the site model. Each scenario is a named sequence of steps with assertions.
 
@@ -248,7 +243,7 @@ Report to user: "Generated N test scenarios across M flows. Starting execution."
 
 ---
 
-## Phase 4: EXECUTE
+## Phase 3: EXECUTE
 
 Run each scenario. Track results in a results table.
 
@@ -312,7 +307,7 @@ Progress: 8/15 scenarios | 6 passed | 1 failed | 1 skipped
 
 ---
 
-## Phase 5: AUTO-FIX
+## Phase 4: AUTO-FIX
 
 After initial execution, if there are failures, run up to `--cycles` fix-and-retry rounds.
 
@@ -393,7 +388,7 @@ Dispatch up to 3 `bug-hunter` agents in parallel for multiple novel failures.
 
 ---
 
-## Phase 6: LEARN
+## Phase 5: LEARN
 
 After all cycles complete, update the pattern library.
 
@@ -430,7 +425,7 @@ Report: "Pattern library updated: N new patterns, M updated, K pruned."
 
 ---
 
-## Phase 7: REPORT
+## Phase 6: REPORT
 
 Generate a standalone HTML report file.
 

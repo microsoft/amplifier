@@ -23,7 +23,7 @@ Create a single unified `/frontend-design` command that:
 | File | Purpose |
 |------|---------|
 | `.claude/commands/frontend-design.md` | Unified command — mode parser, context protocol, 14 mode procedures |
-| `.claude/skills/frontend-design/SKILL.md` | Core principles — AI Slop Test, DO/DON'T, dimensions checklist |
+| `.claude/skills/frontend-design/PRINCIPLES.md` | Core principles — AI Slop Test, DO/DON'T, dimensions checklist |
 | `.claude/skills/frontend-design/reference/typography.md` | Typography + font pairings (merged) |
 | `.claude/skills/frontend-design/reference/color-and-contrast.md` | Color + token strategy (merged) |
 | `.claude/skills/frontend-design/reference/spatial-design.md` | Spatial design (from Impeccable) |
@@ -52,7 +52,7 @@ extract, normalize, delight, onboard, optimize, clarify, adapt — overlap with 
 | Phase | Agent | Model |
 |-------|-------|-------|
 | Reference docs | modular-builder | sonnet |
-| Core SKILL.md | modular-builder | sonnet |
+| Core PRINCIPLES.md | modular-builder | sonnet |
 | Command file | modular-builder | opus |
 | Doc updates | modular-builder | sonnet |
 | Quality review | code-quality-reviewer | sonnet |

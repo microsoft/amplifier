@@ -28,7 +28,7 @@
 
 ## Design Skills
 
-- [Frontend Design Skill](.claude/skills/frontend-design/SKILL.md): Core anti-slop design principles, AI Slop Test, aesthetic DO/DON'T
+- [Frontend Design Skill](.claude/skills/frontend-design/PRINCIPLES.md): Core anti-slop design principles, AI Slop Test, aesthetic DO/DON'T
 - [Typography Reference](.claude/skills/frontend-design/reference/typography.md): Modular scales, fluid sizing, font pairings
 - [Color & Contrast Reference](.claude/skills/frontend-design/reference/color-and-contrast.md): OKLCH, tinted neutrals, semantic tokens
 - [Spatial Design Reference](.claude/skills/frontend-design/reference/spatial-design.md): Grid systems, spacing scales, container queries

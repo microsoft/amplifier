@@ -59,7 +59,7 @@ Procedure:
 2. **Design direction**: Commit to a BOLD aesthetic direction — purpose, tone, constraints, differentiation. Choose an extreme and execute with precision. Never converge on safe defaults.
 3. **Propose approach**: Describe the visual direction and key design decisions. If ambiguous, ask user to pick between 2-3 directions.
 4. **Implement**: Build production-grade, working code. Match implementation complexity to the aesthetic vision. Use distinctive fonts, intentional color, varied spacing, purposeful motion.
-5. **AI Slop Test**: Review ALL DON'T guidelines from SKILL.md. If the interface looks like generic AI output (cyan-on-dark, gradient text, glassmorphism, identical card grids, Inter/Roboto), fix it before presenting.
+5. **AI Slop Test**: Review ALL DON'T guidelines from PRINCIPLES.md. If the interface looks like generic AI output (cyan-on-dark, gradient text, glassmorphism, identical card grids, Inter/Roboto), fix it before presenting.
 6. **Verify**: Accessibility (WCAG AA contrast, 44px touch targets, keyboard nav, reduced motion), performance (transform/opacity only, no layout animation), responsiveness.
 
 ### teach
@@ -135,7 +135,7 @@ Scan dimensions:
 2. **Performance** — layout thrashing, expensive animations, missing lazy loading, bundle size, re-renders
 3. **Theming** — hardcoded colors, broken dark mode, inconsistent tokens
 4. **Responsive** — fixed widths, small touch targets, horizontal scroll, missing breakpoints
-5. **Anti-Patterns** — check ALL DON'T guidelines from SKILL.md for AI slop tells
+5. **Anti-Patterns** — check ALL DON'T guidelines from PRINCIPLES.md for AI slop tells
 
 **Report structure**:
 
@@ -284,7 +284,7 @@ Procedure:
 **Dispatch**: Sonnet subagent, `implement` role, 20-30 turns
 **Inject**: SKILL + .impeccable.md
 
-**WARNING — AI SLOP TRAP**: When asked to make things "bolder," AI defaults to cyan gradients, glassmorphism, neon accents on dark backgrounds, gradient text. These are the OPPOSITE of bold — they're generic. Review ALL DON'T guidelines from SKILL.md before proceeding. Bold means distinctive, not "more effects."
+**WARNING — AI SLOP TRAP**: When asked to make things "bolder," AI defaults to cyan gradients, glassmorphism, neon accents on dark backgrounds, gradient text. These are the OPPOSITE of bold — they're generic. Review ALL DON'T guidelines from PRINCIPLES.md before proceeding. Bold means distinctive, not "more effects."
 
 Procedure:
 
