@@ -104,3 +104,9 @@ When context is compressed (automatic or via `/compact`), preserve in priority o
 6. **Tool outputs** — can delete content, but keep pass/fail status and error messages
 
 Delete freely: file contents already read, intermediate search results, verbose tool output, exploratory dead ends that led nowhere.
+
+**Post-compression recovery** (when context feels fuzzy after `/compact`):
+1. Search memory for current task keywords — fastest, zero cost
+2. Re-read the active plan or spec if one exists
+3. Check `git log --oneline -10` and `git diff --stat` for recent state
+4. Only re-read full files if steps 1-3 don't restore clarity
