@@ -22,6 +22,20 @@ Dispatch `zen-architect` agent (REVIEW mode) for automated self-review, then pre
 
 ## How to Request
 
+### Step 0: Blast Radius Analysis (if code-review-graph available)
+
+Before dispatching review agents, get the impact context:
+
+1. Check if code-review-graph MCP is available (try `mcp__code-review-graph__list_graph_stats_tool`)
+2. If available, call `mcp__code-review-graph__get_impact_radius_tool(base="origin/main", max_depth=2)` to get:
+   - Changed nodes (functions/classes directly modified)
+   - Impacted nodes (what's affected by the changes — callers, dependents, tests)
+   - Impacted files (the blast radius)
+3. Include this context when dispatching review agents — they should focus extra attention on impacted files that weren't directly changed but may be affected.
+4. If the blast radius includes test files, verify those tests still pass.
+
+This step is optional — if the MCP server isn't running, skip and proceed with the standard review.
+
 **1. Get git SHAs:**
 ```bash
 BASE_SHA=$(git rev-parse HEAD~1)  # or origin/main

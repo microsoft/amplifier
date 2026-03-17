@@ -1,6 +1,9 @@
 # Worktrees
 .worktrees/
 
+# Code review graph (local, generated per-machine)
+.code-review-graph/
+
 # Private settings
 **/certs/*.pem
 **/certs/config.json
