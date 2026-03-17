@@ -27,6 +27,8 @@ This file provides guidance to AI assistants when working with code in this repo
 
 **PR-first policy**: All work goes through feature branches + PRs. Never push to main. Never merge without user confirmation. Full details: `/docs search git workflow`.
 
+**Review-before-merge**: Every PR MUST be reviewed before merging. Dispatch `code-reviewer` or `pr-review-toolkit:review-pr` on every PR. No exceptions unless user says "skip review". Fix findings before merging — don't merge then fix.
+
 **Commit footer**: Always append the Amplifier co-author tag (see `docs/guides/git-workflow.md`).
 
 **Remote layout**: `origin` = Gitea (primary), `github` = GitHub (read-only backup, auto-synced).

@@ -82,6 +82,7 @@ All commands are listed with descriptions in the system prompt skills section. K
 - `/frontend-design` (14-mode design with anti-slop)
 - `/debug` → `/tdd` → `/verify` (investigation and testing)
 - `/retro` → `/techdebt` → `/self-improve` (maintenance and improvement)
+- `/optimize-skill` → `/self-eval` binary mode (autonomous skill optimization)
 
 **FuseCP-specific commands** (run in `C:\claude\fusecp-enterprise` session, NOT in Amplifier):
 

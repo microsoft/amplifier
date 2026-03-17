@@ -66,7 +66,7 @@ For workflow/process skills:
 
 ### Phase 2: Baseline (Experiment #0)
 
-1. Create working directory: `autoresearch-[skill-name]/` in the skill's parent folder
+1. Create working directory: `autoresearch-[skill-name]/` in the skill's parent folder. If the skill lives outside the Amplifier workspace, create it at `[AMPLIFIER_ROOT]/autoresearch-[skill-name]/` instead.
 2. Copy the original as `[skill-name]-optimized.md` — ALL mutations happen on this copy. NEVER edit the original.
 3. Save `SKILL.md.baseline` as revert target
 4. Run the skill [N] times using test inputs
@@ -101,8 +101,9 @@ For workflow/process skills:
 5. **Score** — run every output through every eval.
 
 6. **Keep or discard:**
-   - Score improved -> **KEEP**. This is the new baseline.
-   - Score same or worse -> **DISCARD**. Revert to previous version.
+   - Score improved → **KEEP**. This is the new baseline.
+   - Score same → **INCONCLUSIVE** at low N. If runs-per-experiment ≤3, re-run with more runs before discarding. Ties at N=3 are noise, not evidence.
+   - Score worse → **DISCARD**. Revert to previous version.
 
 7. **Log** — append to `changelog.md`:
    ```
@@ -113,7 +114,9 @@ For workflow/process skills:
    Result: [Which evals improved/declined]
    ```
 
-8. **Repeat** until budget exhausted or 95%+ for 3 consecutive experiments.
+8. **Track experiment count.** When count reaches budget cap, stop immediately and proceed to Phase 4 regardless of score trajectory. **Repeat** until budget exhausted or 95%+ for 3 consecutive experiments.
+
+**Quality escape hatch:** If all evals pass but output quality feels wrong — the evals are incomplete, not the skill. Stop experimenting. Add new evals covering the quality gap, re-baseline, then resume.
 
 ### Phase 4: Deliver Results
 
