@@ -32,7 +32,11 @@ def _find_memory_dir() -> Path:
         candidate = base / name / "memory"
         if candidate.is_dir():
             return candidate
-    return base / "-opt-amplifier" / "memory"
+    fallback = base / "-opt-amplifier" / "memory"
+    print(
+        f"Warning: no memory directory found, defaulting to {fallback}", file=sys.stderr
+    )
+    return fallback
 
 
 MEMORY_DIR = _find_memory_dir()

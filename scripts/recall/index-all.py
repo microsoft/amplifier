@@ -24,9 +24,9 @@ def run_script(name: str, args: list[str]) -> None:
                 f"[index-all] {name} failed (exit {result.returncode})", file=sys.stderr
             )
             if result.stderr:
-                print(
-                    f"  {result.stderr.decode(errors='replace')[:200]}", file=sys.stderr
-                )
+                # Show last 500 chars — key info is at the end of tracebacks
+                stderr_text = result.stderr.decode(errors="replace")[-500:]
+                print(f"  {stderr_text}", file=sys.stderr)
     except subprocess.TimeoutExpired:
         print(f"[index-all] {name} timed out after 20s", file=sys.stderr)
     except Exception as e:
