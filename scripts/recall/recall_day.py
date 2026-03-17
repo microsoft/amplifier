@@ -103,8 +103,13 @@ def parse_date_expr(expr: str) -> tuple[date, date]:
         return start, end
 
     day_names = {
-        "monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
-        "friday": 4, "saturday": 5, "sunday": 6,
+        "monday": 0,
+        "tuesday": 1,
+        "wednesday": 2,
+        "thursday": 3,
+        "friday": 4,
+        "saturday": 5,
+        "sunday": 6,
     }
     m = re.match(r"last\s+(\w+)", expr)
     if m and m.group(1) in day_names:
@@ -122,9 +127,10 @@ def get_project_dirs(all_projects: bool) -> list[Path]:
     """Get project directories to scan."""
     if all_projects:
         return [d for d in CLAUDE_PROJECTS.iterdir() if d.is_dir()]
-    amplifier = CLAUDE_PROJECTS / "C--claude-amplifier"
-    if amplifier.exists():
-        return [amplifier]
+    for name in ("-opt-amplifier", "C--claude-amplifier"):
+        candidate = CLAUDE_PROJECTS / name
+        if candidate.exists():
+            return [candidate]
     return [d for d in CLAUDE_PROJECTS.iterdir() if d.is_dir()]
 
 
@@ -172,9 +178,7 @@ def scan_sessions_for_dates(
                         if not ts_str:
                             continue
                         try:
-                            ts = datetime.fromisoformat(
-                                ts_str.replace("Z", "+00:00")
-                            )
+                            ts = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
                         except (ValueError, AttributeError):
                             continue
 
@@ -209,7 +213,9 @@ def scan_sessions_for_dates(
 
             first_msg = user_msgs[0]["text"][:120].split("\n")[0]
 
-            if first_msg.startswith("Warmup") or first_msg.startswith("Context: This summary"):
+            if first_msg.startswith("Warmup") or first_msg.startswith(
+                "Context: This summary"
+            ):
                 continue
 
             sessions.append(
@@ -312,7 +318,9 @@ def cmd_list(args):
     sessions = scan_sessions_for_dates(start, end, args.min_msgs, args.all_projects)
 
     if not sessions:
-        print(f"No sessions found for '{args.date_expr}' (min {args.min_msgs} messages)")
+        print(
+            f"No sessions found for '{args.date_expr}' (min {args.min_msgs} messages)"
+        )
         return
 
     date_range = f"{start}" if start == end else f"{start} to {end}"
@@ -347,17 +355,29 @@ def cmd_expand(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Temporal recall for Claude Code sessions")
+    parser = argparse.ArgumentParser(
+        description="Temporal recall for Claude Code sessions"
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     list_parser = subparsers.add_parser("list", help="List sessions for a date range")
-    list_parser.add_argument("date_expr", help="Date expression (yesterday, last 3 days, etc.)")
-    list_parser.add_argument("--min-msgs", type=int, default=3, help="Minimum messages (default: 3)")
-    list_parser.add_argument("--all-projects", action="store_true", help="Scan all projects")
+    list_parser.add_argument(
+        "date_expr", help="Date expression (yesterday, last 3 days, etc.)"
+    )
+    list_parser.add_argument(
+        "--min-msgs", type=int, default=3, help="Minimum messages (default: 3)"
+    )
+    list_parser.add_argument(
+        "--all-projects", action="store_true", help="Scan all projects"
+    )
 
-    expand_parser = subparsers.add_parser("expand", help="Show conversation flow for a session")
+    expand_parser = subparsers.add_parser(
+        "expand", help="Show conversation flow for a session"
+    )
     expand_parser.add_argument("session_id", help="Session ID (full or prefix)")
-    expand_parser.add_argument("--all-projects", action="store_true", help="Scan all projects")
+    expand_parser.add_argument(
+        "--all-projects", action="store_true", help="Scan all projects"
+    )
 
     args = parser.parse_args()
     if args.command == "list":
