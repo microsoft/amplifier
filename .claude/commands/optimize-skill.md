@@ -98,7 +98,24 @@ For workflow/process skills:
 
 4. **Run the experiment** — execute [N] times with same test inputs.
 
-5. **Score** — run every output through every eval.
+5. **Score** — auto-evaluate each output against every eval:
+   - Dispatch a reviewer subagent to score outputs:
+     ```
+     # Haiku override: binary YES/NO scoring is simple enough — cheaper than routing matrix default (sonnet)
+     Agent(subagent_type="code-quality-reviewer", model="haiku", description="Score experiment output",
+       prompt="Score the following output against these binary evals. For each eval, answer YES or NO with a one-line justification.
+
+       ## Evals
+       [paste eval criteria]
+
+       ## Output to score
+       [paste the experiment output]
+
+       Return a simple table: EVAL | PASS/FAIL | Reason (one line each). End with total: X/Y passed.")
+     ```
+   - If all evals pass unanimously across runs → score is clear, no user needed
+   - If any eval is ambiguous (reviewer unsure) → flag for user review
+   - Record scores in `results.tsv`
 
 6. **Keep or discard:**
    - Score improved → **KEEP**. This is the new baseline.
@@ -146,6 +163,7 @@ autoresearch-[skill-name]/
 - Feed successful mutations into `/self-improve` as evidence
 - The changelog is a research log that future sessions can continue from
 - Run periodically on high-use skills (brainstorm, create-plan, tdd) for continuous improvement
+- Auto-scoring via `code-quality-reviewer` agent reduces manual effort — user only reviews ambiguous results
 
 ## When to Use
 
