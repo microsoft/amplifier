@@ -18,28 +18,16 @@ import sqlite3
 import argparse
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+from scripts.lib.platform import get_memory_dir
+
 # Force UTF-8 output on Windows
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 FTS_DB = Path.home() / ".claude" / "recall-index.sqlite"
 
-
-def _find_memory_dir() -> Path:
-    """Find amplifier memory directory (platform-agnostic)."""
-    base = Path.home() / ".claude" / "projects"
-    for name in ("-opt-amplifier", "C--claude-amplifier"):
-        candidate = base / name / "memory"
-        if candidate.is_dir():
-            return candidate
-    fallback = base / "-opt-amplifier" / "memory"
-    print(
-        f"Warning: no memory directory found, defaulting to {fallback}", file=sys.stderr
-    )
-    return fallback
-
-
-MEMORY_DIR = _find_memory_dir()
+MEMORY_DIR = get_memory_dir("amplifier")
 
 
 def search_fts(query: str, limit: int, db_path: Path) -> list[dict]:

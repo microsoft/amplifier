@@ -14,7 +14,8 @@ if ! command -v jq &>/dev/null; then exit 0; fi
 cat > /dev/null
 
 OBS_FILE="/tmp/amplifier-observations.jsonl"
-REPO_ROOT="${REPO_ROOT:-/opt/amplifier}"
+. "$(dirname "$0")/../lib/platform.sh" 2>/dev/null || true
+REPO_ROOT="${AMPLIFIER_HOME:?AMPLIFIER_HOME not set}"
 
 cd "$REPO_ROOT" 2>/dev/null || exit 0
 

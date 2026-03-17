@@ -79,5 +79,22 @@ fi
 cp "$MCP_SRC" "$MCP_OUT"
 echo "Generated: $MCP_OUT"
 
+# --- Generate platform.json ---
+echo "Generating config/platform.json..."
+python3 -c "
+import sys; sys.path.insert(0, '$REPO_ROOT')
+from scripts.lib.platform import generate_platform_json
+import json
+print(json.dumps(generate_platform_json(), indent=2))
+" > "$REPO_ROOT/config/platform.json" 2>/dev/null || {
+    cat > "$REPO_ROOT/config/platform.json" << PJSON
+{
+  "os": "$AMPLIFIER_PLATFORM",
+  "amplifier_root": "$AMPLIFIER_HOME"
+}
+PJSON
+}
+echo "  Written: config/platform.json"
+
 echo ""
 echo "Done. Platform configs ready for $AMPLIFIER_PLATFORM."
