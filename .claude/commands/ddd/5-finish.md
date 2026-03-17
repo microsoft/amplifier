@@ -223,11 +223,13 @@ If YES:
 [Link to any related issues/discussions]
 ```
 
-**Create PR** (using existing /commit command or gh pr create):
+**Create PR** using Gitea MCP tools:
 
-```bash
-gh pr create --title "[Feature name]" --body "[generated description]"
 ```
+mcp__gitea__create_pull_request(owner="admin", repo="[repo]", title="[Feature name]", body="[generated description]", head="[branch]", base="main")
+```
+
+Fallback if MCP unavailable: `tea pr create --title '...' --body '...'`
 
 Show PR URL to user.
 

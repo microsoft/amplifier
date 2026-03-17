@@ -31,7 +31,7 @@ This file provides guidance to AI assistants when working with code in this repo
 
 **Remote layout**: `origin` = Gitea (primary), `github` = GitHub (read-only backup, auto-synced).
 
-**Gitea operations**: Use Gitea MCP tools (`mcp__gitea__*`) for all Gitea operations — PRs, issues, labels, milestones, reviews. MCP tools support parallel calls and work natively in subagents. Fallback: `tea` CLI when MCP is unavailable. Quick ref: `/docs search git workflow`.
+**Gitea operations:** `mcp__gitea__*` MCP tools (primary) → `tea` CLI (fallback) → NEVER `gh` CLI for Gitea (`gh` talks to GitHub, not Gitea). MCP tools support parallel calls and work natively in subagents.
 
 ---
 
@@ -194,6 +194,8 @@ When fetching content from URLs, pick the optimal tool by platform. Don't blindl
 - Never use WebFetch as first choice for social platforms (always fails)
 - For GitHub, prefer `gh` CLI — it handles auth and rate limits
 - For Gitea, ALWAYS use MCP tools — never `gh` CLI (talks to GitHub, not Gitea)
+
+**Amplifier repos live on Gitea, not GitHub.** When working with Amplifier, FuseCP, or any `admin/*` or `claude/*` repo, ALWAYS use Gitea MCP tools — never `gh` CLI. The GitHub rows above apply only to external/public GitHub repos.
 
 ---
 
