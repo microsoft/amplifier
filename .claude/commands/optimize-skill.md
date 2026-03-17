@@ -101,6 +101,7 @@ For workflow/process skills:
 5. **Score** — auto-evaluate each output against every eval:
    - Dispatch a reviewer subagent to score outputs:
      ```
+     # Haiku override: binary YES/NO scoring is simple enough — cheaper than routing matrix default (sonnet)
      Agent(subagent_type="code-quality-reviewer", model="haiku", description="Score experiment output",
        prompt="Score the following output against these binary evals. For each eval, answer YES or NO with a one-line justification.
 

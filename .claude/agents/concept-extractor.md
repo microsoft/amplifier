@@ -8,6 +8,7 @@ description: |
   - Extracting structured knowledge from multiple documents
   - Identifying contradictions between different sources
   - Building concept relationship maps
+tools: Glob, Grep, LS, Read, WebFetch, WebSearch, TodoWrite
 model: inherit
 ---
 
