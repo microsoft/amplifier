@@ -79,17 +79,19 @@ Implementation agents (`modular-builder`, `bug-hunter`, etc.) are exempt — the
 
 ### Resume Protocol
 
-When an agent returns, the orchestrator evaluates completeness and resumes if needed:
+When an agent returns, the orchestrator MUST evaluate the result before proceeding:
 
 1. **Dispatch** the agent with `max_turns=N`
-2. **Receive** the result and `agent_id`
-3. **Evaluate** completeness:
+2. **Receive** the result — check for these failure modes FIRST:
+   - **Internal error** (`[Tool result missing due to internal error]`, empty result, error field) → this is a HARD FAILURE. **Tell the user immediately:** "Agent [name] failed with: [error]. Retrying with [smaller scope / different model]." Then retry once with reduced scope. If retry fails, report and move on — never silently skip.
+   - **Timeout / no output** (empty result) → treat as incomplete, retry with simpler prompt.
+3. **Evaluate** completeness (only if step 2 passed):
    - **Complete**: Files written, conclusions stated, explicit "done" markers → use the result
    - **Incomplete**: Trailing "I'll now...", partial lists, no conclusion, mid-sentence stops → resume
-4. **Resume** using the Task tool's `resume` parameter with the returned agent ID, and prompt: "Continue your work. You were stopped due to turn limits. Focus on completing the remaining items."
+4. **Resume** using SendMessage with the agent's ID: "Continue your work. You were stopped due to turn limits. Focus on completing the remaining items."
 5. **Limit** to 3 resume cycles maximum, then escalate to the user
 
-The agent does not need to know about this pattern. It gets stopped, gets resumed with full prior context via the Task tool's built-in resume capability, and continues. Each resume gets a fresh output budget.
+**Critical: Never silently proceed past a failed agent.** Report failures to the user, retry once, then ask how to proceed.
 
 ### Synthesis Guard (All Agents)
 
