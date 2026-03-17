@@ -19,10 +19,11 @@ Parse `$ARGUMENTS`:
 Before ANY mode executes:
 
 1. **Load core principles**: Read `.claude/skills/frontend-design/SKILL.md` — contains design guidelines, anti-patterns, and the AI Slop Test
-2. **Check for design context**: Read `.impeccable.md` at project root — if found, load it for brand/audience/aesthetic context
-3. **Handle missing context**:
-   - If no `.impeccable.md` AND mode is `build` or `overdrive`: STOP and run `teach` mode first — these modes produce generic output without project context
-   - If no `.impeccable.md` AND mode is a refinement mode (`polish`, `audit`, `critique`, `harden`, `animate`, `typeset`, `colorize`, `arrange`, `bolder`, `quieter`, `distill`): proceed without — the existing code IS the context
+2. **Check loaded instructions**: Look for a `## Design Context` section in CLAUDE.md or project instructions — if found, use it as design context
+3. **Check for .impeccable.md**: Read `.impeccable.md` at project root — if found, load it for brand/audience/aesthetic context
+4. **Handle missing context**:
+   - If no Design Context AND no `.impeccable.md` AND mode is `build` or `overdrive`: STOP and run `teach` mode first — these modes produce generic output without project context
+   - If no context AND mode is a refinement mode (`polish`, `audit`, `critique`, `harden`, `animate`, `typeset`, `colorize`, `arrange`, `bolder`, `quieter`, `distill`): proceed without — the existing code IS the context
 
 ---
 
@@ -40,6 +41,8 @@ Modes that dispatch subagents inject these files as needed:
 | SPATIAL | `.claude/skills/frontend-design/reference/spatial-design.md` | arrange, build |
 | MOTION | `.claude/skills/frontend-design/reference/motion-design.md` | animate, build |
 | INTERACTION | `.claude/skills/frontend-design/reference/interaction-design.md` | harden, build |
+| RESPONSIVE | `.claude/skills/frontend-design/reference/responsive-design.md` | build, polish |
+| UX-WRITING | `.claude/skills/frontend-design/reference/ux-writing.md` | build, polish, critique |
 
 ---
 
@@ -48,7 +51,7 @@ Modes that dispatch subagents inject these files as needed:
 ### build (default)
 
 **Dispatch**: Sonnet subagent, `implement` role, 25-40 turns
-**Inject**: SKILL + ANTIPATTERNS + .impeccable.md + all reference docs relevant to the task
+**Inject**: SKILL + ANTIPATTERNS + .impeccable.md + all 7 reference docs (TYPOGRAPHY, COLOR, SPATIAL, MOTION, INTERACTION, RESPONSIVE, UX-WRITING)
 
 Procedure:
 
@@ -81,7 +84,7 @@ Procedure:
 ### polish
 
 **Dispatch**: Sonnet subagent, `implement` role, 20-30 turns
-**Inject**: SKILL + .impeccable.md
+**Inject**: SKILL + ANTIPATTERNS + RESPONSIVE + UX-WRITING + .impeccable.md
 
 Systematic final pass across these dimensions:
 
