@@ -262,6 +262,32 @@ digraph subagent_dev {
 }
 ```
 
+## Wave-Based Parallel Execution
+
+Before executing tasks sequentially, analyze the plan for parallelization opportunities:
+
+1. **Build dependency graph** — which tasks depend on which? A task depends on another if it modifies files the other creates, or explicitly states a dependency.
+2. **Assign waves:**
+   - **Wave 1**: All tasks with no dependencies (including [TRACER] task — it runs alone first)
+   - **Wave 2**: Tasks depending only on Wave 1 outputs
+   - **Wave N**: Tasks depending on previous waves
+3. **Execute per wave:**
+   - Within each wave, dispatch all tasks in parallel using `/parallel-agents`
+   - Wait for all tasks in the wave to complete before starting the next wave
+   - If any task in a wave fails, pause and report — don't start the next wave
+
+**When to use waves:**
+- Plan has 4+ tasks with some independence → use waves
+- Plan has 3 or fewer tasks → sequential is fine
+- All tasks modify the same files → sequential only
+
+**Print wave plan before executing:**
+```
+Wave 1 (parallel): Task 1 [TRACER], Task 3
+Wave 2 (parallel): Task 2, Task 4 (depend on Task 1)
+Wave 3 (sequential): Task 5 (depends on Task 2 + Task 4)
+```
+
 ## The Process
 
 ## Dispatch Announcements
