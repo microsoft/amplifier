@@ -174,6 +174,18 @@ Every configuration setting should have exactly ONE authoritative location. All 
 
 **When duplication is acceptable**: Performance-critical paths, build scripts that must work before dependencies are installed, emergency fallbacks.
 
+## Always-Loaded File Budgets
+
+These files are loaded into every session via @imports. Keep them lean:
+
+| File | Target | Current | Action if exceeded |
+|------|--------|---------|-------------------|
+| CLAUDE.md | <150 lines | ~120 | Run `/self-improve prune` before adding |
+| AGENTS.md | <250 lines | ~240 | Move context-specific content to commands |
+| routing-matrix.yaml | <120 lines | ~115 | Only add agents that are in AGENTS_CATALOG |
+
+New content in these files must justify its always-loaded cost. Ask: "Does every session need this, or only sessions that invoke a specific command?" If the latter, put it in the command file.
+
 ## Interactive Question Format
 
 When asking the user to make a decision (in `/brainstorm`, `/create-plan`, `/design-interface`, or any interactive command):

@@ -77,23 +77,11 @@ Regenerate: `bash scripts/generate-llms.sh`. Update `llms.txt` manually when doc
 
 Amplifier provides native commands in `.claude/commands/` invoked via `/command-name`. Available commands are listed in the system prompt's skills section. Before starting work, check if an applicable command exists.
 
-| Command | Purpose |
-|---------|---------|
-| `/brainstorm` | Start new work — explore intent, design, route to execution |
-| `/create-plan` | Structured implementation plan with agent assignments |
-| `/subagent-dev` | Execute plan tasks via specialized agents with two-stage review |
-| `/frontend-design` | Build, refine, and evaluate frontend with anti-slop design (14 modes) |
-| `/design-interface` | Parallel "Design It Twice" — radically different interface proposals |
-| `/debug` | Hypothesis-driven root cause analysis |
-| `/tdd` | Test-driven development (red-green-refactor) |
-| `/verify` | Evidence-based verification before claiming done |
-| `/evaluate` | Score output against quality rubrics (AutoContext) |
-| `/improve` | Iteratively refine output until threshold met |
-| `/self-eval` | Evaluate Amplifier command quality for self-improvement |
-| `/self-improve` | Propose evidence-based updates to CLAUDE.md/AGENTS.md |
-| `/retro` | Development retrospective — commit history, velocity, quality metrics |
-
-All commands listed in system prompt skills section. Check before starting work.
+All commands are listed with descriptions in the system prompt skills section. Key workflow entry points:
+- `/brainstorm` → `/create-plan` → `/subagent-dev` (standard feature workflow)
+- `/frontend-design` (14-mode design with anti-slop)
+- `/debug` → `/tdd` → `/verify` (investigation and testing)
+- `/retro` → `/techdebt` → `/self-improve` (maintenance and improvement)
 
 **FuseCP-specific commands** (run in `C:\claude\fusecp-enterprise` session, NOT in Amplifier):
 

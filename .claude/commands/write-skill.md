@@ -43,6 +43,16 @@ A **command** is a reference guide for proven techniques, patterns, or tools. Co
 
 The entire command creation process follows RED-GREEN-REFACTOR.
 
+## Dedup Check (before creating)
+
+Before creating a new command, search existing skill descriptions for keyword overlap:
+
+1. Read the system prompt skills list (or `.claude/commands/*.md` frontmatter descriptions)
+2. If the new command shares >3 keywords with an existing command's description, it MUST be a mode of that existing command — not a new command
+3. If genuinely new capability with no overlap, proceed with creation
+
+**Consolidation rule:** Prefer adding modes to existing commands over creating new commands. `/frontend-design` with 14 modes is near the practical limit (~15 modes max). Beyond that, split into a new command.
+
 ## When to Create a Command
 
 **Create when:**
@@ -95,7 +105,7 @@ API docs, syntax guides, tool documentation (office docs)
 
 ```markdown
 ---
-description: "Use when [specific triggering conditions and symptoms]"
+# description: "Use when [specific triggering conditions and symptoms]"
 ---
 
 # Command Name
@@ -148,16 +158,16 @@ When the description was changed to just "Use when executing implementation plan
 
 ```yaml
 # BAD: Summarizes workflow - Claude may follow this instead of reading command
-description: "Use when executing plans - dispatches subagent per task with code review between tasks"
+# description: "Use when executing plans - dispatches subagent per task with code review between tasks"
 
 # BAD: Too much process detail
-description: "Use for TDD - write test first, watch it fail, write minimal code, refactor"
+# description: "Use for TDD - write test first, watch it fail, write minimal code, refactor"
 
 # GOOD: Just triggering conditions, no workflow summary
-description: "Use when executing implementation plans with independent tasks in the current session"
+# description: "Use when executing implementation plans with independent tasks in the current session"
 
 # GOOD: Triggering conditions only
-description: "Use when implementing any feature or bugfix, before writing implementation code"
+# description: "Use when implementing any feature or bugfix, before writing implementation code"
 ```
 
 **Content:**
@@ -170,19 +180,19 @@ description: "Use when implementing any feature or bugfix, before writing implem
 
 ```yaml
 # BAD: Too abstract, vague, doesn't include when to use
-description: "For async testing"
+# description: "For async testing"
 
 # BAD: First person
-description: "I can help you with async tests when they're flaky"
+# description: "I can help you with async tests when they're flaky"
 
 # BAD: Mentions technology but command isn't specific to it
-description: "Use when tests use setTimeout/sleep and are flaky"
+# description: "Use when tests use setTimeout/sleep and are flaky"
 
 # GOOD: Starts with "Use when", describes problem, no workflow
-description: "Use when tests have race conditions, timing dependencies, or pass/fail inconsistently"
+# description: "Use when tests have race conditions, timing dependencies, or pass/fail inconsistently"
 
 # GOOD: Technology-specific command with explicit trigger
-description: "Use when using React Router and handling authentication redirects"
+# description: "Use when using React Router and handling authentication redirects"
 ```
 
 ### 2. Keyword Coverage
@@ -494,7 +504,7 @@ Make it easy for agents to self-check when rationalizing:
 Add to description: symptoms of when you're ABOUT to violate the rule:
 
 ```yaml
-description: "Use when implementing any feature or bugfix, before writing implementation code"
+# description: "Use when implementing any feature or bugfix, before writing implementation code"
 ```
 
 ## RED-GREEN-REFACTOR for Commands
