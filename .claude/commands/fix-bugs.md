@@ -1,5 +1,6 @@
 ---
 description: "Autonomous FuseCP bug-fix pipeline: fetch, triage, investigate, fix, test, deploy."
+platforms: ["windows"]
 ---
 
 # FuseCP Bug Fix Pipeline
