@@ -117,6 +117,8 @@ When proposing changes to CLAUDE.md, AGENTS.md, or skill files:
 
 This discipline prevents the failure mode where 5 changes are applied at once, 1 helps, 2 are neutral, and 2 hurt — but you can't tell which is which.
 
+**Exception for `--apply` flag:** When the user passes `--apply`, low+medium risk changes may be batched for convenience. The one-mutation discipline applies strictly only when measuring improvement (e.g., during `/optimize-skill` or when comparing before/after scores).
+
 ### Step 4: Present Proposals to User
 
 Group proposals by risk level (Low first, then Medium, then High):
