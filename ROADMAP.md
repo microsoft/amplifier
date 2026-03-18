@@ -43,3 +43,40 @@ Amplifier should include a tool to parse session data, reconstruct conversation 
 ### Context sharing
 
 Team members should be able to share context without exposing private data publicly or merging into the public repository. Options include private Git repositories or shared OneDrive folders mounted as context for Amplifier. Whether Git or file shares are used, the key requirements are version history and ease of use. A mount-based approach is appealing for now because it treats everything as files and avoids custom API connectors, and allows for individual user-choice of any remote storage or synchronization platforms. Tools and guidance will be provided to make it simple for anyone to use the most recommended approaches.
+
+---
+
+## Recently Completed (2026-03-18)
+
+### Plugin Marketplace (PR #71, #72)
+
+Migrated all 36 agents and 49 commands from monolithic `.claude/` directory to a Claude Code plugin marketplace (`claude/amplifier-plugins` on Gitea). Six plugins: amplifier-core, amplifier-windows, amplifier-linux, amplifier-fusecp, amplifier-siem, amplifier-genetics. Installed via `claude plugin marketplace add`. -26,543 lines removed from monolith.
+
+### Agent Resilience (PR #73)
+
+Cherry-picked three patterns from Fabro (open-source workflow orchestration tool):
+1. **Failure classification** — 6-class taxonomy (transient, deterministic, context_overflow, stuck_loop, canceled, scope_violation) with decision tree
+2. **Loop detection** — pattern matching on last 10 tool calls, steering injection on first detection, hard stop on second
+3. **Friction recording** — JSON append per agent stop for structured retro analysis, smoothness heuristic (Effortless/Smooth/Bumpy/Struggled/Failed), retros table in recall-index.sqlite
+
+---
+
+## Future Opportunities
+
+### DOT-based workflow graphs
+
+Inspired by Fabro's `.fabro` workflow files. Define repeatable agent pipelines as Graphviz DOT digraphs — nodes are agent sessions, shell commands, or human gates; edges are transitions with conditions. CSS-like model stylesheets route nodes to models by class/ID. Benefits: reproducible, diffable, version-controlled, visually renderable. Would complement but not replace the existing markdown command system.
+
+Key features to consider: branching/looping with visit limits, parallel fan-out/fan-in, goal gates (quality checkpoints at exit), retry policies per node, failure signature dedup (circuit breakers).
+
+**Prerequisite:** Agent resilience protocol (completed). The failure taxonomy and loop detection provide the foundation that workflow-level retry/circuit-breaker logic builds on.
+
+### Amplifier CLI
+
+A thin Python/Rust CLI (`amplifier run workflow.dot`) that parses DOT workflow files and dispatches Claude Code agents per node. Would enable unattended execution of multi-step pipelines with deterministic control flow. Estimated scope: ~500-1000 lines for a minimal viable runner.
+
+Features to consider: `amplifier run`, `amplifier validate`, `amplifier graph` (render SVG), `amplifier logs`, `amplifier ssh` (shell into running sandbox). Integration with existing `/subagent-dev` for agent dispatch.
+
+### Unified log access
+
+Integrate OpenLogs (github.com/charlietlamb/openlogs) for dev server log capture, combined with platform-specific log sources (IIS via Get-Content, Exchange via EWS, systemd via journalctl). A `/logs` command that gives agents direct access to runtime logs without asking users to paste terminal output. Cross-platform (Windows + Ubuntu).
