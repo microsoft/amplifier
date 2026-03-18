@@ -74,10 +74,10 @@ Research and scout subagents (context gathering, codebase exploration, documenta
 
 This applies to:
 - Context scouts dispatched by `/brainstorm` and `/create-plan`
-- `agentic-search` agents doing pre-implementation reconnaissance
+- `amplifier-core:agentic-search` agents doing pre-implementation reconnaissance
 - Any `general-purpose` agent with `model="haiku"` used for information gathering
 
-Implementation agents (`modular-builder`, `bug-hunter`, etc.) are exempt — they need write access.
+Implementation agents (`amplifier-core:modular-builder`, `amplifier-core:bug-hunter`, etc.) are exempt — they need write access.
 
 ### Resume Protocol
 

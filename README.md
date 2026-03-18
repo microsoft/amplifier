@@ -157,8 +157,8 @@ Ready! Starting chat...
 First of all, this is still VERY early and we have not brought _most_ of our features over yet, so keep your expectations low and we'll get it ramped up very quickly over the next week or two. Consider this just an early sneak peek.
 
 - **Generate code** - From simple functions to full applications
-- **Debug problems** - Systematic error resolution with the bug-hunter agent
-- **Design systems** - Architecture planning with the zen-architect agent
+- **Debug problems** - Systematic error resolution with the amplifier-core:bug-hunter agent
+- **Design systems** - Architecture planning with the amplifier-core:zen-architect agent
 - **Research solutions** - Find patterns and best practices with the researcher agent
 - **Build modules** - Use Amplifier to create new Amplifier modules (yes, really!)
 
@@ -271,18 +271,18 @@ Specialized agents for focused tasks:
 ```bash
 # Let the AI delegate to specialized agents
 amplifier run "Design a caching layer with careful consideration"
-# The AI will use zen-architect when appropriate
+# The AI will use amplifier-core:zen-architect when appropriate
 
 # Or request specific agents
-amplifier run "Use bug-hunter to debug this error: [paste error]"
+amplifier run "Use amplifier-core:bug-hunter to debug this error: [paste error]"
 ```
 
 **Bundled agents:**
 
-- **zen-architect** - System design with ruthless simplicity
-- **bug-hunter** - Systematic debugging
+- **amplifier-core:zen-architect** - System design with ruthless simplicity
+- **amplifier-core:bug-hunter** - Systematic debugging
 - **web-research** - Web research and content fetching
-- **modular-builder** - Code implementation
+- **amplifier-core:modular-builder** - Code implementation
 - **explorer** - Breadth-first exploration of local code, docs, and other files with citation-ready summaries
 
 ---
