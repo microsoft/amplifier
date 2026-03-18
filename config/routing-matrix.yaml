@@ -5,7 +5,7 @@
 # To change all scouts from haiku to sonnet, update one line here.
 #
 # Roles define semantic categories. Agents map to roles.
-# The resolved model is: agents.<name> -> roles.<role>.model
+# The resolved model is: agents.amplifier-core:<name> -> roles.<role>.model
 #
 # Cost-effective dispatch: when the matrix says haiku or sonnet,
 # ALWAYS dispatch as a subagent — don't burn Opus tokens inline.
@@ -66,49 +66,49 @@ roles:
 # Agents not listed here default to 'implement'
 agents:
   # Core Development
-  agentic-search: scout
-  zen-architect: architect
-  modular-builder: implement
-  bug-hunter: implement          # fixes code; investigation uses agentic-search
-  test-coverage: review
-  security-guardian: security
-  post-task-cleanup: fast
-  performance-optimizer: research
-  integration-specialist: implement
-  spec-reviewer: review
-  code-quality-reviewer: review
+  amplifier-core:agentic-search: scout
+  amplifier-core:zen-architect: architect
+  amplifier-core:modular-builder: implement
+  amplifier-core:bug-hunter: implement          # fixes code; investigation uses agentic-search
+  amplifier-core:test-coverage: review
+  amplifier-core:security-guardian: security
+  amplifier-core:post-task-cleanup: fast
+  amplifier-core:performance-optimizer: research
+  amplifier-core:integration-specialist: implement
+  amplifier-core:spec-reviewer: review
+  amplifier-core:code-quality-reviewer: review
 
   # API & Data
-  api-contract-designer: implement
-  database-architect: implement
-  contract-spec-author: implement
-  module-intent-architect: architect
+  amplifier-core:api-contract-designer: implement
+  amplifier-core:database-architect: implement
+  amplifier-core:contract-spec-author: implement
+  amplifier-core:module-intent-architect: architect
 
   # Design
-  component-designer: implement
-  art-director: implement
-  animation-choreographer: implement
-  layout-architect: implement
-  responsive-strategist: implement
-  design-system-architect: architect
-  voice-strategist: fast
+  amplifier-core:component-designer: implement
+  amplifier-core:art-director: implement
+  amplifier-core:animation-choreographer: implement
+  amplifier-core:layout-architect: implement
+  amplifier-core:responsive-strategist: implement
+  amplifier-core:design-system-architect: architect
+  amplifier-core:voice-strategist: fast
 
   # Knowledge & Analysis
-  content-researcher: research
-  analysis-engine: research
-  concept-extractor: scout
-  insight-synthesizer: research
-  knowledge-archaeologist: research
-  pattern-emergence: research
-  visualization-architect: implement
-  graph-builder: implement
+  amplifier-core:content-researcher: research
+  amplifier-core:analysis-engine: research
+  amplifier-core:concept-extractor: scout
+  amplifier-core:insight-synthesizer: research
+  amplifier-core:knowledge-archaeologist: research
+  amplifier-core:pattern-emergence: research
+  amplifier-core:visualization-architect: implement
+  amplifier-core:graph-builder: implement
 
   # Infrastructure
-  vmware-infrastructure: research
+  amplifier-core:vmware-infrastructure: research
 
   # Meta
-  subagent-architect: implement
-  amplifier-cli-architect: implement
-  ambiguity-guardian: research
-  amplifier-expert: fast
-  handoff-gemini: fast
+  amplifier-core:subagent-architect: implement
+  amplifier-core:amplifier-cli-architect: implement
+  amplifier-core:ambiguity-guardian: research
+  amplifier-core:amplifier-expert: fast
+  amplifier-core:handoff-gemini: fast
