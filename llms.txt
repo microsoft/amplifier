@@ -2,6 +2,15 @@
 
 > AI-powered modular development assistant with 36 specialized agents, 40 slash commands, and design philosophy docs. Uses Claude Code as the agent runtime. Built on Microsoft Amplifier v2.
 
+## Documentation Site
+
+Live at https://amplifier.ergonet.pl — 18 pages × 2 languages (EN/PL), auto-updated on PR merge.
+
+- [LLM Index](https://amplifier.ergonet.pl/llms.txt): Page navigation for LLMs
+- [Full Text](https://amplifier.ergonet.pl/llms-full.txt): All docs as plain text
+- [Structured JSON](https://amplifier.ergonet.pl/llms-structured.json): Machine-queryable commands/agents/workflows
+- Repo: https://gitea.ergonet.pl:3001/claude/amplifier-docs
+
 ## Core Project Files
 
 - [CLAUDE.md](CLAUDE.md): Claude Code project instructions and configuration
