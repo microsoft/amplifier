@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Generate OpenCode agents/*/SKILL.md from canonical .claude/agents/*.md.
+"""Generate OpenCode agents/*/SKILL.md from the amplifier-marketplace plugin.
 
-Reads each agent definition from .claude/agents/, parses the YAML frontmatter,
-adds OpenCode-specific fields (recommended_model, tools), and writes to
-agents/{name}/SKILL.md.
+Reads each agent definition from the plugin marketplace directory, parses the
+YAML frontmatter, adds OpenCode-specific fields (recommended_model, tools),
+and writes to agents/{name}/SKILL.md.
 
-This keeps .claude/agents/ as the single source of truth for agent definitions.
+The plugin marketplace path is the single source of truth for agent definitions:
+  ~/.claude/plugins/marketplaces/amplifier-marketplace/amplifier-core/agents/
+
 Run this script whenever agents are updated to sync the OpenCode format.
 
 Usage:
@@ -152,19 +154,21 @@ def main():
     dry_run = "--dry-run" in sys.argv
 
     repo_root = Path(__file__).parent.parent
-    agents_src = repo_root / ".claude" / "agents"
+    marketplace_base = Path.home() / ".claude" / "plugins" / "marketplaces" / "amplifier-marketplace" / "amplifier-core"
+    agents_src = marketplace_base / "agents"
     agents_dst = repo_root / "agents"
 
     if not agents_src.is_dir():
         print(f"Error: Source directory not found: {agents_src}")
+        print("Ensure the amplifier-marketplace plugin is installed.")
         sys.exit(1)
 
     agent_files = sorted(agents_src.glob("*.md"))
     if not agent_files:
-        print("No agent files found in .claude/agents/")
+        print(f"No agent files found in {agents_src}")
         sys.exit(1)
 
-    print(f"Syncing {len(agent_files)} agents from .claude/agents/ to agents/")
+    print(f"Syncing {len(agent_files)} agents from plugin marketplace to agents/")
 
     synced = 0
     for src_file in agent_files:

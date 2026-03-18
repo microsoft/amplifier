@@ -97,7 +97,7 @@ When an agent returns, the orchestrator MUST evaluate the result before proceedi
 
 ### Synthesis Guard (All Agents)
 
-Every custom agent in `.claude/agents/` includes a **Synthesis guard** rule in its Context Budget section:
+Every agent in the `amplifier-core` plugin includes a **Synthesis guard** rule in its Context Budget section:
 
 > When nearing your turn limit, STOP tool calls and produce your final output with whatever findings you have. Partial results with clear structure are MORE valuable than exhausting all turns on research with no summary. Always reserve at least 2 turns for writing your response.
 
@@ -145,7 +145,7 @@ For batch/pipeline systems: save after each item (not at end), continue on failu
 
 ## AutoContext Quality Gates
 
-After significant work: `/evaluate implementation` (score < 80 → `/improve`). After brainstorm/planning: `/self-eval`. Weekly: `/self-improve` for instruction updates. Before recurring problems: `autocontext_skill_discover(query="...")` for learned strategies. Knowledge bridge: AutoContext → `.claude/skills/` → `/recall`.
+After significant work: `/evaluate implementation` (score < 80 → `/improve`). After brainstorm/planning: `/self-eval`. Weekly: `/self-improve` for instruction updates. Before recurring problems: `autocontext_skill_discover(query="...")` for learned strategies. Knowledge bridge: AutoContext → `/recall`.
 
 ## Decision Tracking
 

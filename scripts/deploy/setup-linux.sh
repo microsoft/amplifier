@@ -123,8 +123,8 @@ fi
 
 # --- Step 8: Consolidate agents ---
 echo "[8/8] Consolidating agents..."
-# Move any scattered agents into amplifier's agent directory
-AMPLIFIER_AGENTS="$AMPLIFIER_DIR/.claude/agents"
+# Move any scattered agents into the plugin marketplace directory
+AMPLIFIER_AGENTS="$HOME/.claude/plugins/marketplaces/amplifier-marketplace/amplifier-core/agents"
 MIGRATED=0
 
 for agent_dir in "$HOME/.claude/agents" "/opt/.claude/agents"; do
@@ -134,6 +134,7 @@ for agent_dir in "$HOME/.claude/agents" "/opt/.claude/agents"; do
       [ -f "$agent_file" ] || continue
       agent_name=$(basename "$agent_file")
       if [ ! -f "$AMPLIFIER_AGENTS/$agent_name" ]; then
+        mkdir -p "$AMPLIFIER_AGENTS"
         cp "$agent_file" "$AMPLIFIER_AGENTS/$agent_name"
         echo "    Migrated: $agent_name"
         MIGRATED=$((MIGRATED + 1))

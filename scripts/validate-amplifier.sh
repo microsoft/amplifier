@@ -30,7 +30,7 @@ echo ""
 
 # 1. Commands have valid frontmatter
 echo "--- Commands ---"
-for cmd in .claude/commands/*.md; do
+for cmd in "$HOME/.claude/plugins/marketplaces/amplifier-marketplace/amplifier-core/commands/"*.md; do
     name=$(basename "$cmd" .md)
     if head -1 "$cmd" | grep -q "^---"; then
         check "$name: frontmatter present" "pass"
