@@ -105,6 +105,49 @@ This prevents the failure mode where an agent uses all turns on tool calls (Glob
 
 **When creating new agents**, always include this rule in the Context Budget section.
 
+### Failure Classification
+
+When an agent fails, classify the failure before deciding on retry/resume. This taxonomy replaces ad-hoc error checking with a shared vocabulary:
+
+| Class | Trigger | Retry? | Resume? |
+|-------|---------|--------|---------|
+| `transient` | API 500, rate limit, timeout, network error | Yes (auto, up to 3x) | No |
+| `deterministic` | Wrong file path, missing module, syntax error in prompt | No | No — fix the prompt |
+| `context_overflow` | Turn limit hit, context window full | No | Yes (reduced scope) |
+| `stuck_loop` | Same action repeated 3+ times (see Loop Detection) | No | No — escalate |
+| `canceled` | User interrupt, hook kill | No | No |
+| `scope_violation` | Write attempt in read-only agent, wrong directory | No | No — fix constraints |
+
+**Decision tree (apply in order):**
+
+1. Classify the failure using the table above.
+2. `transient` → wait briefly, retry (up to 3 times). If 3rd retry fails, escalate to user.
+3. `context_overflow` → invoke Resume Protocol with reduced scope.
+4. `deterministic` → report to user with the specific error and a prompt-fix suggestion. Do NOT retry.
+5. `stuck_loop` → terminate agent, report the repeating pattern to user.
+6. `canceled` → report, do not retry.
+7. `scope_violation` → report with the constraint that was violated, do not retry.
+
+When reporting failures, always include the class name: "Agent amplifier-core:modular-builder failed (deterministic): file src/missing.py does not exist."
+
+### Loop Detection
+
+Watch for repeating tool call patterns that indicate an agent is stuck. Check the last 10 tool calls for:
+
+| Pattern | Definition |
+|---------|------------|
+| Length-1 repeat | Same tool + identical arguments, 3+ consecutive times |
+| Length-2 cycle | A→B→A→B with identical inputs each iteration |
+| Length-3 cycle | A→B→C→A→B→C with identical inputs each iteration |
+
+**What does NOT count as a loop:** Reading different files (same tool, different arguments). Retrying after making a code change (edit content differs). Running tests after each edit (test output differs). Key signal: **identical inputs producing the same failed output**.
+
+**Response protocol:**
+
+1. **First detection:** Inject steering via SendMessage: "Loop detected: you are repeating [tool + argument pattern]. Stop and try a different approach."
+2. **Second detection in same agent session:** Hard stop. Classify as `stuck_loop`. Report to user: "Agent [name] stuck in loop after steering. Pattern: [describe]. Recommend: [specific next action]."
+3. A loop steering injection counts as 1 of the 3 allowed resume cycles. A second loop detection terminates the agent regardless of remaining resume cycles.
+
 ### Task Decomposition Guidelines
 
 Right-size tasks before dispatch. With 1M context, agents can handle larger scope — prefer fewer, meatier tasks over many tiny ones:

@@ -18,12 +18,77 @@ from hook_logger import HookLogger
 
 logger = HookLogger("stop_hook")
 
+
+# --- Friction recording (always runs, regardless of memory system) ---
+def record_friction(input_data: dict) -> None:
+    """Append one JSON record to tmp/friction.jsonl for retro analysis."""
+    try:
+        from datetime import datetime, timezone
+
+        amplifier_dir = Path(__file__).parent.parent.parent
+        friction_dir = amplifier_dir / "tmp"
+        friction_dir.mkdir(parents=True, exist_ok=True)
+        friction_file = friction_dir / "friction.jsonl"
+
+        record = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "agent": input_data.get("agent_name", "unknown"),
+            "model": input_data.get("model", "unknown"),
+            "status": "success" if not input_data.get("error") else "failed",
+            "failure_class": None,
+            "friction_kind": None,
+            "resume_count": input_data.get("resume_count", 0),
+            "loop_detected": input_data.get("loop_detected", False),
+            "turns_used": input_data.get("turns_used", 0),
+            "description": input_data.get("error", "completed successfully"),
+        }
+
+        error = input_data.get("error", "")
+        if error:
+            error_lower = error.lower()
+            if any(s in error_lower for s in ["rate limit", "429", "500", "timeout", "network"]):
+                record["failure_class"] = "transient"
+                record["friction_kind"] = "timeout" if "timeout" in error_lower else "retry"
+            elif any(s in error_lower for s in ["context", "turn limit", "token limit"]):
+                record["failure_class"] = "context_overflow"
+                record["friction_kind"] = "timeout"
+            elif any(s in error_lower for s in ["loop detected", "repeating"]):
+                record["failure_class"] = "stuck_loop"
+                record["friction_kind"] = "loop"
+            elif any(s in error_lower for s in ["read-only", "scope", "permission"]):
+                record["failure_class"] = "scope_violation"
+                record["friction_kind"] = "tool_failure"
+            elif "cancel" in error_lower:
+                record["failure_class"] = "canceled"
+                record["friction_kind"] = None
+            else:
+                record["failure_class"] = "deterministic"
+                record["friction_kind"] = "wrong_approach"
+
+        with open(friction_file, "a", encoding="utf-8") as f:
+            f.write(json.dumps(record) + "\n")
+
+        logger.info(f"Friction recorded: {record['status']} ({record['failure_class'] or 'ok'})")
+    except Exception as e:
+        logger.error(f"Friction recording failed: {e}")
+
+
+# Record friction from stdin (read once, buffer for downstream)
+_raw_input = sys.stdin.read()
+if _raw_input.strip():
+    try:
+        _input_data = json.loads(_raw_input)
+        record_friction(_input_data)
+    except Exception:
+        pass
+# Reset stdin for downstream processing
+sys.stdin = __import__("io").StringIO(_raw_input)
+
 try:
     from amplifier.extraction import MemoryExtractor
     from amplifier.memory import MemoryStore
 except ImportError as e:
     logger.error(f"Failed to import amplifier modules: {e}")
-    # Exit gracefully to not break hook chain
     json.dump({}, sys.stdout)
     sys.exit(0)
 
