@@ -7,7 +7,7 @@ cd "$REPO_ROOT"
 
 MATRIX="config/routing-matrix.yaml"
 CATALOG=".claude/AGENTS_CATALOG.md"
-AGENTS_DIR=".claude/agents"
+AGENTS_DIR="$HOME/.claude/plugins/marketplaces/amplifier-marketplace/amplifier-core/agents"
 ERRORS=0
 WARNINGS=0
 

@@ -1,7 +1,16 @@
 #!/bin/bash
+# DEPRECATED: This script is retired by the plugin marketplace system.
+# Agents and commands are now distributed via the amplifier-marketplace plugin.
+# Use `claude plugin marketplace add amplifier-marketplace amplifier-core` instead.
+#
 # Setup Amplifier skills globally by symlinking commands and agents to ~/.claude/
 # Usage: bash scripts/setup-global-skills.sh
 # Safe to re-run — idempotent (skips correct symlinks, refreshes broken ones)
+
+echo "DEPRECATED: setup-global-skills.sh is retired."
+echo "Agents and commands are now managed by the amplifier-marketplace plugin system."
+echo "Use: claude plugin marketplace add amplifier-marketplace amplifier-core"
+exit 0
 
 set -euo pipefail
 

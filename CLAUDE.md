@@ -78,7 +78,7 @@ Regenerate: `bash scripts/generate-llms.sh`. Update `llms.txt` manually when doc
 
 ## Amplifier Commands
 
-Amplifier provides native commands in `.claude/commands/` invoked via `/command-name`. Available commands are listed in the system prompt's skills section. Before starting work, check if an applicable command exists.
+Amplifier provides commands via the amplifier-marketplace plugin system, invoked via `/command-name`. Available commands are listed in the system prompt's skills section. Before starting work, check if an applicable command exists.
 
 All commands are listed with descriptions in the system prompt skills section. Key workflow entry points:
 - `/brainstorm` → `/create-plan` → `/subagent-dev` (standard feature workflow)
