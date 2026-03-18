@@ -33,7 +33,34 @@ def run_script(name: str, args: list[str]) -> None:
         print(f"[index-all] {name} error: {e}", file=sys.stderr)
 
 
+def ensure_retros_table() -> None:
+    """Create retros table in recall-index.sqlite if it doesn't exist."""
+    import sqlite3
+
+    db_path = Path.home() / ".claude" / "recall-index.sqlite"
+    if not db_path.exists():
+        return  # DB created by extract-sessions.py on first run
+    conn = sqlite3.connect(str(db_path))
+    conn.execute("""CREATE TABLE IF NOT EXISTS retros (
+        id              INTEGER PRIMARY KEY,
+        session_id      TEXT NOT NULL,
+        timestamp       TEXT NOT NULL,
+        smoothness      TEXT NOT NULL,
+        total_agents    INTEGER,
+        successful_agents INTEGER,
+        total_retries   INTEGER,
+        loops_detected  INTEGER,
+        friction_points TEXT,
+        learnings       TEXT,
+        open_items      TEXT,
+        UNIQUE(session_id)
+    )""")
+    conn.commit()
+    conn.close()
+
+
 def main() -> None:
+    ensure_retros_table()
     run_script("extract-sessions.py", ["--days", "3"])
     run_script("extract-docs.py", ["--recent", "3"])
     run_script("generate-doc-registry.py", [])
