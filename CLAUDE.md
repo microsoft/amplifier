@@ -57,8 +57,11 @@ Before asking the user for context, run a `/recall` or `/docs search` query to c
 | `/docs search <terms>` | `/docs search code style`; `/docs search WinRM` | BM25 full-text search across all repos' docs, keyed by doc registry |
 | Doc registry | Auto-loaded at session start | Maps doc categories to file paths across all projects |
 | Episodic memory | MCP plugin `mcp__plugin_episodic-memory_episodic-memory__search` | Semantic and keyword search across indexed past sessions |
+| Docs site index | `WebFetch("https://amplifier.ergonet.pl/llms.txt")` | Navigation index of all Amplifier documentation pages |
+| Docs site full | `WebFetch("https://amplifier.ergonet.pl/llms-full.txt")` | Complete documentation as plain text (for full context handoff) |
+| Docs site JSON | `WebFetch("https://amplifier.ergonet.pl/llms-structured.json")` | Machine-queryable JSON of commands, agents, workflows |
 
-**Priority:** Use `/recall` for session history lookups. Episodic memory (MCP plugin) remains available as a fallback but `/recall` is faster and more comprehensive.
+**Priority:** Use `/recall` for session history lookups. Episodic memory (MCP plugin) remains available as a fallback but `/recall` is faster and more comprehensive. Use the docs site (`amplifier.ergonet.pl`) for external documentation access — accessible from any machine, any session.
 
 ## Self-Improvement Flywheel
 
