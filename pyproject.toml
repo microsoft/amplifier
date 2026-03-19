@@ -8,10 +8,30 @@ requires-python = ">=3.11"
 authors = [
     { name = "Microsoft MADE:Explorations Team" },
 ]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
 dependencies = [
     "amplifier-core",
-    "amplifier-app-cli @ git+https://github.com/microsoft/amplifier-app-cli@main",
+    # amplifier-app-cli will be published to PyPI before this PR merges
+    # During development, it resolves via git reference in [tool.uv.sources]
+    # Note: Ensure amplifier-app-cli is versioned >= 0.1.0 before PyPI publish
+    "amplifier-app-cli>=0.1.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/microsoft/amplifier"
+Repository = "https://github.com/microsoft/amplifier"
+Issues = "https://github.com/microsoft/amplifier/issues"
 
 [project.scripts]
 amplifier = "amplifier_app_cli.main:main"
@@ -32,6 +52,3 @@ amplifier-app-cli = { git = "https://github.com/microsoft/amplifier-app-cli", br
 packages = [
     "amplifier",
 ]
-
-[tool.hatch.metadata]
-allow-direct-references = true

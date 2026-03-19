@@ -23,7 +23,16 @@ Amplifier brings AI assistance to your command line with a modular, extensible a
 > [!IMPORTANT]
 > Amplifier is currently developed and tested on macOS, Linux, and Windows Subsystem for Linux (WSL). Native Windows shells have known issues—use WSL unless you're actively contributing Windows fixes.
 
-### Step 1: Install UV (30 seconds)
+### Option A: Install with Homebrew (macOS/Linux)
+
+```bash
+brew tap microsoft/amplifier
+brew install amplifier
+```
+
+### Option B: Install with UV
+
+#### Step 1: Install UV (30 seconds)
 
 ```bash
 # macOS/Linux/WSL
@@ -33,13 +42,13 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-### Step 2: Install Amplifier (30 seconds)
+#### Step 2: Install Amplifier (30 seconds)
 
 ```bash
 uv tool install git+https://github.com/microsoft/amplifier
 ```
 
-### Step 3: Run Amplifier (30 seconds)
+### Run Amplifier
 
 ```bash
 # First-time wizard (auto-detects missing config)
