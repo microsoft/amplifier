@@ -4,7 +4,7 @@
 # Or from tests: . "$REPO_ROOT/scripts/lib/platform.sh"
 
 # If AMPLIFIER_HOME is already set, respect it
-if [ -n "$AMPLIFIER_HOME" ]; then
+if [ -n "${AMPLIFIER_HOME:-}" ]; then
     return 0 2>/dev/null || true
 fi
 

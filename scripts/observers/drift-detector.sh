@@ -10,8 +10,8 @@ set -euo pipefail
 # Require jq for safe JSON output
 if ! command -v jq &>/dev/null; then exit 0; fi
 
-# Consume stdin (hooks always pipe JSON, even if we don't need it)
-cat > /dev/null
+# Consume stdin if available (non-blocking — SessionStart may not pipe any)
+cat > /dev/null < /dev/null
 
 OBS_FILE="/tmp/amplifier-observations.jsonl"
 . "$(dirname "$0")/../lib/platform.sh" 2>/dev/null || true
