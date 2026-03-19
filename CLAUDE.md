@@ -94,6 +94,18 @@ All commands are listed with descriptions in the system prompt skills section. K
 | `/fix-bugs` | Autonomous bug-fixing pipeline — fetch, triage, investigate, fix, deploy |
 | `/test-verified` | Backend-Verified E2E auto-fix — run suite, classify failures, apply patterns, dispatch agents |
 
+## Amplifier CLI (Workflow Runner)
+
+For repeatable pipelines, use `amplifier run` instead of interactive commands. Repo: `C:\claude\amplifier-cli`.
+
+| Workflow | Command | Use When |
+|----------|---------|----------|
+| FuseCP Deploy | `amplifier run workflows/fusecp-deploy.dot --goal "Deploy after PR #N"` | Build + deploy Portal/API to IIS with smoke test |
+| FuseCP E2E | `amplifier run workflows/fusecp-e2e.dot --goal "Fix E2E failures"` | Test → classify → fix → retest cycle (max 3) |
+| Docs Regen | `amplifier run workflows/docs-update.dot --goal "Regenerate site"` | Pull → generate → commit → push → verify |
+
+**Rule:** Use CLI for deterministic pipelines and overnight runs. Use interactive `/brainstorm` → `/create-plan` for exploratory work.
+
 These commands reference FuseCP project structure (`ARCHITECTURE.md`), bugfix scripts, and E2E test infrastructure. They are part of the Amplifier command catalog but execute against FuseCP code.
 
 ## Compact Instructions
