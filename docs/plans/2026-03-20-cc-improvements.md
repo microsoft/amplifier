@@ -225,9 +225,16 @@ no longer require manual /effort high before use.
 
 **Agent:** `amplifier-core:modular-builder` (implement role)
 
+**Architecture change:** `/second-opinion` was split into 3 commands:
+- `/second-opinion` — Sonnet-only, fast, no external deps
+- `/codex-review` — OpenAI Codex CLI with Gitea MCP integration
+- `/gemini-review` — Google Gemini via OpenCode with Gitea MCP
+
 **Files to modify:**
-- `~/.claude/plugins/marketplaces/amplifier-marketplace/amplifier-core/commands/guard.md`
-- `~/.claude/plugins/marketplaces/amplifier-marketplace/amplifier-core/commands/second-opinion.md`
+- `commands/guard.md`
+- `commands/second-opinion.md`
+- `commands/codex-review.md`
+- `commands/gemini-review.md`
 
 ### Task 3.1: Update guard.md for persistent freeze state
 
@@ -249,14 +256,13 @@ ${CLAUDE_PLUGIN_DATA}/guard-freeze-dir.txt → "/absolute/canonicalized/path/"
 # Deleted on /guard off
 ```
 
-### Task 3.2: Update second-opinion.md for persistent session history
+### Task 3.2: Update all review commands for persistent session history
 
-- [ ] Read `commands/second-opinion.md` in full
-- [ ] Find all `/tmp/second-opinion-diff-XXXXXX.txt` mktemp calls
-- [ ] Replace with `${CLAUDE_PLUGIN_DATA}/second-opinion-sessions/<timestamp>-diff.txt`
-- [ ] Add a session log: after each review, append a summary line to `${CLAUDE_PLUGIN_DATA}/second-opinion-sessions/history.jsonl`
-- [ ] Each history entry: `{"timestamp": "...", "branch": "...", "verdict": "PASS/FAIL/CONCERNS", "finding_count": N}`
-- [ ] Add optional `/second-opinion --history` mode that reads and displays history.jsonl
+- [ ] Read `commands/second-opinion.md`, `commands/codex-review.md`, `commands/gemini-review.md`
+- [ ] In each: replace `/tmp/` mktemp calls with `${CLAUDE_PLUGIN_DATA}/reviews/<timestamp>-diff.txt`
+- [ ] Add shared review log: after each review (any engine), append to `${CLAUDE_PLUGIN_DATA}/reviews/history.jsonl`
+- [ ] Each history entry: `{"timestamp": "...", "engine": "sonnet|codex|gemini", "branch": "...", "verdict": "PASS/FAIL", "finding_count": N, "pr_number": N|null}`
+- [ ] Add optional `--history` mode to `/second-opinion` that reads and displays history.jsonl (all engines)
 - [ ] For future telemetry, add a note: `${CLAUDE_PLUGIN_DATA}/telemetry/` reserved for automated instrumentation
 
 **Verification:**
