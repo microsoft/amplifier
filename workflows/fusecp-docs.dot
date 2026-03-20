@@ -1,0 +1,15 @@
+digraph fusecp_docs {
+    label = "FuseCP Docs Generation Workflow";
+    rankdir = LR;
+
+    pull_source   [label="pull_source\ncd C:/claude/fusecp-enterprise && git pull origin main" shape=box];
+    generate      [label="generate\ncd C:/claude/fusecp-docs && uv run generate.py" shape=box];
+    generate_llms [label="generate_llms\ncd C:/claude/fusecp-docs && bash generate-llms.sh" shape=box];
+    verify        [label="verify\ncurl -sk https://docs.fusecp.ergonet.pl/en/index.html" shape=box];
+    commit        [label="commit\ncd C:/claude/fusecp-docs && git add manifest.json && git commit" shape=box];
+
+    pull_source -> generate;
+    generate -> generate_llms;
+    generate_llms -> verify;
+    verify -> commit;
+}
