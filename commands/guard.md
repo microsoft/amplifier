@@ -84,6 +84,31 @@ If no directory was provided, ask the user:
 
 Once provided, resolve to absolute path and remember it for the session.
 
+**Persisting freeze state (cross-session recovery):**
+
+After resolving the freeze directory path, persist it:
+
+```bash
+PLUGIN_DATA="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugin-data/amplifier-core}"
+mkdir -p "$PLUGIN_DATA"
+echo "$FREEZE_DIR" > "$PLUGIN_DATA/guard-freeze-dir.txt"
+```
+
+**Session recovery:** When `/guard` or `/guard freeze` is invoked, check for a previous freeze boundary FIRST:
+
+```bash
+PLUGIN_DATA="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugin-data/amplifier-core}"
+if [ -f "$PLUGIN_DATA/guard-freeze-dir.txt" ]; then
+  PREV_FREEZE=$(cat "$PLUGIN_DATA/guard-freeze-dir.txt")
+  echo "Previous freeze boundary found: $PREV_FREEZE"
+fi
+```
+
+If a previous boundary exists, ask the user:
+- A) Restore previous boundary (`$PREV_FREEZE`)
+- B) Set a new boundary
+- C) Clear the old boundary and proceed without freeze
+
 **Path canonicalization (critical for cross-platform):**
 - Resolve to absolute path (no relative components)
 - Collapse all `.` and `..` segments
@@ -107,7 +132,12 @@ When the user runs `/guard off` or `/unfreeze`:
    - A) Yes, disable guard mode
    - B) Keep guard mode active
 2. Only deactivate if the user explicitly confirms (option A)
-3. Tell the user: "**Guard mode deactivated.** All restrictions removed."
+3. Clean up persistent state:
+```bash
+PLUGIN_DATA="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugin-data/amplifier-core}"
+rm -f "$PLUGIN_DATA/guard-freeze-dir.txt"
+```
+4. Tell the user: "**Guard mode deactivated.** All restrictions removed."
 
 This prevents accidental deactivation and raises the bar for injected deactivation (though a multi-turn injection could still bypass it).
 
