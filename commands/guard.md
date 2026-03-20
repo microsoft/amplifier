@@ -62,6 +62,13 @@ If no directory was provided, ask the user:
 
 Once provided, resolve to absolute path and remember it for the session.
 
+**Path normalization (critical for cross-platform):**
+- Normalize BOTH the freeze directory AND the target file path before comparing
+- Convert all backslashes (`\`) to forward slashes (`/`) on both sides
+- Convert to lowercase on Windows (case-insensitive filesystem)
+- Compare using forward-slash normalized paths: `C:\repo\src\file.py` → `c:/repo/src/file.py`
+- The freeze directory should end with `/` after normalization
+
 **Scope notes:**
 - Freeze applies to Edit and Write tools ONLY — Read, Bash, Glob, Grep are unaffected
 - This prevents accidental edits, not a security boundary

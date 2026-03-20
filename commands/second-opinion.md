@@ -22,17 +22,19 @@ Parse the user's input for mode and engine:
 
 ## Step 0: Detect Platform and Available Engines
 
+Detect the platform and available engines. Claude Code on Windows uses Git Bash for Bash tool calls, so POSIX shell syntax works. On Linux it uses the default shell.
+
 ```bash
-# Platform detection
-PLATFORM=$(uname -s 2>/dev/null | tr '[:upper:]' '[:lower:]')
-case "$PLATFORM" in
-  *mingw*|*msys*|*cygwin*) PLATFORM="windows" ;;
-  *linux*) PLATFORM="linux" ;;
-  *darwin*) PLATFORM="macos" ;;
+# Platform detection (works in Git Bash on Windows and native Linux/macOS)
+case "$(uname -s 2>/dev/null)" in
+  MINGW*|MSYS*|CYGWIN*) PLATFORM="windows" ;;
+  Linux*)               PLATFORM="linux" ;;
+  Darwin*)              PLATFORM="macos" ;;
+  *)                    PLATFORM="unknown" ;;
 esac
 echo "PLATFORM: $PLATFORM"
 
-# Engine detection
+# Engine detection — all checks use Git Bash compatible syntax
 ENGINES=""
 
 # Sonnet — always available (claude CLI)
@@ -94,8 +96,9 @@ echo "DIFF: $DIFF_STAT"
 ```bash
 BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
 [ -z "$BASE" ] && BASE="main"
-git fetch origin "$BASE" --quiet 2>/dev/null
-DIFF=$(git diff "origin/$BASE")
+# NOTE: no git fetch — this command is read-only and must not mutate .git state.
+# If origin/BASE is stale, the user should fetch manually before running.
+DIFF=$(git diff "origin/$BASE" 2>/dev/null || git diff "$BASE" 2>/dev/null)
 DIFF_SIZE=$(echo "$DIFF" | wc -c | tr -d ' ')
 echo "DIFF_SIZE: $DIFF_SIZE bytes"
 echo "---DIFF START---"
