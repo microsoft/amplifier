@@ -128,6 +128,16 @@ Parse output for P1/P2/P3 markers:
 GATE: PASS/FAIL    Findings: N P1, N P2, N P3
 ```
 
+## Step 4b: Log to review history
+
+```bash
+PLUGIN_DATA="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugin-data/amplifier-core}"
+mkdir -p "$PLUGIN_DATA/reviews"
+echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"engine\":\"codex\",\"mode\":\"review\",\"branch\":\"$(git rev-parse --abbrev-ref HEAD 2>/dev/null)\",\"verdict\":\"VERDICT\",\"findings\":{\"p1\":P1_COUNT,\"p2\":P2_COUNT,\"p3\":P3_COUNT},\"pr_number\":${PR_NUMBER:-null}}" >> "$PLUGIN_DATA/reviews/history.jsonl"
+```
+
+Replace VERDICT, P1_COUNT, P2_COUNT, P3_COUNT with actual values.
+
 ## Step 5: Post to Gitea PR (if PR exists)
 
 If a PR was found in Step 1, offer to post findings:

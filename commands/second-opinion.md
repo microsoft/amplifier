@@ -17,6 +17,23 @@ For full Gitea-integrated reviews with other engines, use `/codex-review` (OpenA
 | `/second-opinion review [instructions]` | review | `/second-opinion review focus on security` |
 | `/second-opinion challenge [focus]` | challenge | `/second-opinion challenge race conditions` |
 | `/second-opinion consult <question>` | consult | `/second-opinion consult is this auth pattern safe?` |
+| `/second-opinion --history` | history | Show review history across all engines |
+
+## History Mode
+
+If the user runs `/second-opinion --history`:
+
+```bash
+PLUGIN_DATA="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugin-data/amplifier-core}"
+HISTORY="$PLUGIN_DATA/reviews/history.jsonl"
+if [ -f "$HISTORY" ]; then
+  cat "$HISTORY"
+else
+  echo "No review history found."
+fi
+```
+
+Present the history as a formatted table showing Date, Engine, Mode, Branch, Verdict, and finding counts (P1/P2/P3). Then return — do not proceed to review mode.
 
 ## Step 1: Detect Mode (if not specified)
 
@@ -42,7 +59,9 @@ echo "DIFF: $DIFF_STAT"
 ```bash
 BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
 [ -z "$BASE" ] && BASE="main"
-DIFF_FILE=$(mktemp /tmp/second-opinion-diff-XXXXXX.txt)
+PLUGIN_DATA="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugin-data/amplifier-core}"
+mkdir -p "$PLUGIN_DATA/reviews"
+DIFF_FILE="$PLUGIN_DATA/reviews/$(date +%Y%m%d-%H%M%S)-sonnet-diff.txt"
 git diff "origin/$BASE" > "$DIFF_FILE" 2>/dev/null || git diff "$BASE" > "$DIFF_FILE" 2>/dev/null
 DIFF_SIZE=$(wc -c < "$DIFF_FILE" | tr -d ' ')
 echo "DIFF_SIZE: $DIFF_SIZE bytes"
@@ -53,7 +72,9 @@ If the diff is empty, check for uncommitted changes: `git diff HEAD > "$DIFF_FIL
 ## Step 3A: Review Mode
 
 ```bash
-DIFF_FILE=$(mktemp /tmp/second-opinion-diff-XXXXXX.txt)
+PLUGIN_DATA="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugin-data/amplifier-core}"
+mkdir -p "$PLUGIN_DATA/reviews"
+DIFF_FILE="$PLUGIN_DATA/reviews/$(date +%Y%m%d-%H%M%S)-sonnet-diff.txt"
 git diff "origin/$BASE" > "$DIFF_FILE"
 
 REVIEW_PROMPT="You are an independent code reviewer. Be direct, terse, and technically precise.
@@ -94,7 +115,17 @@ SECOND OPINION (Sonnet — review):
 GATE: PASS/FAIL    Engine: Sonnet    Findings: N P1, N P2, N P3
 ```
 
-4. **Cross-model comparison:** If `/codex-review` or `/gemini-review` was already run in this conversation, compare findings:
+4. **Log to review history:**
+
+```bash
+PLUGIN_DATA="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugin-data/amplifier-core}"
+mkdir -p "$PLUGIN_DATA/reviews"
+echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"engine\":\"sonnet\",\"mode\":\"review\",\"branch\":\"$(git rev-parse --abbrev-ref HEAD 2>/dev/null)\",\"verdict\":\"VERDICT\",\"findings\":{\"p1\":P1_COUNT,\"p2\":P2_COUNT,\"p3\":P3_COUNT},\"pr_number\":null}" >> "$PLUGIN_DATA/reviews/history.jsonl"
+```
+
+Replace VERDICT, P1_COUNT, P2_COUNT, P3_COUNT with actual values from the review output.
+
+5. **Cross-model comparison:** If `/codex-review` or `/gemini-review` was already run in this conversation, compare findings:
 
 ```
 CROSS-MODEL ANALYSIS:
@@ -107,7 +138,9 @@ CROSS-MODEL ANALYSIS:
 ## Step 3B: Challenge Mode (Adversarial)
 
 ```bash
-DIFF_FILE=$(mktemp /tmp/second-opinion-diff-XXXXXX.txt)
+PLUGIN_DATA="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugin-data/amplifier-core}"
+mkdir -p "$PLUGIN_DATA/reviews"
+DIFF_FILE="$PLUGIN_DATA/reviews/$(date +%Y%m%d-%H%M%S)-sonnet-diff.txt"
 git diff "origin/$BASE" > "$DIFF_FILE"
 
 CHALLENGE_PROMPT="Review the changes in this diff. Your job is to find ways this code will FAIL in production. Think like an attacker and a chaos engineer. Find: edge cases, race conditions, security holes, resource leaks, failure modes, silent data corruption. Be adversarial. Be thorough. No compliments — just the problems.
