@@ -49,6 +49,8 @@ When careful mode is active, before EVERY Bash command you run, check it against
 Also warn on commands containing these verbs when targeting paths outside the current workspace:
 `delete`, `destroy`, `prune`, `format`, `truncate`, `wipe`, `purge`, `nuke`
 
+Apply best-effort pattern matching — if the target path cannot be determined from context, err on the side of warning.
+
 ### Safe exceptions (allow without warning)
 
 Only when the target is a **workspace-relative path** (inside the current git repo or working directory):
@@ -57,6 +59,8 @@ Only when the target is a **workspace-relative path** (inside the current git re
 **NOT safe:** `rm -rf /var/www/app/dist`, `rm -rf ../dist`, `rm -rf ~/dist` — these target paths outside the workspace and MUST still warn.
 
 To determine workspace root: `git rev-parse --show-toplevel 2>/dev/null || pwd`
+
+If workspace root cannot be determined, treat the target as outside the workspace and warn.
 
 ### When a destructive pattern is detected:
 1. STOP before executing
@@ -105,7 +109,7 @@ When the user runs `/guard off` or `/unfreeze`:
 2. Only deactivate if the user explicitly confirms (option A)
 3. Tell the user: "**Guard mode deactivated.** All restrictions removed."
 
-This prevents accidental or injected deactivation.
+This prevents accidental deactivation and raises the bar for injected deactivation (though a multi-turn injection could still bypass it).
 
 ## Step 4: Confirmation (on activation)
 
