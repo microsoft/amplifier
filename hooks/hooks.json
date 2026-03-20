@@ -1,0 +1,12 @@
+{
+  "hooks": [
+    {
+      "event": "StopFailure",
+      "command": "bash ${CLAUDE_SKILL_DIR}/hooks/stop-failure.sh"
+    },
+    {
+      "event": "PostCompact",
+      "command": "bash ${CLAUDE_SKILL_DIR}/hooks/post-compact.sh"
+    }
+  ]
+}
