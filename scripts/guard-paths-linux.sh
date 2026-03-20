@@ -1,6 +1,6 @@
 #!/bin/bash
 # Guard hook: Block file/folder creation outside allowed paths (Linux version).
-# Used as PreToolUse hook for Write and Bash tools.
+# Used as PreToolUse hook for Write, Edit, and Bash tools.
 # Registered in ~/.claude/settings.json on Linux machines.
 
 INPUT=$(cat)
@@ -10,13 +10,13 @@ TOOL=$(echo "$INPUT" | jq -r '.tool_name // empty')
 ALLOWED='^(/opt/|'"$HOME"'/|/tmp/claude/|/tmp/amplifier/|/var/www/logi\.ergonet\.pl/|/etc/traefik/)'
 
 case "$TOOL" in
-  Write)
+  Write|Edit)
     FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
 
     if echo "$FILE_PATH" | grep -qE "$ALLOWED"; then
       exit 0
     fi
-    echo "BLOCKED: Write to '$FILE_PATH' — not in allowed paths. Edit /opt/amplifier/scripts/guard-paths-linux.sh to add exceptions." >&2
+    echo "BLOCKED: $TOOL to '$FILE_PATH' — not in allowed paths. Edit /opt/amplifier/scripts/guard-paths-linux.sh to add exceptions." >&2
     exit 2
     ;;
 
