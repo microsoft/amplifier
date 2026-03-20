@@ -48,7 +48,7 @@ DISALLOWED_TOOLS = ["Edit", "Write", "Bash", "NotebookEdit"]
 COMMAND_EFFORT = {
     "high": [
         "brainstorm", "create-plan", "debug", "design-interface",
-        "second-opinion", "frontend-design", "solve", "worktree",
+        "second-opinion", "codex-review", "frontend-design", "solve", "worktree",
     ],
     "low": [
         "guard", "platform", "prime", "recall", "docs", "commit",
