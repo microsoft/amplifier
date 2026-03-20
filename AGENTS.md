@@ -31,9 +31,13 @@ This file provides guidance to AI assistants when working with code in this repo
 
 **Commit footer**: Always append the Amplifier co-author tag (see `docs/guides/git-workflow.md`).
 
+**Branch hygiene**: Always `git pull origin main` before creating a feature branch. Use `merge` (not squash) for single-commit PRs to avoid duplicate-commit conflicts. Squash is fine for multi-commit PRs.
+
 **Remote layout**: `origin` = Gitea (primary), `github` = GitHub (read-only backup, auto-synced).
 
 **Gitea operations:** `mcp__gitea__*` MCP tools (primary) → `tea` CLI (fallback) → NEVER `gh` CLI for Gitea (`gh` talks to GitHub, not Gitea). MCP tools support parallel calls and work natively in subagents.
+
+**Auto-sync**: After committing to the amplifier repo, run `bash hooks/post-commit-sync.sh` to deploy changed commands/hooks to the plugin marketplace. This also auto-runs `sync-agent-frontmatter.py` when `routing-matrix.yaml` changes.
 
 ---
 
