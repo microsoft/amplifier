@@ -63,7 +63,9 @@ Then use Gitea MCP (`mcp__gitea__list_repo_pull_requests`) to find an open PR fo
 BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
 [ -z "$BASE" ] && BASE="main"
 
-DIFF_FILE=$(mktemp /tmp/gemini-review-diff-XXXXXX.txt)
+PLUGIN_DATA="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugin-data/amplifier-core}"
+mkdir -p "$PLUGIN_DATA/reviews"
+DIFF_FILE="$PLUGIN_DATA/reviews/$(date +%Y%m%d-%H%M%S)-gemini-diff.txt"
 git diff "origin/$BASE" > "$DIFF_FILE" 2>/dev/null || git diff "$BASE" > "$DIFF_FILE" 2>/dev/null
 DIFF_SIZE=$(wc -c < "$DIFF_FILE" | tr -d ' ')
 echo "DIFF_FILE: $DIFF_FILE ($DIFF_SIZE bytes)"
@@ -78,7 +80,9 @@ If diff is empty, check for uncommitted changes with `git diff HEAD`. If still e
 Build the review prompt and pipe the diff:
 
 ```bash
-DIFF_FILE=$(mktemp /tmp/gemini-review-diff-XXXXXX.txt)
+PLUGIN_DATA="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugin-data/amplifier-core}"
+mkdir -p "$PLUGIN_DATA/reviews"
+DIFF_FILE="$PLUGIN_DATA/reviews/$(date +%Y%m%d-%H%M%S)-gemini-diff.txt"
 git diff "origin/$BASE" > "$DIFF_FILE"
 
 REVIEW_PROMPT="You are an independent code reviewer. Be direct, terse, technically precise.
@@ -130,6 +134,16 @@ Parse output for P1/P2/P3 markers:
 ```
 GATE: PASS/FAIL    Findings: N P1, N P2, N P3
 ```
+
+## Step 4b: Log to review history
+
+```bash
+PLUGIN_DATA="${CLAUDE_PLUGIN_DATA:-$HOME/.claude/plugin-data/amplifier-core}"
+mkdir -p "$PLUGIN_DATA/reviews"
+echo "{\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"engine\":\"gemini\",\"mode\":\"review\",\"branch\":\"$(git rev-parse --abbrev-ref HEAD 2>/dev/null)\",\"verdict\":\"VERDICT\",\"findings\":{\"p1\":P1_COUNT,\"p2\":P2_COUNT,\"p3\":P3_COUNT},\"pr_number\":${PR_NUMBER:-null}}" >> "$PLUGIN_DATA/reviews/history.jsonl"
+```
+
+Replace VERDICT, P1_COUNT, P2_COUNT, P3_COUNT with actual values.
 
 ## Step 5: Post to Gitea PR (if PR exists)
 
