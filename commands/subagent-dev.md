@@ -170,6 +170,45 @@ Use this format for all review dispatches:
 >> Review [2/2]: code-quality-reviewer for Task N — code quality check
 ```
 
+## Cognitive Journal
+
+After each task completes (regardless of outcome), the orchestrator appends an entry to `${CLAUDE_PLUGIN_DATA}/journal.md`.
+
+### Entry Format
+
+```markdown
+## 2026-03-21T14:30:00Z — Task 3: Implement mailbox API
+
+**Agent:** modular-builder (sonnet) | **Status:** DONE | **Turns:** 18/25
+**Plan:** docs/plans/2026-03-20-exchange-api.md
+**Branch:** feat/exchange-api
+
+**What happened:** Implemented 3 endpoints. First attempt missed the tenant isolation check — spec-reviewer caught it. Fixed on second dispatch.
+
+**Learned:** Exchange API endpoints need PackageId scoping on every query. Add this as a default constraint in future exchange plans.
+```
+
+### When to Write
+
+- After every task completes (DONE, DONE_WITH_CONCERNS, BLOCKED, or escalated)
+- After a review loop produces findings (even if task eventually passes)
+
+### How to Construct the Entry
+
+**Timestamp:** Use current UTC time in ISO 8601 format.
+
+**Agent / Status / Turns:** From the implementer's final report. Turns = turns used / max turns allocated.
+
+**What happened:** 1-3 sentences summarizing execution. If reviews found issues, state what kind (spec gap, quality issue, security finding) and whether they were fixed. If retried with a different model, note it.
+
+**Learned:** 1-2 sentences of distilled insight for future sessions — a pattern, a constraint, a pitfall. If nothing new was learned, omit this field.
+
+### Rotation Rule
+
+Keep the last 100 entries in `journal.md`. When a new entry would exceed 100, move the oldest entries (in chunks of 20) to `journal-archive.md` (appending). Never delete entries — only archive.
+
+Check entry count by counting `## ` headings in the file. If count >= 100 before appending, rotate first.
+
 ## Session Naming
 
 After loading the plan and creating the TodoWrite list, rename this session to reflect the work:
@@ -226,7 +265,7 @@ digraph subagent_dev {
   "quality_fix" [label="Implementer fixes\nquality issues" shape=box];
   "quality_second_fail" [label="Second quality FAIL?" shape=diamond];
   "quality_escalate" [label="ESCALATE to user\n(do not loop again)" shape=box style=filled fillcolor=orange];
-  "task_complete" [label="Mark task complete\nin TodoWrite" shape=box];
+  "task_complete" [label="Mark task complete\nin TodoWrite\n+ Write journal entry" shape=box];
   "more_tasks" [label="More tasks remain?" shape=diamond];
   "cleanup" [label="Dispatch post-task-cleanup" shape=box];
   "finish" [label="/finish-branch" shape=box style=filled fillcolor=lightgreen];
