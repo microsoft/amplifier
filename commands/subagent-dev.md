@@ -89,6 +89,25 @@ Each task in the plan has an `Agent:` field. Use it as the `subagent_type` when 
   - Architecture decisions → update DISCOVERIES.md or decision records
   - New patterns established → document in appropriate location
   - Domain terms clarified → update project glossary
+
+### Plan Cache Update
+
+After all tasks are done (before `/finish-branch`), update the plan cache with the execution outcome:
+
+```bash
+AMPLIFIER_HOME="${AMPLIFIER_HOME:-$([ -d /opt/amplifier ] && echo /opt/amplifier || echo /c/claude/amplifier)}"
+uv run python "$AMPLIFIER_HOME/scripts/plan-cache.py" update --hash "$PLAN_HASH" --outcome "$OUTCOME"
+```
+
+Where:
+- `$PLAN_HASH` is the cache hash returned when the plan was stored (available from the `/create-plan` cache store step, or re-derive with `lookup`)
+- `$OUTCOME` is one of:
+  - `pass` — all tasks completed successfully
+  - `partial` — some tasks completed, some failed or were skipped
+  - `fail` — execution was blocked and could not complete
+
+This feedback improves future cache matches by weighting plans that led to successful outcomes.
+
 - Then use `/finish-branch`
 
 ## Review Levels

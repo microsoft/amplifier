@@ -473,6 +473,37 @@ Derive `<topic>` (2-4 words) from the feature name. Example: `/rename plan: auth
 
 If `/rename` is unavailable, skip this step.
 
+## Plan Cache Integration
+
+Before generating a new plan, check the cache for a similar existing plan:
+
+```bash
+AMPLIFIER_HOME="${AMPLIFIER_HOME:-$([ -d /opt/amplifier ] && echo /opt/amplifier || echo /c/claude/amplifier)}"
+uv run python "$AMPLIFIER_HOME/scripts/plan-cache.py" lookup --prompt "$SPEC_SUMMARY"
+```
+
+Where `$SPEC_SUMMARY` is a short (1-3 sentence) summary of what you are about to plan.
+
+**If a match is found (>70% similarity), present to the user:**
+
+> A similar plan was found in the cache (N% match: "[cached plan title]").
+> How would you like to proceed?
+> - **A) Adapt this plan** — Load the cached plan and modify it for the current spec
+> - **B) Generate fresh** — Ignore the cache and generate a new plan from scratch
+> - **C) View cached plan first** — Show the cached plan before deciding
+
+Wait for user choice before proceeding.
+
+**After the plan is saved**, store it in the cache:
+
+```bash
+uv run python "$AMPLIFIER_HOME/scripts/plan-cache.py" store --plan "$PLAN_PATH" --prompt "$SPEC_SUMMARY"
+```
+
+Where `$PLAN_PATH` is the path where the plan was saved (e.g., `docs/plans/2026-03-21-feature-name.md`).
+
+---
+
 ## Execution Handoff
 
 After saving the plan:
