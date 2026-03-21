@@ -209,6 +209,56 @@ Keep the last 100 entries in `journal.md`. When a new entry would exceed 100, mo
 
 Check entry count by counting `## ` headings in the file. If count >= 100 before appending, rotate first.
 
+## Agent Performance Tracking
+
+After EVERY agent dispatch (both implementation agents and review agents), append a JSONL line to `${CLAUDE_PLUGIN_DATA}/agent-stats.jsonl`.
+
+### JSONL Format
+
+Each line is a single JSON object with these fields:
+
+```json
+{"timestamp":"2026-03-21T14:30:00Z","agent":"modular-builder","model":"sonnet","task":"Implement API","status":"DONE","turns_used":18,"turns_max":25,"review_pass":true,"retries":0,"plan":"exchange-api"}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `timestamp` | string (ISO 8601 UTC) | When the agent dispatch completed |
+| `agent` | string | Agent role name (e.g., `modular-builder`, `zen-architect`, `code-reviewer`) |
+| `model` | string | Model slug used (e.g., `sonnet`, `opus`) |
+| `task` | string | Short description of what the agent was asked to do (10-50 chars) |
+| `status` | string | Final status: `DONE`, `BLOCKED`, `NEEDS_CONTEXT`, or `DONE_WITH_CONCERNS` |
+| `turns_used` | integer | Turns consumed by this dispatch (from agent report or TaskGet) |
+| `turns_max` | integer | Turn budget given to the agent |
+| `review_pass` | boolean or null | For review agents: `true` if approved, `false` if rejected. For implementation agents: `null` |
+| `retries` | integer | Number of retry dispatches for this same task (0 = first attempt succeeded) |
+| `plan` | string | Plan filename slug (e.g., `exchange-api`, `mailbox-redesign`), or `"none"` if no plan |
+
+### How to Extract Each Field
+
+- **timestamp**: Use the current UTC time when the agent's TaskGet returns a terminal status.
+- **agent**: From the `--agent` flag or system prompt you used when creating the task.
+- **model**: From the dispatch configuration (the model you passed to the agent task).
+- **task**: A short human-readable description — derive from the task title or the first line of the agent's instructions.
+- **status**: From the agent's final report line (e.g., `STATUS: DONE`) or infer from task state.
+- **turns_used**: From the agent's turn counter in their report, or from TaskGet metadata if available.
+- **turns_max**: The budget you assigned in the dispatch (e.g., `--max-turns 25`).
+- **review_pass**: For reviewer agents, check if their report contains `APPROVED` (true) or `REJECTED`/`CONCERNS` (false). Set to `null` for implementation agents.
+- **retries**: Increment each time you re-dispatch the same task. Start at 0.
+- **plan**: The plan filename without extension and path (e.g., `plans/exchange-api.md` → `exchange-api`).
+
+### Append Command
+
+```bash
+echo '{"timestamp":"...","agent":"...","model":"...","task":"...","status":"...","turns_used":0,"turns_max":25,"review_pass":null,"retries":0,"plan":"..."}' >> "${CLAUDE_PLUGIN_DATA}/agent-stats.jsonl"
+```
+
+### Notes
+
+- This file is append-only. No rotation is needed — JSONL files are cheap to scan with `grep` or `jq`.
+- Log EVERY dispatch, including failed or blocked ones. The `status` and `retries` fields capture failure information.
+- If `turns_used` is unknown (agent did not report it), use `-1` as a sentinel value.
+
 ## Session Naming
 
 After loading the plan and creating the TodoWrite list, rename this session to reflect the work:
