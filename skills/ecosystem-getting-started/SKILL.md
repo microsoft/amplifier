@@ -38,3 +38,4 @@ For detailed information, delegate to the appropriate expert agent:
 | Recipe authoring, validation | `recipes:recipe-author` | RECIPE_SCHEMA.md, example recipes |
 
 These agents have the heavy documentation @mentioned directly and can provide authoritative answers.
+

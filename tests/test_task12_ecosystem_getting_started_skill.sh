@@ -26,6 +26,10 @@ check() {
         echo "FAIL: $desc"
         echo "  Expected: $expect | Got: $result"
         echo "  Command: $*"
+        if [ -n "${SKILL_FILE:-}" ] && [ -f "${SKILL_FILE:-}" ]; then
+            echo "  File head (first 4 lines):"
+            head -4 "$SKILL_FILE" | sed 's/^/    /'
+        fi
         FAIL=$((FAIL + 1))
     fi
 }
@@ -45,6 +49,7 @@ check_count() {
     else
         echo "FAIL: $desc"
         echo "  Expected count: $expected_count | Got: $actual_count"
+        echo "  Pattern: $pattern"
         FAIL=$((FAIL + 1))
     fi
 }
