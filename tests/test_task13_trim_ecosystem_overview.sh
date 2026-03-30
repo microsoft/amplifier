@@ -10,6 +10,7 @@ FAIL=0
 check() {
     local desc="$1"
     local expect="$2"  # 0 means command exits 0 (success), 1 means exits non-zero
+    local result
     shift 2
 
     if "$@" > /dev/null 2>&1; then
@@ -38,7 +39,7 @@ check_count() {
     local actual_count
     actual_count=$(grep -c "$pattern" "$file" 2>/dev/null) || actual_count="0"
 
-    if [ "$actual_count" = "$expected_count" ]; then
+    if [ "$actual_count" -eq "$expected_count" ]; then
         echo "PASS: $desc (count=$actual_count)"
         PASS=$((PASS + 1))
     else
