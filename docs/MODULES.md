@@ -24,8 +24,11 @@ User-facing applications that compose libraries and modules.
 | **amplifier-app-cli** | Reference CLI application implementing the Amplifier platform | [amplifier-app-cli](https://github.com/microsoft/amplifier-app-cli) |
 | **amplifier-app-log-viewer** | Web-based log viewer for debugging sessions with real-time updates | [amplifier-app-log-viewer](https://github.com/microsoft/amplifier-app-log-viewer) |
 | **amplifier-app-benchmarks** | Benchmarking and evaluating Amplifier | [amplifier-app-benchmarks](https://github.com/DavidKoleczek/amplifier-app-benchmarks) |
+| **amplifierd** | Localhost HTTP daemon exposing amplifier-core and amplifier-foundation over REST and SSE - drive sessions from any language or framework | [amplifierd](https://github.com/microsoft/amplifierd) |
+| **amplifier-chat** | Chat UI plugin for amplifierd - browser-based conversational interface for creating and managing Amplifier sessions | [amplifier-chat](https://github.com/microsoft/amplifier-chat) |
+| **amplifier-voice** | Voice plugin for amplifierd - WebRTC voice interface using the OpenAI Realtime API, standalone or as a plugin | [amplifier-voice](https://github.com/microsoft/amplifier-voice) |
 
-**Note**: When you install `amplifier`, you get the amplifier-app-cli as the executable application.
+**Note**: When you install `amplifier`, you get the amplifier-app-cli as the executable application. `amplifierd` is a separate daemon that exposes Amplifier capabilities over HTTP, and `amplifier-chat` and `amplifier-voice` are plugins that extend it with web-based chat and voice interfaces.
 
 ---
 
