@@ -97,7 +97,7 @@ Composable configuration packages that combine providers, behaviors, agents, and
 | **a2a** | Agent-to-Agent communication via Google's A2A protocol — discovery, trust, message routing across Amplifier sessions | [amplifier-bundle-a2a](https://github.com/microsoft/amplifier-bundle-a2a) |
 | **attractor** | Attractor pipeline orchestration | [amplifier-bundle-attractor](https://github.com/microsoft/amplifier-bundle-attractor) |
 | **containers** | Container-based execution environments | [amplifier-bundle-containers](https://github.com/microsoft/amplifier-bundle-containers) |
-| **distro** | DEPRECATED — Managed bundle for Amplifier distro (superseded by current bundle system) | [amplifier-bundle-distro](https://github.com/microsoft/amplifier-bundle-distro) |
+| **distro** | Managed bundle for Amplifier distro | [amplifier-bundle-distro](https://github.com/microsoft/amplifier-bundle-distro) |
 | **filesystem** | Filesystem tools (read, write, edit, glob, grep) | [amplifier-bundle-filesystem](https://github.com/microsoft/amplifier-bundle-filesystem) |
 | **modes** | Dynamic runtime behavior overlays (brainstorm, debug, plan, verify, finish) | [amplifier-bundle-modes](https://github.com/microsoft/amplifier-bundle-modes) |
 | **my-voice** | Personalized voice and communication style | [amplifier-bundle-my-voice](https://github.com/microsoft/amplifier-bundle-my-voice) |
