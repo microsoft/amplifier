@@ -51,6 +51,7 @@ Composable configuration packages that combine providers, behaviors, agents, and
 | Bundle | Description | Repository |
 |--------|-------------|------------|
 | **recipes** | Multi-step AI agent orchestration with behavior overlays and standalone options | [amplifier-bundle-recipes](https://github.com/microsoft/amplifier-bundle-recipes) |
+| **azure-devops** | Full Azure DevOps integration — 9 sub-bundles providing 12 agents for work items, PRs, pipelines, repos, boards, scrum, testing, KQL diagnostics, SWE agent tasks, and worktree-based parallel development | [amplifier-bundle-ado](https://github.com/algoldsc_microsoft/amplifier-bundle-ado) |
 | **browser-tester** | Browser automation and testing with 3 specialized agents (operator, researcher, visual documenter) using agent-browser CLI | [amplifier-bundle-browser-tester](https://github.com/microsoft/amplifier-bundle-browser-tester) |
 | **design-intelligence** | Comprehensive design intelligence with 7 specialized agents, design philosophy framework, and knowledge base | [amplifier-bundle-design-intelligence](https://github.com/microsoft/amplifier-bundle-design-intelligence) |
 | **digital-twin-universe** | On-demand isolated environments from declarative profiles — Incus containers with URL rewriting, PyPI overrides, and LLM API passthrough for evidence-based verification of deployed software | [amplifier-bundle-digital-twin-universe](https://github.com/microsoft/amplifier-bundle-digital-twin-universe) |
