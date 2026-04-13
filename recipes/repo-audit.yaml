@@ -42,6 +42,10 @@ context:
   repo_owner: "microsoft"
   repo_name: ""
   
+  # Optional: local filesystem path to the repository (used as fallback when GitHub raw access fails,
+  # e.g. for private repos where unauthenticated curl returns 404)
+  repo_path: ""
+  
   # Whether to create PRs for fixable issues (use string "true"/"false" for condition compatibility)
   create_fix_pr: "false"
   
@@ -186,15 +190,20 @@ steps:
     command: |
       TARGET_DIR="{{working_dir}}/{{repo_name}}"
       BASE_URL="https://raw.githubusercontent.com/{{repo_owner}}/{{repo_name}}/main"
+      LOCAL_PATH="{{repo_path}}"
       
       echo "Fetching files from {{repo_owner}}/{{repo_name}}..."
       
       for file in CODE_OF_CONDUCT.md SECURITY.md SUPPORT.md LICENSE README.md; do
         HTTP_CODE=$(curl -sL --retry 2 -w "%{http_code}" -o "$TARGET_DIR/$file" "$BASE_URL/$file")
         if [ "$HTTP_CODE" = "200" ] && [ -s "$TARGET_DIR/$file" ]; then
-          echo "$file: found ($(wc -c < "$TARGET_DIR/$file") bytes)"
+          echo "$file: found via GitHub ($(wc -c < "$TARGET_DIR/$file") bytes)"
+        elif [ -n "$LOCAL_PATH" ] && [ -f "$LOCAL_PATH/$file" ]; then
+          # Fallback: use local filesystem path (for private repos where unauthenticated curl returns 404)
+          cp "$LOCAL_PATH/$file" "$TARGET_DIR/$file"
+          echo "$file: found via local path ($(wc -c < "$TARGET_DIR/$file") bytes)"
         else
-          echo "$file: NOT FOUND (HTTP $HTTP_CODE)"
+          echo "$file: NOT FOUND (HTTP $HTTP_CODE, local path: ${LOCAL_PATH:-not set})"
           rm -f "$TARGET_DIR/$file"
         fi
       done
