@@ -185,37 +185,7 @@ Modules are loaded using amplifier-foundation's internal APIs directly.
 
 ### Modules (Kernel Extensions)
 
-**Context Managers**:
-- amplifier-module-context-persistent
-- amplifier-module-context-simple
-
-**Hooks**:
-- amplifier-module-hooks-approval
-- amplifier-module-hooks-backup
-- amplifier-module-hooks-logging
-- amplifier-module-hooks-redaction
-- amplifier-module-hooks-scheduler-cost-aware
-- amplifier-module-hooks-scheduler-heuristic
-- amplifier-module-hooks-streaming-ui
-
-**Orchestrators**:
-- amplifier-module-loop-basic
-- amplifier-module-loop-events
-- amplifier-module-loop-streaming
-
-**Providers**:
-- amplifier-module-provider-anthropic
-- amplifier-module-provider-azure-openai
-- amplifier-module-provider-mock
-- amplifier-module-provider-ollama
-- amplifier-module-provider-openai
-
-**Tools**:
-- amplifier-module-tool-bash
-- amplifier-module-tool-filesystem
-- amplifier-module-tool-search
-- amplifier-module-tool-task
-- amplifier-module-tool-web
+For the current list of all runtime modules (orchestrators, providers, tools, context managers, hooks), see **[Module Catalog](MODULES.md)**.
 
 **All Modules**:
 - **Referenced By**: Apps/libraries via mount plans
