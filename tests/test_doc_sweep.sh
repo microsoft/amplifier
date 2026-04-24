@@ -47,21 +47,21 @@ check "README.md has no gpt-5.1 references" \
 check "README.md has no gpt-5.2 references" \
     "empty" grep -n "gpt-5\.2" README.md
 
-check "README.md has gpt-5.4 references (replacements applied)" \
+check "README.md has gpt-5.5 references (replacements applied)" \
     "nonempty" grep -n "gpt-5\.4" README.md
 
 # USER_GUIDE.md checks
 check "USER_GUIDE.md has no gpt-5.1 references" \
     "empty" grep -n "gpt-5\.1" docs/USER_GUIDE.md
 
-check "USER_GUIDE.md has gpt-5.4 references (replacements applied)" \
+check "USER_GUIDE.md has gpt-5.5 references (replacements applied)" \
     "nonempty" grep -n "gpt-5\.4" docs/USER_GUIDE.md
 
 # document-generation.yaml checks
 check "document-generation.yaml has no gpt-4o references" \
     "empty" grep -n "gpt-4o" recipes/document-generation.yaml
 
-check "document-generation.yaml has gpt-5.4 references" \
+check "document-generation.yaml has gpt-5.5 references" \
     "nonempty" grep -n "gpt-5\.4" recipes/document-generation.yaml
 
 check "document-generation.yaml has gpt-5-mini references (correct replacement)" \
