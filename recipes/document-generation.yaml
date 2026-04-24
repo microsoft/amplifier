@@ -157,8 +157,8 @@
 #     * Enables resilience across different provider configurations
 #   - FALLBACK STRATEGY:
 #     * Haiku steps: anthropic haiku → openai gpt-5-mini
-#     * Sonnet steps: anthropic sonnet → openai gpt-5.4 → azure gpt-5.4
-#     * Opus steps: anthropic opus → openai gpt-5.4 → azure gpt-5.4
+#     * Sonnet steps: anthropic sonnet → openai gpt-5.5 → azure gpt-5.5
+#     * Opus steps: anthropic opus → openai gpt-5.5 → azure gpt-5.5
 #   - BACKWARD COMPATIBLE: Works with older foundation versions (uses first preference)
 #
 # v7.1.0-models (2026-01-27):
@@ -660,9 +660,9 @@ stages:
           - provider: anthropic
             model: claude-sonnet-*
           - provider: openai
-            model: gpt-5.4
+            model: gpt-5.5
           - provider: azure
-            model: gpt-5.4
+            model: gpt-5.5
         prompt: |
           Analyze the outline structure and compute traversal context for ALL sections.
           
@@ -741,9 +741,9 @@ stages:
           - provider: anthropic
             model: claude-sonnet-*
           - provider: openai
-            model: gpt-5.4
+            model: gpt-5.5
           - provider: azure
-            model: gpt-5.4
+            model: gpt-5.5
         prompt: |
           Analyze the existing document and determine what updates are needed.
           
@@ -1186,9 +1186,9 @@ stages:
           - provider: anthropic
             model: claude-opus-4-*
           - provider: openai
-            model: gpt-5.4
+            model: gpt-5.5
           - provider: azure
-            model: gpt-5.4
+            model: gpt-5.5
         prompt: |
           ## SECTION GENERATION: {{section_id}}
           
@@ -1308,9 +1308,9 @@ stages:
           - provider: anthropic
             model: claude-sonnet-*
           - provider: openai
-            model: gpt-5.4
+            model: gpt-5.5
           - provider: azure
-            model: gpt-5.4
+            model: gpt-5.5
         prompt: |
           Assemble the complete document from all generated sections.
           
@@ -1376,7 +1376,7 @@ stages:
           - provider: anthropic
             model: claude-sonnet-*
           - provider: openai
-            model: gpt-5.4
+            model: gpt-5.5
         prompt: |
           DESIGN INTELLIGENCE FEEDBACK: Voice & Tone Review (INITIAL GENERATION)
           
@@ -1441,7 +1441,7 @@ stages:
           - provider: anthropic
             model: claude-sonnet-*
           - provider: openai
-            model: gpt-5.4
+            model: gpt-5.5
         prompt: |
           DESIGN INTELLIGENCE FEEDBACK: Structure Review (INITIAL GENERATION)
           
@@ -1610,9 +1610,9 @@ stages:
           - provider: anthropic
             model: claude-sonnet-*
           - provider: openai
-            model: gpt-5.4
+            model: gpt-5.5
           - provider: azure
-            model: gpt-5.4
+            model: gpt-5.5
         prompt: |
           Fix STRUCTURAL issues in the document.
           
@@ -1747,9 +1747,9 @@ stages:
           - provider: anthropic
             model: claude-sonnet-*
           - provider: openai
-            model: gpt-5.4
+            model: gpt-5.5
           - provider: azure
-            model: gpt-5.4
+            model: gpt-5.5
         prompt: |
           ## {{check.type}} VALIDATION
           
@@ -1826,9 +1826,9 @@ stages:
           - provider: anthropic
             model: claude-opus-4-*
           - provider: openai
-            model: gpt-5.4
+            model: gpt-5.5
           - provider: azure
-            model: gpt-5.4
+            model: gpt-5.5
         prompt: |
           ## FIX CONTENT VALIDATION ISSUES
           
@@ -2154,9 +2154,9 @@ stages:
           - provider: anthropic
             model: claude-sonnet-*
           - provider: openai
-            model: gpt-5.4
+            model: gpt-5.5
           - provider: azure
-            model: gpt-5.4
+            model: gpt-5.5
         prompt: |
           ## {{check.type}} VALIDATION
           
@@ -2233,9 +2233,9 @@ stages:
           - provider: anthropic
             model: claude-opus-4-*
           - provider: openai
-            model: gpt-5.4
+            model: gpt-5.5
           - provider: azure
-            model: gpt-5.4
+            model: gpt-5.5
         prompt: |
           ## FIX QUALITY VALIDATION ISSUES
           
@@ -2516,9 +2516,9 @@ stages:
           - provider: anthropic
             model: claude-sonnet-*
           - provider: openai
-            model: gpt-5.4
+            model: gpt-5.5
           - provider: azure
-            model: gpt-5.4
+            model: gpt-5.5
         prompt: |
           FINAL VERIFICATION of the document.
           
@@ -2558,7 +2558,7 @@ stages:
           - provider: anthropic
             model: claude-sonnet-*
           - provider: openai
-            model: gpt-5.4
+            model: gpt-5.5
         prompt: |
           DESIGN INTELLIGENCE FEEDBACK: Voice & Tone Review
           
@@ -2622,7 +2622,7 @@ stages:
           - provider: anthropic
             model: claude-sonnet-*
           - provider: openai
-            model: gpt-5.4
+            model: gpt-5.5
         prompt: |
           DESIGN INTELLIGENCE FEEDBACK: Information Architecture Review
           
@@ -2686,7 +2686,7 @@ stages:
           - provider: anthropic
             model: claude-sonnet-*
           - provider: openai
-            model: gpt-5.4
+            model: gpt-5.5
         prompt: |
           DESIGN INTELLIGENCE FEEDBACK: Outline Review
           
@@ -2867,7 +2867,7 @@ stages:
           - provider: anthropic
             model: claude-sonnet-*
           - provider: openai
-            model: gpt-5.4
+            model: gpt-5.5
         prompt: |
           Generate a summary report of the document generation process.
           
