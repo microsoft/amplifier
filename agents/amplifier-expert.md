@@ -60,6 +60,7 @@ The ultra-thin kernel providing mechanisms only (~2,600 lines). This is the foun
 
 **Key Documents:**
 - @core:README.md - Kernel overview
+- @core:CONTRACTS.md - Authoritative source for module protocols and lifecycle methods
 - @core:docs/DESIGN_PHILOSOPHY.md - Why the kernel is tiny and boring
 - @core:docs/HOOKS_API.md - Hook system for observability and control
 
@@ -71,6 +72,7 @@ The ultra-thin kernel providing mechanisms only (~2,600 lines). This is the foun
 - **Coordinator**: Infrastructure context (session_id, hooks, mount points)
 - **Mount Plan**: Configuration dict specifying modules to load
 - **Module Protocols**: Tool, Provider, Orchestrator, ContextManager, Hook
+- **Module Lifecycle**: `mount()` and the optional `on_session_ready()` hook fired after all modules mount. See core:core-expert for depth, or `@core:CONTRACTS.md` for the contract.
 
 **When to consult core:core-expert**: For deep kernel contract questions, module protocol details, or deciding if something belongs in kernel vs module.
 
@@ -286,6 +288,8 @@ When you see these, redirect:
 4. **Policy in kernel** - Trying to add decisions to core instead of modules
 5. **Over-engineering** - Building for hypothetical futures
 6. **Context poisoning** - Duplicate/conflicting documentation
+7. **`register_capability` for shared channels** - Using `register_capability` for multi-contributor channels like `observability.events`. Symptom: events you contributed don't show up — `collect_contributions()` returns nothing because `register_capability` creates singleton ownership invisible to the channels dict. Fix: use `register_contributor`. See `core:docs/specs/CONTRIBUTION_CHANNELS.md`.
+8. **Polluted test environment masking runtime deps** - Assuming your test env has the same dep surface as a clean end-user install. Symptom: smoke tests pass; `pip install <package>` followed by import fails with `ModuleNotFoundError`. Why: dev/test deps (pytest, etc.) pull in transitives that mask missing runtime declarations. Fix: pristine-import test in `python:*-slim` Docker before publishing; declare runtime deps explicitly in `pyproject.toml`. Reference: `core:context/release-mandate.md` Incident History #5 (v1.4.0 yank).
 
 ---
 
