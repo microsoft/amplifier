@@ -224,10 +224,15 @@ steps:
       # Initialize results
       results='{"files": [], "all_pass": true}'
       
+      # Whitespace-normalized diff: strips trailing whitespace from each line
+      # before comparison. This handles the common case where one file ends
+      # with a trailing newline at EOF and the other does not (POSIX text-file
+      # convention vs editors that omit it), which would otherwise be reported
+      # as a content difference even when the visible content is identical.
       for file in CODE_OF_CONDUCT.md SECURITY.md SUPPORT.md LICENSE; do
         if [ ! -f "$TARGET_DIR/$file" ]; then
           results=$(echo "$results" | jq --arg file "$file" '.files += [{"name": $file, "status": "missing", "match": false, "severity": "error"}] | .all_pass = false')
-        elif diff -q "$REF_DIR/$file" "$TARGET_DIR/$file" > /dev/null 2>&1; then
+        elif diff -q <(awk '{sub(/[[:space:]]+$/,""); print}' "$REF_DIR/$file") <(awk '{sub(/[[:space:]]+$/,""); print}' "$TARGET_DIR/$file") > /dev/null 2>&1; then
           results=$(echo "$results" | jq --arg file "$file" '.files += [{"name": $file, "status": "present", "match": true, "severity": "pass"}]')
         else
           results=$(echo "$results" | jq --arg file "$file" '.files += [{"name": $file, "status": "present", "match": false, "severity": "error"}] | .all_pass = false')
@@ -360,19 +365,34 @@ steps:
           tail -n +$TARGET_CONTRIB_START "$TARGET_README" > /tmp/target_contrib.txt
         fi
         
-        if diff -q /tmp/ref_contrib.txt /tmp/target_contrib.txt > /dev/null 2>&1; then
+        if diff -q <(awk '{sub(/[[:space:]]+$/,""); print}' /tmp/ref_contrib.txt) <(awk '{sub(/[[:space:]]+$/,""); print}' /tmp/target_contrib.txt) > /dev/null 2>&1; then
           CONTRIB_MATCH="true"
         fi
       fi
       
       # Compare Trademarks sections
+      # Bounded extraction (next ## heading or EOF) mirrors the Contributing
+      # logic above, plus whitespace-normalized diff to handle EOF newline
+      # differences between the reference and target READMEs.
       if [ "$HAS_TRADE" -gt 0 ] && [ -n "$TRADE_START" ]; then
-        tail -n +$TRADE_START "$REF_README" > /tmp/ref_trade.txt
-        
+        # Reference: Trademarks section to next ## heading or EOF
+        REF_TRADE_NEXT=$(tail -n +$((TRADE_START+1)) "$REF_README" | grep -n "^## " | head -1 | cut -d: -f1 || echo "")
+        if [ -n "$REF_TRADE_NEXT" ]; then
+          sed -n "${TRADE_START},$((TRADE_START+REF_TRADE_NEXT-1))p" "$REF_README" > /tmp/ref_trade.txt
+        else
+          tail -n +$TRADE_START "$REF_README" > /tmp/ref_trade.txt
+        fi
+
+        # Target: Trademarks section to next ## heading or EOF
         TARGET_TRADE_START=$(grep -n "^## Trademarks" "$TARGET_README" | head -1 | cut -d: -f1)
-        tail -n +$TARGET_TRADE_START "$TARGET_README" > /tmp/target_trade.txt
-        
-        if diff -q /tmp/ref_trade.txt /tmp/target_trade.txt > /dev/null 2>&1; then
+        TARGET_TRADE_NEXT=$(tail -n +$((TARGET_TRADE_START+1)) "$TARGET_README" | grep -n "^## " | head -1 | cut -d: -f1 || echo "")
+        if [ -n "$TARGET_TRADE_NEXT" ]; then
+          sed -n "${TARGET_TRADE_START},$((TARGET_TRADE_START+TARGET_TRADE_NEXT-1))p" "$TARGET_README" > /tmp/target_trade.txt
+        else
+          tail -n +$TARGET_TRADE_START "$TARGET_README" > /tmp/target_trade.txt
+        fi
+
+        if diff -q <(awk '{sub(/[[:space:]]+$/,""); print}' /tmp/ref_trade.txt) <(awk '{sub(/[[:space:]]+$/,""); print}' /tmp/target_trade.txt) > /dev/null 2>&1; then
           TRADE_MATCH="true"
         fi
       fi
