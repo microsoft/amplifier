@@ -1,0 +1,134 @@
+name: "ecosystem-audit-batch"
+description: "Sub-recipe for amplifier-ecosystem-audit.yaml. Audits the repos in one batch file, then flushes per-repo findings as JSONL. Visibility-agnostic — reads visibility from the batch file."
+version: "1.0.0"
+author: "Amplifier Team"
+tags: ["audit", "compliance", "github", "amplifier", "ecosystem", "batch"]
+
+# Ecosystem Audit Batch Sub-Recipe
+#
+# Invoked once per batch by amplifier-ecosystem-audit.yaml's audit-batches
+# foreach. Each batch file contains a subset of repos (default 25) tagged
+# with visibility ("public" or "private").
+#
+# Per-batch flow:
+#   1. Load the batch file and expose repos + visibility metadata
+#   2. Foreach repo in batch (parallel: 2), invoke repo-audit.yaml
+#   3. Flush a JSONL findings file with one line per repo
+#
+# The JSONL findings file is the durable per-batch summary. Filename
+# encodes visibility (batch-pub-NN.jsonl or batch-priv-NN.jsonl); each
+# line embeds the visibility field for redundant clarity.
+#
+# Requirements:
+#   - repo-audit.yaml in the same directory
+#   - batch_file produced by split-into-batches step in parent recipe
+
+recursion:
+  max_depth: 3
+  max_total_steps: 200
+
+context:
+  # Required — path to a single batch file (e.g. batches/batch-pub-01.json)
+  batch_file: ""
+
+  # Required — parent recipe's working directory
+  working_dir: ""
+
+  # Forwarded from parent recipe
+  create_fix_pr: "false"
+  dry_run: "false"
+
+stages:
+  # ==========================================================================
+  # STAGE 1: Load batch metadata
+  # ==========================================================================
+  - name: "load-batch"
+    steps:
+      - id: "load-batch-repos"
+        type: "bash"
+        parse_json: true
+        command: |
+          set -euo pipefail
+          if [ ! -f "{{batch_file}}" ]; then
+            echo "ERROR: Batch file not found: {{batch_file}}" >&2
+            exit 1
+          fi
+          cat "{{batch_file}}"
+        output: "batch"
+        timeout: 30
+        on_error: "fail"
+
+  # ==========================================================================
+  # STAGE 2: Audit the repos in this batch
+  # ==========================================================================
+  - name: "audit-batch"
+    steps:
+      - id: "audit-repos-in-batch"
+        foreach: "{{batch.repos}}"
+        as: "repo"
+        parallel: 2
+        max_iterations: 50          # explicit ceiling; batch_size + buffer
+        collect: "repo_results"
+        type: "recipe"
+        recipe: "repo-audit.yaml"   # unchanged from today
+        context:
+          repo_owner: "{{repo.owner}}"
+          repo_name: "{{repo.name}}"
+          create_fix_pr: "{{create_fix_pr}}"
+          dry_run: "{{dry_run}}"
+          working_dir: "{{working_dir}}/repos"
+        output: "single_audit"
+        timeout: 600
+        on_error: "continue"
+
+      - id: "flush-batch-findings"
+        type: "bash"
+        command: |
+          set -euo pipefail
+          BATCH_ID="{{batch.batch_id}}"
+          VISIBILITY="{{batch.visibility}}"
+          BATCH_FILE="{{batch_file}}"
+          WORKING_DIR="{{working_dir}}"
+          REPORTS_DIR="$WORKING_DIR/repos"
+          FINDINGS_DIR="$WORKING_DIR/findings"
+
+          mkdir -p "$FINDINGS_DIR"
+          OUT="$FINDINGS_DIR/${BATCH_ID}.jsonl"
+          : > "$OUT"
+
+          # Iterate the repos defined in this batch and append a JSONL line
+          # per repo summarising its on-disk audit report (if any).
+          jq -c '.repos[]' "$BATCH_FILE" | while read -r repo_json; do
+            REPO_NAME=$(echo "$repo_json" | jq -r '.name')
+            REPO_OWNER=$(echo "$repo_json" | jq -r '.owner')
+            REPORT="$REPORTS_DIR/$REPO_NAME/audit-report.md"
+
+            if [ -f "$REPORT" ]; then
+              if grep -q "Overall Status.*PASS" "$REPORT" 2>/dev/null; then
+                STATUS="PASS"
+              elif grep -q "Overall Status.*CRITICAL" "$REPORT" 2>/dev/null; then
+                STATUS="CRITICAL"
+              elif grep -q "Overall Status.*NEEDS_ATTENTION" "$REPORT" 2>/dev/null; then
+                STATUS="NEEDS_ATTENTION"
+              else
+                STATUS="UNKNOWN"
+              fi
+            else
+              STATUS="MISSING"
+            fi
+
+            jq -nc \
+              --arg repo "$REPO_NAME" \
+              --arg owner "$REPO_OWNER" \
+              --arg status "$STATUS" \
+              --arg vis "$VISIBILITY" \
+              --arg batch "$BATCH_ID" \
+              '{repo: $repo, owner: $owner, status: $status, visibility: $vis, batch_id: $batch}' \
+              >> "$OUT"
+          done
+
+          LINE_COUNT=$(wc -l < "$OUT" | tr -d ' ')
+          echo "Flushed $LINE_COUNT findings for $BATCH_ID ($VISIBILITY) to $OUT"
+        output: "flush_result"
+        timeout: 120
+        on_error: "continue"
