@@ -290,6 +290,7 @@ Modules built by the community.
 | Module | Description | Author | Repository |
 |--------|-------------|--------|------------|
 | **hooks-concise-display** | Cleaner, more condensed terminal output for Amplifier sessions | [@obra](https://github.com/obra) | [amplifier-module-hooks-concise-display](https://github.com/obra/amplifier-module-hooks-concise-display) |
+| **hooks-compact** | Compress verbose bash stdout via command-aware filters (git, pytest, cargo, npm, ruff, etc.) before it enters the LLM context | [@samueljklee](https://github.com/samueljklee) | [amplifier-module-hooks-compact](https://github.com/samueljklee/amplifier-module-hooks-compact) |
 
 ### Contributing Your Modules
 
