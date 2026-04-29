@@ -1,6 +1,6 @@
 name: "repo-audit"
 description: "Audit a single Amplifier ecosystem repository for compliance with Microsoft standards and Amplifier guidelines."
-version: "1.2.0"
+version: "1.3.0"
 author: "Amplifier Team"
 tags: ["audit", "compliance", "github", "amplifier"]
 
@@ -77,7 +77,7 @@ steps:
   - id: "fetch-repo-info"
     type: "bash"
     command: |
-      gh repo view "{{repo_owner}}/{{repo_name}}" --json name,owner,description,hasIssuesEnabled,hasWikiEnabled,isArchived,defaultBranchRef,pushedAt,url 2>&1 || echo '{"error": "Repository not found or not accessible"}'
+      gh repo view "{{repo_owner}}/{{repo_name}}" --json name,owner,description,hasIssuesEnabled,hasWikiEnabled,hasProjectsEnabled,isArchived,defaultBranchRef,pushedAt,url 2>&1 || echo '{"error": "Repository not found or not accessible"}'
     output: "repo_info_raw"
     timeout: 60
     retry:
@@ -592,6 +592,119 @@ steps:
     on_error: "continue"
 
   # ==========================================================================
+  # STEP 7b: Check Wiki Status
+  # ==========================================================================
+  - id: "check-wiki-status"
+    type: "bash"
+    parse_json: true
+    command: |
+      cat << 'REPO_JSON_EOF' > /tmp/repo_wiki_$$.json
+      {{repo_info_raw}}
+      REPO_JSON_EOF
+
+      WIKI_ENABLED=$(jq -r 'if has("hasWikiEnabled") then (.hasWikiEnabled | tostring) else "unknown" end' /tmp/repo_wiki_$$.json)
+      rm -f /tmp/repo_wiki_$$.json
+
+      # Policy: all repos (including main amplifier) should disable wiki
+      if [ "{{repo_name}}" = "amplifier" ] && [ "{{repo_owner}}" = "microsoft" ]; then
+        if [ "$WIKI_ENABLED" = "false" ]; then
+          jq -n '{wiki_enabled: false, severity: "pass", finding: "Wiki is disabled (correct)"}'
+        elif [ "$WIKI_ENABLED" = "true" ]; then
+          jq -n '{wiki_enabled: true, severity: "error", finding: "Wiki is enabled - should be disabled even on main amplifier repo"}'
+        else
+          jq -n --arg status "$WIKI_ENABLED" '{wiki_enabled: null, severity: "unknown", finding: ("Unable to determine wiki status: " + $status)}'
+        fi
+      else
+        if [ "$WIKI_ENABLED" = "false" ]; then
+          jq -n '{wiki_enabled: false, severity: "pass", finding: "Wiki is disabled (correct)"}'
+        elif [ "$WIKI_ENABLED" = "true" ]; then
+          jq -n '{wiki_enabled: true, severity: "error", finding: "Wiki is enabled - should be disabled"}'
+        else
+          jq -n --arg status "$WIKI_ENABLED" '{wiki_enabled: null, severity: "unknown", finding: ("Unable to determine wiki status: " + $status)}'
+        fi
+      fi
+    output: "wiki_check"
+    timeout: 30
+    on_error: "continue"
+
+  # ==========================================================================
+  # STEP 7c: Check Projects Status
+  # ==========================================================================
+  - id: "check-projects-status"
+    type: "bash"
+    parse_json: true
+    command: |
+      cat << 'REPO_JSON_EOF' > /tmp/repo_projects_$$.json
+      {{repo_info_raw}}
+      REPO_JSON_EOF
+
+      PROJECTS_ENABLED=$(jq -r 'if has("hasProjectsEnabled") then (.hasProjectsEnabled | tostring) else "unknown" end' /tmp/repo_projects_$$.json)
+      rm -f /tmp/repo_projects_$$.json
+
+      # Policy: all repos (including main amplifier) should disable projects
+      if [ "{{repo_name}}" = "amplifier" ] && [ "{{repo_owner}}" = "microsoft" ]; then
+        if [ "$PROJECTS_ENABLED" = "false" ]; then
+          jq -n '{projects_enabled: false, severity: "pass", finding: "Projects is disabled (correct)"}'
+        elif [ "$PROJECTS_ENABLED" = "true" ]; then
+          jq -n '{projects_enabled: true, severity: "error", finding: "Projects is enabled - should be disabled even on main amplifier repo"}'
+        else
+          jq -n --arg status "$PROJECTS_ENABLED" '{projects_enabled: null, severity: "unknown", finding: ("Unable to determine projects status: " + $status)}'
+        fi
+      else
+        if [ "$PROJECTS_ENABLED" = "false" ]; then
+          jq -n '{projects_enabled: false, severity: "pass", finding: "Projects is disabled (correct)"}'
+        elif [ "$PROJECTS_ENABLED" = "true" ]; then
+          jq -n '{projects_enabled: true, severity: "error", finding: "Projects is enabled - should be disabled"}'
+        else
+          jq -n --arg status "$PROJECTS_ENABLED" '{projects_enabled: null, severity: "unknown", finding: ("Unable to determine projects status: " + $status)}'
+        fi
+      fi
+    output: "projects_check"
+    timeout: 30
+    on_error: "continue"
+
+  # ==========================================================================
+  # STEP 7d: Check Branch Protection
+  # ==========================================================================
+  - id: "check-branch-protection"
+    type: "bash"
+    parse_json: true
+    command: |
+      cat << 'REPO_JSON_EOF' > /tmp/repo_bp_$$.json
+      {{repo_info_raw}}
+      REPO_JSON_EOF
+
+      DEFAULT_BRANCH=$(jq -r '.defaultBranchRef.name // "main"' /tmp/repo_bp_$$.json)
+      rm -f /tmp/repo_bp_$$.json
+
+      REPO="{{repo_owner}}/{{repo_name}}"
+      PROTECTION_RAW=$(gh api "repos/$REPO/branches/$DEFAULT_BRANCH/protection" 2>&1 || echo "FETCH_FAILED")
+
+      if echo "$PROTECTION_RAW" | grep -qE "Branch not protected|Not Found|FETCH_FAILED"; then
+        jq -n --arg branch "$DEFAULT_BRANCH"           '{has_protection: false, severity: "error", finding: ("No branch protection on default branch (" + $branch + ") - push/merge unrestricted")}'
+      else
+        echo "$PROTECTION_RAW" > /tmp/repo_bp_protection_$$.json
+        TEAM_COUNT=$(jq -r '(.restrictions.teams // []) | length' /tmp/repo_bp_protection_$$.json 2>/dev/null || echo "0")
+        ENFORCE_ADMINS=$(jq -r '.enforce_admins.enabled // false | tostring' /tmp/repo_bp_protection_$$.json 2>/dev/null || echo "false")
+        REVIEW_COUNT=$(jq -r '.required_pull_request_reviews.required_approving_review_count // 0' /tmp/repo_bp_protection_$$.json 2>/dev/null || echo "0")
+        rm -f /tmp/repo_bp_protection_$$.json
+
+        FAIL_MSGS=""
+        [ "$TEAM_COUNT" -lt 1 ] && FAIL_MSGS="${FAIL_MSGS:+$FAIL_MSGS; }Push/merge not restricted to a designated team (restrictions.teams empty)"
+        [ "$ENFORCE_ADMINS" != "true" ] && FAIL_MSGS="${FAIL_MSGS:+$FAIL_MSGS; }Admin bypass enabled (enforce_admins is false)"
+        [ "$REVIEW_COUNT" -lt 1 ] && FAIL_MSGS="${FAIL_MSGS:+$FAIL_MSGS; }PR reviews not required before merge (required_approving_review_count < 1)"
+
+        if [ -z "$FAIL_MSGS" ]; then
+          jq -n --arg branch "$DEFAULT_BRANCH"             '{has_protection: true, severity: "pass", finding: ("Branch protection on default branch (" + $branch + ") configured correctly")}'
+        else
+          jq -n --arg branch "$DEFAULT_BRANCH" --arg fails "$FAIL_MSGS"             '{has_protection: true, severity: "error", finding: ("Branch protection on " + $branch + " misconfigured: " + $fails)}'
+        fi
+      fi
+    output: "branch_protection_check"
+    timeout: 60
+    on_error: "continue"
+
+  # ==========================================================================
   # STEP 8: Get Repository Stats
   # ==========================================================================
   - id: "get-repo-stats"
@@ -662,7 +775,16 @@ steps:
       ### 4. GitHub Issues Status
       {{issues_check}}
       
-      ### 5. Repository Stats
+      ### 5. Wiki Status
+      {{wiki_check}}
+      
+      ### 6. Projects Status
+      {{projects_check}}
+      
+      ### 7. Branch Protection (default branch)
+      {{branch_protection_check}}
+      
+      ### 8. Repository Stats
       {{repo_stats}}
       
       ## Report Format
@@ -686,6 +808,9 @@ steps:
       | README Contributing | [Match/Mismatch/Missing] | [pass/warning/error] |
       | README Trademarks | [Match/Mismatch/Missing] | [pass/warning/error] |
       | GitHub Issues | [Disabled/Enabled] | [pass/recommendation] |
+      | Wiki | [Disabled/Enabled] | [pass/error] |
+      | Projects | [Disabled/Enabled] | [pass/error] |
+      | Branch Protection | [Configured/Misconfigured/Missing] | [pass/error] |
       
       **Overall Status**: [PASS / NEEDS ATTENTION / CRITICAL]
       - Critical issues (errors): N
@@ -709,7 +834,7 @@ steps:
       [For each non-passing issue, provide specific steps to fix]
       
       ---
-      *Generated by Amplifier repo-audit recipe v1.2.0*
+      *Generated by Amplifier repo-audit recipe v1.3.0*
     output: "audit_report_content"
     timeout: 300
     on_error: "fail"
