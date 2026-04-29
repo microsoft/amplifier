@@ -705,6 +705,48 @@ steps:
     on_error: "continue"
 
   # ==========================================================================
+  # STEP 7e: Check Bypass Actors (warning-severity convenience check)
+  # ==========================================================================
+  # Verifies that the maintainer/owner bypass model is configured so that
+  # trusted contributors can self-merge their own PRs without external review.
+  # This is a CONVENIENCE check, not a security check -- the security floor is
+  # enforced by check-branch-protection (push restrictions + required reviews).
+  # An empty bypass list means maintainers must wait for external review on
+  # their own PRs. That is annoying but not insecure, hence severity: warning.
+  - id: "check-bypass-actors"
+    type: "bash"
+    parse_json: true
+    command: |
+      cat << 'REPO_JSON_EOF' > /tmp/repo_bypass_$$.json
+      {{repo_info_raw}}
+      REPO_JSON_EOF
+
+      DEFAULT_BRANCH=$(jq -r '.defaultBranchRef.name // "main"' /tmp/repo_bypass_$$.json)
+      rm -f /tmp/repo_bypass_$$.json
+
+      REPO="{{repo_owner}}/{{repo_name}}"
+      PROTECTION_RAW=$(gh api "repos/$REPO/branches/$DEFAULT_BRANCH/protection" 2>&1 || echo "FETCH_FAILED")
+
+      if echo "$PROTECTION_RAW" | grep -qE "Branch not protected|Not Found|FETCH_FAILED"; then
+        jq -n --arg branch "$DEFAULT_BRANCH"           '{has_bypass: false, severity: "warning", finding: ("Cannot evaluate bypass actors - branch protection missing on " + $branch + " (see Branch Protection check above)")}'
+      else
+        echo "$PROTECTION_RAW" > /tmp/repo_bypass_protection_$$.json
+        BYPASS_TEAMS=$(jq -r '(.required_pull_request_reviews.bypass_pull_request_allowances.teams // []) | length' /tmp/repo_bypass_protection_$$.json 2>/dev/null || echo "0")
+        BYPASS_USERS=$(jq -r '(.required_pull_request_reviews.bypass_pull_request_allowances.users // []) | length' /tmp/repo_bypass_protection_$$.json 2>/dev/null || echo "0")
+        rm -f /tmp/repo_bypass_protection_$$.json
+
+        TOTAL=$((BYPASS_TEAMS + BYPASS_USERS))
+        if [ "$TOTAL" -lt 1 ]; then
+          jq -n --arg branch "$DEFAULT_BRANCH"             '{has_bypass: false, severity: "warning", finding: ("Branch protection on " + $branch + " has no bypass actors configured. Maintainers and owners will be required to get external review on their own PRs (convenience issue, not security). Consider adding the maintainer team and individual repo owners to required_pull_request_reviews.bypass_pull_request_allowances.")}'
+        else
+          jq -n --arg branch "$DEFAULT_BRANCH" --arg teams "$BYPASS_TEAMS" --arg users "$BYPASS_USERS"             '{has_bypass: true, severity: "pass", finding: ("Bypass actors configured on " + $branch + " (" + $teams + " teams, " + $users + " users) - maintainers/owners can self-merge")}'
+        fi
+      fi
+    output: "bypass_actors_check"
+    timeout: 60
+    on_error: "continue"
+
+  # ==========================================================================
   # STEP 8: Get Repository Stats
   # ==========================================================================
   - id: "get-repo-stats"
@@ -784,7 +826,10 @@ steps:
       ### 7. Branch Protection (default branch)
       {{branch_protection_check}}
       
-      ### 8. Repository Stats
+      ### 8. Bypass Actors (convenience layer — warning severity)
+      {{bypass_actors_check}}
+      
+      ### 9. Repository Stats
       {{repo_stats}}
       
       ## Report Format
@@ -811,6 +856,7 @@ steps:
       | Wiki | [Disabled/Enabled] | [pass/error] |
       | Projects | [Disabled/Enabled] | [pass/error] |
       | Branch Protection | [Configured/Misconfigured/Missing] | [pass/error] |
+      | Bypass Actors | [Configured/Empty/N-A] | [pass/warning] |
       
       **Overall Status**: [PASS / NEEDS ATTENTION / CRITICAL]
       - Critical issues (errors): N
