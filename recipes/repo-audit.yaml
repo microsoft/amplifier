@@ -1,6 +1,6 @@
 name: "repo-audit"
 description: "Audit a single Amplifier ecosystem repository for compliance with Microsoft standards and Amplifier guidelines."
-version: "1.3.0"
+version: "1.4.0"
 author: "Amplifier Team"
 tags: ["audit", "compliance", "github", "amplifier"]
 
@@ -678,26 +678,21 @@ steps:
       rm -f /tmp/repo_bp_$$.json
 
       REPO="{{repo_owner}}/{{repo_name}}"
-      PROTECTION_RAW=$(gh api "repos/$REPO/branches/$DEFAULT_BRANCH/protection" 2>&1 || echo "FETCH_FAILED")
 
-      if echo "$PROTECTION_RAW" | grep -qE "Branch not protected|Not Found|FETCH_FAILED"; then
-        jq -n --arg branch "$DEFAULT_BRANCH"           '{has_protection: false, severity: "error", finding: ("No branch protection on default branch (" + $branch + ") - push/merge unrestricted")}'
+      # Probe rules-in-effect on the default branch.
+      RULES_RAW=$(gh api "repos/$REPO/rules/branches/$DEFAULT_BRANCH" 2>&1 || echo "FETCH_FAILED")
+
+      if [ "$RULES_RAW" = "FETCH_FAILED" ] || echo "$RULES_RAW" | grep -qE "Not Found"; then
+        jq -n --arg branch "$DEFAULT_BRANCH" \
+          '{has_protection: false, severity: "error", finding: ("No branch protection on default branch (" + $branch + ") - no repository ruleset is in effect, push/merge is unrestricted")}'
       else
-        echo "$PROTECTION_RAW" > /tmp/repo_bp_protection_$$.json
-        TEAM_COUNT=$(jq -r '(.restrictions.teams // []) | length' /tmp/repo_bp_protection_$$.json 2>/dev/null || echo "0")
-        ENFORCE_ADMINS=$(jq -r '.enforce_admins.enabled // false | tostring' /tmp/repo_bp_protection_$$.json 2>/dev/null || echo "false")
-        REVIEW_COUNT=$(jq -r '.required_pull_request_reviews.required_approving_review_count // 0' /tmp/repo_bp_protection_$$.json 2>/dev/null || echo "0")
-        rm -f /tmp/repo_bp_protection_$$.json
-
-        FAIL_MSGS=""
-        [ "$TEAM_COUNT" -lt 1 ] && FAIL_MSGS="${FAIL_MSGS:+$FAIL_MSGS; }Push/merge not restricted to a designated team (restrictions.teams empty)"
-        [ "$ENFORCE_ADMINS" != "true" ] && FAIL_MSGS="${FAIL_MSGS:+$FAIL_MSGS; }Admin bypass enabled (enforce_admins is false)"
-        [ "$REVIEW_COUNT" -lt 1 ] && FAIL_MSGS="${FAIL_MSGS:+$FAIL_MSGS; }PR reviews not required before merge (required_approving_review_count < 1)"
-
-        if [ -z "$FAIL_MSGS" ]; then
-          jq -n --arg branch "$DEFAULT_BRANCH"             '{has_protection: true, severity: "pass", finding: ("Branch protection on default branch (" + $branch + ") configured correctly")}'
+        PR_RULE_COUNT=$(echo "$RULES_RAW" | jq -r '[.[] | select(.type == "pull_request" and ((.parameters.required_approving_review_count // 0) >= 1))] | length' 2>/dev/null || echo "0")
+        if [ "$PR_RULE_COUNT" -ge 1 ]; then
+          jq -n --arg branch "$DEFAULT_BRANCH" \
+            '{has_protection: true, severity: "pass", finding: ("Branch protection on default branch (" + $branch + ") configured via repository ruleset (pull_request rule with required reviews active)")}'
         else
-          jq -n --arg branch "$DEFAULT_BRANCH" --arg fails "$FAIL_MSGS"             '{has_protection: true, severity: "error", finding: ("Branch protection on " + $branch + " misconfigured: " + $fails)}'
+          jq -n --arg branch "$DEFAULT_BRANCH" \
+            '{has_protection: false, severity: "error", finding: ("Repository ruleset present on default branch (" + $branch + ") but no pull_request rule requires approving reviews. Update the ruleset to require at least 1 approving review before merge.")}'
         fi
       fi
     output: "branch_protection_check"
@@ -725,22 +720,34 @@ steps:
       rm -f /tmp/repo_bypass_$$.json
 
       REPO="{{repo_owner}}/{{repo_name}}"
-      PROTECTION_RAW=$(gh api "repos/$REPO/branches/$DEFAULT_BRANCH/protection" 2>&1 || echo "FETCH_FAILED")
 
-      if echo "$PROTECTION_RAW" | grep -qE "Branch not protected|Not Found|FETCH_FAILED"; then
-        jq -n --arg branch "$DEFAULT_BRANCH"           '{has_bypass: false, severity: "warning", finding: ("Cannot evaluate bypass actors - branch protection missing on " + $branch + " (see Branch Protection check above)")}'
+      # Enumerate active branch rulesets and check bypass_actors on those that target the default branch.
+      RULESETS_RAW=$(gh api "repos/$REPO/rulesets" 2>&1 || echo "FETCH_FAILED")
+      RULESET_PRESENT=false
+      RULESET_BYPASS_TOTAL=0
+      if [ "$RULESETS_RAW" != "FETCH_FAILED" ] && ! echo "$RULESETS_RAW" | grep -qE "Not Found"; then
+        RULESET_IDS=$(echo "$RULESETS_RAW" | jq -r '.[] | select(.enforcement == "active" and .target == "branch") | .id' 2>/dev/null || echo "")
+        for RID in $RULESET_IDS; do
+          DETAIL=$(gh api "repos/$REPO/rulesets/$RID" 2>&1 || echo "FETCH_FAILED")
+          [ "$DETAIL" = "FETCH_FAILED" ] && continue
+          MATCHES=$(echo "$DETAIL" | jq --arg branch "$DEFAULT_BRANCH" '(.conditions.ref_name.include // []) | any(. == "~DEFAULT_BRANCH" or . == ("refs/heads/" + $branch))' 2>/dev/null || echo "false")
+          if [ "$MATCHES" = "true" ]; then
+            RULESET_PRESENT=true
+            COUNT=$(echo "$DETAIL" | jq -r '(.bypass_actors // []) | length' 2>/dev/null || echo "0")
+            RULESET_BYPASS_TOTAL=$((RULESET_BYPASS_TOTAL + COUNT))
+          fi
+        done
+      fi
+
+      if [ "$RULESET_BYPASS_TOTAL" -ge 1 ]; then
+        jq -n --arg branch "$DEFAULT_BRANCH" --arg count "$RULESET_BYPASS_TOTAL" \
+          '{has_bypass: true, severity: "pass", finding: ("Bypass actors configured on " + $branch + " via repository ruleset (" + $count + " bypass actors) - maintainers/owners can self-merge")}'
+      elif [ "$RULESET_PRESENT" = "true" ]; then
+        jq -n --arg branch "$DEFAULT_BRANCH" \
+          '{has_bypass: false, severity: "warning", finding: ("Repository ruleset on " + $branch + " has no bypass actors configured. Maintainers and owners will be required to get external review on their own PRs (convenience issue, not security).")}'
       else
-        echo "$PROTECTION_RAW" > /tmp/repo_bypass_protection_$$.json
-        BYPASS_TEAMS=$(jq -r '(.required_pull_request_reviews.bypass_pull_request_allowances.teams // []) | length' /tmp/repo_bypass_protection_$$.json 2>/dev/null || echo "0")
-        BYPASS_USERS=$(jq -r '(.required_pull_request_reviews.bypass_pull_request_allowances.users // []) | length' /tmp/repo_bypass_protection_$$.json 2>/dev/null || echo "0")
-        rm -f /tmp/repo_bypass_protection_$$.json
-
-        TOTAL=$((BYPASS_TEAMS + BYPASS_USERS))
-        if [ "$TOTAL" -lt 1 ]; then
-          jq -n --arg branch "$DEFAULT_BRANCH"             '{has_bypass: false, severity: "warning", finding: ("Branch protection on " + $branch + " has no bypass actors configured. Maintainers and owners will be required to get external review on their own PRs (convenience issue, not security). Consider adding the maintainer team and individual repo owners to required_pull_request_reviews.bypass_pull_request_allowances.")}'
-        else
-          jq -n --arg branch "$DEFAULT_BRANCH" --arg teams "$BYPASS_TEAMS" --arg users "$BYPASS_USERS"             '{has_bypass: true, severity: "pass", finding: ("Bypass actors configured on " + $branch + " (" + $teams + " teams, " + $users + " users) - maintainers/owners can self-merge")}'
-        fi
+        jq -n --arg branch "$DEFAULT_BRANCH" \
+          '{has_bypass: false, severity: "warning", finding: ("Cannot evaluate bypass actors - no repository ruleset configured on " + $branch + " (see Branch Protection check above)")}'
       fi
     output: "bypass_actors_check"
     timeout: 60
