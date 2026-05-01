@@ -7,6 +7,13 @@ agents:
   include:
     - amplifier:amplifier-expert
 
+tools:
+  - module: tool-skills
+    source: git+https://github.com/microsoft/amplifier-module-tool-skills@main
+    config:
+      skills:
+        - "@amplifier:skills"
+
 context:
   include:
     - amplifier:context/ecosystem-overview.md
