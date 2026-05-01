@@ -279,7 +279,7 @@ Modules built by the community.
 
 | Module | Description | Author | Repository |
 |--------|-------------|--------|------------|
-| **tool-youtube-dl** | Download audio and video from YouTube with metadata extraction | [@robotdad](https://github.com/robotdad) | [amplifier-module-tool-youtube-dl](https://github.com/robotdad/amplifier-module-tool-youtube-dl) |
+| **youtube** | YouTube download, search, and account feed access — audio/video download, keyword and filtered search (YouTube Data API + yt-dlp fallback), watch history, subscriptions, liked videos, and more | [@robotdad](https://github.com/robotdad) | [amplifier-youtube](https://github.com/robotdad/amplifier-youtube) |
 | **tool-whisper** | Speech-to-text transcription using OpenAI's Whisper API | [@robotdad](https://github.com/robotdad) | [amplifier-module-tool-whisper](https://github.com/robotdad/amplifier-module-tool-whisper) |
 | **tool-rlm** | Recursive Language Model (RLM) for processing 10M+ token contexts via sandboxed Python REPL | [@michaeljabbour](https://github.com/michaeljabbour) | [amplifier-module-tool-rlm](https://github.com/michaeljabbour/amplifier-module-tool-rlm) |
 | **module-image-generation** | Multi-provider AI image generation with DALL-E, Imagen, and GPT-Image-1 | [@robotdad](https://github.com/robotdad) | [amplifier-module-image-generation](https://github.com/robotdad/amplifier-module-image-generation) |
