@@ -700,14 +700,24 @@ steps:
     on_error: "continue"
 
   # ==========================================================================
-  # STEP 7e: Check Bypass Actors (warning-severity convenience check)
+  # STEP 7e: Check Bypass Actors (mixed severity: error / warning / pass)
   # ==========================================================================
-  # Verifies that the maintainer/owner bypass model is configured so that
-  # trusted contributors can self-merge their own PRs without external review.
-  # This is a CONVENIENCE check, not a security check -- the security floor is
-  # enforced by check-branch-protection (push restrictions + required reviews).
-  # An empty bypass list means maintainers must wait for external review on
-  # their own PRs. That is annoying but not insecure, hence severity: warning.
+  # Verifies that the maintainer/owner bypass model is configured correctly so
+  # that trusted contributors can self-merge their own PRs without external
+  # review, AND that the bypass mode does not silently undermine the security
+  # floor enforced by check-branch-protection.
+  #
+  # Severity model:
+  #   - error:   any bypass actor uses bypass_mode=always. This permits direct
+  #              pushes to the default branch, bypassing the pull_request rule
+  #              entirely and leaving no audit trail. Bypass mode must be
+  #              pull_request so that bypass remains a recorded action on PR
+  #              merges and direct pushes stay blocked.
+  #   - warning: ruleset present but no bypass actors configured. Maintainers
+  #              and owners will be required to wait for external review on
+  #              their own PRs. Convenience issue, not a security violation.
+  #   - pass:    at least one bypass actor configured, all using bypass_mode
+  #              of pull_request (none using always).
   - id: "check-bypass-actors"
     type: "bash"
     parse_json: true
@@ -725,6 +735,7 @@ steps:
       RULESETS_RAW=$(gh api "repos/$REPO/rulesets" 2>&1 || echo "FETCH_FAILED")
       RULESET_PRESENT=false
       RULESET_BYPASS_TOTAL=0
+      RULESET_ALWAYS_TOTAL=0
       if [ "$RULESETS_RAW" != "FETCH_FAILED" ] && ! echo "$RULESETS_RAW" | grep -qE "Not Found"; then
         RULESET_IDS=$(echo "$RULESETS_RAW" | jq -r '.[] | select(.enforcement == "active" and .target == "branch") | .id' 2>/dev/null || echo "")
         for RID in $RULESET_IDS; do
@@ -735,13 +746,18 @@ steps:
             RULESET_PRESENT=true
             COUNT=$(echo "$DETAIL" | jq -r '(.bypass_actors // []) | length' 2>/dev/null || echo "0")
             RULESET_BYPASS_TOTAL=$((RULESET_BYPASS_TOTAL + COUNT))
+            ALWAYS_COUNT=$(echo "$DETAIL" | jq -r '[(.bypass_actors // [])[] | select(.bypass_mode == "always")] | length' 2>/dev/null || echo "0")
+            RULESET_ALWAYS_TOTAL=$((RULESET_ALWAYS_TOTAL + ALWAYS_COUNT))
           fi
         done
       fi
 
-      if [ "$RULESET_BYPASS_TOTAL" -ge 1 ]; then
+      if [ "$RULESET_ALWAYS_TOTAL" -ge 1 ]; then
+        jq -n --arg branch "$DEFAULT_BRANCH" --arg count "$RULESET_ALWAYS_TOTAL" \
+          '{has_bypass: true, severity: "error", finding: ("Repository ruleset on " + $branch + " has " + $count + " bypass actor(s) with bypass_mode=always. This permits direct pushes to the default branch, bypassing the pull_request rule entirely and leaving no audit trail. Change bypass_mode to pull_request for all bypass actors so that bypass remains an explicit, recorded action on PR merges only.")}'
+      elif [ "$RULESET_BYPASS_TOTAL" -ge 1 ]; then
         jq -n --arg branch "$DEFAULT_BRANCH" --arg count "$RULESET_BYPASS_TOTAL" \
-          '{has_bypass: true, severity: "pass", finding: ("Bypass actors configured on " + $branch + " via repository ruleset (" + $count + " bypass actors) - maintainers/owners can self-merge")}'
+          '{has_bypass: true, severity: "pass", finding: ("Bypass actors configured on " + $branch + " via repository ruleset (" + $count + " bypass actors with bypass_mode=pull_request) - maintainers/owners can self-merge")}'
       elif [ "$RULESET_PRESENT" = "true" ]; then
         jq -n --arg branch "$DEFAULT_BRANCH" \
           '{has_bypass: false, severity: "warning", finding: ("Repository ruleset on " + $branch + " has no bypass actors configured. Maintainers and owners will be required to get external review on their own PRs (convenience issue, not security).")}'
