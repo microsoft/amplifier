@@ -32,6 +32,16 @@ User-facing applications that compose libraries and modules.
 
 ---
 
+## Documentation & Learning
+
+These are the canonical documentation and learning sites for the Amplifier ecosystem. They reflect the framework but do not run it.
+
+| Component | Description | Repository |
+|-----------|-------------|------------|
+| **amplifier-app-learn** | Interactive learning curriculum for Amplifier — six narrative levels, hands-on approach guides, validated architecture diagrams, and a chat assistant with live DOT rendering. React 19 + Vite SPA. | [amplifier-app-learn](https://github.com/michaeljabbour/amplifier-app-learn) |
+
+---
+
 ## Libraries
 
 Foundational libraries used by **applications** (not used directly by runtime modules).
