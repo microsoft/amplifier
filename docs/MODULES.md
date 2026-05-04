@@ -257,6 +257,7 @@ Bundles built by the community.
 | **frontdoor** | Authentication gateway and service dashboard for Tailscale-based hosts. Provides PAM-based SSO, Caddy forward_auth integration, and a service discovery dashboard. Includes skills for host infrastructure discovery and web app setup. | [@robotdad](https://github.com/robotdad) | [amplifier-bundle-frontdoor](https://github.com/robotdad/frontdoor) |
 | **codebase-to-course** | Transform any codebase or GitHub URL into a self-contained interactive HTML course for non-technical learners — scroll-based navigation, animated visualizations, embedded quizzes, and code-with-plain-English side-by-side translations | [@johannao76](https://github.com/johannao76) | [amplifier-bundle-codebase-to-course](https://github.com/johannao76/amplifier-bundle-codebase-to-course) |
 
+| **taste** | Anti-slop frontend design discipline with named hard-bans on LLM UI defaults (Inter font, purple-blue gradients, centered heroes, equal-card grids), 3 parametric dials (`DESIGN_VARIANCE` / `MOTION_INTENSITY` / `VISUAL_DENSITY`), 4 mutually-exclusive aesthetic archetypes, and always-on output discipline. Adapted from [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill). | [@michaeljabbour](https://github.com/michaeljabbour) | [amplifier-bundle-taste](https://github.com/michaeljabbour/amplifier-bundle-taste) |
 **Want to share your bundle?** Submit a PR to add your Amplifier bundle to this list!
 
 ---
