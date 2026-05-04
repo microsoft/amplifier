@@ -1,6 +1,6 @@
 name: "repo-audit"
 description: "Audit a single Amplifier ecosystem repository for compliance with Microsoft standards and Amplifier guidelines."
-version: "1.4.0"
+version: "1.5.0"
 author: "Amplifier Team"
 tags: ["audit", "compliance", "github", "amplifier"]
 
@@ -189,23 +189,51 @@ steps:
     type: "bash"
     command: |
       TARGET_DIR="{{working_dir}}/{{repo_name}}"
-      BASE_URL="https://raw.githubusercontent.com/{{repo_owner}}/{{repo_name}}/main"
       LOCAL_PATH="{{repo_path}}"
-      
+
       echo "Fetching files from {{repo_owner}}/{{repo_name}}..."
-      
+
+      # Use authenticated `gh api` for content fetching so this works for
+      # BOTH public and private repos. Unauthenticated raw.githubusercontent.com
+      # returns HTTP 404 for private repos even when the file exists, which
+      # would silently misreport every private repo as missing all boilerplate.
+      # Authenticated `gh api` distinguishes:
+      #   - 200 + content : file exists (decode and write)
+      #   - 404           : file truly missing
+      #   - 401/403       : auth/scope problem (loud warning)
       for file in CODE_OF_CONDUCT.md SECURITY.md SUPPORT.md LICENSE README.md; do
-        HTTP_CODE=$(curl -sL --retry 2 -w "%{http_code}" -o "$TARGET_DIR/$file" "$BASE_URL/$file")
-        if [ "$HTTP_CODE" = "200" ] && [ -s "$TARGET_DIR/$file" ]; then
-          echo "$file: found via GitHub ($(wc -c < "$TARGET_DIR/$file") bytes)"
-        elif [ -n "$LOCAL_PATH" ] && [ -f "$LOCAL_PATH/$file" ]; then
-          # Fallback: use local filesystem path (for private repos where unauthenticated curl returns 404)
+        # Capture stderr so we can detect auth failures vs true 404s
+        API_OUT=$(gh api "repos/{{repo_owner}}/{{repo_name}}/contents/$file" 2>&1)
+        API_RC=$?
+
+        if [ "$API_RC" -eq 0 ]; then
+          # Success — decode base64 content
+          echo "$API_OUT" | jq -r '.content' | base64 -d > "$TARGET_DIR/$file" 2>/dev/null
+          if [ -s "$TARGET_DIR/$file" ]; then
+            echo "$file: found via gh api ($(wc -c < "$TARGET_DIR/$file") bytes)"
+            continue
+          fi
+        fi
+
+        # Check if this looks like an auth failure (any private repo whose
+        # owner the user lacks access to, or expired token, or bad scope)
+        if echo "$API_OUT" | grep -qE "(HTTP 401|HTTP 403|Bad credentials|requires authentication|insufficient scopes)"; then
+          echo "$file: AUTH ERROR — gh CLI lacks access to {{repo_owner}}/{{repo_name}}"
+          echo "  Run 'gh auth status' and ensure your token has 'repo' scope and access to this repo."
+          rm -f "$TARGET_DIR/$file"
+          continue
+        fi
+
+        # Local-path fallback (offline / pre-clone case)
+        if [ -n "$LOCAL_PATH" ] && [ -f "$LOCAL_PATH/$file" ]; then
           cp "$LOCAL_PATH/$file" "$TARGET_DIR/$file"
           echo "$file: found via local path ($(wc -c < "$TARGET_DIR/$file") bytes)"
-        else
-          echo "$file: NOT FOUND (HTTP $HTTP_CODE, local path: ${LOCAL_PATH:-not set})"
-          rm -f "$TARGET_DIR/$file"
+          continue
         fi
+
+        # Genuine miss (HTTP 404 with auth proven good by the surrounding context)
+        echo "$file: NOT FOUND (gh api returned non-zero, local path: ${LOCAL_PATH:-not set})"
+        rm -f "$TARGET_DIR/$file"
       done
     output: "target_fetch_result"
     timeout: 120
