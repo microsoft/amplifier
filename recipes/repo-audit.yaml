@@ -77,7 +77,7 @@ steps:
   - id: "fetch-repo-info"
     type: "bash"
     command: |
-      gh repo view "{{repo_owner}}/{{repo_name}}" --json name,owner,description,hasIssuesEnabled,hasWikiEnabled,hasProjectsEnabled,isArchived,defaultBranchRef,pushedAt,url 2>&1 || echo '{"error": "Repository not found or not accessible"}'
+      gh repo view "{{repo_owner}}/{{repo_name}}" --json name,owner,description,hasIssuesEnabled,hasWikiEnabled,hasProjectsEnabled,isArchived,isPrivate,defaultBranchRef,pushedAt,url 2>&1 || echo '{"error": "Repository not found or not accessible"}'
     output: "repo_info_raw"
     timeout: 60
     retry:
@@ -369,40 +369,72 @@ steps:
         exit 0
       fi
       
+      # Sanity check the reference README before relying on it. If the
+      # reference fetch failed or returned partial content, downstream
+      # comparisons would silently mis-report "content differs" when the
+      # real condition is "I could not complete the comparison".
+      REF_README_OK="true"
+      REF_README_BYTES=0
+      if [ ! -s "$REF_README" ]; then
+        REF_README_OK="false"
+      else
+        REF_README_BYTES=$(wc -c < "$REF_README" | tr -d ' ')
+      fi
+
       # Get line numbers for sections in reference
       CONTRIB_START=$(grep -n "^## Contributing" "$REF_README" | head -1 | cut -d: -f1 || echo "")
       TRADE_START=$(grep -n "^## Trademarks" "$REF_README" | head -1 | cut -d: -f1 || echo "")
-      
+
+      # Reference must have both Contributing and Trademarks headings to be
+      # usable as a comparison source. If either is missing, treat the
+      # reference as broken rather than letting comparisons silently fail.
+      if [ -z "$CONTRIB_START" ] || [ -z "$TRADE_START" ]; then
+        REF_README_OK="false"
+      fi
+
       # Check if target has the sections
       HAS_CONTRIB=$(grep -c "^## Contributing" "$TARGET_README" 2>/dev/null || echo "0")
       HAS_TRADE=$(grep -c "^## Trademarks" "$TARGET_README" 2>/dev/null || echo "0")
-      
-      CONTRIB_MATCH="false"
-      TRADE_MATCH="false"
-      
+
+      # Three-state match flags: "true" = compared and identical,
+      # "false" = compared and differ, "unknown" = comparison could not
+      # be performed (missing reference, missing section, extraction failed).
+      # Defaulting to "unknown" prevents extraction failures from being
+      # silently reported as content mismatches.
+      CONTRIB_MATCH="unknown"
+      TRADE_MATCH="unknown"
+
       # Compare Contributing sections
-      if [ "$HAS_CONTRIB" -gt 0 ] && [ -n "$CONTRIB_START" ] && [ -n "$TRADE_START" ]; then
+      if [ "$REF_README_OK" = "true" ] && [ "$HAS_CONTRIB" -gt 0 ]; then
         sed -n "${CONTRIB_START},$((TRADE_START-1))p" "$REF_README" > /tmp/ref_contrib.txt
-        
+
         TARGET_CONTRIB_START=$(grep -n "^## Contributing" "$TARGET_README" | head -1 | cut -d: -f1)
         TARGET_NEXT=$(tail -n +$((TARGET_CONTRIB_START+1)) "$TARGET_README" | grep -n "^## " | head -1 | cut -d: -f1 || echo "")
-        
+
         if [ -n "$TARGET_NEXT" ]; then
           sed -n "${TARGET_CONTRIB_START},$((TARGET_CONTRIB_START+TARGET_NEXT-1))p" "$TARGET_README" > /tmp/target_contrib.txt
         else
           tail -n +$TARGET_CONTRIB_START "$TARGET_README" > /tmp/target_contrib.txt
         fi
-        
-        if diff -q <(awk '{sub(/[[:space:]]+$/,""); print}' /tmp/ref_contrib.txt) <(awk '{sub(/[[:space:]]+$/,""); print}' /tmp/target_contrib.txt) > /dev/null 2>&1; then
-          CONTRIB_MATCH="true"
+
+        # Only declare match/mismatch if both extracted files are non-empty.
+        # An empty extraction means something went wrong (race, partial fetch,
+        # broken sed, etc.) -- leave CONTRIB_MATCH="unknown" so the recipe
+        # surfaces the real condition.
+        if [ -s /tmp/ref_contrib.txt ] && [ -s /tmp/target_contrib.txt ]; then
+          if diff -q <(awk '{sub(/[[:space:]]+$/,""); print}' /tmp/ref_contrib.txt) <(awk '{sub(/[[:space:]]+$/,""); print}' /tmp/target_contrib.txt) > /dev/null 2>&1; then
+            CONTRIB_MATCH="true"
+          else
+            CONTRIB_MATCH="false"
+          fi
         fi
       fi
-      
+
       # Compare Trademarks sections
       # Bounded extraction (next ## heading or EOF) mirrors the Contributing
       # logic above, plus whitespace-normalized diff to handle EOF newline
       # differences between the reference and target READMEs.
-      if [ "$HAS_TRADE" -gt 0 ] && [ -n "$TRADE_START" ]; then
+      if [ "$REF_README_OK" = "true" ] && [ "$HAS_TRADE" -gt 0 ]; then
         # Reference: Trademarks section to next ## heading or EOF
         REF_TRADE_NEXT=$(tail -n +$((TRADE_START+1)) "$REF_README" | grep -n "^## " | head -1 | cut -d: -f1 || echo "")
         if [ -n "$REF_TRADE_NEXT" ]; then
@@ -420,15 +452,35 @@ steps:
           tail -n +$TARGET_TRADE_START "$TARGET_README" > /tmp/target_trade.txt
         fi
 
-        if diff -q <(awk '{sub(/[[:space:]]+$/,""); print}' /tmp/ref_trade.txt) <(awk '{sub(/[[:space:]]+$/,""); print}' /tmp/target_trade.txt) > /dev/null 2>&1; then
-          TRADE_MATCH="true"
+        # Only declare match/mismatch if both extracted files are non-empty.
+        if [ -s /tmp/ref_trade.txt ] && [ -s /tmp/target_trade.txt ]; then
+          if diff -q <(awk '{sub(/[[:space:]]+$/,""); print}' /tmp/ref_trade.txt) <(awk '{sub(/[[:space:]]+$/,""); print}' /tmp/target_trade.txt) > /dev/null 2>&1; then
+            TRADE_MATCH="true"
+          else
+            TRADE_MATCH="false"
+          fi
         fi
       fi
-      
-      # Determine overall severity
+
+      # Determine overall severity.
+      # Order matters: missing-section is a real error, extraction-failure
+      # is a transient warning that should be retried, and only an actual
+      # diff mismatch warrants the "content differs" finding. Previously the
+      # recipe initialized *_MATCH to "false" and collapsed all three
+      # conditions into the single "content differs" message, producing
+      # false positives whenever extraction silently failed.
       if [ "$HAS_CONTRIB" -eq 0 ] || [ "$HAS_TRADE" -eq 0 ]; then
         SEVERITY="error"
         FINDING="README.md is missing required sections"
+      elif [ "$CONTRIB_MATCH" = "unknown" ] || [ "$TRADE_MATCH" = "unknown" ]; then
+        SEVERITY="warning"
+        # Distinguish "reference unavailable" from "extraction failed" so the
+        # report points to the right remediation (re-fetch reference vs retry).
+        if [ "$REF_README_OK" = "false" ]; then
+          FINDING="README.md comparison could not complete (reference README missing or invalid; ref bytes=${REF_README_BYTES}); retry recommended"
+        else
+          FINDING="README.md comparison could not complete (section extraction yielded empty content); retry recommended"
+        fi
       elif [ "$CONTRIB_MATCH" = "false" ] || [ "$TRADE_MATCH" = "false" ]; then
         SEVERITY="warning"
         FINDING="README.md sections exist but content differs from template"
@@ -436,13 +488,21 @@ steps:
         SEVERITY="pass"
         FINDING="README.md has correct Contributing and Trademarks sections"
       fi
+
+      # Map three-state match flags to booleans for the JSON contract.
+      # "unknown" surfaces as false in the *_verbatim fields (we cannot
+      # claim verbatim correctness without a successful comparison), but
+      # the severity/finding above carries the distinct signal so downstream
+      # consumers can see why.
+      CONTRIB_VERBATIM_BOOL=$([ "$CONTRIB_MATCH" = "true" ] && echo true || echo false)
+      TRADE_VERBATIM_BOOL=$([ "$TRADE_MATCH" = "true" ] && echo true || echo false)
       
       jq -n \
         --argjson readme_exists true \
         --argjson has_contrib "$([ "$HAS_CONTRIB" -gt 0 ] && echo true || echo false)" \
         --argjson has_trade "$([ "$HAS_TRADE" -gt 0 ] && echo true || echo false)" \
-        --argjson contrib_match "$CONTRIB_MATCH" \
-        --argjson trade_match "$TRADE_MATCH" \
+        --argjson contrib_match "$CONTRIB_VERBATIM_BOOL" \
+        --argjson trade_match "$TRADE_VERBATIM_BOOL" \
         --arg severity "$SEVERITY" \
         --arg finding "$FINDING" \
         '{
@@ -703,7 +763,19 @@ steps:
       REPO_JSON_EOF
 
       DEFAULT_BRANCH=$(jq -r '.defaultBranchRef.name // "main"' /tmp/repo_bp_$$.json)
+      IS_PRIVATE=$(jq -r '.isPrivate // false' /tmp/repo_bp_$$.json)
       rm -f /tmp/repo_bp_$$.json
+
+      # Private repos are out of scope for the canonical ruleset / branch
+      # protection policy. Auditing them against public-repo expectations
+      # produces 100% false-positive findings (every private repo flags the
+      # same way) and obscures real issues. Emit a single "pass" verdict
+      # noting the skip and exit early.
+      if [ "$IS_PRIVATE" = "true" ]; then
+        jq -n --arg branch "$DEFAULT_BRANCH" \
+          '{has_protection: null, severity: "pass", finding: ("Branch protection check skipped: private repo (canonical ruleset is not applied to private repos per policy)")}'
+        exit 0
+      fi
 
       REPO="{{repo_owner}}/{{repo_name}}"
 
@@ -755,7 +827,20 @@ steps:
       REPO_JSON_EOF
 
       DEFAULT_BRANCH=$(jq -r '.defaultBranchRef.name // "main"' /tmp/repo_bypass_$$.json)
+      IS_PRIVATE=$(jq -r '.isPrivate // false' /tmp/repo_bypass_$$.json)
       rm -f /tmp/repo_bypass_$$.json
+
+      # Private repos are out of scope for the canonical ruleset / bypass
+      # actor policy (the canonical ruleset is not applied to private repos).
+      # Without a ruleset there are no bypass actors to evaluate, and the
+      # check would otherwise emit a misleading "no ruleset configured"
+      # warning that adds noise without surfacing actionable information.
+      # Emit a single "pass" verdict noting the skip and exit early.
+      if [ "$IS_PRIVATE" = "true" ]; then
+        jq -n --arg branch "$DEFAULT_BRANCH" \
+          '{has_bypass: null, severity: "pass", finding: ("Bypass actors check skipped: private repo (canonical ruleset is not applied to private repos per policy)")}'
+        exit 0
+      fi
 
       REPO="{{repo_owner}}/{{repo_name}}"
 
