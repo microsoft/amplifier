@@ -77,7 +77,7 @@ steps:
   - id: "fetch-repo-info"
     type: "bash"
     command: |
-      gh repo view "{{repo_owner}}/{{repo_name}}" --json name,owner,description,hasIssuesEnabled,hasWikiEnabled,hasProjectsEnabled,isArchived,defaultBranchRef,pushedAt,url 2>&1 || echo '{"error": "Repository not found or not accessible"}'
+      gh repo view "{{repo_owner}}/{{repo_name}}" --json name,owner,description,hasIssuesEnabled,hasWikiEnabled,hasProjectsEnabled,isArchived,isPrivate,defaultBranchRef,pushedAt,url 2>&1 || echo '{"error": "Repository not found or not accessible"}'
     output: "repo_info_raw"
     timeout: 60
     retry:
@@ -763,7 +763,19 @@ steps:
       REPO_JSON_EOF
 
       DEFAULT_BRANCH=$(jq -r '.defaultBranchRef.name // "main"' /tmp/repo_bp_$$.json)
+      IS_PRIVATE=$(jq -r '.isPrivate // false' /tmp/repo_bp_$$.json)
       rm -f /tmp/repo_bp_$$.json
+
+      # Private repos are out of scope for the canonical ruleset / branch
+      # protection policy. Auditing them against public-repo expectations
+      # produces 100% false-positive findings (every private repo flags the
+      # same way) and obscures real issues. Emit a single "pass" verdict
+      # noting the skip and exit early.
+      if [ "$IS_PRIVATE" = "true" ]; then
+        jq -n --arg branch "$DEFAULT_BRANCH" \
+          '{has_protection: null, severity: "pass", finding: ("Branch protection check skipped: private repo (canonical ruleset is not applied to private repos per policy)")}'
+        exit 0
+      fi
 
       REPO="{{repo_owner}}/{{repo_name}}"
 
@@ -815,7 +827,20 @@ steps:
       REPO_JSON_EOF
 
       DEFAULT_BRANCH=$(jq -r '.defaultBranchRef.name // "main"' /tmp/repo_bypass_$$.json)
+      IS_PRIVATE=$(jq -r '.isPrivate // false' /tmp/repo_bypass_$$.json)
       rm -f /tmp/repo_bypass_$$.json
+
+      # Private repos are out of scope for the canonical ruleset / bypass
+      # actor policy (the canonical ruleset is not applied to private repos).
+      # Without a ruleset there are no bypass actors to evaluate, and the
+      # check would otherwise emit a misleading "no ruleset configured"
+      # warning that adds noise without surfacing actionable information.
+      # Emit a single "pass" verdict noting the skip and exit early.
+      if [ "$IS_PRIVATE" = "true" ]; then
+        jq -n --arg branch "$DEFAULT_BRANCH" \
+          '{has_bypass: null, severity: "pass", finding: ("Bypass actors check skipped: private repo (canonical ruleset is not applied to private repos per policy)")}'
+        exit 0
+      fi
 
       REPO="{{repo_owner}}/{{repo_name}}"
 
