@@ -1,6 +1,6 @@
 name: "repo-audit"
 description: "Audit a single Amplifier ecosystem repository for compliance with Microsoft standards and Amplifier guidelines."
-version: "1.5.0"
+version: "1.6.0"
 author: "Amplifier Team"
 tags: ["audit", "compliance", "github", "amplifier"]
 
@@ -813,9 +813,15 @@ steps:
   #              entirely and leaving no audit trail. Bypass mode must be
   #              pull_request so that bypass remains a recorded action on PR
   #              merges and direct pushes stay blocked.
-  #   - warning: ruleset present but no bypass actors configured. Maintainers
-  #              and owners will be required to wait for external review on
-  #              their own PRs. Convenience issue, not a security violation.
+  #   - error:   ruleset present but no bypass actors configured, AND the repo
+  #              is owned by microsoft. 17 of 18 amplifier-* repos use the
+  #              canonical bypass pattern; absence is a deviation from org-wide
+  #              convention (not merely a convenience issue). PRs cannot be
+  #              admin-merged on repos missing this configuration.
+  #   - warning: ruleset present but no bypass actors configured, for repos NOT
+  #              owned by microsoft (forks, personal projects). Maintainers and
+  #              owners will be required to wait for external review on their
+  #              own PRs. Convenience issue, not a security violation.
   #   - pass:    at least one bypass actor configured, all using bypass_mode
   #              of pull_request (none using always).
   - id: "check-bypass-actors"
@@ -872,14 +878,108 @@ steps:
         jq -n --arg branch "$DEFAULT_BRANCH" --arg count "$RULESET_BYPASS_TOTAL" \
           '{has_bypass: true, severity: "pass", finding: ("Bypass actors configured on " + $branch + " via repository ruleset (" + $count + " bypass actors with bypass_mode=pull_request) - maintainers/owners can self-merge")}'
       elif [ "$RULESET_PRESENT" = "true" ]; then
-        jq -n --arg branch "$DEFAULT_BRANCH" \
-          '{has_bypass: false, severity: "warning", finding: ("Repository ruleset on " + $branch + " has no bypass actors configured. Maintainers and owners will be required to get external review on their own PRs (convenience issue, not security).")}'
+        if [ "{{repo_owner}}" = "microsoft" ]; then
+          jq -n --arg branch "$DEFAULT_BRANCH" \
+            '{has_bypass: false, severity: "error", finding: ("Bypass actors not configured on " + $branch + ". Canonical pattern for microsoft/amplifier-* repos: {actor_id: 5, actor_type: RepositoryRole, bypass_mode: pull_request} (Admin role can bypass review on PR merge); {actor_id: 16902513, actor_type: Team, bypass_mode: pull_request} (octo-made-amplifier-maintainers Team can bypass review on PR merge). 17 of 18 amplifier-* repos use this pattern. The single outlier (amplifier-eval-harness) is documented as a transfer artifact and should be brought into compliance.")}'
+        else
+          jq -n --arg branch "$DEFAULT_BRANCH" \
+            '{has_bypass: false, severity: "warning", finding: ("Repository ruleset on " + $branch + " has no bypass actors configured. Maintainers and owners will be required to get external review on their own PRs (convenience issue, not security).")}'
+        fi
       else
         jq -n --arg branch "$DEFAULT_BRANCH" \
           '{has_bypass: false, severity: "warning", finding: ("Cannot evaluate bypass actors - no repository ruleset configured on " + $branch + " (see Branch Protection check above)")}'
       fi
     output: "bypass_actors_check"
     timeout: 60
+    on_error: "continue"
+
+  # ==========================================================================
+  # STEP 7f: Check PR Rule Strictness (microsoft/* repos — warning severity)
+  # ==========================================================================
+  # Verifies that the three supplemental PR review settings used by 17 of 18
+  # amplifier-* repos are in place.  These are recommended but not as critical
+  # as bypass actor configuration (hence warning, not error):
+  #   - dismiss_stale_reviews_on_push: true  (reviews reset on new commits)
+  #   - required_review_thread_resolution: true  (threads must be resolved)
+  #   - required_linear_history rule present  (no merge commits on main)
+  #
+  # Severity model:
+  #   - pass:    all three match the canonical configuration, OR this is a
+  #              non-microsoft / private repo (check not applicable)
+  #   - warning: one or more settings deviate from the canonical configuration
+  - id: "check-pr-rule-strictness"
+    type: "bash"
+    parse_json: true
+    command: |
+      cat << 'REPO_JSON_EOF' > /tmp/repo_prstrictness_$$.json
+      {{repo_info_raw}}
+      REPO_JSON_EOF
+
+      DEFAULT_BRANCH=$(jq -r '.defaultBranchRef.name // "main"' /tmp/repo_prstrictness_$$.json)
+      IS_PRIVATE=$(jq -r '.isPrivate // false' /tmp/repo_prstrictness_$$.json)
+      rm -f /tmp/repo_prstrictness_$$.json
+
+      # This check only applies to microsoft/* public repos.
+      # The canonical amplifier-* convention does not govern non-microsoft repos.
+      if [ "{{repo_owner}}" != "microsoft" ]; then
+        jq -n --arg branch "$DEFAULT_BRANCH" \
+          '{severity: "pass", finding: "PR rule strictness check not applicable (non-microsoft repo)"}'
+        exit 0
+      fi
+
+      # Private repos are out of scope for the canonical ruleset policy.
+      if [ "$IS_PRIVATE" = "true" ]; then
+        jq -n --arg branch "$DEFAULT_BRANCH" \
+          '{severity: "pass", finding: "PR rule strictness check skipped: private repo (canonical ruleset is not applied to private repos per policy)"}'
+        exit 0
+      fi
+
+      REPO="{{repo_owner}}/{{repo_name}}"
+
+      # Enumerate active branch rulesets targeting the default branch.
+      RULESETS_RAW=$(gh api "repos/$REPO/rulesets" 2>&1 || echo "FETCH_FAILED")
+      if [ "$RULESETS_RAW" = "FETCH_FAILED" ] || echo "$RULESETS_RAW" | grep -qE "Not Found"; then
+        jq -n --arg branch "$DEFAULT_BRANCH" \
+          '{severity: "warning", finding: ("Cannot evaluate PR rule strictness - no rulesets accessible on " + $branch + " (see Branch Protection check above)")}'
+        exit 0
+      fi
+
+      DISMISS_STALE="false"
+      THREAD_RESOLUTION="false"
+      LINEAR_HISTORY="false"
+
+      RULESET_IDS=$(echo "$RULESETS_RAW" | jq -r '.[] | select(.enforcement == "active" and .target == "branch") | .id' 2>/dev/null || echo "")
+      for RID in $RULESET_IDS; do
+        DETAIL=$(gh api "repos/$REPO/rulesets/$RID" 2>&1 || echo "FETCH_FAILED")
+        [ "$DETAIL" = "FETCH_FAILED" ] && continue
+        MATCHES=$(echo "$DETAIL" | jq --arg branch "$DEFAULT_BRANCH" '(.conditions.ref_name.include // []) | any(. == "~DEFAULT_BRANCH" or . == ("refs/heads/" + $branch))' 2>/dev/null || echo "false")
+        if [ "$MATCHES" = "true" ]; then
+          # Check dismiss_stale_reviews_on_push in pull_request rule parameters
+          DS=$(echo "$DETAIL" | jq -r '[.rules[] | select(.type == "pull_request") | .parameters.dismiss_stale_reviews_on_push // false] | any' 2>/dev/null || echo "false")
+          [ "$DS" = "true" ] && DISMISS_STALE="true"
+          # Check required_review_thread_resolution in pull_request rule parameters
+          TR=$(echo "$DETAIL" | jq -r '[.rules[] | select(.type == "pull_request") | .parameters.required_review_thread_resolution // false] | any' 2>/dev/null || echo "false")
+          [ "$TR" = "true" ] && THREAD_RESOLUTION="true"
+          # Check for presence of a required_linear_history rule
+          LH=$(echo "$DETAIL" | jq -r '[.rules[] | select(.type == "required_linear_history")] | length' 2>/dev/null || echo "0")
+          [ "$LH" -ge 1 ] && LINEAR_HISTORY="true"
+        fi
+      done
+
+      MISSING=""
+      [ "$DISMISS_STALE" != "true" ] && MISSING="${MISSING:+$MISSING, }dismiss_stale_reviews_on_push=true"
+      [ "$THREAD_RESOLUTION" != "true" ] && MISSING="${MISSING:+$MISSING, }required_review_thread_resolution=true"
+      [ "$LINEAR_HISTORY" != "true" ] && MISSING="${MISSING:+$MISSING, }required_linear_history rule"
+
+      if [ -z "$MISSING" ]; then
+        jq -n --arg branch "$DEFAULT_BRANCH" \
+          '{severity: "pass", finding: ("PR rule strictness matches canonical amplifier-* configuration on " + $branch + " (dismiss_stale_reviews_on_push=true, required_review_thread_resolution=true, required_linear_history rule present)")}'
+      else
+        jq -n --arg branch "$DEFAULT_BRANCH" --arg missing "$MISSING" \
+          '{severity: "warning", finding: ("PR rule strictness deviates from canonical amplifier-* configuration on " + $branch + ". Missing: " + $missing + ". Canonical pattern (17/18 amplifier-* repos): dismiss_stale_reviews_on_push=true, required_review_thread_resolution=true, required_linear_history rule present.")}'
+      fi
+    output: "pr_rule_strictness_check"
+    timeout: 90
     on_error: "continue"
 
   # ==========================================================================
@@ -962,10 +1062,13 @@ steps:
       ### 7. Branch Protection (default branch)
       {{branch_protection_check}}
       
-      ### 8. Bypass Actors (convenience layer — warning severity)
+      ### 8. Bypass Actors
       {{bypass_actors_check}}
       
-      ### 9. Repository Stats
+      ### 9. PR Rule Strictness (microsoft/* repos)
+      {{pr_rule_strictness_check}}
+      
+      ### 10. Repository Stats
       {{repo_stats}}
       
       ## Report Format
@@ -992,7 +1095,8 @@ steps:
       | Wiki | [Disabled/Enabled] | [pass/error] |
       | Projects | [Disabled/Enabled] | [pass/error] |
       | Branch Protection | [Configured/Misconfigured/Missing] | [pass/error] |
-      | Bypass Actors | [Configured/Empty/N-A] | [pass/warning] |
+      | Bypass Actors | [Configured/Empty/N-A] | [pass/warning/error] |
+      | PR Rule Strictness | [Pass/Deviates/N-A] | [pass/warning] |
       
       **Overall Status**: [PASS / NEEDS ATTENTION / CRITICAL]
       - Critical issues (errors): N
@@ -1016,7 +1120,7 @@ steps:
       [For each non-passing issue, provide specific steps to fix]
       
       ---
-      *Generated by Amplifier repo-audit recipe v1.3.0*
+      *Generated by Amplifier repo-audit recipe v1.6.0*
     output: "audit_report_content"
     timeout: 300
     on_error: "fail"
