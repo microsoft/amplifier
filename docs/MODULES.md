@@ -22,6 +22,7 @@ User-facing applications that compose libraries and modules.
 |-----------|-------------|------------|
 | **amplifier** | Main Amplifier project and entry point - installs amplifier-app-cli via `uv tool install` | [amplifier](https://github.com/microsoft/amplifier) |
 | **amplifier-app-cli** | Reference CLI application implementing the Amplifier platform | [amplifier-app-cli](https://github.com/microsoft/amplifier-app-cli) |
+| **amplifier-eval-harness** | Configurable test harness for evaluating Amplifier bundles across scenarios and providers in isolated Digital Twin Universe environments. Captures wall time, LLM time, per-call tokens, cache traffic, request counts, and per-`provider/model` breakdowns across the full session tree (parent + every sub-session) for cross-bundle and cross-provider comparison. | [amplifier-eval-harness](https://github.com/microsoft/amplifier-eval-harness) |
 | **amplifier-app-log-viewer** | Web-based log viewer for debugging sessions with real-time updates | [amplifier-app-log-viewer](https://github.com/microsoft/amplifier-app-log-viewer) |
 | **amplifier-app-benchmarks** | Benchmarking and evaluating Amplifier | [amplifier-app-benchmarks](https://github.com/DavidKoleczek/amplifier-app-benchmarks) |
 | **amplifierd** | Localhost HTTP daemon exposing amplifier-core and amplifier-foundation over REST and SSE - drive sessions from any language or framework | [amplifierd](https://github.com/microsoft/amplifierd) |
