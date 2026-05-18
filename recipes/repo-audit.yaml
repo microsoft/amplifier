@@ -1,6 +1,6 @@
 name: "repo-audit"
 description: "Audit a single Amplifier ecosystem repository for compliance with Microsoft standards and Amplifier guidelines."
-version: "1.6.0"
+version: "1.7.0"
 author: "Amplifier Team"
 tags: ["audit", "compliance", "github", "amplifier"]
 
@@ -807,6 +807,16 @@ steps:
   # review, AND that the bypass mode does not silently undermine the security
   # floor enforced by check-branch-protection.
   #
+  # For microsoft/* repos, this step also validates that the RepositoryRole
+  # actor_id matches the canonical value (5 = Admin). GitHub does not officially
+  # document the RepositoryRole actor_id mapping, but it has been confirmed
+  # empirically and via github/rest-api-description#4406:
+  #
+  #   actor_id 1 = Read, 2 = Triage, 3 = Write, 4 = Maintain, 5 = Admin
+  #
+  # A repo with actor_id 2 (Triage) instead of 5 (Admin) means the wrong
+  # role has bypass capability. This check catches that drift.
+  #
   # Severity model:
   #   - error:   any bypass actor uses bypass_mode=always. This permits direct
   #              pushes to the default branch, bypassing the pull_request rule
@@ -818,12 +828,17 @@ steps:
   #              org-wide convention for amplifier-* repos; absence is a
   #              deviation (not merely a convenience issue). PRs cannot be
   #              admin-merged on repos missing this configuration.
+  #   - error:   bypass actors configured on a microsoft/* repo but the
+  #              RepositoryRole actor_id is not 5 (Admin). The wrong
+  #              repository role has bypass capability — likely drift from
+  #              a misconfigured ruleset apply.
   #   - warning: ruleset present but no bypass actors configured, for repos NOT
   #              owned by microsoft (forks, personal projects). Maintainers and
   #              owners will be required to wait for external review on their
   #              own PRs. Convenience issue, not a security violation.
   #   - pass:    at least one bypass actor configured, all using bypass_mode
-  #              of pull_request (none using always).
+  #              of pull_request (none using always). For microsoft/* repos,
+  #              also confirms RepositoryRole actor_id 5 (Admin).
   - id: "check-bypass-actors"
     type: "bash"
     parse_json: true
@@ -855,6 +870,7 @@ steps:
       RULESET_PRESENT=false
       RULESET_BYPASS_TOTAL=0
       RULESET_ALWAYS_TOTAL=0
+      REPO_ROLE_IDS=""
       if [ "$RULESETS_RAW" != "FETCH_FAILED" ] && ! echo "$RULESETS_RAW" | grep -qE "Not Found"; then
         RULESET_IDS=$(echo "$RULESETS_RAW" | jq -r '.[] | select(.enforcement == "active" and .target == "branch") | .id' 2>/dev/null || echo "")
         for RID in $RULESET_IDS; do
@@ -867,6 +883,11 @@ steps:
             RULESET_BYPASS_TOTAL=$((RULESET_BYPASS_TOTAL + COUNT))
             ALWAYS_COUNT=$(echo "$DETAIL" | jq -r '[(.bypass_actors // [])[] | select(.bypass_mode == "always")] | length' 2>/dev/null || echo "0")
             RULESET_ALWAYS_TOTAL=$((RULESET_ALWAYS_TOTAL + ALWAYS_COUNT))
+            # Collect RepositoryRole actor_ids for canonical config validation (microsoft/* repos)
+            ROLE_ACTORS=$(echo "$DETAIL" | jq -r '[(.bypass_actors // [])[] | select(.actor_type == "RepositoryRole") | .actor_id] | map(tostring) | join(",")' 2>/dev/null || echo "")
+            if [ -n "$ROLE_ACTORS" ]; then
+              REPO_ROLE_IDS="${REPO_ROLE_IDS:+$REPO_ROLE_IDS,}$ROLE_ACTORS"
+            fi
           fi
         done
       fi
@@ -875,8 +896,21 @@ steps:
         jq -n --arg branch "$DEFAULT_BRANCH" --arg count "$RULESET_ALWAYS_TOTAL" \
           '{has_bypass: true, severity: "error", finding: ("Repository ruleset on " + $branch + " has " + $count + " bypass actor(s) with bypass_mode=always. This permits direct pushes to the default branch, bypassing the pull_request rule entirely and leaving no audit trail. Change bypass_mode to pull_request for all bypass actors so that bypass remains an explicit, recorded action on PR merges only.")}'
       elif [ "$RULESET_BYPASS_TOTAL" -ge 1 ]; then
-        jq -n --arg branch "$DEFAULT_BRANCH" --arg count "$RULESET_BYPASS_TOTAL" \
-          '{has_bypass: true, severity: "pass", finding: ("Bypass actors configured on " + $branch + " via repository ruleset (" + $count + " bypass actors with bypass_mode=pull_request) - maintainers/owners can self-merge")}'
+        # For microsoft/* repos, verify RepositoryRole actor_id matches canonical (5 = Admin).
+        # GitHub does not document RepositoryRole actor_id values, but empirical testing
+        # and github/rest-api-description#4406 confirm: 1=Read, 2=Triage, 3=Write, 4=Maintain, 5=Admin.
+        if [ "{{repo_owner}}" = "microsoft" ] && [ -n "$REPO_ROLE_IDS" ]; then
+          if echo ",$REPO_ROLE_IDS," | grep -q ",5,"; then
+            jq -n --arg branch "$DEFAULT_BRANCH" --arg count "$RULESET_BYPASS_TOTAL" \
+              '{has_bypass: true, severity: "pass", finding: ("Bypass actors configured on " + $branch + " via repository ruleset (" + $count + " bypass actors, RepositoryRole=Admin, bypass_mode=pull_request) - matches canonical amplifier-* configuration")}'
+          else
+            jq -n --arg branch "$DEFAULT_BRANCH" --arg count "$RULESET_BYPASS_TOTAL" --arg ids "$REPO_ROLE_IDS" \
+              '{has_bypass: true, severity: "error", finding: ("Bypass actors configured on " + $branch + " but RepositoryRole actor_id is " + $ids + " instead of canonical 5 (Admin role). The wrong repository role has bypass capability. Update the ruleset bypass_actors to use RepositoryRole actor_id 5 (Admin).")}'
+          fi
+        else
+          jq -n --arg branch "$DEFAULT_BRANCH" --arg count "$RULESET_BYPASS_TOTAL" \
+            '{has_bypass: true, severity: "pass", finding: ("Bypass actors configured on " + $branch + " via repository ruleset (" + $count + " bypass actors with bypass_mode=pull_request) - maintainers/owners can self-merge")}'
+        fi
       elif [ "$RULESET_PRESENT" = "true" ]; then
         if [ "{{repo_owner}}" = "microsoft" ]; then
           jq -n --arg branch "$DEFAULT_BRANCH" \
