@@ -60,6 +60,7 @@ Composable configuration packages that combine providers, behaviors, agents, and
 | **gitea** | On-demand ephemeral Gitea instances for isolated git workflows — mirror repos from GitHub, work freely, and promote results back when ready | [amplifier-bundle-gitea](https://github.com/microsoft/amplifier-bundle-gitea) |
 | **foreman** | Assistant pattern where the conversation assistant manages a fleet of other assistants, each with their own sessions, leveraging capabilities from amplifier-bundle-orchestration | [amplifier-bundle-foreman](https://github.com/payneio/amplifier-bundle-foreman) |
 | **issues** | Persistent issue tracking with dependency management, priority scheduling, and session linking for autonomous work | [amplifier-bundle-issues](https://github.com/microsoft/amplifier-bundle-issues) |
+| **llm-wiki** | Karpathy LLM Wiki pattern as composable workflow modes — wiki-init, wiki-ingest, wiki-lint, wiki-publish, wiki-query; zero-cost-when-dormant via per-mode shared orientation | [amplifier-bundle-llm-wiki](https://github.com/microsoft/amplifier-bundle-llm-wiki) |
 | **lsp** | Core Language Server Protocol support for code intelligence operations | [amplifier-bundle-lsp](https://github.com/microsoft/amplifier-bundle-lsp) |
 | **lsp-python** | DEPRECATED — forwarding stub, use python-dev instead | [amplifier-bundle-lsp-python](https://github.com/microsoft/amplifier-bundle-lsp-python) |
 | **lsp-rust** | DEPRECATED — forwarding stub, use rust-dev instead | [amplifier-bundle-lsp-rust](https://github.com/microsoft/amplifier-bundle-lsp-rust) |
