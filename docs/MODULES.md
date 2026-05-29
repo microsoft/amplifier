@@ -257,7 +257,7 @@ Bundles built by the community.
 | **web-ux-dev** | Web UX development tools - visual regression testing, console debugging, and pre-commit verification (extends browser bundle) | [@colombod](https://github.com/colombod) | [amplifier-bundle-web-ux-dev](https://github.com/colombod/amplifier-bundle-web-ux-dev) |
 | **frontdoor** | Authentication gateway and service dashboard for Tailscale-based hosts. Provides PAM-based SSO, Caddy forward_auth integration, and a service discovery dashboard. Includes skills for host infrastructure discovery and web app setup. | [@robotdad](https://github.com/robotdad) | [amplifier-bundle-frontdoor](https://github.com/robotdad/frontdoor) |
 | **codebase-to-course** | Transform any codebase or GitHub URL into a self-contained interactive HTML course for non-technical learners — scroll-based navigation, animated visualizations, embedded quizzes, and code-with-plain-English side-by-side translations | [@johannao76](https://github.com/johannao76) | [amplifier-bundle-codebase-to-course](https://github.com/johannao76/amplifier-bundle-codebase-to-course) |
-| **scientificpaper** | AI-assisted scientific paper authoring: LaTeX/IMRaD structuring, multi-conference formatting (NeurIPS, ICML, ACL, IEEE, ACM, arXiv), citation management, and publication-ready figure generation | [@michaeljabbour](https://github.com/michaeljabbour) | [amplifier-bundle-scientificpaper](https://github.com/michaeljabbour/amplifier-bundle-scientificpaper) |
+| **research** | Scientific-rigor research bundle: hypothesis design, pre-registration discipline, statistics, honest-pivot defaults, and full paper authoring (LaTeX, multi-conference formatting, citations, and PaperBanana figure generation) | [@michaeljabbour](https://github.com/michaeljabbour) | [amplifier-bundle-research](https://github.com/michaeljabbour/amplifier-bundle-research) |
 
 **Want to share your bundle?** Submit a PR to add your Amplifier bundle to this list!
 
@@ -287,7 +287,6 @@ Modules built by the community.
 | **module-image-generation** | Multi-provider AI image generation with DALL-E, Imagen, and GPT-Image-1 | [@robotdad](https://github.com/robotdad) | [amplifier-module-image-generation](https://github.com/robotdad/amplifier-module-image-generation) |
 | **module-style-extraction** | Extract and apply writing style from text samples | [@robotdad](https://github.com/robotdad) | [amplifier-module-style-extraction](https://github.com/robotdad/amplifier-module-style-extraction) |
 | **module-markdown-utils** | Markdown parsing, injection, and metadata extraction utilities | [@robotdad](https://github.com/robotdad) | [amplifier-module-markdown-utils](https://github.com/robotdad/amplifier-module-markdown-utils) |
-| **tool-paperbanana** | PaperBanana multi-agent academic figure generation with quality veto rules (arXiv 2601.23265) | [@michaeljabbour](https://github.com/michaeljabbour) | [amplifier-module-tool-paperbanana](https://github.com/michaeljabbour/amplifier-module-tool-paperbanana) |
 
 ### Hooks
 
