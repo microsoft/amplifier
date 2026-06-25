@@ -34,7 +34,7 @@ User-facing applications that compose libraries and modules.
 | **amplifier-chat** | Chat UI plugin for amplifierd - browser-based conversational interface for creating and managing Amplifier sessions | [amplifier-chat](https://github.com/microsoft/amplifier-chat) |
 | **amplifier-voice** | Voice plugin for amplifierd - WebRTC voice interface using the OpenAI Realtime API, standalone or as a plugin | [amplifier-voice](https://github.com/microsoft/amplifier-voice) |
 
-**Note**: When you install `amplifier`, you get the amplifier-app-cli as the executable application. `amplifier-agent` is a separate, embeddable backend — a per-turn stdio process (and OpenAI-compatible HTTP server) that lets external software use Amplifier as an AI engine; `amplifier-app-nanoclaw`, `amplifier-app-opencode`, and `amplifier-app-paperclip` are reference host integrations that put amplifier-agent behind a containerized assistant harness, a coding TUI, and an agent platform respectively. `amplifierd` is a separate daemon that exposes Amplifier capabilities over HTTP, and `amplifier-chat` and `amplifier-voice` are plugins that extend it with web-based chat and voice interfaces.
+**Note**: When you install `amplifier`, you get the amplifier-app-cli as the executable application. `amplifierd` is a separate daemon that exposes Amplifier capabilities over HTTP, and `amplifier-chat` and `amplifier-voice` are plugins that extend it with web-based chat and voice interfaces.
 
 ---
 
