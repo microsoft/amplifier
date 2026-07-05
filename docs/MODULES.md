@@ -251,6 +251,7 @@ Applications built by the community using Amplifier.
 | **amplifier-playground** | Interactive environment for building, configuring, and testing Amplifier AI agent sessions | [@samueljklee](https://github.com/samueljklee) | [amplifier-playground](https://github.com/samueljklee/amplifier-playground) |
 | **amplifier-lakehouse** | Amplifier on top of your data (daemon and webapp) | [@payneio](https://github.com/payneio) | [amplifier-lakehouse](https://github.com/payneio/lakehouse) |
 | **app-session-analyzer** | Analyze Amplifier session logs and generate interesting metrics about your usage! | [@DavidKoleczek](https://github.com/DavidKoleczek) | [amplifier-app-session-analyzer](https://github.com/DavidKoleczek/amplifier-app-session-analyzer) |
+| **jilog** | Append-only event ledger and nightly learning loop over Amplifier, Claude Code, Codex, and Copilot session transcripts; files issues for recurring failure patterns | [@Joi](https://github.com/Joi) | [jilog](https://github.com/Joi/jilog) |
 
 **Want to showcase your application?** Submit a PR to add your Amplifier-powered application to this list!
 
