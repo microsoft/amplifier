@@ -55,6 +55,7 @@ Foundational libraries used by **applications** (not used directly by runtime mo
 | Component | Description | Repository |
 |-----------|-------------|------------|
 | **amplifier-foundation** | Foundational library for bundles, module resolution, and shared utilities | [amplifier-foundation](https://github.com/microsoft/amplifier-foundation) |
+| **aiuser** | Reusable "AI User" that drives a lower-level AI session toward a goal across multiple turns given a persona, scenario, and invocation guide, then reports a verdict — built to be embedded for testing and evaluation. | [amplifier-bundle-aiuser](https://github.com/microsoft/amplifier-bundle-aiuser) |
 
 **Architectural Boundary**: Libraries are consumed by applications (like amplifier-app-cli). Runtime modules only depend on amplifier-core and never use these libraries directly.
 
