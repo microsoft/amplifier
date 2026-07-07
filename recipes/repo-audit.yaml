@@ -1,6 +1,6 @@
 name: "repo-audit"
 description: "Audit a single Amplifier ecosystem repository for compliance with Microsoft standards and Amplifier guidelines."
-version: "1.7.0"
+version: "1.8.0"
 author: "Amplifier Team"
 tags: ["audit", "compliance", "github", "amplifier"]
 
@@ -1026,7 +1026,7 @@ steps:
       REPO="{{repo_owner}}/{{repo_name}}"
       
       # Get open PRs
-      OPEN_PRS=$(gh pr list -R "$REPO" --state open --json number,title,author,createdAt,url 2>/dev/null || echo "[]")
+      OPEN_PRS=$(gh pr list -R "$REPO" --state open --limit 200 --json number,title,author,createdAt,url 2>/dev/null || echo "[]")
       PR_COUNT=$(echo "$OPEN_PRS" | jq 'length')
       
       # Get recent commits (last 7 days) - handle both Linux and macOS date
@@ -1053,6 +1053,168 @@ steps:
         }'
     output: "repo_stats"
     timeout: 120
+    retry:
+      max_attempts: 2
+      backoff: "linear"
+      initial_delay: 3
+    on_error: "continue"
+
+  # ==========================================================================
+  # STEP 8b: Check Dependabot PRs (READ-ONLY / ADVISORY)
+  # ==========================================================================
+  # This step is strictly read-only and advisory. It lists open Dependabot PRs,
+  # inspects each (bump type, CI status, mergeability, security signal), and
+  # emits a per-PR recommendation FOR A HUMAN to act on. It does NOT merge,
+  # approve, close, or modify any PR - consistent with this recipe's existing
+  # "never auto-act" philosophy. Even a "MERGE" recommendation means
+  # "recommended for a human to merge", not an action the recipe performs.
+  - id: "check-dependabot-prs"
+    type: "bash"
+    parse_json: true
+    command: |
+      REPO="{{repo_owner}}/{{repo_name}}"
+
+      # List open Dependabot PRs. Dependabot authors as the GitHub App "app/dependabot".
+      PRS=$(gh pr list -R "$REPO" --author "app/dependabot" --state open --limit 200 --json number,title,url,headRefName,createdAt,labels 2>/dev/null || echo "[]")
+      COUNT=$(echo "$PRS" | jq 'length' 2>/dev/null || echo "0")
+
+      if [ "$COUNT" -eq 0 ]; then
+        echo '{"count":0,"security_count":0,"prs":[],"severity":"pass","finding":"No open Dependabot PRs"}'
+        exit 0
+      fi
+
+      RESULTS="[]"
+      NUMBERS=$(echo "$PRS" | jq -r '.[].number' 2>/dev/null)
+
+      for NUM in $NUMBERS; do
+        [ -z "$NUM" ] && continue
+
+        DETAIL=$(gh pr view "$NUM" -R "$REPO" --json number,title,url,mergeable,mergeStateStatus,reviewDecision,statusCheckRollup,labels,createdAt,headRefName,body 2>/dev/null || echo "{}")
+        [ -z "$DETAIL" ] && DETAIL="{}"
+
+        TITLE=$(echo "$DETAIL" | jq -r '.title // ""')
+        URL=$(echo "$DETAIL" | jq -r '.url // ""')
+        MERGEABLE=$(echo "$DETAIL" | jq -r '.mergeable // "UNKNOWN"')
+        MERGE_STATE=$(echo "$DETAIL" | jq -r '.mergeStateStatus // "UNKNOWN"')
+        REVIEW_DECISION=$(echo "$DETAIL" | jq -r '.reviewDecision // ""')
+
+        # ---- bump_type: parse "from A to B" out of the Dependabot title ----
+        # Handles "Bump <dep> from A to B" and "build(deps): bump <dep> from A to B".
+        FROM_V=$(echo "$TITLE" | sed -nE 's/.*[Bb]ump .* from ([0-9][0-9A-Za-z._-]*) to ([0-9][0-9A-Za-z._-]*).*/\1/p')
+        TO_V=$(echo "$TITLE"   | sed -nE 's/.*[Bb]ump .* from ([0-9][0-9A-Za-z._-]*) to ([0-9][0-9A-Za-z._-]*).*/\2/p')
+        BUMP_TYPE="unknown"
+        if [ -n "$FROM_V" ] && [ -n "$TO_V" ]; then
+          # Strip leading v/V, then extract leading numeric part of each component.
+          FV=$(echo "$FROM_V" | sed 's/^[vV]//')
+          TV=$(echo "$TO_V"   | sed 's/^[vV]//')
+          FMAJ=$(echo "$FV" | cut -d. -f1 | sed 's/[^0-9].*$//')
+          FMIN=$(echo "$FV" | cut -d. -f2 | sed 's/[^0-9].*$//')
+          FPAT=$(echo "$FV" | cut -d. -f3 | sed 's/[^0-9].*$//')
+          TMAJ=$(echo "$TV" | cut -d. -f1 | sed 's/[^0-9].*$//')
+          TMIN=$(echo "$TV" | cut -d. -f2 | sed 's/[^0-9].*$//')
+          TPAT=$(echo "$TV" | cut -d. -f3 | sed 's/[^0-9].*$//')
+          if [ -n "$FMAJ" ] && [ -n "$TMAJ" ]; then
+            FMIN=${FMIN:-0}; FPAT=${FPAT:-0}; TMIN=${TMIN:-0}; TPAT=${TPAT:-0}
+            if [ "$FMAJ" != "$TMAJ" ]; then BUMP_TYPE="major"
+            elif [ "$FMIN" != "$TMIN" ]; then BUMP_TYPE="minor"
+            elif [ "$FPAT" != "$TPAT" ]; then BUMP_TYPE="patch"
+            else BUMP_TYPE="unknown"; fi
+          fi
+        fi
+
+        # ---- is_security: label contains "security" OR body mentions vuln/CVE/advisory ----
+        LABELS_SEC=$(echo "$DETAIL" | jq -r '[(.labels // [])[].name // ""] | map(ascii_downcase) | any(contains("security"))' 2>/dev/null || echo "false")
+        BODY_SEC=$(echo "$DETAIL" | jq -r '((.body // "") | ascii_downcase) | (contains("vulnerab") or contains("cve") or contains("security advisory"))' 2>/dev/null || echo "false")
+        if [ "$LABELS_SEC" = "true" ] || [ "$BODY_SEC" = "true" ]; then IS_SECURITY="true"; else IS_SECURITY="false"; fi
+
+        # ---- ci_status: aggregate over statusCheckRollup ----
+        ROLLUP_LEN=$(echo "$DETAIL" | jq -r '(.statusCheckRollup // []) | length' 2>/dev/null || echo "0")
+        if [ "$ROLLUP_LEN" -eq 0 ]; then
+          CI_STATUS="none"
+        else
+          # One effective token per check: prefer conclusion, then state, then status.
+          TOKENS=$(echo "$DETAIL" | jq -r '
+            [ .statusCheckRollup[]?
+              | (if ((.conclusion // "") != "") then .conclusion
+                 elif ((.state // "") != "") then .state
+                 elif ((.status // "") != "") then .status
+                 else "UNKNOWN" end)
+            ] | map(ascii_upcase) | join(" ")' 2>/dev/null || echo "")
+          if echo " $TOKENS " | grep -qE ' (FAILURE|ERROR|CANCELLED|TIMED_OUT) '; then
+            CI_STATUS="failing"
+          elif echo " $TOKENS " | grep -qE ' (PENDING|QUEUED|IN_PROGRESS|EXPECTED) '; then
+            CI_STATUS="pending"
+          else
+            ALL_OK="true"
+            for t in $TOKENS; do
+              case "$t" in
+                SUCCESS|NEUTRAL|SKIPPED) ;;
+                *) ALL_OK="false" ;;
+              esac
+            done
+            if [ "$ALL_OK" = "true" ] && [ -n "$TOKENS" ]; then CI_STATUS="passing"; else CI_STATUS="unknown"; fi
+          fi
+        fi
+
+        # ---- recommendation + reason (top-down cascade, first match wins; all advisory FOR A HUMAN) ----
+        # Gates 1-7 guarantee that by the time a MERGE branch (8/9) is reached the PR has:
+        # CI passing, no conflict, no changes-requested, not a major bump, a determined bump
+        # type, and GitHub-confirmed mergeable==MERGEABLE. No PR can reach MERGE otherwise.
+        if [ "$CI_STATUS" = "failing" ]; then
+          RECO="REVIEW"; REASON="CI checks are failing - do not merge until green"
+        elif [ "$MERGEABLE" = "CONFLICTING" ]; then
+          RECO="REVIEW"; REASON="merge conflict - needs rebase"
+        elif [ "$REVIEW_DECISION" = "CHANGES_REQUESTED" ]; then
+          RECO="REVIEW"; REASON="changes requested by a reviewer - resolve before merging"
+        elif [ "$BUMP_TYPE" = "major" ]; then
+          RECO="REVIEW"; REASON="major version bump - review changelog for breaking changes"
+        elif [ "$BUMP_TYPE" = "unknown" ]; then
+          RECO="REVIEW"; REASON="bump type undetermined (e.g. grouped/multi-dependency update) - review contents manually"
+        elif [ "$CI_STATUS" = "pending" ] || [ "$CI_STATUS" = "unknown" ] || [ "$CI_STATUS" = "none" ]; then
+          RECO="WAIT"; REASON="checks still running or absent - re-evaluate when status is known"
+        elif [ "$MERGEABLE" != "MERGEABLE" ]; then
+          RECO="WAIT"; REASON="GitHub has not yet confirmed mergeability - re-evaluate shortly"
+        elif [ "$IS_SECURITY" = "true" ]; then
+          RECO="MERGE (priority)"; REASON="security update with green checks, mergeable - merge promptly"
+        elif [ "$BUMP_TYPE" = "patch" ] || [ "$BUMP_TYPE" = "minor" ]; then
+          RECO="MERGE"; REASON="low-risk $BUMP_TYPE update, checks green, no conflicts"
+        else
+          RECO="REVIEW"; REASON="does not meet auto-safe criteria - needs human judgment"
+        fi
+
+        PR_OBJ=$(jq -n \
+          --argjson number "$NUM" \
+          --arg title "$TITLE" \
+          --arg url "$URL" \
+          --arg bump_type "$BUMP_TYPE" \
+          --argjson is_security "$IS_SECURITY" \
+          --arg ci_status "$CI_STATUS" \
+          --arg mergeable "$MERGEABLE" \
+          --arg merge_state "$MERGE_STATE" \
+          --arg review_decision "$REVIEW_DECISION" \
+          --arg recommendation "$RECO" \
+          --arg reason "$REASON" \
+          '{number:$number,title:$title,url:$url,bump_type:$bump_type,is_security:$is_security,ci_status:$ci_status,mergeable:$mergeable,merge_state:$merge_state,review_decision:$review_decision,recommendation:$recommendation,reason:$reason}')
+        RESULTS=$(echo "$RESULTS" | jq --argjson obj "$PR_OBJ" '. + [$obj]')
+      done
+
+      SEC_COUNT=$(echo "$RESULTS" | jq '[.[] | select(.is_security == true)] | length')
+      MERGE_COUNT=$(echo "$RESULTS" | jq '[.[] | select(.recommendation == "MERGE" or .recommendation == "MERGE (priority)")] | length')
+      REVIEW_COUNT=$(echo "$RESULTS" | jq '[.[] | select(.recommendation == "REVIEW")] | length')
+      ANY_REVIEW_OR_SEC=$(echo "$RESULTS" | jq 'any(.[]; .recommendation == "REVIEW" or .is_security == true)')
+
+      if [ "$ANY_REVIEW_OR_SEC" = "true" ]; then SEVERITY="warning"; else SEVERITY="recommendation"; fi
+      FINDING="$COUNT open Dependabot PR(s): $MERGE_COUNT recommend MERGE, $REVIEW_COUNT need REVIEW, $SEC_COUNT security"
+
+      jq -n \
+        --argjson count "$COUNT" \
+        --argjson security_count "$SEC_COUNT" \
+        --argjson prs "$RESULTS" \
+        --arg severity "$SEVERITY" \
+        --arg finding "$FINDING" \
+        '{count:$count,security_count:$security_count,prs:$prs,severity:$severity,finding:$finding}'
+    output: "dependabot_check"
+    timeout: 180
     retry:
       max_attempts: 2
       backoff: "linear"
@@ -1105,6 +1267,9 @@ steps:
       ### 10. Repository Stats
       {{repo_stats}}
       
+      ### 11. Dependabot Pull Requests
+      {{dependabot_check}}
+      
       ## Report Format
       
       Generate a markdown report following this structure:
@@ -1131,6 +1296,7 @@ steps:
       | Branch Protection | [Configured/Misconfigured/Missing] | [pass/error] |
       | Bypass Actors | [Configured/Empty/N-A] | [pass/warning/error] |
       | PR Rule Strictness | [Pass/Deviates/N-A] | [pass/warning] |
+      | Dependabot PRs | [N open — see below] | [pass/recommendation/warning] |
       
       **Overall Status**: [PASS / NEEDS ATTENTION / CRITICAL]
       - Critical issues (errors): N
@@ -1149,12 +1315,22 @@ steps:
       
       [If there are open PRs, list them with titles and links]
       
+      ## Dependabot Pull Requests
+      
+      [If count is 0, print "No open Dependabot PRs." Otherwise render this table using the entries in {{dependabot_check}}.prs:]
+      
+      | PR | Update | Security | CI | Mergeable | Recommendation | Reason |
+      |----|--------|----------|----|-----------|----------------|--------|
+      | [#number](url) | [bump_type] | [yes/no] | [ci_status] | [mergeable] | **[recommendation]** | [reason] |
+      
+      Recommendations are advisory — a human decides and performs any merge. This recipe does not merge PRs.
+      
       ## Remediation Steps
       
       [For each non-passing issue, provide specific steps to fix]
       
       ---
-      *Generated by Amplifier repo-audit recipe v1.6.0*
+      *Generated by Amplifier repo-audit recipe v1.8.0*
     output: "audit_report_content"
     timeout: 300
     on_error: "fail"
