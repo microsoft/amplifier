@@ -1356,6 +1356,52 @@ steps:
     on_error: "fail"
 
   # ==========================================================================
+  # STEP 10b: Write Dependabot Summary JSON (machine-readable rollup handoff)
+  # ==========================================================================
+  # The per-repo audit-report.md renders the full Dependabot table (Section 11),
+  # but the ecosystem-level rollup needs machine-readable numbers, not prose.
+  # This step writes a tiny dependabot.json next to audit-report.md in the same
+  # per-repo output dir that ecosystem-audit-batch.yaml's flush-batch-findings
+  # step already reads from. flush-batch-findings picks up these fields and
+  # embeds them in the per-repo JSONL line so they aggregate to the top-level
+  # report. Defensive: any missing/errored field defaults to 0 / "pass".
+  - id: "write-dependabot-summary"
+    type: "bash"
+    command: |
+      set -euo pipefail
+      TARGET_DIR="{{working_dir}}/{{repo_name}}"
+      mkdir -p "$TARGET_DIR"
+
+      # Capture the dependabot check output (parsed JSON object) to a temp file.
+      cat << 'DEPENDABOT_JSON_EOF' > /tmp/dependabot_$$.json
+      {{dependabot_check}}
+      DEPENDABOT_JSON_EOF
+
+      # Extract the three machine-readable fields the ecosystem rollup needs,
+      # defaulting safely if the check errored or produced no object.
+      COUNT=$(jq -r '.count // 0' /tmp/dependabot_$$.json 2>/dev/null || echo 0)
+      SEC=$(jq -r '.security_count // 0' /tmp/dependabot_$$.json 2>/dev/null || echo 0)
+      SEV=$(jq -r '.severity // "pass"' /tmp/dependabot_$$.json 2>/dev/null || echo "pass")
+      rm -f /tmp/dependabot_$$.json
+
+      # Guard against non-numeric / empty values before serialising.
+      [[ "$COUNT" =~ ^[0-9]+$ ]] || COUNT=0
+      [[ "$SEC" =~ ^[0-9]+$ ]] || SEC=0
+      [ -n "$SEV" ] || SEV="pass"
+
+      jq -n \
+        --argjson count "$COUNT" \
+        --argjson security_count "$SEC" \
+        --arg severity "$SEV" \
+        '{dependabot_count:$count, dependabot_security_count:$security_count, dependabot_severity:$severity}' \
+        > "$TARGET_DIR/dependabot.json"
+
+      echo "Dependabot summary written: $TARGET_DIR/dependabot.json (count=$COUNT security=$SEC severity=$SEV)"
+    output: "dependabot_summary_write_result"
+    timeout: 30
+    on_error: "continue"
+
+  # ==========================================================================
   # STEP 11: Prepare Fix PR (Conditional)
   # ==========================================================================
   - id: "prepare-fixes"
