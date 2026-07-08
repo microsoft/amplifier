@@ -1,6 +1,6 @@
 name: "amplifier-ecosystem-audit"
-description: "Audit all Amplifier ecosystem repositories (public and private) in the Microsoft GitHub organization for compliance. Uses a batched architecture (configurable batch_size, default 25) with public/private separation; scales past 100 repos and supports the audit_visibility filter."
-version: "2.0.0"
+description: "Audit all Amplifier ecosystem repositories (public and private) in the Microsoft GitHub organization for compliance. Uses a batched architecture (configurable batch_size, default 25) with public/private separation; scales past 100 repos and supports the audit_visibility filter. Aggregates per-repo Dependabot open-PR findings to the top-level report as always-reported warnings."
+version: "2.1.0"
 author: "Amplifier Team"
 tags: ["audit", "compliance", "github", "amplifier", "ecosystem", "multi-repo"]
 
@@ -602,13 +602,19 @@ stages:
           PUBLIC_TOTAL=0
           PRIVATE_TOTAL=0
 
+          # Dependabot rollup counters (advisory warnings; never gate the audit)
+          DEP_TOTAL=0
+          DEP_SEC_TOTAL=0
+          DEP_REPOS_AFFECTED=0
+
           # Per-status repo lists (build as JSON arrays via jq)
           REPOS_PASS_TMP=$(mktemp)
           REPOS_ATTENTION_TMP=$(mktemp)
           REPOS_CRITICAL_TMP=$(mktemp)
           PUBLIC_REPOS_TMP=$(mktemp)
           PRIVATE_REPOS_TMP=$(mktemp)
-          trap 'rm -f "$REPOS_PASS_TMP" "$REPOS_ATTENTION_TMP" "$REPOS_CRITICAL_TMP" "$PUBLIC_REPOS_TMP" "$PRIVATE_REPOS_TMP"' EXIT
+          DEP_PER_REPO_TMP=$(mktemp)
+          trap 'rm -f "$REPOS_PASS_TMP" "$REPOS_ATTENTION_TMP" "$REPOS_CRITICAL_TMP" "$PUBLIC_REPOS_TMP" "$PRIVATE_REPOS_TMP" "$DEP_PER_REPO_TMP"' EXIT
 
           # Walk every JSONL findings file (one per batch).
           # Each line: {repo, owner, status, visibility, batch_id}
@@ -619,6 +625,24 @@ stages:
               REPO=$(echo "$line" | jq -r '.repo')
               STATUS=$(echo "$line" | jq -r '.status')
               VISIBILITY=$(echo "$line" | jq -r '.visibility')
+
+              # Dependabot fields — default to 0 if the batch flush predates this
+              # schema or the field is absent, so aggregation never breaks.
+              DEP_COUNT=$(echo "$line" | jq -r '.dependabot_count // 0')
+              DEP_SEC=$(echo "$line" | jq -r '.dependabot_security_count // 0')
+              [[ "$DEP_COUNT" =~ ^[0-9]+$ ]] || DEP_COUNT=0
+              [[ "$DEP_SEC" =~ ^[0-9]+$ ]] || DEP_SEC=0
+              DEP_TOTAL=$((DEP_TOTAL + DEP_COUNT))
+              DEP_SEC_TOTAL=$((DEP_SEC_TOTAL + DEP_SEC))
+              if [ "$DEP_COUNT" -gt 0 ]; then
+                DEP_REPOS_AFFECTED=$((DEP_REPOS_AFFECTED + 1))
+                jq -nc \
+                  --arg repo "$REPO" \
+                  --argjson count "$DEP_COUNT" \
+                  --argjson security_count "$DEP_SEC" \
+                  '{repo: $repo, count: $count, security_count: $security_count}' \
+                  >> "$DEP_PER_REPO_TMP"
+              fi
 
               TOTAL=$((TOTAL + 1))
 
@@ -663,6 +687,13 @@ stages:
           PUBLIC_REPOS=$(jq_array_from_lines "$PUBLIC_REPOS_TMP")
           PRIVATE_REPOS=$(jq_array_from_lines "$PRIVATE_REPOS_TMP")
 
+          # Dependabot per-repo list, sorted by open count descending.
+          if [ -s "$DEP_PER_REPO_TMP" ]; then
+            DEP_PER_REPO=$(jq -s -c 'sort_by(-.count)' "$DEP_PER_REPO_TMP")
+          else
+            DEP_PER_REPO="[]"
+          fi
+
           jq -n \
             --argjson total "$TOTAL" \
             --argjson pass "$PASS" \
@@ -675,6 +706,10 @@ stages:
             --argjson repos_critical "$REPOS_CRITICAL" \
             --argjson public_repos "$PUBLIC_REPOS" \
             --argjson private_repos "$PRIVATE_REPOS" \
+            --argjson dep_total "$DEP_TOTAL" \
+            --argjson dep_sec_total "$DEP_SEC_TOTAL" \
+            --argjson dep_repos_affected "$DEP_REPOS_AFFECTED" \
+            --argjson dep_per_repo "$DEP_PER_REPO" \
             '{
               total_repos: $total,
               by_status: {
@@ -690,7 +725,13 @@ stages:
               repos_needing_attention: $repos_attention,
               repos_critical: $repos_critical,
               public_repos: $public_repos,
-              private_repos: $private_repos
+              private_repos: $private_repos,
+              dependabot: {
+                total_prs: $dep_total,
+                total_security_prs: $dep_sec_total,
+                repos_affected: $dep_repos_affected,
+                per_repo: $dep_per_repo
+              }
             }'
         output: "aggregate_data"
         timeout: 120
@@ -727,6 +768,10 @@ stages:
           | NEEDS ATTENTION | N | X% |
           | CRITICAL | N | X% |
           
+          **Dependabot**: [From aggregate_data.dependabot. If total_prs > 0, write
+          "N open PRs across M repos (S security-flagged) — WARNING". If total_prs is 0,
+          write "none open — OK". This line is mandatory and must always be present.]
+          
           **Key Findings**:
           - [Top 3-5 most important findings across ecosystem]
           
@@ -759,6 +804,34 @@ stages:
           ### Critical
           [List private repos with critical issues]
           
+          ## Dependabot Pull Requests (Warnings)
+          
+          ALWAYS render this section, even when there are zero open Dependabot PRs.
+          These are ADVISORY WARNINGS — never CRITICAL, never PASS — and they do NOT
+          fail the audit or change any repo's overall status. Source all numbers from
+          the `dependabot` object in aggregate_data.
+          
+          If `dependabot.total_prs` is 0, render exactly this line and nothing else in
+          this section:
+          
+          > No open Dependabot PRs across the ecosystem.
+          
+          Otherwise, render the totals:
+          
+          - **Total open Dependabot PRs**: [dependabot.total_prs]
+          - **Security-flagged**: [dependabot.total_security_prs]
+          - **Repos affected**: [dependabot.repos_affected]
+          
+          Then a table of EVERY affected repo, using `dependabot.per_repo` (already
+          sorted by open count descending):
+          
+          | Repository | Open Dependabot PRs | Security-flagged |
+          |------------|---------------------|------------------|
+          | repo-name | N | N |
+          
+          Label all of the above explicitly as WARNINGS. The security-flagged subset
+          deserves prompt human attention, but nothing here blocks the audit.
+          
           ## Repository Details
           
           For each repository, summarize:
@@ -785,7 +858,7 @@ stages:
           3. [Long-term governance recommendations]
           
           ---
-          *Generated by Amplifier ecosystem-audit recipe v2.0.0*
+          *Generated by Amplifier ecosystem-audit recipe v2.1.0*
         output: "ecosystem_report_content"
         timeout: 600
         on_error: "fail"
@@ -846,7 +919,8 @@ stages:
             "    Private: \(.by_visibility.private // 0)",
             "  Passing: \(.by_status.pass)",
             "  Needs attention: \(.by_status.needs_attention)", 
-            "  Critical: \(.by_status.critical)"
+            "  Critical: \(.by_status.critical)",
+            "  Dependabot open PRs: \(.dependabot.total_prs // 0) across \(.dependabot.repos_affected // 0) repos (\(.dependabot.total_security_prs // 0) security-flagged) [WARNING]"
           ' || echo "  (stats not available)"
           
           echo ""

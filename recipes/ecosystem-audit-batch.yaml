@@ -1,6 +1,6 @@
 name: "ecosystem-audit-batch"
 description: "Sub-recipe for amplifier-ecosystem-audit.yaml. Audits the repos in one batch file, then flushes per-repo findings as JSONL. Visibility-agnostic — reads visibility from the batch file."
-version: "1.0.0"
+version: "1.1.0"
 author: "Amplifier Team"
 tags: ["audit", "compliance", "github", "amplifier", "ecosystem", "batch"]
 
@@ -117,13 +117,32 @@ stages:
               STATUS="MISSING"
             fi
 
+            # Read the machine-readable Dependabot summary written by repo-audit's
+            # write-dependabot-summary step (STEP 10b). Defaults keep the flush
+            # resilient if the file is absent (repo audit skipped/errored) or the
+            # fields are malformed.
+            DEPENDABOT_JSON="$REPORTS_DIR/$REPO_NAME/dependabot.json"
+            if [ -f "$DEPENDABOT_JSON" ]; then
+              DEP_COUNT=$(jq -r '.dependabot_count // 0' "$DEPENDABOT_JSON" 2>/dev/null || echo 0)
+              DEP_SEC=$(jq -r '.dependabot_security_count // 0' "$DEPENDABOT_JSON" 2>/dev/null || echo 0)
+              DEP_SEV=$(jq -r '.dependabot_severity // "pass"' "$DEPENDABOT_JSON" 2>/dev/null || echo "pass")
+            else
+              DEP_COUNT=0; DEP_SEC=0; DEP_SEV="pass"
+            fi
+            [[ "$DEP_COUNT" =~ ^[0-9]+$ ]] || DEP_COUNT=0
+            [[ "$DEP_SEC" =~ ^[0-9]+$ ]] || DEP_SEC=0
+            [ -n "$DEP_SEV" ] || DEP_SEV="pass"
+
             jq -nc \
               --arg repo "$REPO_NAME" \
               --arg owner "$REPO_OWNER" \
               --arg status "$STATUS" \
               --arg vis "$VISIBILITY" \
               --arg batch "$BATCH_ID" \
-              '{repo: $repo, owner: $owner, status: $status, visibility: $vis, batch_id: $batch}' \
+              --argjson dependabot_count "$DEP_COUNT" \
+              --argjson dependabot_security_count "$DEP_SEC" \
+              --arg dependabot_severity "$DEP_SEV" \
+              '{repo: $repo, owner: $owner, status: $status, visibility: $vis, batch_id: $batch, dependabot_count: $dependabot_count, dependabot_security_count: $dependabot_security_count, dependabot_severity: $dependabot_severity}' \
               >> "$OUT"
           done
 
