@@ -48,7 +48,6 @@ These are the canonical documentation and learning sites for the Amplifier ecosy
 
 | Component | Description | Repository |
 |-----------|-------------|------------|
-| **amplifier-app-learn** | Interactive learning curriculum for Amplifier — six narrative levels, hands-on approach guides, validated architecture diagrams, and a chat assistant with live DOT rendering. React 19 + Vite SPA. | [amplifier-app-learn](https://github.com/michaeljabbour/amplifier-app-learn) |
 | **amplifier-docs** | Documentation for the Amplifier project | [amplifier-docs](https://github.com/microsoft/amplifier-docs) |
 
 ---
