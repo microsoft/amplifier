@@ -317,6 +317,28 @@ steps:
     timeout: 60
     on_error: "continue"
 
+  # `check-existing-pr` only runs when create_fix_pr is true, so on an audit-only
+  # run it never sets `existing_pr_check`. Variable substitution happens BEFORE a
+  # step's condition is evaluated, so the downstream steps that reference
+  # {{existing_pr_check}} blew up with "Undefined variable" even though their own
+  # conditions would have skipped them. Provide the default explicitly -- same
+  # pattern as validate-bundle-repo's set-default-build-check.
+  - id: "set-default-existing-pr-check"
+    condition: "{{create_fix_pr}} != 'true'"
+    type: "bash"
+    parse_json: true
+    command: |
+      jq -n '{
+        existing_pr: false,
+        pr_url: null,
+        pr_number: null,
+        pr_title: null,
+        message: "PR creation not requested - existing-PR check skipped"
+      }'
+    output: "existing_pr_check"
+    timeout: 10
+    on_error: "fail"
+
   - id: "report-existing-pr"
     condition: "{{create_fix_pr}} == 'true'"
     type: "bash"
