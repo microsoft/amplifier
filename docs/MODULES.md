@@ -115,6 +115,7 @@ Composable configuration packages that combine providers, behaviors, agents, and
 | **typescript-dev** | TypeScript development tools (linting, type checking, LSP) | [amplifier-bundle-typescript-dev](https://github.com/microsoft/amplifier-bundle-typescript-dev) |
 | **webllm** | WebLLM with WebGPU for running amplifier-core in browsers | [amplifier-bundle-webllm](https://github.com/microsoft/amplifier-bundle-webllm) |
 | **webruntime** | Web runtime for browser-based Amplifier | [amplifier-bundle-webruntime](https://github.com/microsoft/amplifier-bundle-webruntime) |
+| **work-tracker** | Multi-agent work coordination — atomic claiming so exactly one agent ever holds an item, PID-bound custody that survives long autonomous and long idle holds, feedback routed back to whoever reported it, and an executable contract suite that makes storage-layer churn fail loudly. Built on Beads. | [amplifier-work-tracker](https://github.com/microsoft/amplifier-work-tracker) |
 
 **Usage**: Bundles are loaded via the `amplifier bundle` commands:
 
