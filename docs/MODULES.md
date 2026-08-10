@@ -37,6 +37,7 @@ User-facing applications that compose libraries and modules.
 | **amplifier-voice** | Voice plugin for amplifierd - WebRTC voice interface using the OpenAI Realtime API, standalone or as a plugin | [amplifier-voice](https://github.com/microsoft/amplifier-voice) |
 | **amplifier-app-aiuser** | Reusable "AI User" that drives a lower-level AI session toward a goal across multiple turns given a persona, scenario, and invocation guide, then reports a verdict — built to be embedded for testing and evaluation. | [amplifier-app-aiuser](https://github.com/microsoft/amplifier-app-aiuser) |
 | **amplifier-app-openclaw** | OpenClaw skill for the Amplifier project | [amplifier-app-openclaw](https://github.com/microsoft/amplifier-app-openclaw) |
+| **amplifier-browser-bridge** | Lets an agent running on one machine drive the user's real, logged-in Microsoft Edge browser on other devices — desktop or Android — over their own Tailscale network, with no third-party relay | [amplifier-browser-bridge](https://github.com/microsoft/amplifier-browser-bridge) |
 
 **Note**: When you install `amplifier`, you get the amplifier-app-cli as the executable application. `amplifierd` is a separate daemon that exposes Amplifier capabilities over HTTP, and `amplifier-chat` and `amplifier-voice` are plugins that extend it with web-based chat and voice interfaces.
 
