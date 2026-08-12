@@ -878,14 +878,22 @@ steps:
       # Without a ruleset there are no bypass actors to evaluate, and the
       # check would otherwise emit a misleading "no ruleset configured"
       # warning that adds noise without surfacing actionable information.
-      # Emit a single "pass" verdict noting the skip and exit early.
+      # Emit a "not_applicable" verdict noting the skip and exit early.
+      # NOTE: this must never be "pass" -- the check was never evaluated,
+      # so reporting "pass" would make an unevaluated repo look clean
+      # (a false negative if the repo genuinely has zero bypass actors).
       if [ "$IS_PRIVATE" = "true" ]; then
         jq -n --arg branch "$DEFAULT_BRANCH" \
-          '{has_bypass: null, severity: "pass", finding: ("Bypass actors check skipped: private repo (canonical ruleset is not applied to private repos per policy)")}'
+          '{has_bypass: null, severity: "not_applicable", finding: ("Not applicable: bypass actors check skipped for private repo (canonical ruleset is not applied to private repos per policy)")}'
         exit 0
       fi
 
       REPO="{{repo_owner}}/{{repo_name}}"
+
+      # GitHub redacts ruleset bypass_actors to null for non-admin viewers.
+      # Probe our own access level so we can distinguish "genuinely empty"
+      # from "hidden from us" and avoid reporting a false positive.
+      HAS_ADMIN=$(gh api "repos/$REPO" --jq '.permissions.admin // false' 2>/dev/null || echo "false")
 
       # Enumerate active branch rulesets and check bypass_actors on those that target the default branch.
       RULESETS_RAW=$(gh api "repos/$REPO/rulesets" 2>&1 || echo "FETCH_FAILED")
@@ -934,7 +942,10 @@ steps:
             '{has_bypass: true, severity: "pass", finding: ("Bypass actors configured on " + $branch + " via repository ruleset (" + $count + " bypass actors with bypass_mode=pull_request) - maintainers/owners can self-merge")}'
         fi
       elif [ "$RULESET_PRESENT" = "true" ]; then
-        if [ "{{repo_owner}}" = "microsoft" ]; then
+        if [ "$HAS_ADMIN" != "true" ]; then
+          jq -n --arg branch "$DEFAULT_BRANCH" \
+            '{has_bypass: null, severity: "warning", finding: ("Bypass actors on " + $branch + " are INDETERMINATE - GitHub redacts the bypass_actors field for viewers without admin on this repository, so an empty result cannot be distinguished from a genuinely unconfigured one. Re-run this check with admin access to confirm. Not treated as a finding.")}'
+        elif [ "{{repo_owner}}" = "microsoft" ]; then
           jq -n --arg branch "$DEFAULT_BRANCH" \
             '{has_bypass: false, severity: "error", finding: ("Bypass actors not configured on " + $branch + ". Canonical pattern for microsoft/amplifier-* repos: {actor_id: 5, actor_type: RepositoryRole, bypass_mode: pull_request} (Admin role can bypass review on PR merge); {actor_id: 16902513, actor_type: Team, bypass_mode: pull_request} (octo-made-amplifier-maintainers Team can bypass review on PR merge). Configure both on the default-branch ruleset to match org-wide convention.")}'
         else
@@ -1246,6 +1257,13 @@ steps:
   # ==========================================================================
   # STEP 9: Generate Audit Report (LLM generates content only)
   # ==========================================================================
+  # NOTE: Boilerplate match/status verdicts (CODE_OF_CONDUCT.md, SECURITY.md,
+  # SUPPORT.md, LICENSE) are computed deterministically in bash by the
+  # compare-boilerplate step above (byte-for-byte, whitespace-normalized
+  # diff -- not LLM judgment) and must be reported verbatim by the prompt
+  # below. A prior version of this recipe let this agent judge file
+  # equivalence itself, which hallucinated "Mismatch" findings on files
+  # that were byte-identical to the reference. See prompt instructions.
   - id: "generate-report"
     agent: "foundation:zen-architect"
     mode: "ANALYZE"
@@ -1264,6 +1282,15 @@ steps:
       
       ### 2. Boilerplate Files Check
       {{boilerplate_check}}
+      
+      IMPORTANT: The match/status/severity values above were computed by an
+      exact byte-for-byte (whitespace-normalized) diff comparison in bash,
+      not by you. Report them VERBATIM in the summary table below -- do NOT
+      open, re-read, or re-compare CODE_OF_CONDUCT.md, SECURITY.md,
+      SUPPORT.md, or LICENSE yourself, and do NOT second-guess or override
+      this computed verdict. A prior version of this recipe let the LLM
+      judge file equivalence itself and it hallucinated "Mismatch" results
+      on files that were byte-identical to the reference.
       
       ### 3. README.md Sections Check
       {{readme_check}}
