@@ -261,17 +261,31 @@ stages:
         parse_json: true
         command: |
           MAX_REPOS={{max_repos}}
+          ALL_REPOS_FILE="{{working_dir}}/all_repos.json"
           
-          # Debug: Check what we received
-          echo "DEBUG: all_repos variable length: ${#ALL_REPOS_RAW}" >&2
+          # Read the repo list from disk. The preceding merge-repo-lists step
+          # already wrote this file, so there is no need to interpolate the
+          # JSON blob into the shell -- and doing so is unsafe. Repo
+          # descriptions are free text from the GitHub API and routinely
+          # contain apostrophes, which terminate a single-quoted shell string
+          # and break the surrounding command substitution.
+          if [ ! -s "$ALL_REPOS_FILE" ]; then
+            echo "ERROR: missing or empty $ALL_REPOS_FILE" >&2
+            jq -n --argjson max "$MAX_REPOS" '{
+              exceeded: false,
+              total: 0,
+              max: $max,
+              error: "No repositories found"
+            }'
+            exit 1
+          fi
           
-          # Get total from all_repos - handle empty/malformed gracefully
-          TOTAL=$(echo '{{all_repos}}' | jq -r '.total // 0' 2>/dev/null || echo "0")
+          TOTAL=$(jq -r '.total // 0' "$ALL_REPOS_FILE" 2>/dev/null || echo "0")
           
           # Validate TOTAL is a number
           if ! [[ "$TOTAL" =~ ^[0-9]+$ ]]; then
-            echo "ERROR: Could not parse repo count from all_repos. Got: '$TOTAL'" >&2
-            echo "all_repos content preview: $(echo '{{all_repos}}' | head -c 200)" >&2
+            echo "ERROR: Could not parse repo count from $ALL_REPOS_FILE. Got: '$TOTAL'" >&2
+            head -c 200 "$ALL_REPOS_FILE" >&2
             TOTAL=0
           fi
           
