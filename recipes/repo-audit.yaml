@@ -384,13 +384,13 @@ steps:
       TARGET_DIR="{{working_dir}}/{{repo_name}}"
       TARGET_README="$TARGET_DIR/README.md"
       REF_README="$REF_DIR/README.md"
-      
+
       # Check if README exists
       if [ ! -f "$TARGET_README" ]; then
         echo '{"readme_exists": false, "contributing_section": false, "trademarks_section": false, "contributing_verbatim": false, "trademarks_verbatim": false, "severity": "error", "finding": "README.md is missing"}'
         exit 0
       fi
-      
+
       # Sanity check the reference README before relying on it. If the
       # reference fetch failed or returned partial content, downstream
       # comparisons would silently mis-report "content differs" when the
@@ -403,128 +403,203 @@ steps:
         REF_README_BYTES=$(wc -c < "$REF_README" | tr -d ' ')
       fi
 
-      # Get line numbers for sections in reference
-      CONTRIB_START=$(grep -n "^## Contributing" "$REF_README" | head -1 | cut -d: -f1 || echo "")
-      TRADE_START=$(grep -n "^## Trademarks" "$REF_README" | head -1 | cut -d: -f1 || echo "")
-
-      # Reference must have both Contributing and Trademarks headings to be
+      # Reference must have both canonical headings, byte-exact, to be
       # usable as a comparison source. If either is missing, treat the
       # reference as broken rather than letting comparisons silently fail.
-      if [ -z "$CONTRIB_START" ] || [ -z "$TRADE_START" ]; then
+      CONTRIB_REF_LINE=$(grep -Fxn -- "## Contributing" "$REF_README" 2>/dev/null | head -1 | cut -d: -f1)
+      TRADE_REF_LINE=$(grep -Fxn -- "## Trademarks" "$REF_README" 2>/dev/null | head -1 | cut -d: -f1)
+      if [ -z "$CONTRIB_REF_LINE" ] || [ -z "$TRADE_REF_LINE" ]; then
         REF_README_OK="false"
       fi
 
-      # Check if target has the sections
-      HAS_CONTRIB=$(grep -c "^## Contributing" "$TARGET_README" 2>/dev/null || echo "0")
-      HAS_TRADE=$(grep -c "^## Trademarks" "$TARGET_README" 2>/dev/null || echo "0")
+      # classify_heading: locate a section by NAME (e.g. "Contributing") in a
+      # given file and classify it into one of three states:
+      #   conformant    - a line byte-exactly equal to the canonical heading exists
+      #   nonconformant - a heading (levels 1-4) exists whose tokenized text
+      #                   contains the section name as a whole word, but the
+      #                   line is NOT byte-exact (wrong level, emoji, combined
+      #                   heading like "## Contributing · Security · Support")
+      #   absent        - no heading at any level matches at all
+      #
+      # IMPORTANT: the tokenized/fuzzy scan exists ONLY to distinguish
+      # "missing entirely" from "present with wrong heading" for reporting.
+      # It NEVER promotes a non-exact heading to a pass -- see evaluate_section.
+      classify_heading() {
+        local file="$1" name="$2" canonical="$3"
+        HSTATE="absent"
+        HLINE=""
+        HTEXT=""
 
-      # Three-state match flags: "true" = compared and identical,
-      # "false" = compared and differ, "unknown" = comparison could not
-      # be performed (missing reference, missing section, extraction failed).
-      # Defaulting to "unknown" prevents extraction failures from being
-      # silently reported as content mismatches.
-      CONTRIB_MATCH="unknown"
-      TRADE_MATCH="unknown"
-
-      # Compare Contributing sections
-      if [ "$REF_README_OK" = "true" ] && [ "$HAS_CONTRIB" -gt 0 ]; then
-        sed -n "${CONTRIB_START},$((TRADE_START-1))p" "$REF_README" > /tmp/ref_contrib.txt
-
-        TARGET_CONTRIB_START=$(grep -n "^## Contributing" "$TARGET_README" | head -1 | cut -d: -f1)
-        TARGET_NEXT=$(tail -n +$((TARGET_CONTRIB_START+1)) "$TARGET_README" | grep -n "^## " | head -1 | cut -d: -f1 || echo "")
-
-        if [ -n "$TARGET_NEXT" ]; then
-          sed -n "${TARGET_CONTRIB_START},$((TARGET_CONTRIB_START+TARGET_NEXT-1))p" "$TARGET_README" > /tmp/target_contrib.txt
-        else
-          tail -n +$TARGET_CONTRIB_START "$TARGET_README" > /tmp/target_contrib.txt
+        local exact_line
+        exact_line=$(grep -Fxn -- "$canonical" "$file" 2>/dev/null | head -1 | cut -d: -f1)
+        if [ -n "$exact_line" ]; then
+          HSTATE="conformant"
+          HLINE="$exact_line"
+          return 0
         fi
 
-        # Only declare match/mismatch if both extracted files are non-empty.
-        # An empty extraction means something went wrong (race, partial fetch,
-        # broken sed, etc.) -- leave CONTRIB_MATCH="unknown" so the recipe
-        # surfaces the real condition.
-        if [ -s /tmp/ref_contrib.txt ] && [ -s /tmp/target_contrib.txt ]; then
-          if diff -q <(awk '{sub(/[[:space:]]+$/,""); print}' /tmp/ref_contrib.txt) <(awk '{sub(/[[:space:]]+$/,""); print}' /tmp/target_contrib.txt) > /dev/null 2>&1; then
-            CONTRIB_MATCH="true"
-          else
-            CONTRIB_MATCH="false"
+        local line_num line_text word_list
+        while IFS=: read -r line_num line_text; do
+          word_list=$(printf '%s' "$line_text" | sed -E 's/^#{1,4}[[:space:]]+//' | tr -c '[:alpha:]' '\n' | grep -v '^$')
+          if printf '%s\n' "$word_list" | grep -iFxq -- "$name"; then
+            HSTATE="nonconformant"
+            HLINE="$line_num"
+            HTEXT="$line_text"
+            return 0
           fi
-        fi
-      fi
+        done < <(grep -nE "^#{1,4}[[:space:]]" "$file" 2>/dev/null)
 
-      # Compare Trademarks sections
-      # Bounded extraction (next ## heading or EOF) mirrors the Contributing
-      # logic above, plus whitespace-normalized diff to handle EOF newline
-      # differences between the reference and target READMEs.
-      if [ "$REF_README_OK" = "true" ] && [ "$HAS_TRADE" -gt 0 ]; then
-        # Reference: Trademarks section to next ## heading or EOF
-        REF_TRADE_NEXT=$(tail -n +$((TRADE_START+1)) "$REF_README" | grep -n "^## " | head -1 | cut -d: -f1 || echo "")
-        if [ -n "$REF_TRADE_NEXT" ]; then
-          sed -n "${TRADE_START},$((TRADE_START+REF_TRADE_NEXT-1))p" "$REF_README" > /tmp/ref_trade.txt
+        HSTATE="absent"
+        return 0
+      }
+
+      # extract_section_body: given a heading line number, return every line
+      # from that heading up to (but not including) the next "## " heading,
+      # or to EOF if there is none.
+      extract_section_body() {
+        local file="$1" start="$2"
+        local next
+        next=$(tail -n +$((start + 1)) "$file" | grep -n "^## " | head -1 | cut -d: -f1 || echo "")
+        if [ -n "$next" ]; then
+          sed -n "${start},$((start + next - 1))p" "$file"
         else
-          tail -n +$TRADE_START "$REF_README" > /tmp/ref_trade.txt
+          tail -n +"$start" "$file"
+        fi
+      }
+
+      # canonical_lines_missing: containment check, not equality. Every
+      # non-empty, whitespace-normalized line of the CANONICAL body must
+      # appear somewhere in the TARGET body; extra target lines are fine.
+      # Blockquote/admonition lines (e.g. GitHub "> [!NOTE]" asides) are
+      # dropped from the CANONICAL side only, since those are repo-instance
+      # commentary (e.g. amplifier-core's own contribution-status notice),
+      # not the legally-mandated boilerplate every repo must carry verbatim.
+      canonical_lines_missing() {
+        local canonical_file="$1" target_file="$2"
+
+        if [ ! -s "$canonical_file" ] || [ ! -s "$target_file" ]; then
+          echo "unknown"
+          return 0
         fi
 
-        # Target: Trademarks section to next ## heading or EOF
-        TARGET_TRADE_START=$(grep -n "^## Trademarks" "$TARGET_README" | head -1 | cut -d: -f1)
-        TARGET_TRADE_NEXT=$(tail -n +$((TARGET_TRADE_START+1)) "$TARGET_README" | grep -n "^## " | head -1 | cut -d: -f1 || echo "")
-        if [ -n "$TARGET_TRADE_NEXT" ]; then
-          sed -n "${TARGET_TRADE_START},$((TARGET_TRADE_START+TARGET_TRADE_NEXT-1))p" "$TARGET_README" > /tmp/target_trade.txt
+        awk '{ gsub(/[ \t]+/, " "); sub(/^ /, ""); sub(/ $/, ""); if (length($0) > 0 && $0 !~ /^>/) print }' "$canonical_file" > /tmp/_canon_norm_$$.txt
+        awk '{ gsub(/[ \t]+/, " "); sub(/^ /, ""); sub(/ $/, ""); if (length($0) > 0) print }' "$target_file" > /tmp/_target_norm_$$.txt
+
+        if [ ! -s /tmp/_canon_norm_$$.txt ] || [ ! -s /tmp/_target_norm_$$.txt ]; then
+          rm -f /tmp/_canon_norm_$$.txt /tmp/_target_norm_$$.txt
+          echo "unknown"
+          return 0
+        fi
+
+        local missing
+        missing=$(grep -Fxvf /tmp/_target_norm_$$.txt /tmp/_canon_norm_$$.txt)
+        rm -f /tmp/_canon_norm_$$.txt /tmp/_target_norm_$$.txt
+        if [ -n "$missing" ]; then
+          echo "1"
         else
-          tail -n +$TARGET_TRADE_START "$TARGET_README" > /tmp/target_trade.txt
+          echo "0"
+        fi
+      }
+
+      # evaluate_section: run the three-state classification for one section
+      # (Contributing or Trademarks) and set <TAG>_SECTION / <TAG>_VERBATIM /
+      # <TAG>_SEVERITY / <TAG>_FINDING accordingly.
+      #   absent        -> error, "is missing required section"
+      #   nonconformant -> error, states both found heading and required heading
+      #                    (this is the fix for the false negative in BUG A:
+      #                    previously a literal grep on "^## Contributing"
+      #                    reported this exact case as "missing")
+      #   conformant    -> compare body by CONTAINMENT (fix for BUG B: previously
+      #                    exact `diff -q` equality flagged compliant READMEs
+      #                    with extra repo-specific content as "differs")
+      evaluate_section() {
+        local tag="$1" name="$2" canonical="$3"
+
+        classify_heading "$TARGET_README" "$name" "$canonical"
+        local state="$HSTATE" line="$HLINE" text="$HTEXT"
+
+        eval "${tag}_SECTION=false"
+        eval "${tag}_VERBATIM=false"
+        eval "${tag}_SEVERITY=pass"
+        eval "${tag}_FINDING=''"
+
+        if [ "$state" = "absent" ]; then
+          eval "${tag}_SEVERITY=error"
+          eval "${tag}_FINDING=\"README.md is missing required section: ${canonical}\""
+          return 0
         fi
 
-        # Only declare match/mismatch if both extracted files are non-empty.
-        if [ -s /tmp/ref_trade.txt ] && [ -s /tmp/target_trade.txt ]; then
-          if diff -q <(awk '{sub(/[[:space:]]+$/,""); print}' /tmp/ref_trade.txt) <(awk '{sub(/[[:space:]]+$/,""); print}' /tmp/target_trade.txt) > /dev/null 2>&1; then
-            TRADE_MATCH="true"
-          else
-            TRADE_MATCH="false"
-          fi
-        fi
-      fi
+        eval "${tag}_SECTION=true"
 
-      # Determine overall severity.
-      # Order matters: missing-section is a real error, extraction-failure
-      # is a transient warning that should be retried, and only an actual
-      # diff mismatch warrants the "content differs" finding. Previously the
-      # recipe initialized *_MATCH to "false" and collapsed all three
-      # conditions into the single "content differs" message, producing
-      # false positives whenever extraction silently failed.
-      if [ "$HAS_CONTRIB" -eq 0 ] || [ "$HAS_TRADE" -eq 0 ]; then
-        SEVERITY="error"
-        FINDING="README.md is missing required sections"
-      elif [ "$CONTRIB_MATCH" = "unknown" ] || [ "$TRADE_MATCH" = "unknown" ]; then
-        SEVERITY="warning"
-        # Distinguish "reference unavailable" from "extraction failed" so the
-        # report points to the right remediation (re-fetch reference vs retry).
-        if [ "$REF_README_OK" = "false" ]; then
-          FINDING="README.md comparison could not complete (reference README missing or invalid; ref bytes=${REF_README_BYTES}); retry recommended"
+        if [ "$state" = "nonconformant" ]; then
+          eval "${tag}_SEVERITY=error"
+          eval "${tag}_FINDING=\"README.md has non-conformant heading: found '${text}', requires '${canonical}'\""
+          return 0
+        fi
+
+        if [ "$REF_README_OK" != "true" ]; then
+          eval "${tag}_SEVERITY=warning"
+          eval "${tag}_FINDING=\"README.md comparison could not complete (reference README missing or invalid; ref bytes=${REF_README_BYTES}); retry recommended\""
+          return 0
+        fi
+
+        local ref_line
+        ref_line=$(grep -Fxn -- "$canonical" "$REF_README" | head -1 | cut -d: -f1)
+
+        extract_section_body "$REF_README" "$ref_line" > /tmp/_ref_body_$$.txt
+        extract_section_body "$TARGET_README" "$line" > /tmp/_target_body_$$.txt
+
+        local result
+        result=$(canonical_lines_missing /tmp/_ref_body_$$.txt /tmp/_target_body_$$.txt)
+        rm -f /tmp/_ref_body_$$.txt /tmp/_target_body_$$.txt
+
+        if [ "$result" = "unknown" ]; then
+          eval "${tag}_SEVERITY=warning"
+          eval "${tag}_FINDING=\"README.md comparison could not complete (section extraction yielded empty content); retry recommended\""
+        elif [ "$result" = "1" ]; then
+          eval "${tag}_SEVERITY=error"
+          eval "${tag}_VERBATIM=false"
+          eval "${tag}_FINDING=\"README.md '${canonical}' section is missing required canonical text\""
         else
-          FINDING="README.md comparison could not complete (section extraction yielded empty content); retry recommended"
+          eval "${tag}_SEVERITY=pass"
+          eval "${tag}_VERBATIM=true"
         fi
-      elif [ "$CONTRIB_MATCH" = "false" ] || [ "$TRADE_MATCH" = "false" ]; then
-        SEVERITY="warning"
-        FINDING="README.md sections exist but content differs from template"
-      else
-        SEVERITY="pass"
+      }
+
+      evaluate_section "CONTRIB" "Contributing" "## Contributing"
+      evaluate_section "TRADE" "Trademarks" "## Trademarks"
+
+      # Roll the two independent per-section evaluations up into one overall
+      # severity/finding. error beats warning beats pass; findings from every
+      # non-passing section are concatenated so nothing is silently dropped.
+      FINDINGS=()
+      SEVERITY="pass"
+      for tag in CONTRIB TRADE; do
+        sev_var="${tag}_SEVERITY"
+        finding_var="${tag}_FINDING"
+        sev="${!sev_var}"
+        finding="${!finding_var}"
+        if [ "$sev" = "error" ]; then
+          SEVERITY="error"
+          FINDINGS+=("$finding")
+        elif [ "$sev" = "warning" ] && [ "$SEVERITY" != "error" ]; then
+          SEVERITY="warning"
+          FINDINGS+=("$finding")
+        fi
+      done
+
+      if [ "$SEVERITY" = "pass" ]; then
         FINDING="README.md has correct Contributing and Trademarks sections"
+      else
+        FINDING=$(IFS='; '; echo "${FINDINGS[*]}")
       fi
 
-      # Map three-state match flags to booleans for the JSON contract.
-      # "unknown" surfaces as false in the *_verbatim fields (we cannot
-      # claim verbatim correctness without a successful comparison), but
-      # the severity/finding above carries the distinct signal so downstream
-      # consumers can see why.
-      CONTRIB_VERBATIM_BOOL=$([ "$CONTRIB_MATCH" = "true" ] && echo true || echo false)
-      TRADE_VERBATIM_BOOL=$([ "$TRADE_MATCH" = "true" ] && echo true || echo false)
-      
       jq -n \
         --argjson readme_exists true \
-        --argjson has_contrib "$([ "$HAS_CONTRIB" -gt 0 ] && echo true || echo false)" \
-        --argjson has_trade "$([ "$HAS_TRADE" -gt 0 ] && echo true || echo false)" \
-        --argjson contrib_match "$CONTRIB_VERBATIM_BOOL" \
-        --argjson trade_match "$TRADE_VERBATIM_BOOL" \
+        --argjson has_contrib "$CONTRIB_SECTION" \
+        --argjson has_trade "$TRADE_SECTION" \
+        --argjson contrib_match "$CONTRIB_VERBATIM" \
+        --argjson trade_match "$TRADE_VERBATIM" \
         --arg severity "$SEVERITY" \
         --arg finding "$FINDING" \
         '{
@@ -539,7 +614,6 @@ steps:
     output: "readme_check"
     timeout: 60
     on_error: "continue"
-
   # ==========================================================================
   # STEP 6b: Check if README Fix is Needed
   # ==========================================================================
@@ -630,25 +704,28 @@ steps:
       echo "Size: $(wc -c < "$FIXED_README") bytes, $(wc -l < "$FIXED_README") lines"
       echo ""
       
-      # Validate Contributing section exists
-      if grep -q "^## Contributing" "$FIXED_README"; then
+      # Validate Contributing section exists with the byte-exact canonical
+      # heading. Exact match (not a "^## Contributing" prefix scan) so a
+      # fix that lands emoji, wrong heading level, or a combined heading
+      # is caught here rather than silently passing validation.
+      if grep -Fxq -- "## Contributing" "$FIXED_README"; then
         echo "✓ Contributing section found"
       else
-        echo "✗ ERROR: Contributing section missing!"
+        echo "✗ ERROR: Contributing section missing or heading not exactly '## Contributing'!"
         exit 1
       fi
       
-      # Validate Trademarks section exists
-      if grep -q "^## Trademarks" "$FIXED_README"; then
+      # Validate Trademarks section exists with the byte-exact canonical heading.
+      if grep -Fxq -- "## Trademarks" "$FIXED_README"; then
         echo "✓ Trademarks section found"
       else
-        echo "✗ ERROR: Trademarks section missing!"
+        echo "✗ ERROR: Trademarks section missing or heading not exactly '## Trademarks'!"
         exit 1
       fi
       
       # Check that Contributing comes before Trademarks
-      CONTRIB_LINE=$(grep -n "^## Contributing" "$FIXED_README" | head -1 | cut -d: -f1)
-      TRADE_LINE=$(grep -n "^## Trademarks" "$FIXED_README" | head -1 | cut -d: -f1)
+      CONTRIB_LINE=$(grep -Fxn -- "## Contributing" "$FIXED_README" | head -1 | cut -d: -f1)
+      TRADE_LINE=$(grep -Fxn -- "## Trademarks" "$FIXED_README" | head -1 | cut -d: -f1)
       
       if [ "$CONTRIB_LINE" -lt "$TRADE_LINE" ]; then
         echo "✓ Section order correct (Contributing at line $CONTRIB_LINE, Trademarks at line $TRADE_LINE)"
