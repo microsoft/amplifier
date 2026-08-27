@@ -1,6 +1,6 @@
 name: "repo-audit"
 description: "Audit a single Amplifier ecosystem repository for compliance with Microsoft standards and Amplifier guidelines."
-version: "1.8.0"
+version: "1.9.0"
 author: "Amplifier Team"
 tags: ["audit", "compliance", "github", "amplifier"]
 
@@ -29,9 +29,21 @@ tags: ["audit", "compliance", "github", "amplifier"]
 #     "repo_name": "amplifier-app-transcribe"
 #   }'
 #
+#   # Audit AND apply the canonical branch-protection ruleset (audit-only is the
+#   # default). Only takes effect on microsoft/* PUBLIC repos where the branch
+#   # protection or bypass-actors check reported an error - e.g. migrating a
+#   # repo that was hand-remediated with classic branch protection (which blocks
+#   # even ruleset-bypass-capable maintainers) to the canonical repository
+#   # ruleset. See STEP "apply-protection-fix" below.
+#   amplifier recipes execute repo-audit.yaml --context '{
+#     "repo_name": "amplifier-bundle-dot-runner",
+#     "apply_fixes": "true"
+#   }'
+#
 # Requirements:
 #   - gh CLI installed and authenticated
 #   - Write access to the repo if create_fix_pr is "true"
+#   - Repo admin access (or equivalent) if apply_fixes is "true"
 
 recursion:
   max_depth: 2
@@ -52,6 +64,17 @@ context:
   # Dry-run mode: show what WOULD happen without actually creating PRs
   # When "true", prepares fixes and shows PR preview but doesn't push/create
   dry_run: "false"
+
+  # Whether to APPLY the canonical branch-protection ruleset when the
+  # branch-protection or bypass-actors checks reported an error (e.g. a repo
+  # hand-remediated with classic branch protection instead of the canonical
+  # ruleset - see NOTES-dot-runner-protection.md). DEFAULT IS "false"
+  # (audit-only, no changes). When "true", the "apply-protection-fix" step
+  # still only acts on microsoft/* PUBLIC repos that actually have an error
+  # finding to fix - every other repo/condition gets an explicit skip verdict,
+  # never a silent no-op. Use string "true"/"false" for condition compatibility,
+  # matching create_fix_pr/dry_run above.
+  apply_fixes: "false"
   
   # Working directory for intermediate files
   working_dir: "./ai_working/repo-audit"
@@ -853,6 +876,39 @@ steps:
   # ==========================================================================
   # STEP 7d: Check Branch Protection
   # ==========================================================================
+  # Probes TWO independent branch-protection mechanisms and cross-references
+  # them, because they are invisible to each other:
+  #   1. Repository rulesets, via `rules/branches/*` (rules-in-effect).
+  #   2. CLASSIC branch protection, via `branches/*/protection` (legacy API).
+  # The rules-in-effect endpoint surfaces RULESET-derived rules ONLY -- a repo
+  # hand-remediated with classic protection (instead of the canonical ruleset)
+  # never appears there, so without the second probe this check would report
+  # "no branch protection" on a repo that actually has protection -- just the
+  # wrong, over-tight kind. This is exactly what happened on
+  # microsoft/amplifier-bundle-dot-runner: classic protection required 1
+  # code-owner review with bypass_pull_request_allowances empty, which blocks
+  # EVERY merge (including by maintainers/admins) unless GitHub admin
+  # elevation is used, and the audit was blind to it. See
+  # NOTES-dot-runner-protection.md for the full incident writeup.
+  #
+  # Finding classes (additive `classic_protection` field on every verdict):
+  #   - error:   classic protection requires reviews with an empty/absent
+  #              bypass_pull_request_allowances list, AND no ruleset supplies
+  #              a passing pull_request rule. The anti-pattern above -- names
+  #              it explicitly and points at the ruleset-based fix.
+  #   - warning: classic protection present ALONGSIDE a passing ruleset.
+  #              Redundant dual enforcement (most-restrictive wins); not a
+  #              blocker but exactly the kind of drift that led to the
+  #              anti-pattern above. Notes which classic bits (e.g. required
+  #              status checks) the ruleset does not carry.
+  #   - warning: classic protection requires reviews AND has an explicit
+  #              bypass_pull_request_allowances list, with no ruleset in
+  #              effect. Functional (not the "unrestricted" case below) but
+  #              non-canonical - bypass here is enumerated by user/team/app
+  #              IDs on the legacy API and drifts silently, unlike the
+  #              ruleset's role+team bypass_actors model.
+  #   - pass/error (unchanged): existing ruleset-only verdicts when classic
+  #              protection is absent.
   - id: "check-branch-protection"
     type: "bash"
     parse_json: true
@@ -872,27 +928,85 @@ steps:
       # noting the skip and exit early.
       if [ "$IS_PRIVATE" = "true" ]; then
         jq -n --arg branch "$DEFAULT_BRANCH" \
-          '{has_protection: null, severity: "pass", finding: ("Branch protection check skipped: private repo (canonical ruleset is not applied to private repos per policy)")}'
+          '{has_protection: null, severity: "pass", classic_protection: null, finding: ("Branch protection check skipped: private repo (canonical ruleset is not applied to private repos per policy)")}'
         exit 0
       fi
 
       REPO="{{repo_owner}}/{{repo_name}}"
 
-      # Probe rules-in-effect on the default branch.
+      # Probe 1: rules-in-effect on the default branch (ruleset-derived only).
       RULES_RAW=$(gh api "repos/$REPO/rules/branches/$DEFAULT_BRANCH" 2>&1 || echo "FETCH_FAILED")
-
+      RULESET_FETCH_OK="true"
       if [ "$RULES_RAW" = "FETCH_FAILED" ] || echo "$RULES_RAW" | grep -qE "Not Found"; then
-        jq -n --arg branch "$DEFAULT_BRANCH" \
-          '{has_protection: false, severity: "error", finding: ("No branch protection on default branch (" + $branch + ") - no repository ruleset is in effect, push/merge is unrestricted")}'
+        RULESET_FETCH_OK="false"
+        PR_RULE_COUNT=0
       else
         PR_RULE_COUNT=$(echo "$RULES_RAW" | jq -r '[.[] | select(.type == "pull_request" and ((.parameters.required_approving_review_count // 0) >= 1))] | length' 2>/dev/null || echo "0")
-        if [ "$PR_RULE_COUNT" -ge 1 ]; then
-          jq -n --arg branch "$DEFAULT_BRANCH" \
-            '{has_protection: true, severity: "pass", finding: ("Branch protection on default branch (" + $branch + ") configured via repository ruleset (pull_request rule with required reviews active)")}'
-        else
-          jq -n --arg branch "$DEFAULT_BRANCH" \
-            '{has_protection: false, severity: "error", finding: ("Repository ruleset present on default branch (" + $branch + ") but no pull_request rule requires approving reviews. Update the ruleset to require at least 1 approving review before merge.")}'
+      fi
+      RULESET_HAS_PR_RULE="false"
+      [ "${PR_RULE_COUNT:-0}" -ge 1 ] 2>/dev/null && RULESET_HAS_PR_RULE="true"
+      RULESET_HAS_STATUS_CHECKS_COUNT=0
+      if [ "$RULESET_FETCH_OK" = "true" ]; then
+        RULESET_HAS_STATUS_CHECKS_COUNT=$(echo "$RULES_RAW" | jq -r '[.[] | select(.type == "required_status_checks")] | length' 2>/dev/null || echo "0")
+      fi
+
+      # Probe 2: CLASSIC branch protection (legacy API - invisible to Probe 1).
+      CLASSIC_RAW=$(gh api "repos/$REPO/branches/$DEFAULT_BRANCH/protection" 2>&1 || echo "FETCH_FAILED")
+      CLASSIC_PRESENT="false"
+      CLASSIC_REQUIRES_REVIEWS="false"
+      CLASSIC_BYPASS_COUNT=0
+      CLASSIC_STATUS_CONTEXTS="[]"
+      if [ "$CLASSIC_RAW" != "FETCH_FAILED" ] && ! echo "$CLASSIC_RAW" | grep -qE "Not Found|Branch not protected"; then
+        CLASSIC_PRESENT="true"
+        CLASSIC_REQUIRES_REVIEWS=$(echo "$CLASSIC_RAW" | jq -r '(.required_pull_request_reviews != null)' 2>/dev/null || echo "false")
+        CLASSIC_BYPASS_COUNT=$(echo "$CLASSIC_RAW" | jq -r '
+          ((.required_pull_request_reviews.bypass_pull_request_allowances.users // [])
+           + (.required_pull_request_reviews.bypass_pull_request_allowances.teams // [])
+           + (.required_pull_request_reviews.bypass_pull_request_allowances.apps // [])) | length
+        ' 2>/dev/null || echo "0")
+        CLASSIC_STATUS_CONTEXTS=$(echo "$CLASSIC_RAW" | jq -c '(.required_status_checks.contexts // [])' 2>/dev/null || echo "[]")
+      fi
+      CLASSIC_HAS_BYPASS="false"
+      [ "${CLASSIC_BYPASS_COUNT:-0}" -ge 1 ] 2>/dev/null && CLASSIC_HAS_BYPASS="true"
+
+      if [ "$RULESET_HAS_PR_RULE" = "true" ] && [ "$CLASSIC_PRESENT" = "true" ]; then
+        # Finding class: redundant dual enforcement (warning).
+        MISSING_NOTE=""
+        CLASSIC_STATUS_COUNT=$(echo "$CLASSIC_STATUS_CONTEXTS" | jq 'length' 2>/dev/null || echo "0")
+        if [ "${CLASSIC_STATUS_COUNT:-0}" -gt 0 ] 2>/dev/null && [ "${RULESET_HAS_STATUS_CHECKS_COUNT:-0}" -eq 0 ]; then
+          MISSING_NOTE=" Classic protection carries required status checks ($(echo "$CLASSIC_STATUS_CONTEXTS" | jq -r 'join(", ")')) that the ruleset does not enforce - migrate them into the ruleset's required_status_checks rule before removing classic protection."
         fi
+        jq -n --arg branch "$DEFAULT_BRANCH" --arg note "$MISSING_NOTE" \
+          '{has_protection: true, severity: "warning", classic_protection: true, finding: ("Branch protection on default branch (" + $branch + ") is enforced by BOTH a passing repository ruleset AND classic branch protection - redundant dual enforcement (most-restrictive wins). Canonical setup is ruleset-only; remove the classic branch protection." + $note)}'
+      elif [ "$RULESET_HAS_PR_RULE" = "true" ]; then
+        jq -n --arg branch "$DEFAULT_BRANCH" \
+          '{has_protection: true, severity: "pass", classic_protection: false, finding: ("Branch protection on default branch (" + $branch + ") configured via repository ruleset (pull_request rule with required reviews active)")}'
+      elif [ "$CLASSIC_PRESENT" = "true" ] && [ "$CLASSIC_REQUIRES_REVIEWS" = "true" ] && [ "$CLASSIC_HAS_BYPASS" = "false" ]; then
+        # Finding class: the dot-runner anti-pattern (error). Classic
+        # protection requires reviews with NO bypass path at all - classic
+        # protection has no concept of bypass actors, so every merge
+        # (including by maintainers/admins acting through normal means) is
+        # blocked unless GitHub admin elevation is used.
+        jq -n --arg branch "$DEFAULT_BRANCH" \
+          '{has_protection: true, severity: "error", classic_protection: true, finding: ("classic branch protection requires reviews with no bypass path - maintainers cannot merge; canonical setup is a ruleset with bypass actors (migrate). Classic branch protection on " + $branch + " requires pull request reviews with an empty/absent bypass_pull_request_allowances list, and no repository ruleset supplies a passing pull_request rule. Migrate to a repository ruleset (deletion, non_fast_forward, required_linear_history, pull_request) with bypass_actors {RepositoryRole Admin, Team octo-made-amplifier-maintainers}, then delete the classic protection. Set apply_fixes=true on this recipe to migrate automatically on microsoft/* public repos.")}'
+      elif [ "$CLASSIC_PRESENT" = "true" ] && [ "$CLASSIC_REQUIRES_REVIEWS" = "true" ] && [ "$CLASSIC_HAS_BYPASS" = "true" ]; then
+        # Finding class: functional-but-non-canonical (warning). Classic
+        # protection requires reviews AND has an explicit
+        # bypass_pull_request_allowances list (users/teams/apps) - so it IS
+        # restricted (this is NOT the "push/merge is unrestricted" case
+        # below), but the bypass path here is enumerated by individual
+        # user/team/app IDs on the legacy API rather than the ruleset's
+        # role+team bypass_actors model, which drifts silently (e.g. a
+        # departed maintainer's account remains on the allowance list) and
+        # has none of check-bypass-actors' error/warning drift detection.
+        jq -n --arg branch "$DEFAULT_BRANCH" \
+          '{has_protection: true, severity: "warning", classic_protection: true, finding: ("Classic branch protection on default branch (" + $branch + ") requires pull request reviews and has explicit bypass_pull_request_allowances (users/teams/apps) - functional but non-canonical, no repository ruleset is in effect. Bypass allowances on classic protection are enumerated by individual user/team/app IDs and drift silently (e.g. a departed maintainer remains listed); the canonical ruleset expresses bypass via role+team actors instead. Recommend migrating to the canonical repository ruleset (deletion, non_fast_forward, required_linear_history, pull_request) with bypass_actors {RepositoryRole Admin, Team octo-made-amplifier-maintainers}. Set apply_fixes=true on this recipe to migrate automatically on microsoft/* public repos.")}'
+      elif [ "$RULESET_FETCH_OK" = "true" ]; then
+        jq -n --arg branch "$DEFAULT_BRANCH" --arg classic "$CLASSIC_PRESENT" \
+          '{has_protection: false, severity: "error", classic_protection: ($classic == "true"), finding: ("Repository ruleset present on default branch (" + $branch + ") but no pull_request rule requires approving reviews. Update the ruleset to require at least 1 approving review before merge.")}'
+      else
+        jq -n --arg branch "$DEFAULT_BRANCH" --arg classic "$CLASSIC_PRESENT" \
+          '{has_protection: false, severity: "error", classic_protection: ($classic == "true"), finding: ("No branch protection on default branch (" + $branch + ") - no repository ruleset is in effect, push/merge is unrestricted")}'
       fi
     output: "branch_protection_check"
     timeout: 60
@@ -1035,6 +1149,288 @@ steps:
       fi
     output: "bypass_actors_check"
     timeout: 60
+    on_error: "continue"
+
+  # ==========================================================================
+  # STEP 7e-apply: Apply the Canonical Branch-Protection Ruleset (opt-in)
+  # ==========================================================================
+  # Audit-only remains the default. This step is gated behind the "apply_fixes"
+  # context var (default "false") and ALWAYS runs (no top-level `condition:`)
+  # so it can emit an explicit, structured skip verdict for every reason it
+  # declines to act - never a silent no-op, and never leaves
+  # {{apply_protection_check}} undefined for the report step below.
+  #
+  # Gate order (first failing gate wins, nothing after it is touched):
+  #   1. apply_fixes != "true"            -> {applied:false, reason:"audit-only..."}
+  #   2. repo owner != microsoft, or private -> skip verdict (never touches non-MS/private)
+  #   3. neither branch-protection nor bypass-actors verdict was "error" -> skip verdict
+  #      (nothing to fix)
+  #
+  # When all gates pass, this migrates a repo stuck on the classic-protection
+  # anti-pattern (see check-branch-protection above / NOTES-dot-runner-protection.md)
+  # to the canonical repository ruleset:
+  #   a. Capture classic protection's required_status_checks.contexts (if any)
+  #      so the CI requirement survives the migration.
+  #   b. Create-or-update (idempotent, by name) the repo ruleset
+  #      "amplifier-default-branch-protection": target ~DEFAULT_BRANCH,
+  #      enforcement active, rules deletion/non_fast_forward/
+  #      required_linear_history/pull_request (1 review, dismiss-stale,
+  #      code-owner review, thread resolution) plus required_status_checks
+  #      carrying the captured contexts (omitted entirely if none captured),
+  #      bypass_actors {RepositoryRole 5 (Admin), Team 16902513
+  #      (octo-made-amplifier-maintainers)}, both bypass_mode=pull_request.
+  #   c. GET the ruleset back and verify the rules + bypass_actors round-trip
+  #      BEFORE ever deleting the classic protection. Any failure here (create,
+  #      verify, or delete) is reported as {applied:false, error:...} with
+  #      classic_deleted:false - nothing is removed unless the replacement is
+  #      confirmed live.
+  #   d. Re-probes both protection mechanisms post-apply (the same logic as
+  #      check-branch-protection) and reports post_apply_check: pass|error, so
+  #      the recipe run itself proves the fix landed rather than merely
+  #      asserting it.
+  - id: "apply-protection-fix"
+    type: "bash"
+    parse_json: true
+    command: |
+      cat << 'REPO_JSON_EOF' > /tmp/repo_apply_$$.json
+      {{repo_info_raw}}
+      REPO_JSON_EOF
+
+      DEFAULT_BRANCH=$(jq -r '.defaultBranchRef.name // "main"' /tmp/repo_apply_$$.json)
+      IS_PRIVATE=$(jq -r '.isPrivate // false' /tmp/repo_apply_$$.json)
+      rm -f /tmp/repo_apply_$$.json
+
+      REPO="{{repo_owner}}/{{repo_name}}"
+      APPLY_FIXES="{{apply_fixes}}"
+
+      # Gate 1: never trigger without an explicit apply_fixes=true.
+      if [ "$APPLY_FIXES" != "true" ]; then
+        jq -n '{applied: false, reason: "audit-only (apply_fixes not set)", severity: "recommendation", finding: "Apply mode not requested (apply_fixes=false) - audit-only, no changes made. Set apply_fixes=true to migrate a classic-protection anti-pattern to the canonical ruleset on microsoft/* public repos."}'
+        exit 0
+      fi
+
+      # Gate 2: microsoft/* public repos only - never touch anything else in apply mode.
+      if [ "{{repo_owner}}" != "microsoft" ]; then
+        jq -n --arg owner "{{repo_owner}}" \
+          '{applied: false, reason: ("skip: apply mode is restricted to microsoft/* repos (owner=" + $owner + ")"), severity: "pass", finding: "Apply mode skipped: non-microsoft owner"}'
+        exit 0
+      fi
+      if [ "$IS_PRIVATE" = "true" ]; then
+        jq -n '{applied: false, reason: "skip: apply mode is restricted to public repos (this repo is private)", severity: "pass", finding: "Apply mode skipped: private repo"}'
+        exit 0
+      fi
+
+      # Gate 3: only act when there is an actual error finding to fix.
+      cat << 'BP_JSON_EOF' > /tmp/apply_bp_$$.json
+      {{branch_protection_check}}
+      BP_JSON_EOF
+      cat << 'BA_JSON_EOF' > /tmp/apply_ba_$$.json
+      {{bypass_actors_check}}
+      BA_JSON_EOF
+      BP_SEV=$(jq -r '.severity // "pass"' /tmp/apply_bp_$$.json 2>/dev/null || echo "pass")
+      BA_SEV=$(jq -r '.severity // "pass"' /tmp/apply_ba_$$.json 2>/dev/null || echo "pass")
+      rm -f /tmp/apply_bp_$$.json /tmp/apply_ba_$$.json
+
+      if [ "$BP_SEV" != "error" ] && [ "$BA_SEV" != "error" ]; then
+        jq -n --arg bp "$BP_SEV" --arg ba "$BA_SEV" \
+          '{applied: false, reason: ("skip: no error verdict to fix (branch_protection=" + $bp + ", bypass_actors=" + $ba + ")"), severity: "pass", finding: "Apply mode skipped: nothing to fix"}'
+        exit 0
+      fi
+
+      # ---- All gates passed. Capture classic protection before touching anything. ----
+      CLASSIC_RAW=$(gh api "repos/$REPO/branches/$DEFAULT_BRANCH/protection" 2>&1 || echo "FETCH_FAILED")
+      CLASSIC_PRESENT="false"
+      STATUS_CHECK_CONTEXTS="[]"
+      STRICT_POLICY="false"
+      if [ "$CLASSIC_RAW" != "FETCH_FAILED" ] && ! echo "$CLASSIC_RAW" | grep -qE "Not Found|Branch not protected"; then
+        CLASSIC_PRESENT="true"
+        STATUS_CHECK_CONTEXTS=$(echo "$CLASSIC_RAW" | jq -c '(.required_status_checks.contexts // [])' 2>/dev/null || echo "[]")
+        STRICT_POLICY=$(echo "$CLASSIC_RAW" | jq -r '.required_status_checks.strict // false' 2>/dev/null || echo "false")
+
+        # Fix (a): the STATUS_CHECK_CONTEXTS parse above silently degrades to
+        # "[]" on a jq failure (via `// []` / the `|| echo "[]"` fallback), so
+        # a classic protection that genuinely HAS required checks could
+        # migrate to a ruleset that silently drops them. Detect that failure
+        # mode loudly: if required_status_checks is non-null in the raw
+        # classic-protection JSON (i.e. it really is configured) but we could
+        # not positively confirm a parsed contexts list for it (jq itself
+        # failed, or the parse produced an empty list despite the object
+        # being present), refuse to migrate rather than risk silent data
+        # loss. exit 0 BEFORE any mutation (ruleset create/update, delete).
+        RSC_NON_NULL=$(echo "$CLASSIC_RAW" | jq -r '(.required_status_checks != null)' 2>/dev/null)
+        RSC_NON_NULL_RC=$?
+        STATUS_CHECK_COUNT=$(echo "$STATUS_CHECK_CONTEXTS" | jq -r 'length' 2>/dev/null)
+        STATUS_CHECK_COUNT_RC=$?
+        if [ $RSC_NON_NULL_RC -ne 0 ] || { [ "$RSC_NON_NULL" = "true" ] && { [ $STATUS_CHECK_COUNT_RC -ne 0 ] || [ "${STATUS_CHECK_COUNT:-0}" -eq 0 ]; }; }; then
+          jq -n '{applied: false, error: "could not parse classic required_status_checks — refusing to migrate", classic_deleted: false, severity: "error", finding: "Classic branch protection appears to have required_status_checks configured, but this recipe could not confirm a non-empty set of captured contexts (jq parse failure on the classic-protection response, or an unexpectedly empty contexts list on a non-null required_status_checks object). Refusing to migrate to avoid silently dropping a required CI check - investigate the classic protection response manually."}'
+          exit 0
+        fi
+      fi
+
+      # Build the canonical ruleset payload.
+      RULESET_NAME="amplifier-default-branch-protection"
+      # NOTE: the ruleset API's pull_request parameters schema REQUIRES all five
+      # fields -- omitting require_last_push_approval yields HTTP 422
+      # "Invalid property /rules/N: data matches no possible input".
+      PR_PARAMS='{"required_approving_review_count":1,"dismiss_stale_reviews_on_push":true,"require_code_owner_review":true,"require_last_push_approval":false,"required_review_thread_resolution":true}'
+
+      RULES_JSON=$(jq -n \
+        --argjson pr_params "$PR_PARAMS" \
+        --argjson contexts "$STATUS_CHECK_CONTEXTS" \
+        --argjson strict "$STRICT_POLICY" \
+        '[
+          {"type":"deletion"},
+          {"type":"non_fast_forward"},
+          {"type":"required_linear_history"},
+          {"type":"pull_request","parameters":$pr_params}
+        ]
+        + (if ($contexts | length) > 0 then
+            [{"type":"required_status_checks","parameters":{"strict_required_status_checks_policy":$strict,"do_not_enforce_on_create":false,"required_status_checks":[$contexts[] | {context: .}]}}]
+          else [] end)')
+
+      BYPASS_JSON='[{"actor_type":"RepositoryRole","actor_id":5,"bypass_mode":"pull_request"},{"actor_type":"Team","actor_id":16902513,"bypass_mode":"pull_request"}]'
+
+      RULESET_PAYLOAD=$(jq -n \
+        --arg name "$RULESET_NAME" \
+        --argjson rules "$RULES_JSON" \
+        --argjson bypass "$BYPASS_JSON" \
+        '{
+          name: $name,
+          target: "branch",
+          enforcement: "active",
+          conditions: {ref_name: {include: ["~DEFAULT_BRANCH"], exclude: []}},
+          rules: $rules,
+          bypass_actors: $bypass
+        }')
+
+      # Idempotent: PUT-update an existing repo ruleset of this name, else POST-create.
+      EXISTING_RULESETS=$(gh api "repos/$REPO/rulesets" 2>&1 || echo "FETCH_FAILED")
+      EXISTING_ID=""
+      if [ "$EXISTING_RULESETS" != "FETCH_FAILED" ] && ! echo "$EXISTING_RULESETS" | grep -qE "Not Found"; then
+        EXISTING_ID=$(echo "$EXISTING_RULESETS" | jq -r --arg name "$RULESET_NAME" '[.[] | select(.name == $name)][0].id // empty' 2>/dev/null || echo "")
+      fi
+
+      if [ -n "$EXISTING_ID" ]; then
+        API_OUT=$(echo "$RULESET_PAYLOAD" | gh api -X PUT "repos/$REPO/rulesets/$EXISTING_ID" --input - 2>&1)
+        API_RC=$?
+        RULESET_ID="$EXISTING_ID"
+      else
+        API_OUT=$(echo "$RULESET_PAYLOAD" | gh api -X POST "repos/$REPO/rulesets" --input - 2>&1)
+        API_RC=$?
+        RULESET_ID=$(echo "$API_OUT" | jq -r '.id // empty' 2>/dev/null || echo "")
+      fi
+
+      if [ "$API_RC" -ne 0 ] || [ -z "$RULESET_ID" ]; then
+        jq -n --arg err "$API_OUT" \
+          '{applied: false, error: ("ruleset create/update failed - nothing deleted: " + $err), classic_deleted: false, severity: "error", finding: "Ruleset create/update failed; classic protection left untouched"}'
+        exit 0
+      fi
+
+      # Verify the ruleset round-trips BEFORE ever deleting classic protection.
+      VERIFY_RAW=$(gh api "repos/$REPO/rulesets/$RULESET_ID" 2>&1 || echo "FETCH_FAILED")
+      if [ "$VERIFY_RAW" = "FETCH_FAILED" ]; then
+        jq -n --argjson id "$RULESET_ID" \
+          '{applied: false, error: "ruleset verify GET failed after create/update - nothing deleted", ruleset_id: $id, classic_deleted: false, severity: "error", finding: "Could not verify newly-created/updated ruleset; classic protection left untouched"}'
+        exit 0
+      fi
+
+      HAS_ALL_RULES=$(echo "$VERIFY_RAW" | jq -r '
+        ([.rules[]?.type]) as $t
+        | (["deletion","non_fast_forward","required_linear_history","pull_request"] | all(. as $r | ($t | index($r)) != null))
+      ' 2>/dev/null || echo "false")
+      BYPASS_OK=$(echo "$VERIFY_RAW" | jq -r '
+        (.bypass_actors // []) as $b
+        | ( ($b | any(.actor_type == "RepositoryRole" and .actor_id == 5 and .bypass_mode == "pull_request"))
+            and ($b | any(.actor_type == "Team" and .actor_id == 16902513 and .bypass_mode == "pull_request")) )
+      ' 2>/dev/null || echo "false")
+
+      # Fix (b): when classic protection carried captured required_status_checks
+      # contexts, the round-trip verify must also confirm the ruleset's own
+      # required_status_checks rule exists AND its parameters.required_status_checks[]
+      # context set is a superset of every captured context - otherwise a
+      # "successful" migration could silently drop the CI requirement. When no
+      # contexts were captured, this check is vacuously true (nothing to carry).
+      CONTEXTS_COUNT=$(echo "$STATUS_CHECK_CONTEXTS" | jq 'length' 2>/dev/null || echo "0")
+      STATUS_CHECKS_OK="true"
+      if [ "${CONTEXTS_COUNT:-0}" -gt 0 ] 2>/dev/null; then
+        STATUS_CHECKS_OK=$(echo "$VERIFY_RAW" | jq --argjson contexts "$STATUS_CHECK_CONTEXTS" -r '
+          ([.rules[]? | select(.type == "required_status_checks")]) as $rsc_rules
+          | (($rsc_rules | length) > 0)
+            and ([$rsc_rules[].parameters.required_status_checks[]?.context] as $ruleset_contexts
+                 | ($contexts | all(. as $c | ($ruleset_contexts | index($c)) != null)))
+        ' 2>/dev/null || echo "false")
+      fi
+
+      if [ "$HAS_ALL_RULES" != "true" ] || [ "$BYPASS_OK" != "true" ] || [ "$STATUS_CHECKS_OK" != "true" ]; then
+        jq -n --argjson id "$RULESET_ID" \
+          '{applied: false, error: "ruleset round-trip verification failed (rules or bypass_actors did not match canonical) - nothing deleted", ruleset_id: $id, classic_deleted: false, severity: "error", finding: "Newly-created/updated ruleset failed round-trip verification; classic protection left untouched"}'
+        exit 0
+      fi
+
+      # Verified live. Now (and only now) delete the classic protection.
+      CLASSIC_DELETED="false"
+      if [ "$CLASSIC_PRESENT" = "true" ]; then
+        DELETE_OUT=$(gh api -X DELETE "repos/$REPO/branches/$DEFAULT_BRANCH/protection" 2>&1)
+        DELETE_RC=$?
+        if [ "$DELETE_RC" -eq 0 ]; then
+          CLASSIC_DELETED="true"
+        else
+          jq -n --argjson id "$RULESET_ID" --arg err "$DELETE_OUT" \
+            '{applied: false, error: ("ruleset verified but classic protection delete failed: " + $err), ruleset_id: $id, classic_deleted: false, severity: "error", finding: "Ruleset verified and live, but deleting classic protection failed - repo now has BOTH (most-restrictive wins); retry the delete manually"}'
+          exit 0
+        fi
+      fi
+
+      # Re-run the check-branch-protection probe logic post-apply, so this run
+      # PROVES the fix landed rather than merely asserting it.
+      POST_RULES_RAW=$(gh api "repos/$REPO/rules/branches/$DEFAULT_BRANCH" 2>&1 || echo "FETCH_FAILED")
+      POST_PR_RULE_COUNT=$(echo "$POST_RULES_RAW" | jq -r '[.[] | select(.type == "pull_request" and ((.parameters.required_approving_review_count // 0) >= 1))] | length' 2>/dev/null || echo "0")
+      POST_CLASSIC_RAW=$(gh api "repos/$REPO/branches/$DEFAULT_BRANCH/protection" 2>&1 || echo "FETCH_FAILED")
+      POST_CLASSIC_PRESENT="false"
+      if [ "$POST_CLASSIC_RAW" != "FETCH_FAILED" ] && ! echo "$POST_CLASSIC_RAW" | grep -qE "Not Found|Branch not protected"; then
+        POST_CLASSIC_PRESENT="true"
+      fi
+
+      # Fix (c): when contexts were captured from classic protection, the
+      # post-apply re-check must also confirm the rules-in-effect
+      # (rules/branches/$BRANCH) include a required_status_checks rule -
+      # otherwise a "passing" post-apply check could mask a migration that
+      # silently dropped the CI requirement. Vacuously true when no contexts
+      # were captured (CONTEXTS_COUNT computed during round-trip verify above).
+      POST_STATUS_CHECKS_COUNT=$(echo "$POST_RULES_RAW" | jq -r '[.[] | select(.type == "required_status_checks")] | length' 2>/dev/null || echo "0")
+      POST_STATUS_CHECKS_OK="true"
+      if [ "${CONTEXTS_COUNT:-0}" -gt 0 ] 2>/dev/null; then
+        POST_STATUS_CHECKS_OK="false"
+        [ "${POST_STATUS_CHECKS_COUNT:-0}" -ge 1 ] 2>/dev/null && POST_STATUS_CHECKS_OK="true"
+      fi
+
+      POST_APPLY_CHECK="error"
+      POST_APPLY_SEVERITY="error"
+      if [ "$POST_CLASSIC_PRESENT" = "false" ] && [ "${POST_PR_RULE_COUNT:-0}" -ge 1 ] 2>/dev/null && [ "$POST_STATUS_CHECKS_OK" = "true" ]; then
+        POST_APPLY_CHECK="pass"
+        POST_APPLY_SEVERITY="pass"
+      fi
+
+      jq -n \
+        --argjson id "$RULESET_ID" \
+        --argjson contexts "$STATUS_CHECK_CONTEXTS" \
+        --argjson classic_was_present "$CLASSIC_PRESENT" \
+        --argjson classic_deleted "$CLASSIC_DELETED" \
+        --arg post_apply_check "$POST_APPLY_CHECK" \
+        --arg severity "$POST_APPLY_SEVERITY" \
+        '{
+          applied: true,
+          ruleset_id: $id,
+          ruleset_name: "amplifier-default-branch-protection",
+          carried_status_checks: $contexts,
+          classic_protection_was_present: $classic_was_present,
+          classic_deleted: $classic_deleted,
+          post_apply_check: $post_apply_check,
+          severity: $severity,
+          finding: ("Applied canonical branch-protection ruleset (id " + ($id|tostring) + "); classic protection " + (if $classic_deleted then "deleted" elif $classic_was_present then "present but NOT deleted (see error)" else "was not present" end) + "; post-apply re-check: " + $post_apply_check)
+        }'
+    output: "apply_protection_check"
+    timeout: 180
     on_error: "continue"
 
   # ==========================================================================
@@ -1390,6 +1786,9 @@ steps:
       ### 9. PR Rule Strictness (microsoft/* repos)
       {{pr_rule_strictness_check}}
       
+      ### 9b. Apply Protection Fix (opt-in, apply_fixes context var)
+      {{apply_protection_check}}
+      
       ### 10. Repository Stats
       {{repo_stats}}
       
@@ -1422,6 +1821,7 @@ steps:
       | Branch Protection | [Configured/Misconfigured/Missing] | [pass/error] |
       | Bypass Actors | [Configured/Empty/N-A] | [pass/warning/error] |
       | PR Rule Strictness | [Pass/Deviates/N-A] | [pass/warning] |
+      | Apply Protection Fix | [Applied/Skipped/Failed — see {{apply_protection_check}}] | [pass/recommendation/error] |
       | Dependabot PRs | [N open — see below] | [pass/recommendation/warning] |
       
       **Overall Status**: [PASS / NEEDS ATTENTION / CRITICAL]
@@ -1456,7 +1856,7 @@ steps:
       [For each non-passing issue, provide specific steps to fix]
       
       ---
-      *Generated by Amplifier repo-audit recipe v1.8.0*
+      *Generated by Amplifier repo-audit recipe v1.9.0*
     output: "audit_report_content"
     timeout: 300
     on_error: "fail"
