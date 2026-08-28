@@ -185,7 +185,7 @@ amplifier-log-viewer
 Amplifier works with multiple AI providers:
 
 - **Anthropic Claude** - Recommended, most tested (Sonnet 4.5, Opus 4.6, Haiku 4.5)
-- **OpenAI** - Good alternative (GPT-5.2, GPT-5.2-Pro, GPT-5.1-Codex)
+- **OpenAI** - Good alternative (GPT-5.4, GPT-5.4-Pro, GPT-5.4-Codex)
 - **Azure OpenAI** - Enterprise users with Azure subscriptions (supports managed identity)
 - **Ollama** - Local, free, no API key needed (llama3, codellama, etc.)
 
@@ -255,13 +255,12 @@ amplifier run --bundle recipes "Your prompt"
 amplifier bundle use foundation
 ```
 
-**The `foundation` bundle** is the default and includes:
+**The `foundation` bundle** is the default bare-minimum configuration:
 
-- **Tools**: filesystem, bash, web, search, task delegation
-- **Agents**: 14 specialized agents (zen-architect, bug-hunter, git-ops, web-research, explorer, etc.)
-- **Behaviors**: logging, redaction, streaming UI, todo tracking
+- **Tools**: filesystem, bash
+- **Agents**: None (agents ship in other bundles such as `dev`)
 
-Most users never need to change bundles—foundation provides everything for development work.
+Add bundles like `dev`, `recipes`, or `design-intelligence` for richer tooling and specialized agents.
 
 ### Working with Agents
 
