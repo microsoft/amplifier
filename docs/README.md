@@ -17,6 +17,7 @@ audience: all
 **Get up and running quickly:**
 
 - [USER_ONBOARDING.md](./USER_ONBOARDING.md) — **Start here!** Complete getting started guide
+- [BUNDLES_PROVIDERS_ROUTING_PROJECTS.md](./BUNDLES_PROVIDERS_ROUTING_PROJECTS.md) — Understand how session configuration and model selection fit together
 - **[Bundle Guide](https://github.com/microsoft/amplifier-foundation/blob/main/docs/BUNDLE_GUIDE.md)** — Create and customize bundles
 - **[Agent Authoring](https://github.com/microsoft/amplifier-foundation/blob/main/docs/AGENT_AUTHORING.md)** — Create specialized agents
 - [SCENARIO_TOOLS_GUIDE.md](./SCENARIO_TOOLS_GUIDE.md) — Building sophisticated CLI tools

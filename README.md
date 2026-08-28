@@ -319,6 +319,8 @@ Sessions are project-scoped—when you're in `/home/user/myapp`, you see only `m
 
 ## Configuration
 
+See [how bundles, provider instances, routing matrices, and project folders fit together](docs/BUNDLES_PROVIDERS_ROUTING_PROJECTS.md) for the mental model behind these settings.
+
 ### Switching Providers
 
 ```bash
