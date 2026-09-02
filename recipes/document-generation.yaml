@@ -52,6 +52,25 @@
 # CHANGELOG
 # =============================================================================
 #
+# v8.2.0 (2026-09-02):
+#   - PORTABILITY: declare a schema_version 2 dependency manifest
+#     (contract recipe-dependency-manifest.v1; block sits above `name:`)
+#     * The `foundation:explorer` / `foundation:zen-architect` /
+#       `design-intelligence:layout-architect` /
+#       `design-intelligence:voice-strategist` steps below previously resolved
+#       out of the CALLING session's agent map; a caller without them failed at
+#       run time with "Agent 'design-intelligence:voice-strategist' not found
+#       in configuration"
+#     * They now resolve from this recipe's own declared closure
+#     * ONE dependency covers all four: foundation composes
+#       amplifier-bundle-design-intelligence via its own bundle.md include.
+#       Declaring design-intelligence separately collides (both bundles supply
+#       the same agent names) -- see the note on the manifest block
+#     * The "Requirements: foundation bundle" line in the header above is now
+#       enforced by the manifest rather than left to the caller
+#   - No behavior change under the legacy engine, which ignores both new
+#     top-level keys. Recipe logic, steps and prompts untouched.
+#
 # v8.1.0 (2026-01-30):
 #   - NEW FEATURE: Design Intelligence Feedback (EXPERIMENTAL)
 #     * Adds observational feedback from DI agents at TWO stages:
@@ -253,9 +272,41 @@
 #
 # =============================================================================
 
+# --- Dependency manifest (contract: recipe-dependency-manifest.v1) ----------
+# schema_version 2 makes this recipe portable: every `agent:` reference below
+# resolves ONLY from the declared closure here, never from the calling
+# session's agent map. A caller that lacks these agents can still run it.
+# Pinned to the released tag `v2.1.2`. Foundation fetches a ref with
+# `git clone --branch`, which accepts a branch or a tag but NOT a commit SHA,
+# so a tag is the most immutable pin a `source:` can currently express.
+#
+# ONE dependency, not two, even though this recipe references BOTH the
+# `foundation:` and `design-intelligence:` namespaces. The foundation bundle
+# composes amplifier-bundle-design-intelligence via its own `bundle.md`
+# include, so the single source below genuinely supplies all four agents --
+# verified, not assumed: the planner's `required_agents` preflight fails loud
+# if a declared dependency does not actually supply a name listed under it.
+# Declaring amplifier-bundle-design-intelligence as a SECOND dependency was
+# tried and is wrong: that bundle composes foundation too, so the two sources
+# supply overlapping agent names and planning aborts with
+# AgentCollisionError ("Agent name 'amplifier:amplifier-expert' is supplied by
+# more than one dependency").
+schema_version: 2
+
+dependencies:
+  - source: "git+https://github.com/microsoft/amplifier-foundation@v2.1.2"
+    kind: bundle
+    required_agents:
+      - "foundation:explorer"
+      - "foundation:zen-architect"
+      # Supplied by foundation's design-intelligence include (see note above).
+      - "design-intelligence:layout-architect"
+      - "design-intelligence:voice-strategist"
+# ---------------------------------------------------------------------------
+
 name: "document-generation"
 description: "Generate documentation from an outline with BFS traversal, parallel validation, provider preferences, and Design Intelligence feedback"
-version: "8.1.0"
+version: "8.2.0"
 author: "Amplifier Recipes Collection"
 tags: ["documentation", "generation", "outline", "bfs", "validation", "staged", "resumable", "parallel"]
 
