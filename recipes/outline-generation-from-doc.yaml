@@ -113,8 +113,15 @@ tags: ["documentation", "outline", "analysis", "source-identification", "directi
 #     * PLACEMENT: also documented that source paths are repo-relative and
 #       resolve against dirname(dirname(outline_path)), so the outline belongs
 #       one level below the repo root (the default output_dir "./outlines").
-#   - Documentation only. No steps, prompts, or logic changed; still
-#     schema_version 2, 28 steps, legacy-engine loadable.
+#   - BUGFIX: write-outline-files now mkdir -p's output_dir before writing.
+#     setup-working-dir creates output_dir at step 1.1, but clone-target-repo
+#     (step 1.3) does `rm -rf "$target_dir"` before cloning. An output_dir inside
+#     the target repo clone -- which is exactly where the placement convention
+#     above requires it (<repo_root>/outlines/) -- is therefore gone by the time
+#     the outline is written, and the run died after ~25 minutes of real work
+#     with FileNotFoundError on the .yaml file. Measured on a live run.
+#   - Otherwise documentation only. No steps added or removed, no prompts or
+#     analysis logic changed; still schema_version 2, 28 steps, legacy-loadable.
 #
 # v1.7.0 (2026-09-02):
 #   - PORTABILITY: declare a schema_version 2 dependency manifest
@@ -2160,6 +2167,14 @@ steps:
       yaml_file="{{output_dir}}/{{setup_info.document_name}}_outline.yaml"
       json_file="{{output_dir}}/{{setup_info.document_name}}_outline.json"
       temp_file="{{working_dir}}/temp_outline_assembled.json"
+      
+      # (Re)create the output directory. setup-working-dir made it 25 steps ago,
+      # but clone-target-repo does `rm -rf "$target_dir"` before cloning -- so an
+      # output_dir INSIDE the target repo clone (which is exactly where it has to
+      # be for document-generation to resolve sources: <repo_root>/outlines/) has
+      # been deleted by the time we get here. Without this the step died with
+      # FileNotFoundError on the yaml file after ~25 minutes of work.
+      mkdir -p "{{output_dir}}"
       
       # Save the assembled outline to a temp file
       cat > "$temp_file" << 'OUTLINE_EOF'
