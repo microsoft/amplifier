@@ -13,6 +13,51 @@
 #   amplifier recipes execute outline-generation-from-document.yaml \
 #     --context '{"target_repo_url": "https://github.com/myorg/myrepo", "target_document_path": "docs/DESIGN.md"}'
 #
+# =============================================================================
+# OUTPUT CONTRACT (consumed by document-generation.yaml)
+# =============================================================================
+#
+# This recipe is the PRODUCER end of a two-recipe pipeline:
+#
+#   outline-generation-from-doc.yaml  --(outline JSON)-->  document-generation.yaml
+#
+# The outline JSON written by write-outline-files IS the contract:
+#
+#   {
+#     "_meta": { "name", "document_type", "model", "target_path",
+#                "allowed_source_repos", ... },
+#     "document": {
+#       "title":  "# Document Title",
+#       "output": "docs/DESIGN.md",
+#       "sections": [
+#         { "heading": "## Section",
+#           "level": 2,
+#           "prompt": "...",
+#           "sources": [ {"file_path": "docs/VISION.md",
+#                         "contribution": "...",
+#                         "relevance": "high"} ],
+#           "sections": [ ...nested... ] }
+#       ]
+#     }
+#   }
+#
+# document-generation.yaml v8.3.0+ normalizes this shape in its own
+# parse-outline-structure step (it accepts "_meta" or "meta", nested
+# document.sections or a top-level sections list, and sources as objects or as
+# plain path strings). Sources here are OBJECTS carrying file_path plus
+# provenance; the consumer maps them to plain relative path strings.
+#
+# PLACEMENT: source file_path values are REPO-RELATIVE, and the consumer
+# resolves them against dirname(dirname(outline_path)) -- the outline's
+# GRANDPARENT directory. So write the outline ONE level below the repo root it
+# cites, which is what the default output_dir "./outlines" gives you when the
+# recipe is run from that repo root:
+#
+#     <repo_root>/outlines/<name>_outline.json     <- correct
+#     <repo_root>/<name>_outline.json              <- one level too high
+#
+# =============================================================================
+#
 # Typical runtime: 15-30 minutes depending on document complexity
 # 
 # Requirements:
@@ -42,13 +87,35 @@ dependencies:
 
 name: "outline-generation-from-document"
 description: "Generate structured outlines from existing documents with source identification, directionality detection, and classification"
-version: "1.7.0"
+version: "1.8.0"
 author: "Recipe Author Agent"
 tags: ["documentation", "outline", "analysis", "source-identification", "directionality", "authority-detection"]
 
 # =============================================================================
 # CHANGELOG
 # =============================================================================
+# v1.8.0 (2026-09-02):
+#   - CONTRACT: documented this recipe's output as the agreed schema for
+#     document-generation.yaml (work item recipes-0sv). See "OUTPUT CONTRACT"
+#     in the header above.
+#     * The mismatch that motivated this: this recipe emits top-level "_meta"
+#       with sections nested under document.sections and each section's sources
+#       as OBJECTS ({"file_path": ..., "contribution": ..., "relevance": ...}),
+#       while document-generation documented "meta"/"sections" with sources as
+#       plain path STRINGS. Feeding this recipe's output straight in produced a
+#       source manifest scraped out of prompt text ("contracts/", "README") and
+#       the consumer hard-failed with "No source files were fetched".
+#     * RESOLUTION: this shape is the contract; the CONSUMER normalizes.
+#       document-generation v8.3.0 parses both dialects deterministically
+#       (no LLM) and maps sources[].file_path to path strings. No change was
+#       needed to this recipe's emitted structure -- it is now written down on
+#       both sides instead of being implied.
+#     * PLACEMENT: also documented that source paths are repo-relative and
+#       resolve against dirname(dirname(outline_path)), so the outline belongs
+#       one level below the repo root (the default output_dir "./outlines").
+#   - Documentation only. No steps, prompts, or logic changed; still
+#     schema_version 2, 28 steps, legacy-engine loadable.
+#
 # v1.7.0 (2026-09-02):
 #   - PORTABILITY: declare a schema_version 2 dependency manifest
 #     (contract recipe-dependency-manifest.v1; block sits above `name:`)

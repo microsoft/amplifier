@@ -41,9 +41,72 @@
 #   With existing document (for updates/revisions):
 #   amplifier run "execute document-generation-parallel.yaml with outline_path=./outline.json existing_document_path=./current-doc.md"
 #
+# =============================================================================
+# OUTLINE CONTRACT (what this recipe accepts as outline_path)
+# =============================================================================
+#
+# This recipe is the CONSUMER end of a two-recipe pipeline:
+#
+#   outline-generation-from-doc.yaml  --(outline JSON)-->  document-generation.yaml
+#
+# The `parse-outline-structure` step normalizes the outline into ONE canonical
+# shape before anything else reads it, so BOTH dialects below are accepted:
+#
+#   metadata key      : "_meta"  (emitted by outline-generation-from-document)
+#                    or "meta"
+#   section tree      : "document": {"sections": [...]}   (nested)
+#                    or top-level  "sections": [...]
+#   section sources   : [{"file_path": "docs/VISION.md", ...}, ...]   (objects)
+#                    or ["docs/VISION.md", ...]                       (strings)
+#
+# Canonical form written to state/parsed_outline.json (what every later step
+# reads -- do not read the raw outline directly):
+#
+#   {
+#     "meta": {...},                          # from _meta or meta
+#     "document": {"title", "output", "sections"},
+#     "sections": [ <section>, ... ],          # same tree, top-level alias
+#     "section_count", "max_depth", "source_count",
+#     "meta_key_used", "sections_key_used"     # which dialect was seen
+#   }
+#
+#   <section> = {
+#     "id": "1" | "1.1" | ...,   # assigned deterministically, BFS-dotted
+#     "heading": "## Title",     # REQUIRED - a section with no heading is fatal
+#     "level": 2,
+#     "prompt": "...",
+#     "sources": ["docs/VISION.md", ...],   # ALWAYS plain relative path strings
+#     "sources_detail": [ <original source objects, verbatim> ],
+#     "sections": [ <child section>, ... ]
+#   }
+#
+# Source paths are REPO-RELATIVE. Anything in a sources array that is not a file
+# reference (a bare directory like "contracts/", or an extension-less word like
+# "README") is dropped and reported, never fetched.
+#
+# =============================================================================
+# OUTLINE PLACEMENT (where outline_path must live)
+# =============================================================================
+#
+# Sources are resolved against the outline's GRANDPARENT directory:
+#
+#     repo_root = dirname(dirname(realpath(outline_path)))
+#
+# So the outline must sit ONE level below the repo root whose files it cites:
+#
+#     <repo_root>/outlines/<name>_outline.json     <- correct
+#     <repo_root>/<name>_outline.json              <- one level too high
+#
+# (This matches outline-generation-from-document's default output_dir of
+# "./outlines".) As a safety net, fetch-local-sources tries repo_root FIRST and
+# then the outline's OWN directory, and every fetched source records which root
+# resolved it in state/sources_result.json. An outline placed at the repo root
+# therefore still resolves instead of silently reading one directory too high.
+#
 # Requirements:
 #   - foundation bundle (provides zen-architect, explorer agents)
 #   - Python 3 installed
+#   - jq installed
 #   - Write access to working directory
 #
 # =============================================================================
@@ -51,6 +114,50 @@
 # =============================================================================
 # CHANGELOG
 # =============================================================================
+#
+# v8.3.0 (2026-09-02):
+#   - CONTRACT: accept outline-generation-from-document's output directly
+#     (work item recipes-0sv). The two recipes read as a pipeline but did not
+#     agree on a schema: the producer emits "_meta" + nested document.sections
+#     with sources as OBJECTS ({"file_path": ...}); this recipe documented
+#     "meta" + "sections" with sources as plain path STRINGS.
+#     * parse-outline-structure is now a DETERMINISTIC bash/python step (was an
+#       LLM step). It accepts BOTH dialects and writes ONE canonical
+#       state/parsed_outline.json -- see "OUTLINE CONTRACT" in the header.
+#       Sources are normalized to relative path strings; the original objects
+#       are preserved losslessly under sources_detail. Sections get stable
+#       dotted ids (1, 1.1, ...).
+#     * extract-source-paths is now DETERMINISTIC too. It reads ONLY the
+#       normalized sources arrays. Previously the LLM parse step dropped the
+#       sources arrays entirely and this step reconstructed a manifest by
+#       scraping file paths out of section PROMPT TEXT -- producing non-file
+#       entries ("contracts/" (a directory), "README" (no extension)) that
+#       resolved to nothing, so fetch-local-sources fetched 0 files and the run
+#       hard-failed at verify-all-sources-fetched.
+#     * get-outline-directory's output is renamed outline_dir -> source_root.
+#       The step always computed repo_root = dirname(dirname(outline_path));
+#       storing that in a variable named `outline_dir` was the trap. The
+#       placement convention is now documented under "OUTLINE PLACEMENT".
+#     * fetch-local-sources tries source_root FIRST, then the outline's own
+#       directory, and records resolved_root per source. An outline placed at
+#       the repo root no longer silently resolves one directory too high.
+#     * verify-all-sources-fetched no longer hard-fails when the outline
+#       legitimately declares ZERO sources (document_type "original"); it only
+#       fails when sources were declared and none resolved, and it now names
+#       each unresolved path.
+#   - BUGFIX: no-existing-document path generated ZERO sections then hard-failed
+#     at save-v0-generated (work item recipes-mxe).
+#     * copy-preserved-sections' two early-exit branches said "all sections need
+#       LLM generation" while emitting sections_for_llm: []. They now emit the
+#       full bfs_order (and write an empty preserved_sections.json).
+#     * get-sections-for-llm falls back to the full bfs_order when the filtered
+#       list is empty AND nothing was preserved, and fails loud if there is
+#       still nothing to do.
+#     * set-generation-complete-status now REFUSES to stamp "generation_complete"
+#       when generated_content is empty (or nothing completed while sections are
+#       still pending). The silent zero-iteration foreach used to surface three
+#       steps later as "ERROR: Agent failed to write v0_generated.md".
+#   - Step count unchanged; no step ids added or removed. Still schema_version 2.
 #
 # v8.2.0 (2026-09-02):
 #   - PORTABILITY: declare a schema_version 2 dependency manifest
@@ -306,7 +413,7 @@ dependencies:
 
 name: "document-generation"
 description: "Generate documentation from an outline with BFS traversal, parallel validation, provider preferences, and Design Intelligence feedback"
-version: "8.2.0"
+version: "8.3.0"
 author: "Amplifier Recipes Collection"
 tags: ["documentation", "generation", "outline", "bfs", "validation", "staged", "resumable", "parallel"]
 
@@ -543,41 +650,209 @@ stages:
           echo "Outline saved to {{working_dir}}/state/outline.json"
         output: "outline_saved"
 
+      # ---- NORMALIZE OUTLINE TO THE CANONICAL CONTRACT (deterministic) ----
+      # Accepts BOTH outline dialects and emits ONE canonical parsed_outline.json.
+      # See "OUTLINE CONTRACT" in the header for the full contract.
+      #   metadata key    : "_meta" (outline-generation-from-document) or "meta"
+      #   section tree    : document.sections (nested) or top-level sections
+      #   section sources : [{"file_path": "..."}, ...] or ["...", ...]
+      # This step was an LLM step until v8.3.0; the model silently dropped the
+      # sources arrays, and extract-source-paths then scraped paths out of prompt
+      # TEXT, producing non-file entries ("contracts/", "README") that resolved
+      # to nothing. Parsing a known JSON shape is not a reasoning task.
       - id: "parse-outline-structure"
-        agent: "foundation:explorer"
-        provider_preferences:
-          - provider: anthropic
-            model: claude-haiku-*
-          - provider: openai
-            model: gpt-5-mini
-        prompt: |
-          Parse the outline JSON file and extract its structure.
-          
-          Read the outline from: {{working_dir}}/state/outline.json
-          
-          Return a JSON object with:
-          1. **meta**: All metadata fields (purpose, audience, style, etc.)
-          2. **document**: Document-level info (title, output path, etc.)
-          3. **sections**: The full section tree structure
-          4. **section_count**: Total number of sections (including nested)
-          5. **max_depth**: Maximum nesting depth found
-          
-          Validate that:
-          - Required fields are present (meta, document, sections)
-          - Each section has at least: heading, prompt
-          
-          IMPORTANT: Save your parsed result to: {{working_dir}}/state/parsed_outline.json
-          
-          After saving, return a brief confirmation message with the section_count and max_depth.
+        type: "bash"
+        command: |
+          set -euo pipefail
+
+          python3 << 'PARSE_EOF'
+          import json
+          import sys
+
+          outline_file = "{{working_dir}}/state/outline.json"
+          out_file = "{{working_dir}}/state/parsed_outline.json"
+
+          with open(outline_file) as f:
+              raw = json.load(f)
+
+          if not isinstance(raw, dict):
+              print("ERROR: outline root is not a JSON object", file=sys.stderr)
+              sys.exit(1)
+
+          # --- metadata: accept "meta" or "_meta" -----------------------------
+          meta_key = None
+          if isinstance(raw.get("meta"), dict):
+              meta_key = "meta"
+          elif isinstance(raw.get("_meta"), dict):
+              meta_key = "_meta"
+          if meta_key is None:
+              print("ERROR: outline has no 'meta' or '_meta' object", file=sys.stderr)
+              sys.exit(1)
+          meta = raw[meta_key]
+
+          # --- section tree: accept document.sections or top-level sections ---
+          doc_in = raw.get("document")
+          if not isinstance(doc_in, dict):
+              doc_in = {}
+          if isinstance(doc_in.get("sections"), list):
+              sections_key = "document.sections"
+              raw_sections = doc_in["sections"]
+          elif isinstance(raw.get("sections"), list):
+              sections_key = "sections"
+              raw_sections = raw["sections"]
+          else:
+              print("ERROR: outline has no section list at document.sections or sections", file=sys.stderr)
+              sys.exit(1)
+
+          SOURCE_KEYS = ("file_path", "path", "file", "source", "src")
+
+          def norm_sources(value):
+              """Normalize a section's sources to plain relative path strings."""
+              paths = []
+              details = []
+              rejected = []
+              if not isinstance(value, list):
+                  return paths, details, rejected
+              for entry in value:
+                  path = None
+                  if isinstance(entry, str):
+                      path = entry
+                  elif isinstance(entry, dict):
+                      details.append(entry)
+                      for key in SOURCE_KEYS:
+                          candidate = entry.get(key)
+                          if isinstance(candidate, str) and candidate.strip():
+                              path = candidate
+                              break
+                  if not isinstance(path, str):
+                      rejected.append(repr(entry)[:80])
+                      continue
+                  path = path.strip()
+                  while path.startswith("./"):
+                      path = path[2:]
+                  # A source must be a FILE reference, not a directory or bare word.
+                  if not path or path.endswith("/") or "." not in path.rsplit("/", 1)[-1]:
+                      rejected.append(path)
+                      continue
+                  if path not in paths:
+                      paths.append(path)
+              return paths, details, rejected
+
+          all_rejected = []
+
+          def norm_section(node, depth):
+              if not isinstance(node, dict):
+                  return None
+              heading = node.get("heading")
+              if not isinstance(heading, str) or not heading.strip():
+                  heading = node.get("title") if isinstance(node.get("title"), str) else ""
+              level = node.get("level")
+              if not isinstance(level, int):
+                  stripped = heading.lstrip()
+                  hashes = len(stripped) - len(stripped.lstrip("#"))
+                  level = hashes if hashes > 0 else depth
+              prompt = node.get("prompt")
+              if not isinstance(prompt, str):
+                  prompt = ""
+              paths, details, rejected = norm_sources(node.get("sources"))
+              all_rejected.extend(rejected)
+              children = []
+              for child in node.get("sections") or []:
+                  normalized = norm_section(child, depth + 1)
+                  if normalized is not None:
+                      children.append(normalized)
+              out = {}
+              out["heading"] = heading
+              out["level"] = level
+              out["prompt"] = prompt
+              out["sources"] = paths
+              out["sources_detail"] = details
+              out["sections"] = children
+              return out
+
+          sections = []
+          for node in raw_sections:
+              normalized = norm_section(node, 1)
+              if normalized is not None:
+                  sections.append(normalized)
+
+          if not sections:
+              print("ERROR: outline contains zero sections after normalization", file=sys.stderr)
+              sys.exit(1)
+
+          # --- assign stable dotted ids (1, 1.1, 1.1.1 ...) -------------------
+          flat = []
+
+          def assign_ids(nodes, prefix, depth):
+              for index, node in enumerate(nodes, start=1):
+                  sid = str(index) if not prefix else prefix + "." + str(index)
+                  node["id"] = sid
+                  flat.append((sid, node, depth))
+                  assign_ids(node["sections"], sid, depth + 1)
+
+          assign_ids(sections, "", 1)
+
+          headless = [sid for sid, node, _ in flat if not node["heading"].strip()]
+          if headless:
+              print("ERROR: sections missing a heading: " + ", ".join(headless), file=sys.stderr)
+              sys.exit(1)
+
+          unique_sources = []
+          for _, node, _ in flat:
+              for path in node["sources"]:
+                  if path not in unique_sources:
+                      unique_sources.append(path)
+
+          document = {}
+          title = doc_in.get("title")
+          if not isinstance(title, str) or not title.strip():
+              title = meta.get("name") if isinstance(meta.get("name"), str) else "# Document"
+          output_path = doc_in.get("output")
+          if not isinstance(output_path, str) or not output_path.strip():
+              output_path = meta.get("target_path") if isinstance(meta.get("target_path"), str) else "output.md"
+          document["title"] = title
+          document["output"] = output_path
+          document["sections"] = sections
+
+          parsed = {}
+          parsed["meta"] = meta
+          parsed["document"] = document
+          parsed["sections"] = sections
+          parsed["section_count"] = len(flat)
+          parsed["max_depth"] = max(depth for _, _, depth in flat)
+          parsed["source_count"] = len(unique_sources)
+          parsed["meta_key_used"] = meta_key
+          parsed["sections_key_used"] = sections_key
+
+          with open(out_file, "w") as f:
+              json.dump(parsed, f, indent=2, ensure_ascii=False)
+
+          if all_rejected:
+              print("Ignored " + str(len(all_rejected)) + " non-file source entries: "
+                    + ", ".join(all_rejected[:10]), file=sys.stderr)
+          print("Parsed outline: " + str(parsed["section_count"]) + " sections, max_depth "
+                + str(parsed["max_depth"]) + ", " + str(parsed["source_count"])
+                + " unique sources (dialect: " + meta_key + " + " + sections_key + ")", file=sys.stderr)
+
+          summary = {}
+          summary["section_count"] = parsed["section_count"]
+          summary["max_depth"] = parsed["max_depth"]
+          summary["source_count"] = parsed["source_count"]
+          summary["meta_key_used"] = meta_key
+          summary["sections_key_used"] = sections_key
+          summary["rejected_source_entries"] = len(all_rejected)
+          print(json.dumps(summary))
+          PARSE_EOF
         output: "outline_parsed_status"
+        parse_json: true
         timeout: 120
-        retry:
-          max_attempts: 3
-          backoff: "exponential"
-          initial_delay: 2
 
       # ---- EXTRACT AND RESOLVE SOURCE PATHS ----
-      
+
+      # repo_root, NOT the outline's own directory: sources are repo-relative and
+      # the outline is expected to live ONE level below the repo root
+      # (<repo>/outlines/<name>_outline.json). fetch-local-sources falls back to
+      # the outline's own directory. See "OUTLINE PLACEMENT" in the header.
       - id: "get-outline-directory"
         type: "bash"
         command: |
@@ -586,78 +861,120 @@ stages:
           outline_dir="$(dirname "$outline_full_path")"
           repo_root="$(dirname "$outline_dir")"
           printf '%s' "$repo_root"
-        output: "outline_dir"
+        output: "source_root"
 
+      # Deterministic manifest build: reads ONLY the normalized sources arrays
+      # from parsed_outline.json. Never scrapes file paths out of prompt text.
       - id: "extract-source-paths"
-        agent: "foundation:explorer"
-        provider_preferences:
-          - provider: anthropic
-            model: claude-haiku-*
-          - provider: openai
-            model: gpt-5-mini
-        prompt: |
-          Extract ALL unique source file references from the parsed outline.
-          
-          Read the parsed outline from: {{working_dir}}/state/parsed_outline.json
-          
-          Sources in the outline are relative file paths (e.g., "docs/LOCAL_DEVELOPMENT.md").
-          
-          For each source found, extract:
-          - file_path: The relative path as specified in the outline
-          - sections: List of section IDs that reference this source
-          
-          Create a JSON manifest with this structure:
-          {
-            "sources": [
-              {
-                "file_path": "docs/LOCAL_DEVELOPMENT.md",
-                "sections": ["1", "1.1", "2.3"]
-              }
-            ],
-            "total_sources": number,
-            "sections_with_sources": number,
-            "sections_without_sources": number
-          }
-          
-          IMPORTANT: Save this manifest to: {{working_dir}}/state/source_manifest.json
-          
-          After saving, return a confirmation with the total_sources count.
+        type: "bash"
+        command: |
+          set -euo pipefail
+
+          python3 << 'MANIFEST_EOF'
+          import json
+          import sys
+
+          parsed_file = "{{working_dir}}/state/parsed_outline.json"
+          manifest_file = "{{working_dir}}/state/source_manifest.json"
+
+          with open(parsed_file) as f:
+              parsed = json.load(f)
+
+          order = []
+          by_path = {}
+          counters = [0, 0]
+
+          def visit(nodes):
+              for node in nodes:
+                  sid = node.get("id") or node.get("heading") or ""
+                  paths = node.get("sources") or []
+                  if paths:
+                      counters[0] += 1
+                  else:
+                      counters[1] += 1
+                  for path in paths:
+                      if path not in by_path:
+                          by_path[path] = []
+                          order.append(path)
+                      if sid not in by_path[path]:
+                          by_path[path].append(sid)
+                  visit(node.get("sections") or [])
+
+          visit(parsed.get("sections") or [])
+
+          sources = [{"file_path": path, "sections": by_path[path]} for path in order]
+
+          manifest = {}
+          manifest["sources"] = sources
+          manifest["total_sources"] = len(sources)
+          manifest["sections_with_sources"] = counters[0]
+          manifest["sections_without_sources"] = counters[1]
+
+          with open(manifest_file, "w") as f:
+              json.dump(manifest, f, indent=2, ensure_ascii=False)
+
+          print("Source manifest: " + str(manifest["total_sources"]) + " unique sources across "
+                + str(manifest["sections_with_sources"]) + " sections ("
+                + str(manifest["sections_without_sources"]) + " sections have no sources)", file=sys.stderr)
+          for entry in sources:
+              print("  - " + entry["file_path"], file=sys.stderr)
+          print(json.dumps(manifest))
+          MANIFEST_EOF
         output: "source_manifest_status"
+        parse_json: true
         timeout: 120
-        retry:
-          max_attempts: 3
-          backoff: "exponential"
-          initial_delay: 2
 
       # ---- FETCH LOCAL SOURCES ----
-      
+
       - id: "fetch-local-sources"
         type: "bash"
         command: |
           set -euo pipefail
-          
-          outline_dir="{{outline_dir}}"
+
+          source_root="{{source_root}}"
+          outline_dir="$(dirname "$(realpath "{{outline_path}}")")"
           sources_dir="{{working_dir}}/sources"
           manifest_file="{{working_dir}}/state/source_manifest.json"
           result_file="{{working_dir}}/state/sources_result.json"
-          
+
           fetched_json="[]"
           failed_json="[]"
-          
+
           while IFS= read -r file_path; do
             [ -z "$file_path" ] && continue
-            
-            abs_path="$outline_dir/$file_path"
+
+            abs_path=""
+            resolved_root=""
+            if [ "${file_path#/}" != "$file_path" ]; then
+              # Absolute path in the outline - use it verbatim.
+              if [ -f "$file_path" ]; then
+                abs_path="$file_path"
+                resolved_root="(absolute)"
+              fi
+            else
+              # repo_root first (documented convention), then the outline's own
+              # directory, so a misplaced outline resolves instead of silently
+              # reading one directory too high.
+              for root in "$source_root" "$outline_dir"; do
+                if [ -f "$root/$file_path" ]; then
+                  abs_path="$root/$file_path"
+                  resolved_root="$root"
+                  break
+                fi
+              done
+            fi
+
             safe_name=$(echo "$file_path" | tr '/' '_' | tr '\\' '_')
             dest_path="$sources_dir/$safe_name"
-            
-            if [ -f "$abs_path" ]; then
+
+            if [ -n "$abs_path" ]; then
               cp -p "$abs_path" "$dest_path" 2>/dev/null && {
                 size_bytes=$(wc -c < "$dest_path")
                 line_count=$(wc -l < "$dest_path")
                 fetched_json=$(echo "$fetched_json" | jq --arg src "$file_path" \
-                  --arg lp "$dest_path" --argjson sz "$size_bytes" --argjson lc "$line_count" \
-                  '. + [{"source": $src, "local_path": $lp, "size_bytes": $sz, "line_count": $lc}]')
+                  --arg lp "$dest_path" --arg root "$resolved_root" \
+                  --argjson sz "$size_bytes" --argjson lc "$line_count" \
+                  '. + [{"source": $src, "local_path": $lp, "resolved_root": $root, "size_bytes": $sz, "line_count": $lc}]')
               } || {
                 failed_json=$(echo "$failed_json" | jq --arg src "$file_path" \
                   --arg err "Copy failed: $abs_path" \
@@ -665,14 +982,14 @@ stages:
               }
             else
               failed_json=$(echo "$failed_json" | jq --arg src "$file_path" \
-                --arg err "File not found: $abs_path" \
+                --arg err "File not found under repo_root ($source_root) or outline dir ($outline_dir)" \
                 '. + [{"source": $src, "error": $err}]')
             fi
           done < <(jq -r '.sources[]?.file_path // empty' "$manifest_file")
-          
+
           total_fetched=$(echo "$fetched_json" | jq 'length')
           total_failed=$(echo "$failed_json" | jq 'length')
-          
+
           jq -n --argjson fetched "$fetched_json" --argjson failed "$failed_json" \
             --argjson tf "$total_fetched" --argjson tfl "$total_failed" '{
               fetched: $fetched,
@@ -681,7 +998,7 @@ stages:
               total_fetched: $tf,
               total_failed: $tfl
             }' > "$result_file"
-          
+
           cat "$result_file"
         output: "sources_result"
         parse_json: true
@@ -690,15 +1007,32 @@ stages:
         type: "bash"
         command: |
           set -euo pipefail
-          
+
+          manifest_file="{{working_dir}}/state/source_manifest.json"
+          result_file="{{working_dir}}/state/sources_result.json"
+
+          declared=$(jq -r '.total_sources // 0' "$manifest_file")
           fetched_count=$(ls -1 "{{working_dir}}/sources/" 2>/dev/null | wc -l)
-          
-          if [ "$fetched_count" -eq 0 ]; then
-              echo "ERROR: No source files were fetched" >&2
-              exit 1
+
+          if [ "$declared" -eq 0 ]; then
+            # A source-free outline (document_type "original") is legitimate:
+            # every section is written from its prompt alone. Do NOT hard-fail.
+            echo "Outline declares zero sources - nothing to fetch (source-free outline)"
+            exit 0
           fi
-          
-          echo "Successfully fetched $fetched_count source files"
+
+          if [ "$fetched_count" -eq 0 ]; then
+            echo "ERROR: outline declared $declared source(s) but NONE resolved on disk" >&2
+            jq -r '.failed[]? | "  - " + .source + ": " + .error' "$result_file" >&2 || true
+            exit 1
+          fi
+
+          if [ "$fetched_count" -lt "$declared" ]; then
+            echo "WARNING: fetched $fetched_count of $declared declared sources" >&2
+            jq -r '.failed[]? | "  - " + .source + ": " + .error' "$result_file" >&2 || true
+          fi
+
+          echo "Successfully fetched $fetched_count of $declared source files"
           ls -la "{{working_dir}}/sources/"
         output: "sources_verified"
 
@@ -1111,19 +1445,45 @@ stages:
           existing_map="$working_dir/state/existing_content_map.json"
           has_existing="$working_dir/state/has_existing_document"
           
-          # Check if we have existing document analysis
+          # Get BFS order (the full set of sections the outline asks for)
+          bfs_order=$(jq -c '.bfs_order // []' "$structure_file")
+          bfs_count=$(echo "$bfs_order" | jq 'length')
+          
+          if [ "$bfs_count" -eq 0 ]; then
+            echo "ERROR: structure.json has an empty bfs_order - there is nothing to generate" >&2
+            echo "       (compute-section-relationships did not produce section ids)" >&2
+            exit 1
+          fi
+          
+          # ---- NO EXISTING DOCUMENT: every section needs LLM generation ----
+          # Until v8.3.0 these two branches emitted sections_for_llm: [] while
+          # SAYING "all sections need LLM generation". get-sections-for-llm then
+          # filtered bfs_order down to nothing, generate-section's foreach ran
+          # ZERO times silently, and the run died much later at save-v0-generated
+          # with "Agent failed to write v0_generated.md". Emit the full bfs_order.
           if [ ! -f "$has_existing" ] || [ "$(cat "$has_existing")" != "true" ]; then
-            echo '{"preserved_count": 0, "sections_for_llm": [], "message": "No existing document - all sections need LLM generation"}'
+            echo "[]" > "$working_dir/state/preserved_sections.json"
+            jq -n --argjson bfs "$bfs_order" '{
+              preserved_count: 0,
+              preserved_sections: [],
+              sections_for_llm: $bfs,
+              llm_count: ($bfs | length),
+              message: "No existing document - all \($bfs | length) sections need LLM generation"
+            }'
             exit 0
           fi
           
           if [ ! -f "$existing_map" ]; then
-            echo '{"preserved_count": 0, "sections_for_llm": [], "message": "No existing content map - all sections need LLM generation"}'
+            echo "[]" > "$working_dir/state/preserved_sections.json"
+            jq -n --argjson bfs "$bfs_order" '{
+              preserved_count: 0,
+              preserved_sections: [],
+              sections_for_llm: $bfs,
+              llm_count: ($bfs | length),
+              message: "No existing content map - all \($bfs | length) sections need LLM generation"
+            }'
             exit 0
           fi
-          
-          # Get BFS order
-          bfs_order=$(jq -r '.bfs_order // []' "$structure_file")
           
           # Identify sections to preserve (action_needed = "none") vs sections needing LLM
           preserved_sections=$(jq -r '
@@ -1216,13 +1576,34 @@ stages:
           set -euo pipefail
           
           # Get the filtered list from preservation_result, maintaining BFS order
-          bfs_order=$(jq -r '.bfs_order // []' "{{working_dir}}/state/structure.json")
+          bfs_order=$(jq -c '.bfs_order // []' "{{working_dir}}/state/structure.json")
           sections_for_llm='{{preservation_result.sections_for_llm}}'
+          preserved_count='{{preservation_result.preserved_count}}'
+          preserved_count="${preserved_count:-0}"
           
           # Filter BFS order to only include sections needing LLM, preserving order
-          jq -n --argjson bfs "$bfs_order" --argjson for_llm "$sections_for_llm" '
+          filtered=$(jq -n --argjson bfs "$bfs_order" --argjson for_llm "$sections_for_llm" '
             $bfs | map(select(. as $s | $for_llm | index($s)))
-          '
+          ')
+          filtered_count=$(echo "$filtered" | jq 'length')
+          
+          # An empty list here means generate-section's foreach iterates ZERO
+          # times. That is only legitimate when sections were actually preserved
+          # from an existing document. With nothing preserved it is the bug that
+          # used to surface much later as "Agent failed to write v0_generated.md".
+          if [ "$filtered_count" -eq 0 ] && [ "$preserved_count" -eq 0 ]; then
+            echo "WARNING: sections_for_llm was empty with 0 preserved sections - falling back to the full BFS order" >&2
+            filtered="$bfs_order"
+            filtered_count=$(echo "$filtered" | jq 'length')
+          fi
+          
+          if [ "$filtered_count" -eq 0 ] && [ "$preserved_count" -eq 0 ]; then
+            echo "ERROR: nothing to generate and nothing preserved - generate-section would run 0 times" >&2
+            exit 1
+          fi
+          
+          echo "Sections for LLM generation: $filtered_count (preserved: $preserved_count)" >&2
+          echo "$filtered"
         output: "llm_bfs_order"
         parse_json: true
 
@@ -1340,16 +1721,38 @@ stages:
         command: |
           set -euo pipefail
           
+          tracker="{{working_dir}}/state/tracker.json"
+          
+          # GATE (v8.3.0): never stamp "generation_complete" over an empty
+          # document. Before this gate the status was stamped unconditionally and
+          # the real failure only surfaced at save-v0-generated as "Agent failed
+          # to write v0_generated.md" - the wrong step, the wrong message.
+          completed=$(jq '.sections_completed | length' "$tracker")
+          pending=$(jq '.sections_pending | length' "$tracker")
+          generated=$(jq '.generated_content | length' "$tracker")
+          
+          if [ "$generated" -eq 0 ]; then
+            echo "ERROR: generation produced ZERO sections (generated_content is empty)" >&2
+            echo "       sections_completed=$completed sections_pending=$pending" >&2
+            echo "       generate-section's foreach ran zero times or no section persisted content." >&2
+            echo "       Inspect: $tracker and {{working_dir}}/state/structure.json (.bfs_order)" >&2
+            exit 1
+          fi
+          
+          if [ "$completed" -eq 0 ] && [ "$pending" -gt 0 ]; then
+            echo "ERROR: no sections completed but $pending still pending - refusing to stamp generation_complete" >&2
+            exit 1
+          fi
+          
           timestamp=$(date -Iseconds)
           jq --arg ts "$timestamp" '
             .status = "generation_complete" |
             .current_stage = "generation" |
             .generation_completed_at = $ts
-          ' "{{working_dir}}/state/tracker.json" > "{{working_dir}}/state/tracker.json.tmp" \
-            && mv "{{working_dir}}/state/tracker.json.tmp" "{{working_dir}}/state/tracker.json"
+          ' "$tracker" > "$tracker.tmp" \
+            && mv "$tracker.tmp" "$tracker"
           
-          sections=$(jq '.sections_completed | length' "{{working_dir}}/state/tracker.json")
-          echo "Generation complete: $sections sections"
+          echo "Generation complete: $completed sections completed, $generated with content, $pending pending"
         output: "generation_status_set"
 
       - id: "assemble-document-from-tracker"
