@@ -1,6 +1,34 @@
+# --- Dependency manifest (contract: recipe-dependency-manifest.v1) ----------
+# schema_version 2 makes this recipe portable: every `agent:` reference below
+# resolves ONLY from the declared closure here, never from the calling
+# session's agent map. A caller that lacks these agents can still run it.
+# Pinned to the released tag `v2.1.2`. Foundation fetches a ref with
+# `git clone --branch`, which accepts a branch or a tag but NOT a commit SHA,
+# so a tag is the most immutable pin a `source:` can currently express.
+#
+# v2.2.0 -- this block is the only change. Previously the
+# `agent: "foundation:zen-architect"` steps below resolved out of the CALLING
+# session's agent map; a caller without that agent failed at run time with
+# "Agent 'foundation:zen-architect' not found in configuration". They now
+# resolve from this recipe's own declared closure. No behavior change under
+# the legacy engine, which ignores both new top-level keys. Recipe logic,
+# steps and prompts untouched.
+#
+# NOTE: the sub-recipes this recipe invokes (`ecosystem-audit-batch.yaml`,
+# `repo-audit.yaml`) carry their own manifests -- a sub-recipe's closure is
+# its own, not inherited from here.
+schema_version: 2
+
+dependencies:
+  - source: "git+https://github.com/microsoft/amplifier-foundation@v2.1.2"
+    kind: bundle
+    required_agents:
+      - "foundation:zen-architect"
+# ---------------------------------------------------------------------------
+
 name: "amplifier-ecosystem-audit"
 description: "Audit all Amplifier ecosystem repositories (public and private) in the Microsoft GitHub organization for compliance. Uses a batched architecture (configurable batch_size, default 25) with public/private separation; scales past 100 repos and supports the audit_visibility filter. Aggregates per-repo Dependabot open-PR findings to the top-level report as always-reported warnings."
-version: "2.1.0"
+version: "2.2.0"
 author: "Amplifier Team"
 tags: ["audit", "compliance", "github", "amplifier", "ecosystem", "multi-repo"]
 

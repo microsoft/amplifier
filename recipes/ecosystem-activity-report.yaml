@@ -1,6 +1,24 @@
+# --- Dependency manifest (contract: recipe-dependency-manifest.v1) ----------
+# schema_version 2 makes this recipe portable: every `agent:` reference below
+# resolves ONLY from the declared closure here, never from the calling
+# session's agent map. A caller that lacks these agents can still run it.
+# Pinned to the released tag `v2.1.2`. Foundation fetches a ref with
+# `git clone --branch`, which accepts a branch or a tag but NOT a commit SHA,
+# so a tag is the most immutable pin a `source:` can currently express.
+schema_version: 2
+
+dependencies:
+  - source: "git+https://github.com/microsoft/amplifier-foundation@v2.1.2"
+    kind: bundle
+    required_agents:
+      - "foundation:explorer"
+      - "foundation:file-ops"
+      - "foundation:zen-architect"
+# ---------------------------------------------------------------------------
+
 name: "ecosystem-activity-report"
 description: "Analyze activity across the Amplifier ecosystem by discovering repos from MODULES.md"
-version: "1.15.2"
+version: "1.16.0"
 author: "Amplifier"
 tags: ["amplifier", "ecosystem", "github", "activity", "modules", "discovery"]
 
@@ -14,6 +32,20 @@ tags: ["amplifier", "ecosystem", "github", "activity", "modules", "discovery"]
 # 3. Reads MODULES.md to discover all ecosystem repos
 # 4. Filters repos based on criteria (org, name pattern)
 # 5. Calls the generic multi-repo recipe from @recipes bundle
+#
+# v1.16.0: Portability - declare a schema_version 2 dependency manifest
+#         (contract recipe-dependency-manifest.v1, block at top of file)
+#         - The `agent: "foundation:explorer"` / `"foundation:file-ops"` /
+#           `"foundation:zen-architect"` steps below previously resolved out of
+#           the CALLING session's agent map; a caller without them failed at
+#           run time with "Agent 'foundation:file-ops' not found in
+#           configuration"
+#         - They now resolve from this recipe's own declared closure
+#         - The sub-recipe this recipe delegates to (repo-activity-analysis)
+#           carries its own manifest; a sub-recipe's closure is its own, not
+#           inherited from here
+#         - No behavior change under the legacy engine, which ignores both new
+#           top-level keys. Recipe logic, steps and prompts untouched.
 #
 # v1.15.2: Fix reduce-analyses step to filter intermediate files
 #         - Same fix as v1.15.1 but for reduce-analyses step (was missed)
