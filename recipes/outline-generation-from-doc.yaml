@@ -87,13 +87,31 @@ dependencies:
 
 name: "outline-generation-from-document"
 description: "Generate structured outlines from existing documents with source identification, directionality detection, and classification"
-version: "1.8.0"
+version: "1.9.0"
 author: "Recipe Author Agent"
 tags: ["documentation", "outline", "analysis", "source-identification", "directionality", "authority-detection"]
 
 # =============================================================================
 # CHANGELOG
 # =============================================================================
+# v1.9.0 (2026-09-05):
+#   - BUGFIX: assemble-outline-structure hard-failed with "Invalid \\escape" on any
+#     LLM payload whose string values carried a LITERAL backslash -- most commonly
+#     a shell line-continuation (backslash then a real newline) quoted verbatim
+#     out of a source document (work item recipes-cv1, found while producing a
+#     live outline for recipes-mxe).
+#     * clean_json_control_chars() assumed EVERY backslash inside a string began
+#       an escape sequence and copied it plus the next character through
+#       untouched, so backslash+newline survived into json.loads and the literal
+#       newline never reached the branch that would have escaped it.
+#     * All three fallback extraction methods re-run that same cleaner, so they
+#       failed identically and the step died with "Could not parse flat_sections
+#       as JSON" after a full, expensive outline generation had already succeeded.
+#     * The cleaner now copies a backslash pair through ONLY when the next
+#       character is a valid JSON escape initiator ("\\/bfnrt, or u + 4 hex
+#       digits); any other backslash is escaped as data. `import re` added to the
+#       step's python heredoc for the hex-digit check.
+#
 # v1.8.0 (2026-09-02):
 #   - CONTRACT: documented this recipe's output as the agreed schema for
 #     document-generation.yaml (work item recipes-0sv). See "OUTPUT CONTRACT"
@@ -1775,6 +1793,7 @@ steps:
       # Use Python to assemble the nested structure from flat sections
       python3 << 'ASSEMBLE_EOF'
       import json
+      import re
       import sys
       
       # Parse the inputs - these come as JSON strings from previous steps
@@ -1807,10 +1826,29 @@ steps:
               if in_string:
                   # We're inside a quoted string
                   if c == '\\' and i + 1 < n:
-                      # Escape sequence - keep as-is and skip next char
-                      result.append(c)
-                      result.append(json_str[i + 1])
-                      i += 2
+                      # Only a VALID JSON escape may be copied through untouched.
+                      # Until v1.9.0 every backslash was assumed to start one, so a
+                      # literal backslash in the data - most commonly a shell
+                      # line-continuation the LLM quoted verbatim, backslash then a
+                      # REAL newline - was emitted unchanged and json.loads rejected
+                      # the whole payload with "Invalid \escape". The literal newline
+                      # never reached the branch below that would have escaped it,
+                      # and all three fallback extraction methods re-run this same
+                      # cleaner, so they failed identically. (work item recipes-cv1)
+                      nxt = json_str[i + 1]
+                      is_valid_escape = nxt in '"\\/bfnrt' or (
+                          nxt == 'u'
+                          and re.match(r'[0-9a-fA-F]{4}', json_str[i + 2:i + 6] or '')
+                      )
+                      if is_valid_escape:
+                          result.append(c)
+                          result.append(nxt)
+                          i += 2
+                          continue
+                      # Literal backslash in the data - escape it and let the loop
+                      # handle the following character on its own terms.
+                      result.append('\\\\')
+                      i += 1
                       continue
                   elif c == '"':
                       # Is this the end of the string, or an unescaped quote inside?
