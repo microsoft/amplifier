@@ -27,8 +27,8 @@ dependencies:
 # ---------------------------------------------------------------------------
 
 name: "amplifier-ecosystem-audit"
-description: "Audit all Amplifier ecosystem repositories (public and private) in the Microsoft GitHub organization for compliance. Uses a batched architecture (configurable batch_size, default 25) with public/private separation; scales past 100 repos and supports the audit_visibility filter. Aggregates per-repo Dependabot open-PR findings to the top-level report as always-reported warnings."
-version: "2.2.0"
+description: "Audit all Amplifier ecosystem repositories (public and private) in the Microsoft GitHub organization for compliance. Uses a batched architecture (configurable batch_size, default 25) with public/private separation; scales past 100 repos and supports the audit_visibility filter. Aggregates per-repo Dependabot open-PR findings to the top-level report as always-reported warnings, and surfaces per-batch audit coverage (batch_health) so a batch that audited nothing is never mistaken for a clean one."
+version: "2.3.0"
 author: "Amplifier Team"
 tags: ["audit", "compliance", "github", "amplifier", "ecosystem", "multi-repo"]
 
@@ -72,7 +72,45 @@ tags: ["audit", "compliance", "github", "amplifier", "ecosystem", "multi-repo"]
 # Requirements:
 #   - gh CLI installed and authenticated
 #   - repo-audit.yaml recipe (in same directory)
+#   - ecosystem-audit-batch.yaml >= v1.2.0 (writes the per-batch
+#     <batch_id>.health.json this recipe's collect-batch-health step reads)
 #   - Write access to repos if create_fix_prs is "true"
+#
+# =============================================================================
+# CHANGELOG
+# =============================================================================
+#
+# v2.3.0 (2026-09-05):
+#   - COVERAGE VISIBILITY: surface batch health end to end (work item
+#     recipes-kj5). `audit-batches` sets on_error: "continue" so one bad batch
+#     cannot sink the ecosystem run — but that also meant a run in which every
+#     batch audited NOTHING still produced a confident report, because the only
+#     evidence was a per-repo "status":"MISSING" marker buried in the JSONL.
+#     * NEW STEP `collect-batch-health` (deterministic bash, no LLM,
+#       on_error: "fail") is now the FIRST step of the reporting stage. It
+#       reads the <batch_id>.health.json files written by
+#       ecosystem-audit-batch.yaml v1.2.0, rolls them up into
+#       findings/batch-health-summary.json, and FAILS THE RUN when zero repos
+#       were audited across all batches — before the two report-generating LLM
+#       steps run, so the recipe never spends a model call describing an audit
+#       that did not happen.
+#     * A batch whose health file is absent (the batch died before its own
+#       check ran) is counted as `batches_unreported`, and one that is present
+#       but unparseable as `batches_unreadable` — neither is silently skipped.
+#     * `aggregate-results` now carries `batch_health` in its output (read back
+#       from batch-health-summary.json, not interpolated), so it lands in
+#       reports/aggregate-data.json too.
+#     * The report prompt gains a MANDATORY "Batch Health" executive-summary
+#       line and a "Batch Health" section, both required to state that repos
+#       which failed to audit are a COVERAGE GAP, not a clean bill of health.
+#     * `completion-summary` prints the same audited/failed/batches figures.
+#     * Report footer version string corrected (was still v2.1.0 at v2.2.0).
+#   - No change to discovery, batching, or the audits stage.
+#
+# v2.2.0:
+#   - PORTABILITY: declare a schema_version 2 dependency manifest
+#     (contract recipe-dependency-manifest.v1; block at top of file). See the
+#     note above `schema_version:` for the full rationale.
 
 recursion:
   max_depth: 5
@@ -596,6 +634,124 @@ stages:
   # ==========================================================================
   - name: "reporting"
     steps:
+      # ------------------------------------------------------------------
+      # Batch health rollup (deterministic; no LLM) — runs FIRST.
+      #
+      # `audit-batches` sets on_error: "continue" on purpose: one bad batch
+      # must not sink the ecosystem run. ecosystem-audit-batch.yaml v1.2.0
+      # now writes <batch_id>.health.json per batch, so this step can tell
+      # a healthy batch from a partial one from one that audited NOTHING —
+      # without parsing per-repo "MISSING" markers out of the JSONL
+      # (recipes-kj5).
+      #
+      # It runs before collect-individual-reports so a run in which every
+      # batch produced nothing fails HERE, loudly, rather than spending two
+      # LLM calls generating a confident report about zero audits.
+      # ------------------------------------------------------------------
+      - id: "collect-batch-health"
+        type: "bash"
+        parse_json: true
+        command: |
+          set -euo pipefail
+          FINDINGS_DIR="{{working_dir}}/findings"
+          EXPECTED_BATCHES={{split.total_batches}}
+          SUMMARY="$FINDINGS_DIR/batch-health-summary.json"
+
+          mkdir -p "$FINDINGS_DIR"
+
+          HEALTH_TMP=$(mktemp)
+          trap 'rm -f "$HEALTH_TMP"' EXIT
+
+          shopt -s nullglob
+          HEALTH_FILES=("$FINDINGS_DIR"/*.health.json)
+          for hf in "${HEALTH_FILES[@]}"; do
+            # A malformed health file is reported as such, never skipped
+            # silently — a batch we cannot read is not a batch that passed.
+            if jq -e . "$hf" > /dev/null 2>&1; then
+              jq -c '.' "$hf" >> "$HEALTH_TMP"
+            else
+              jq -nc --arg f "$hf" \
+                '{batch_id: ($f | split("/") | last | sub("\\.health\\.json$"; "")),
+                  visibility: "unknown", health: "unreadable",
+                  repos_total: 0, repos_audited: 0, repos_failed: 0,
+                  failed_repos: [], failures: []}' >> "$HEALTH_TMP"
+            fi
+          done
+
+          if [ -s "$HEALTH_TMP" ]; then
+            BATCHES=$(jq -s -c '.' "$HEALTH_TMP")
+          else
+            BATCHES="[]"
+          fi
+
+          SUMMARY_JSON=$(jq -n \
+            --argjson batches "$BATCHES" \
+            --argjson expected "$EXPECTED_BATCHES" \
+            '{
+              batches_expected: $expected,
+              batches_reported: ($batches | length),
+              batches_unreported: (($expected - ($batches | length)) | if . < 0 then 0 else . end),
+              batches_ok:        ([$batches[] | select(.health == "ok")]        | length),
+              batches_partial:   ([$batches[] | select(.health == "partial")]   | length),
+              batches_empty:     ([$batches[] | select(.health == "empty")]     | length),
+              batches_unreadable:([$batches[] | select(.health == "unreadable")]| length),
+              repos_audited: ([$batches[] | .repos_audited // 0] | add // 0),
+              repos_failed:  ([$batches[] | .repos_failed  // 0] | add // 0),
+              failed_repos:  ([$batches[] | .failed_repos[]? ] | unique),
+              failing_batches: [$batches[] | select(.health == "empty" or .health == "partial" or .health == "unreadable")
+                                | {batch_id, visibility, health, repos_audited, repos_failed, failed_repos}],
+              # Compact on purpose: this rollup is interpolated into the report
+              # prompt. The verbose per-repo `failures` reasons stay in each
+              # batch is own <batch_id>.health.json rather than being copied here.
+              per_batch: [$batches[] | {batch_id, visibility, health, repos_total, repos_audited, repos_failed, failed_repos}]
+            }
+            | .health = (
+                if .repos_audited == 0 then "empty"
+                elif (.repos_failed > 0 or .batches_unreported > 0 or .batches_empty > 0 or .batches_unreadable > 0) then "partial"
+                else "ok" end
+              )')
+
+          printf '%s\n' "$SUMMARY_JSON" > "$SUMMARY"
+          printf '%s\n' "$SUMMARY_JSON"
+
+          AUDITED=$(jq -r '.repos_audited' <<< "$SUMMARY_JSON")
+          OVERALL=$(jq -r '.health' <<< "$SUMMARY_JSON")
+
+          if [ "$AUDITED" -eq 0 ]; then
+            {
+              echo "========================================================"
+              echo "ECOSYSTEM AUDIT PRODUCED NOTHING"
+              echo "========================================================"
+              jq -r '"Batches expected   : \(.batches_expected)",
+                     "Batches reporting  : \(.batches_reported)",
+                     "  ok / partial     : \(.batches_ok) / \(.batches_partial)",
+                     "  empty            : \(.batches_empty)",
+                     "  unreadable       : \(.batches_unreadable)",
+                     "  never reported   : \(.batches_unreported)",
+                     "Repos audited      : \(.repos_audited)",
+                     "Repos failed       : \(.repos_failed)"' <<< "$SUMMARY_JSON"
+              echo ""
+              echo "Not one repository in any batch produced an audit report."
+              echo "Per-batch detail:"
+              jq -r '.failing_batches[]? | "  - \(.batch_id) (\(.visibility)): \(.health), audited \(.repos_audited), failed \(.repos_failed)"' <<< "$SUMMARY_JSON"
+              echo ""
+              echo "Batch health summary written to: $SUMMARY"
+              echo "Refusing to generate an ecosystem report over zero audits."
+              echo "========================================================"
+            } >&2
+            exit 1
+          fi
+
+          if [ "$OVERALL" != "ok" ]; then
+            {
+              echo "WARNING: ecosystem audit is PARTIAL — see $SUMMARY"
+              jq -r '.failing_batches[]? | "  - \(.batch_id) (\(.visibility)): \(.health), audited \(.repos_audited), failed \(.repos_failed)"' <<< "$SUMMARY_JSON"
+            } >&2
+          fi
+        output: "batch_health"
+        timeout: 120
+        on_error: "fail"
+
       - id: "collect-individual-reports"
         type: "bash"
         command: |
@@ -736,7 +892,20 @@ stages:
             DEP_PER_REPO="[]"
           fi
 
+          # Batch health, computed by collect-batch-health and read back from
+          # its own file rather than interpolated: the aggregate must carry
+          # batch health so the report and the saved aggregate-data.json both
+          # show partial failure without anyone re-deriving it from MISSING
+          # markers (recipes-kj5).
+          BATCH_HEALTH_FILE="$FINDINGS_DIR/batch-health-summary.json"
+          if [ -s "$BATCH_HEALTH_FILE" ] && jq -e . "$BATCH_HEALTH_FILE" > /dev/null 2>&1; then
+            BATCH_HEALTH=$(jq -c '.' "$BATCH_HEALTH_FILE")
+          else
+            BATCH_HEALTH='{"health":"unknown","reason":"batch-health-summary.json missing or unreadable"}'
+          fi
+
           jq -n \
+            --argjson batch_health "$BATCH_HEALTH" \
             --argjson total "$TOTAL" \
             --argjson pass "$PASS" \
             --argjson attention "$ATTENTION" \
@@ -754,6 +923,7 @@ stages:
             --argjson dep_per_repo "$DEP_PER_REPO" \
             '{
               total_repos: $total,
+              batch_health: $batch_health,
               by_status: {
                 pass: $pass,
                 needs_attention: $attention,
@@ -810,12 +980,49 @@ stages:
           | NEEDS ATTENTION | N | X% |
           | CRITICAL | N | X% |
           
+          **Batch Health**: [From aggregate_data.batch_health. If health is "ok",
+          write "all N batches audited cleanly — OK". If health is "partial", write
+          "PARTIAL — A of B batches reported, X repos audited, Y repos failed to
+          audit (list failed_repos)". If health is "unknown", say so plainly rather
+          than implying success. This line is mandatory and must always be present.]
+          
           **Dependabot**: [From aggregate_data.dependabot. If total_prs > 0, write
           "N open PRs across M repos (S security-flagged) — WARNING". If total_prs is 0,
           write "none open — OK". This line is mandatory and must always be present.]
           
           **Key Findings**:
           - [Top 3-5 most important findings across ecosystem]
+          
+          ## Batch Health
+          
+          ALWAYS render this section. Source every number from the
+          `batch_health` object in aggregate_data — never from per-repo MISSING
+          markers, and never infer it from the repo counts elsewhere in this
+          report. A repo that was never audited is NOT the same as a repo that
+          was audited and found wanting; this section is the only place that
+          distinction is stated.
+          
+          - **Overall**: [batch_health.health — ok / partial / empty / unknown]
+          - **Batches**: [batch_health.batches_reported] of
+            [batch_health.batches_expected] reported
+            ([batch_health.batches_ok] ok, [batch_health.batches_partial] partial,
+            [batch_health.batches_empty] empty,
+            [batch_health.batches_unreported] never reported)
+          - **Repos audited**: [batch_health.repos_audited]
+          - **Repos that failed to audit**: [batch_health.repos_failed]
+          
+          If `batch_health.repos_failed` is 0 and `batch_health.health` is "ok",
+          add the line "All batches audited cleanly." and nothing else.
+          
+          Otherwise list every failing batch from `batch_health.failing_batches`:
+          
+          | Batch | Visibility | Health | Audited | Failed | Failed repos |
+          |-------|------------|--------|---------|--------|--------------|
+          | batch-pub-01 | public | partial | N | N | repo-a, repo-b |
+          
+          State explicitly that repos listed here were NOT audited, so their
+          absence from the PASS / NEEDS ATTENTION / CRITICAL counts above is a
+          gap in coverage, not a clean bill of health.
           
           ## Compliance Overview
           
@@ -900,7 +1107,7 @@ stages:
           3. [Long-term governance recommendations]
           
           ---
-          *Generated by Amplifier ecosystem-audit recipe v2.1.0*
+          *Generated by Amplifier ecosystem-audit recipe v2.3.0*
         output: "ecosystem_report_content"
         timeout: 600
         on_error: "fail"
@@ -956,6 +1163,7 @@ stages:
           # Show summary stats
           echo "Quick Stats:"
           cat "{{working_dir}}/reports/aggregate-data.json" 2>/dev/null | jq -r '
+            "  Batch health: \(.batch_health.health // "unknown") — \(.batch_health.repos_audited // 0) repos audited, \(.batch_health.repos_failed // 0) failed to audit across \(.batch_health.batches_reported // 0)/\(.batch_health.batches_expected // 0) batches",
             "  Total repos: \(.total_repos)",
             "    Public: \(.by_visibility.public // 0)",
             "    Private: \(.by_visibility.private // 0)",

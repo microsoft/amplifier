@@ -1,6 +1,23 @@
+# --- Dependency manifest (contract: recipe-dependency-manifest.v1) ----------
+# schema_version 2 makes this recipe portable: an `agent:` reference resolves
+# ONLY from the declared closure here, never from the calling session's agent
+# map. This recipe has NO `agent:` steps of its own -- every step is `bash` or
+# `recipe` -- so its closure is genuinely EMPTY, and `dependencies: []` is the
+# way manifest.v1 says "declare none". Declaring it explicitly is the point:
+# it states that this recipe needs nothing from its caller, rather than
+# leaving that to be inferred from the absence of a block.
+#
+# NOTE: the sub-recipe this recipe invokes (`repo-audit.yaml`) carries its own
+# manifest -- a sub-recipe's closure is its own, not inherited from here, and
+# not narrowed by this recipe's empty one.
+schema_version: 2
+
+dependencies: []
+# ---------------------------------------------------------------------------
+
 name: "ecosystem-audit-batch"
-description: "Sub-recipe for amplifier-ecosystem-audit.yaml. Audits the repos in one batch file, then flushes per-repo findings as JSONL. Visibility-agnostic — reads visibility from the batch file."
-version: "1.1.0"
+description: "Sub-recipe for amplifier-ecosystem-audit.yaml. Audits the repos in one batch file, flushes per-repo findings as JSONL, then checks batch health and fails loud when the whole batch produced no audit at all. Visibility-agnostic — reads visibility from the batch file."
+version: "1.2.0"
 author: "Amplifier Team"
 tags: ["audit", "compliance", "github", "amplifier", "ecosystem", "batch"]
 
@@ -14,14 +31,57 @@ tags: ["audit", "compliance", "github", "amplifier", "ecosystem", "batch"]
 #   1. Load the batch file and expose repos + visibility metadata
 #   2. Foreach repo in batch (parallel: 2), invoke repo-audit.yaml
 #   3. Flush a JSONL findings file with one line per repo
+#   4. Check batch health: fail loud if NOTHING in the batch was audited,
+#      otherwise record an explicit audited/failed summary for the caller
 #
 # The JSONL findings file is the durable per-batch summary. Filename
 # encodes visibility (batch-pub-NN.jsonl or batch-priv-NN.jsonl); each
 # line embeds the visibility field for redundant clarity.
 #
+# Alongside it, step 4 writes <batch_id>.health.json in the same findings
+# directory. That file — not the per-repo "MISSING" markers — is what the
+# parent recipe reads to tell a healthy batch from a partial one from a batch
+# that audited nothing at all.
+#
 # Requirements:
 #   - repo-audit.yaml in the same directory
 #   - batch_file produced by split-into-batches step in parent recipe
+#
+# =============================================================================
+# CHANGELOG
+# =============================================================================
+#
+# v1.2.0 (2026-09-05):
+#   - BUGFIX: the recipe reported {'status': 'completed'} when 100% of the
+#     batch's repos failed to audit (work item recipes-kj5). `on_error:
+#     "continue"` on the audit-repos-in-batch foreach is deliberate and stays
+#     — one bad repo must not sink a 25-repo batch — but it also swallowed the
+#     case where EVERY repo failed. flush-batch-findings then wrote a
+#     success-shaped JSONL file whose lines all said "status":"MISSING", and
+#     the caller saw completed + a findings file. Only the per-repo MISSING
+#     marker distinguished "audited and genuinely absent" from "never audited".
+#     * NEW STEP `check-batch-health` (deterministic bash, no LLM, on_error:
+#       "fail") runs after flush-batch-findings. It reads what that step
+#       already computed and:
+#         - exits non-zero when ZERO repos produced an audit-report.md,
+#           naming the batch id and the per-repo failure reason for each;
+#         - passes when >= 1 repo audited, but always writes an explicit
+#           batch_health summary (health/repos_audited/repos_failed/
+#           failed_repos/failures) to <findings>/<batch_id>.health.json.
+#     * flush-batch-findings runs with on_error: "continue", so its own
+#       failure must not read as "nothing to check": when the JSONL is absent
+#       or empty the check falls back to the batch file itself and reports
+#       every named repo as failed rather than reporting an empty batch.
+#   - PORTABILITY: declare a schema_version 2 dependency manifest
+#     (contract recipe-dependency-manifest.v1; block sits above `name:`).
+#     This recipe has no `agent:` steps, so the closure is `dependencies: []`.
+#     No behavior change under the legacy engine, which ignores both new
+#     top-level keys.
+#
+# v1.1.0:
+#   - flush-batch-findings picks up repo-audit's dependabot.json and embeds
+#     dependabot_count / dependabot_security_count / dependabot_severity in
+#     each per-repo JSONL line.
 
 recursion:
   max_depth: 3
@@ -151,3 +211,187 @@ stages:
         output: "flush_result"
         timeout: 120
         on_error: "continue"
+
+      # ------------------------------------------------------------------
+      # Batch health check (deterministic; no LLM)
+      #
+      # `audit-repos-in-batch` sets on_error: "continue" on purpose: one bad
+      # repo must not sink a 25-repo batch. But that also swallowed the case
+      # where EVERY repo failed — the recipe still returned 'completed' and
+      # flush-batch-findings still wrote a success-shaped findings file whose
+      # lines all said "status":"MISSING" (recipes-kj5).
+      #
+      # This step reads what flush-batch-findings already computed and draws
+      # the line the foreach cannot:
+      #   audited >= 1  -> pass, and record audited/failed + failed repo names
+      #                    in <batch_id>.health.json so the caller sees partial
+      #                    failure WITHOUT parsing per-repo MISSING markers
+      #   audited == 0  -> fail loud, naming the batch and why each repo failed
+      # ------------------------------------------------------------------
+      - id: "check-batch-health"
+        type: "bash"
+        parse_json: true
+        command: |
+          set -euo pipefail
+          BATCH_ID="{{batch.batch_id}}"
+          VISIBILITY="{{batch.visibility}}"
+          BATCH_FILE="{{batch_file}}"
+          WORKING_DIR="{{working_dir}}"
+          REPORTS_DIR="$WORKING_DIR/repos"
+          FINDINGS_DIR="$WORKING_DIR/findings"
+          FINDINGS="$FINDINGS_DIR/${BATCH_ID}.jsonl"
+          HEALTH="$FINDINGS_DIR/${BATCH_ID}.health.json"
+
+          mkdir -p "$FINDINGS_DIR"
+
+          FAILED_TMP=$(mktemp)
+          FAILURES_TMP=$(mktemp)
+          trap 'rm -f "$FAILED_TMP" "$FAILURES_TMP"' EXIT
+
+          # Why a named repo has no audit report, from on-disk evidence only.
+          # Deliberately does not guess a cause it cannot see.
+          reason_for() {
+            local owner="$1" name="$2"
+            local report="$REPORTS_DIR/$name/audit-report.md"
+            if [ ! -d "$REPORTS_DIR/$name" ]; then
+              echo "no audit report at $report — the per-repo output directory was never created, so repo-audit.yaml for $owner/$name did not get past its first step"
+            else
+              echo "no audit report at $report — the per-repo output directory exists, so repo-audit.yaml for $owner/$name started and failed before writing its report"
+            fi
+          }
+
+          record_failure() {
+            local owner="$1" name="$2" reason
+            reason="$(reason_for "$owner" "$name")"
+            echo "$name" >> "$FAILED_TMP"
+            jq -nc --arg repo "$name" --arg owner "$owner" --arg reason "$reason" \
+              '{repo: $repo, owner: $owner, reason: $reason}' >> "$FAILURES_TMP"
+          }
+
+          TOTAL=0
+          AUDITED=0
+          FAILED=0
+          FINDINGS_FLUSHED=true
+
+          if [ ! -s "$FINDINGS" ]; then
+            # flush-batch-findings runs with on_error: "continue", so its own
+            # failure must never read as "nothing to check". Fall back to the
+            # batch file: every repo the batch NAMED is accounted for.
+            FINDINGS_FLUSHED=false
+            while IFS= read -r repo_json; do
+              [ -z "$repo_json" ] && continue
+              REPO_NAME=$(echo "$repo_json" | jq -r '.name')
+              REPO_OWNER=$(echo "$repo_json" | jq -r '.owner')
+              TOTAL=$((TOTAL + 1))
+              if [ -f "$REPORTS_DIR/$REPO_NAME/audit-report.md" ]; then
+                AUDITED=$((AUDITED + 1))
+              else
+                FAILED=$((FAILED + 1))
+                record_failure "$REPO_OWNER" "$REPO_NAME"
+              fi
+            done < <(jq -c '.repos[]' "$BATCH_FILE")
+          else
+            while IFS= read -r line; do
+              [ -z "$line" ] && continue
+              REPO_NAME=$(echo "$line" | jq -r '.repo')
+              REPO_OWNER=$(echo "$line" | jq -r '.owner')
+              STATUS=$(echo "$line" | jq -r '.status')
+              TOTAL=$((TOTAL + 1))
+              if [ "$STATUS" = "MISSING" ]; then
+                FAILED=$((FAILED + 1))
+                record_failure "$REPO_OWNER" "$REPO_NAME"
+              else
+                AUDITED=$((AUDITED + 1))
+              fi
+            done < "$FINDINGS"
+          fi
+
+          if [ -s "$FAILED_TMP" ]; then
+            FAILED_REPOS=$(jq -R -s -c 'split("\n") | map(select(length > 0))' "$FAILED_TMP")
+          else
+            FAILED_REPOS="[]"
+          fi
+          if [ -s "$FAILURES_TMP" ]; then
+            FAILURES=$(jq -s -c '.' "$FAILURES_TMP")
+          else
+            FAILURES="[]"
+          fi
+
+          # empty   — nothing in this batch was audited (or the batch named no
+          #           repos at all); the batch produced no usable finding
+          # partial — at least one repo audited, at least one failed
+          # ok      — every repo in the batch produced an audit report
+          if [ "$AUDITED" -eq 0 ]; then
+            HEALTH_STATUS="empty"
+          elif [ "$FAILED" -gt 0 ]; then
+            HEALTH_STATUS="partial"
+          else
+            HEALTH_STATUS="ok"
+          fi
+
+          jq -n \
+            --arg batch_id "$BATCH_ID" \
+            --arg visibility "$VISIBILITY" \
+            --arg health "$HEALTH_STATUS" \
+            --arg findings_file "$FINDINGS" \
+            --argjson findings_flushed "$FINDINGS_FLUSHED" \
+            --argjson repos_total "$TOTAL" \
+            --argjson repos_audited "$AUDITED" \
+            --argjson repos_failed "$FAILED" \
+            --argjson failed_repos "$FAILED_REPOS" \
+            --argjson failures "$FAILURES" \
+            --arg checked_at "$(date -Iseconds)" \
+            '{
+              batch_id: $batch_id,
+              visibility: $visibility,
+              health: $health,
+              repos_total: $repos_total,
+              repos_audited: $repos_audited,
+              repos_failed: $repos_failed,
+              failed_repos: $failed_repos,
+              failures: $failures,
+              findings_file: $findings_file,
+              findings_flushed: $findings_flushed,
+              checked_at: $checked_at
+            }' > "$HEALTH"
+
+          cat "$HEALTH"
+
+          if [ "$AUDITED" -eq 0 ]; then
+            {
+              echo "========================================================"
+              echo "BATCH AUDIT PRODUCED NOTHING: $BATCH_ID ($VISIBILITY)"
+              echo "========================================================"
+              echo "Repos named in batch : $TOTAL"
+              echo "Repos audited        : 0"
+              echo "Repos failed         : $FAILED"
+              if [ "$FINDINGS_FLUSHED" = "false" ]; then
+                echo "Findings file        : MISSING or empty ($FINDINGS)"
+                echo "  flush-batch-findings did not produce a findings file for"
+                echo "  this batch; repo state was read from $BATCH_FILE instead."
+              else
+                echo "Findings file        : $FINDINGS (every line status=MISSING)"
+              fi
+              echo ""
+              if [ "$TOTAL" -eq 0 ]; then
+                echo "This batch named NO repositories at all. split-into-batches"
+                echo "in the parent recipe should never emit an empty batch, so"
+                echo "$BATCH_FILE is itself suspect."
+              else
+                echo "Per-repo failure reasons:"
+                jq -r '.[] | "  - \(.owner)/\(.repo): \(.reason)"' <<< "$FAILURES"
+              fi
+              echo ""
+              echo "Batch health written to: $HEALTH"
+              echo "Refusing to report this batch as completed."
+              echo "========================================================"
+            } >&2
+            exit 1
+          fi
+
+          if [ "$FAILED" -gt 0 ]; then
+            echo "WARNING: batch $BATCH_ID is PARTIAL — audited $AUDITED, failed $FAILED ($(jq -r 'join(", ")' <<< "$FAILED_REPOS"))" >&2
+          fi
+        output: "batch_health"
+        timeout: 120
+        on_error: "fail"
