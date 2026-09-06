@@ -18,7 +18,7 @@ dependencies:
 
 name: "ecosystem-activity-report"
 description: "Analyze activity across the Amplifier ecosystem by discovering repos from MODULES.md"
-version: "1.17.0"
+version: "1.18.0"
 author: "Amplifier"
 tags: ["amplifier", "ecosystem", "github", "activity", "modules", "discovery"]
 
@@ -32,6 +32,35 @@ tags: ["amplifier", "ecosystem", "github", "activity", "modules", "discovery"]
 # 3. Reads MODULES.md to discover all ecosystem repos
 # 4. Filters repos based on criteria (org, name pattern)
 # 5. Calls the generic multi-repo recipe from @recipes bundle
+#
+# v1.18.0: the zero-repos path reports "no activity" instead of dying
+#         (work item recipes-7vl)
+#         - A repo_filter or date_range that selects repos with NO activity is
+#           an ordinary outcome, not an error. It used to be fatal: with
+#           analyses/ empty, set-final-validation's count was a bare
+#             ls -1 analyses/*-analysis.json 2>/dev/null | grep -v -E '...' | wc -l
+#           under `set -euo pipefail`. `ls` failed AND `grep -v` selected no
+#           lines (exit 1), so the pipeline aborted the step before it emitted
+#           anything at all. Its `on_error: continue` then wrote that EMPTY
+#           stdout into final_validation as a str, and assemble-report died two
+#           steps later on {{final_validation.still_missing}} with:
+#             "Cannot access 'still_missing' on {{final_validation}}
+#              - it's a str, not a dict"
+#           -- naming the symptom, two steps downstream of the producer.
+#         - Every leg of that count now tolerates the empty case, so the zero
+#           path runs to completion.
+#         - set-final-validation now validates its OWN output shape before
+#           emitting it, and fails naming ITSELF when the payload is not a JSON
+#           object. Its on_error is "fail" rather than "continue" for the same
+#           reason: silently substituting an unusable value for final_validation
+#           is what moved the failure away from the step that caused it.
+#         - assemble-report says so explicitly when zero repos had activity,
+#           rather than emitting a report shaped like one that found activity
+#           and happens to have every number at zero. Its two LLM-supplied
+#           arrays are read with `// []` defaults, since an empty dataset is
+#           exactly when a model is most likely to omit those keys.
+#         - v1.17.0's deterministic save-analyses-to-file step is unchanged.
+#         - Unit-tested by tests/test_ecosystem_activity_final_validation.py.
 #
 # v1.17.0: save-analyses-to-file no longer uses a model as a file-copy primitive
 #         (work item recipes-zfl)
@@ -1113,29 +1142,66 @@ steps:
       
       # Recount (only main {repo}-analysis.json, not chunk/commit/pr intermediates)
       # v1.15.1: Filter out intermediate files from repo-activity-analysis v3.0.0+
-      expected=$(wc -l < expected-repos.txt | tr -d ' ')
-      analyzed=$(ls -1 analyses/*-analysis.json 2>/dev/null | grep -v -E '(-chunk-|-commit-|-pr-|-all-chunks|-deep-dives)' | wc -l | tr -d ' ')
+      #
+      # v1.18.0: every leg of this count tolerates the EMPTY case. It used to be
+      # one pipeline:
+      #   analyzed=$(ls -1 analyses/*-analysis.json 2>/dev/null | grep -v -E ... | wc -l)
+      # With analyses/ empty -- an ordinary outcome for a narrow repo_filter or a
+      # quiet window -- `ls` failed AND `grep -v` selected no lines (exit 1), so
+      # `set -o pipefail` aborted this step before it emitted anything, and its
+      # then-`on_error: continue` handed the consumer an empty STRING for
+      # final_validation. See the v1.18.0 note at the top of this file.
+      count_analyses() {
+        { ls -1 analyses/*-analysis.json 2>/dev/null || true; } \
+          | { grep -v -E '(-chunk-|-commit-|-pr-|-all-chunks|-deep-dives)' || true; }
+      }
+      
+      if [ -f expected-repos.txt ]; then
+        expected=$(grep -c . expected-repos.txt || true)
+      else
+        echo "WARNING: set-final-validation: expected-repos.txt is missing; treating expected as 0" >&2
+        expected=0
+      fi
+      analyzed=$(count_analyses | grep -c . || true)
       still_missing=$((expected - analyzed))
+      if [ "$still_missing" -lt 0 ]; then
+        still_missing=0
+      fi
       
       if [ "$still_missing" -eq 0 ]; then
-        echo '{"all_complete": true, "still_missing": 0, "repos": []}' 
+        if [ "$expected" -eq 0 ]; then
+          echo "Final validation: no repos had activity in this range; nothing to analyze" >&2
+        fi
+        payload='{"all_complete": true, "still_missing": 0, "repos": []}'
       else
         # Find missing repos
-        ls -1 analyses/*-analysis.json 2>/dev/null | \
-          grep -v -E '(-chunk-|-commit-|-pr-|-all-chunks|-deep-dives)' | \
-          xargs -I {} basename {} -analysis.json | sort > analyzed-repos-final.txt
+        count_analyses | xargs -I {} basename {} -analysis.json | sort > analyzed-repos-final.txt
         missing=$(comm -23 expected-repos.txt analyzed-repos-final.txt || true)
         echo "Final validation: $still_missing repos missing" >&2
-        echo "$missing" | grep -v '^$' | sed 's/^/  - /' >&2
+        printf '%s\n' "$missing" | grep -v '^$' | sed 's/^/  - /' >&2 || true
         
-        missing_json=$(echo "$missing" | grep -v '^$' | jq -R -s 'split("\n") | map(select(length > 0))')
-        jq -n --argjson m "$missing_json" --argjson c "$still_missing" \
-          '{"all_complete": false, "still_missing": $c, "repos": $m}'
+        missing_json=$(printf '%s\n' "$missing" | jq -R -s 'split("\n") | map(select(length > 0))')
+        payload=$(jq -n --argjson m "$missing_json" --argjson c "$still_missing" \
+          '{"all_complete": false, "still_missing": $c, "repos": $m}')
       fi
+      
+      # v1.18.0: validate this step's OWN output before emitting it. Every
+      # consumer indexes into final_validation (assemble-report reads
+      # .still_missing twice), so a payload that is not a JSON object has to
+      # fail HERE, naming THIS step, rather than surfacing two steps later as a
+      # type error against a variable whose producer the reader must then hunt.
+      if ! printf '%s' "$payload" | jq -e 'type == "object"' >/dev/null 2>&1; then
+        echo "ERROR: step 'set-final-validation' produced output that is not a JSON object." >&2
+        echo "       Its output becomes final_validation, which assemble-report indexes" >&2
+        echo "       into (.still_missing); a non-object there is unusable downstream." >&2
+        echo "       produced: $payload" >&2
+        exit 1
+      fi
+      printf '%s\n' "$payload"
     output: "final_validation"
     parse_json: true
     timeout: 60
-    on_error: "continue"
+    on_error: "fail"
 
   # ==========================================================================
   # Step 10a: Calculate report statistics (DETERMINISTIC)
@@ -1397,6 +1463,19 @@ steps:
 
       HEADEREOF
       
+      # v1.18.0: zero repos with activity is an ordinary outcome (a narrow
+      # repo_filter, a quiet window), not a failure. Say so plainly rather than
+      # emitting a report shaped like one that found activity and happens to
+      # have every number at zero.
+      repos_with_activity={{report_stats.totals.repos}}
+      if [ "$repos_with_activity" -eq 0 ]; then
+        {
+          printf '%s\n' ''
+          printf '%s\n' '> **No activity found.** No repository matched this scope with activity in this date range, so there is nothing to report for this window. Every repository checked is listed under "Repositories with No Activity" at the end of this report.'
+          printf '%s\n' ''
+        } >> final-report.md
+      fi
+      
       # v1.9.0: Add data gap warning if any repos failed analysis
       still_missing={{final_validation.still_missing}}
       if [ "$still_missing" -gt 0 ]; then
@@ -1411,7 +1490,10 @@ steps:
       echo "" >> final-report.md
       
       # Add key highlights from LLM
-      jq -r '.key_highlights[]' exec-summary.json | while read -r highlight; do
+      # v1.18.0: `// []` -- an empty dataset is exactly when a model is most
+      # likely to return an object without this key, and `.key_highlights[]` on
+      # a missing key aborts this step under `set -euo pipefail`.
+      jq -r '(.key_highlights // [])[]' exec-summary.json | while read -r highlight; do
         echo "- $highlight" >> final-report.md
       done
       
@@ -1430,6 +1512,13 @@ steps:
       ## Activity by Repository
 
       REPOHEADEREOF
+      
+      # v1.18.0: with no active repos the loop below writes nothing, leaving a
+      # bare heading. Say why it is empty.
+      if [ "$repos_with_activity" -eq 0 ]; then
+        printf '%s\n' '_No repository had activity in this date range._' >> final-report.md
+        printf '%s\n' '' >> final-report.md
+      fi
       
       # Add per-repo sections with injected stats
       jq -c '.[]' report-stats.json 2>/dev/null | head -1 > /dev/null || true
@@ -1470,9 +1559,16 @@ steps:
       echo "## Cross-Cutting Observations" >> final-report.md
       echo "" >> final-report.md
       
-      jq -r '.cross_cutting_observations[]' repo-sections.json | while read -r obs; do
+      # v1.18.0: `// []` for the same reason as key_highlights above, and count
+      # first -- with nothing to compare across repos the model legitimately
+      # returns [], which would otherwise leave a bare heading with no body.
+      obs_count=$(jq '(.cross_cutting_observations // []) | length' repo-sections.json)
+      jq -r '(.cross_cutting_observations // [])[]' repo-sections.json | while read -r obs; do
         echo "- $obs" >> final-report.md
       done
+      if [ "$obs_count" -eq 0 ]; then
+        printf '%s\n' '_None reported._' >> final-report.md
+      fi
       
       # v1.9.0: Add Failed Analyses section if any repos still missing after retry
       still_missing={{final_validation.still_missing}}
