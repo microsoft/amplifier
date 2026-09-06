@@ -42,6 +42,31 @@
 #   amplifier run "execute document-generation-parallel.yaml with outline_path=./outline.json existing_document_path=./current-doc.md"
 #
 # =============================================================================
+# APPROVAL GATES (this recipe is staged and pauses FIVE times)
+# =============================================================================
+#
+# A gate is declared on each of these stages:
+#
+#   generation | validation-structural | validation-content
+#   validation-quality | finalization
+#
+# Each pause returns status "paused_for_approval" plus the run's session_id.
+# Continue with the engine's own operations -- from the SAME cwd, one gate at a
+# time (a fresh CLI process per call is fine):
+#
+#   amplifier tool invoke recipes operation=approve \
+#     session_id=<id> stage_name=<stage>
+#   amplifier tool invoke recipes operation=resume session_id=<id>
+#
+# There is NO `auto_approve` context key, and one cannot be added as a context
+# value: `approval.required` is a plain bool in the engine (ApprovalConfig in
+# tool-recipes/models.py) and is never template-expanded, so no context value
+# can make a gate conditional. This recipe DECLARED such a key until v8.4.0 and
+# nothing read it -- callers passing auto_approve: true still stopped at all
+# five gates. For a genuinely unattended run, keep a local copy of this file
+# whose stages set `approval.required: false`.
+#
+# =============================================================================
 # OUTLINE CONTRACT (what this recipe accepts as outline_path)
 # =============================================================================
 #
@@ -114,6 +139,38 @@
 # =============================================================================
 # CHANGELOG
 # =============================================================================
+#
+# v8.4.0 (2026-09-05):
+#   - HONESTY: removed the inert `auto_approve` context key (work item
+#     recipes-4ds). The key was declared and NOTHING read it: a caller passing
+#     auto_approve: true still stopped at all five of this recipe's gates, which
+#     is part of how gated v2 recipes came to look un-completable. It cannot be
+#     wired as declared either -- `approval.required` is a plain bool in the
+#     engine (ApprovalConfig in tool-recipes/models.py), never template-expanded,
+#     so no context value can make a gate conditional. Rather than invent a
+#     mechanism the shipped engine does not have, the key is GONE and the new
+#     "APPROVAL GATES" header block documents what actually works: execute, then
+#     `approve` + `resume` per gate from the same cwd (fresh CLI processes are
+#     fine), or a local copy with `approval.required: false`.
+#   - VERIFIED LIVE: the v8.3.0 no-existing-document fix (work item recipes-mxe)
+#     is now proven end to end rather than only reasoned about -- a full run with
+#     existing_document_path: "" generated one section per bfs_order entry and
+#     produced a non-empty v0_generated.md. See the PR body for the run record.
+#   - set-generation-complete-status' refusal now NAMES the outline's section
+#     count (structure.json .bfs_order) and the empty foreach, so the failure
+#     message points at the cause instead of only the symptom. It also warns
+#     (without failing) when generation completed with sections still pending.
+#   - BUGFIX (same class, carried across from the sibling recipe): the JSON
+#     helper this recipe writes in setup-json-helper shared outline-generation-
+#     from-doc's escape bug (work item recipes-cv1) -- clean_json_control_chars()
+#     assumed EVERY backslash inside a string began an escape sequence, so a
+#     literal backslash in the data (a shell line-continuation quoted verbatim
+#     out of a source document: backslash then a real newline) survived into
+#     json.loads and failed the payload with "Invalid \escape". A backslash pair
+#     is now copied through only when the next character is a valid JSON escape
+#     initiator ("\/bfnrt, or u + 4 hex digits).
+#   - Step count unchanged; no step ids added or removed. Still schema_version 2
+#     with the same dependency manifest.
 #
 # v8.3.0 (2026-09-02):
 #   - CONTRACT: accept outline-generation-from-document's output directly
@@ -413,7 +470,7 @@ dependencies:
 
 name: "document-generation"
 description: "Generate documentation from an outline with BFS traversal, parallel validation, provider preferences, and Design Intelligence feedback"
-version: "8.3.0"
+version: "8.4.0"
 author: "Amplifier Recipes Collection"
 tags: ["documentation", "generation", "outline", "bfs", "validation", "staged", "resumable", "parallel"]
 
@@ -427,8 +484,15 @@ context:
   # Optional: Working directory for state and versions
   working_dir: "./.docgen"
   
-  # Optional: Skip approval gates (for automated runs)
-  auto_approve: false
+  # NOTE: there is deliberately NO `auto_approve` key here. This recipe declared
+  # one until v8.4.0 and NOTHING read it -- a caller passing auto_approve: true
+  # still stopped at all five gates. It cannot be wired as declared, either:
+  # `approval.required` is a plain bool in the engine (ApprovalConfig in
+  # tool-recipes/models.py) and is not template-expanded, so no context value can
+  # make a gate conditional. To run this recipe unattended, drive it with the
+  # engine's own approval operations -- execute, then `approve` + `resume` per
+  # gate (see "APPROVAL GATES" in the header) -- or keep a local copy whose
+  # stages set `approval.required: false`.
   
   # Optional: Path to an existing document to use as reference
   # When provided, the recipe will:
@@ -500,9 +564,26 @@ stages:
                   
                   if in_string:
                       if c == '\\' and i + 1 < n:
-                          result.append(c)
-                          result.append(json_str[i + 1])
-                          i += 2
+                          # Only a VALID JSON escape may be copied through untouched
+                          # (v8.4.0, work item recipes-cv1). Assuming every backslash
+                          # starts one means a literal backslash in the data - most
+                          # commonly a shell line-continuation the LLM quoted verbatim,
+                          # backslash then a REAL newline - is emitted unchanged and
+                          # json.loads rejects the payload with "Invalid \escape".
+                          nxt = json_str[i + 1]
+                          is_valid_escape = nxt in '"\\/bfnrt' or (
+                              nxt == 'u'
+                              and re.match(r'[0-9a-fA-F]{4}', json_str[i + 2:i + 6] or '')
+                          )
+                          if is_valid_escape:
+                              result.append(c)
+                              result.append(nxt)
+                              i += 2
+                              continue
+                          # Literal backslash in the data - escape it and let the loop
+                          # handle the following character on its own terms.
+                          result.append('\\\\')
+                          i += 1
                           continue
                       elif c == '"':
                           j = i + 1
@@ -1722,6 +1803,7 @@ stages:
           set -euo pipefail
           
           tracker="{{working_dir}}/state/tracker.json"
+          structure="{{working_dir}}/state/structure.json"
           
           # GATE (v8.3.0): never stamp "generation_complete" over an empty
           # document. Before this gate the status was stamped unconditionally and
@@ -1730,18 +1812,29 @@ stages:
           completed=$(jq '.sections_completed | length' "$tracker")
           pending=$(jq '.sections_pending | length' "$tracker")
           generated=$(jq '.generated_content | length' "$tracker")
+          outline_sections=$(jq '.bfs_order // [] | length' "$structure")
           
           if [ "$generated" -eq 0 ]; then
             echo "ERROR: generation produced ZERO sections (generated_content is empty)" >&2
+            echo "       the outline asks for $outline_sections section(s) (structure.json .bfs_order)" >&2
             echo "       sections_completed=$completed sections_pending=$pending" >&2
-            echo "       generate-section's foreach ran zero times or no section persisted content." >&2
-            echo "       Inspect: $tracker and {{working_dir}}/state/structure.json (.bfs_order)" >&2
+            echo "       generate-section's foreach over llm_bfs_order ran ZERO times, or no" >&2
+            echo "       section persisted content. Refusing to stamp generation_complete over an" >&2
+            echo "       empty document - save-v0-generated would fail three steps later instead." >&2
+            echo "       Inspect: $tracker and $structure (.bfs_order)" >&2
             exit 1
           fi
           
           if [ "$completed" -eq 0 ] && [ "$pending" -gt 0 ]; then
             echo "ERROR: no sections completed but $pending still pending - refusing to stamp generation_complete" >&2
+            echo "       the outline asks for $outline_sections section(s); generated_content has $generated" >&2
             exit 1
+          fi
+          
+          if [ "$pending" -gt 0 ]; then
+            echo "WARNING: $pending of $outline_sections section(s) still pending after generation" >&2
+            echo "         (completed=$completed generated=$generated) - continuing, but the" >&2
+            echo "         assembled document will be missing those sections." >&2
           fi
           
           timestamp=$(date -Iseconds)
