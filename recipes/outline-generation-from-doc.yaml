@@ -87,13 +87,50 @@ dependencies:
 
 name: "outline-generation-from-document"
 description: "Generate structured outlines from existing documents with source identification, directionality detection, and classification"
-version: "1.9.0"
+version: "1.10.0"
 author: "Recipe Author Agent"
 tags: ["documentation", "outline", "analysis", "source-identification", "directionality", "authority-detection"]
 
 # =============================================================================
 # CHANGELOG
 # =============================================================================
+# v1.10.0 (2026-09-06):
+#   - ROOT-CAUSE FIX: assemble-outline-structure corrupted the model's payload
+#     itself, then tried to repair the damage character by character.
+#     (work item recipes-cv1, both defects, one cause)
+#     * The step interpolated each payload straight into a python triple-quoted
+#       STRING LITERAL. A python literal is not raw, so python's own escape
+#       processing ran over the payload before json.loads ever saw it: a JSON
+#       `\"` arrived as a bare `"`, a JSON `\\` arrived as a lone `\`, and a
+#       JSON `\n` arrived as a real newline. Byte-exact, valid model output was
+#       destroyed in transit.
+#     * That is BOTH reported failures. "Invalid \escape" was the lone backslash
+#       (v1.9.0 treated the symptom). "Expecting ',' delimiter ... {\"tracker_
+#       project\": \"converge\"" was the stripped `\"` on a section prompt
+#       quoting an embedded JSON snippet -- the payload's inner quotes were
+#       properly escaped when the model emitted them.
+#     * Fix: both payloads are now delivered to disk by QUOTED heredocs
+#       (<< 'DELIM' performs no substitution), and python reads the files. The
+#       bytes the model emitted are the bytes the parser reads, and well-formed
+#       model output now parses strictly with no repair at all.
+#   - The tolerant pass is retained only as a safety net for genuinely malformed
+#     model output, and is now deterministic and explainable rather than
+#     positional: it tracks JSON grammar state (a value string can never be
+#     closed by ':', which the v1.9.0 lookahead could not express), with a
+#     stricter schema-aware second policy for the residual ambiguity an embedded
+#     snippet leaves behind.
+#   - Both payloads are now strict-schema-validated at this step -- outline_meta
+#     against the same required fields validate-assembled-outline demands, and
+#     flat_sections against the contract build_nested_sections depends on -- so a
+#     shortfall surfaces here with a usable message instead of two steps later.
+#   - On genuine failure the step now fails loud: every parse/validate attempt is
+#     listed with its offending snippet, and the byte-exact payload is left on
+#     disk with its path named. No model is ever asked to retype JSON.
+#   - Unit-tested by tests/test_outline_json_payload.py against the 7 payload
+#     shapes v1.9.0 was verified with plus the 2 shapes from the work item,
+#     exercised both through the extracted loader and through the whole step run
+#     under real bash.
+#
 # v1.9.0 (2026-09-05):
 #   - BUGFIX: assemble-outline-structure hard-failed with "Invalid \\escape" on any
 #     LLM payload whose string values carried a LITERAL backslash -- most commonly
@@ -1789,302 +1826,414 @@ steps:
     type: "bash"
     command: |
       set -euo pipefail
-      
-      # Use Python to assemble the nested structure from flat sections
+
+      # ---------------------------------------------------------------------
+      # Deliver both LLM payloads to disk BYTE-EXACT before any parsing.
+      #
+      # Until v1.10.0 they were interpolated straight into python triple-quoted
+      # string literals -- the flat-sections placeholder pasted directly between
+      # a pair of ''' delimiters, and the same for the meta placeholder.
+      # A python literal is NOT raw, so python's own escape processing ran over
+      # the payload before json.loads ever saw it: a JSON `\"` arrived as a bare
+      # `"`, a JSON `\\` arrived as a lone `\`, and a JSON `\n` arrived as a real
+      # newline. Perfectly valid model output was corrupted in transit -- that
+      # single line is the root cause behind BOTH failure classes filed as
+      # recipes-cv1 ("Invalid \escape", and "Expecting ',' delimiter" on a
+      # section prompt quoting an embedded JSON snippet). The old character-wise
+      # cleaner was repairing damage this step inflicted on itself.
+      #
+      # A quoted heredoc (<< 'DELIM') performs no substitution at all, so the
+      # bytes the model emitted are the bytes the parser reads.
+      # ---------------------------------------------------------------------
+      mkdir -p "{{working_dir}}"
+      meta_raw="{{working_dir}}/_outline_meta.raw.json"
+      flat_raw="{{working_dir}}/_flat_sections.raw.json"
+
+      cat > "$meta_raw" << '__AMP_OUTLINE_META_RAW__'
+      {{outline_meta}}
+      __AMP_OUTLINE_META_RAW__
+
+      cat > "$flat_raw" << '__AMP_FLAT_SECTIONS_RAW__'
+      {{flat_sections}}
+      __AMP_FLAT_SECTIONS_RAW__
+
       python3 << 'ASSEMBLE_EOF'
       import json
       import re
       import sys
-      
-      # Parse the inputs - these come as JSON strings from previous steps
-      meta_json = '''{{outline_meta}}'''
-      flat_json = '''{{flat_sections}}'''
-      target_path = "{{target_document_path}}"
-      
-      def clean_json_control_chars(json_str):
+
+      WORKING_DIR = "{{working_dir}}"
+      TARGET_PATH = "{{target_document_path}}"
+      META_RAW = WORKING_DIR + "/_outline_meta.raw.json"
+      FLAT_RAW = WORKING_DIR + "/_flat_sections.raw.json"
+
+      # === BEGIN json-payload-loader ===
+      # Unit-tested from this YAML by tests/test_outline_json_payload.py -- the
+      # test extracts the region between these two markers, so the test can
+      # never drift from the recipe that actually runs.
+      #
+      # Contract: DETERMINISTIC. Strict parse first; a bounded, explainable
+      # tolerant repair only if that fails; strict schema validation on whatever
+      # comes back; and a loud failure naming the offending snippet otherwise.
+      # No model is ever asked to retype JSON.
+
+      META_KEYS = ("name", "document_type", "model", "source_repo", "target_path",
+                   "max_response_tokens", "temperature", "allowed_source_repos",
+                   "consumers_excluded", "regeneration_notes")
+      FLAT_KEYS = ("document_title", "sections", "section_id", "heading", "level",
+                   "parent_index", "prompt", "sources")
+
+      VALID_ESCAPES = '"\\/bfnrt'
+
+
+      def candidate_texts(text):
+          """Deterministic extraction of parseable candidates from raw model output.
+
+          No repair happens here -- this only unwraps the shapes a model wraps its
+          JSON in (a fenced block, or prose around a brace-balanced object).
           """
-          Clean control characters inside JSON string values.
-          
-          LLMs often output JSON with literal newlines/tabs inside string values,
-          which breaks JSON parsing. This function escapes those characters while
-          preserving structural newlines outside of strings.
-          
-          Approach: Parse character-by-character, tracking whether we're inside
-          a quoted string. Only escape control chars when inside strings.
-          """
-          if not json_str:
-              return json_str
-          
-          result = []
-          in_string = False
-          i = 0
-          n = len(json_str)
-          
-          while i < n:
-              c = json_str[i]
-              
-              if in_string:
-                  # We're inside a quoted string
-                  if c == '\\' and i + 1 < n:
-                      # Only a VALID JSON escape may be copied through untouched.
-                      # Until v1.9.0 every backslash was assumed to start one, so a
-                      # literal backslash in the data - most commonly a shell
-                      # line-continuation the LLM quoted verbatim, backslash then a
-                      # REAL newline - was emitted unchanged and json.loads rejected
-                      # the whole payload with "Invalid \escape". The literal newline
-                      # never reached the branch below that would have escaped it,
-                      # and all three fallback extraction methods re-run this same
-                      # cleaner, so they failed identically. (work item recipes-cv1)
-                      nxt = json_str[i + 1]
-                      is_valid_escape = nxt in '"\\/bfnrt' or (
-                          nxt == 'u'
-                          and re.match(r'[0-9a-fA-F]{4}', json_str[i + 2:i + 6] or '')
-                      )
-                      if is_valid_escape:
-                          result.append(c)
-                          result.append(nxt)
-                          i += 2
-                          continue
-                      # Literal backslash in the data - escape it and let the loop
-                      # handle the following character on its own terms.
-                      result.append('\\\\')
-                      i += 1
+          out = [("raw payload", text)]
+          m = re.search(r'```(?:json)?\s*\n(.*)\n```', text, re.DOTALL)
+          if m:
+              out.append(("fenced block", m.group(1).strip()))
+          start = text.find('{')
+          if start >= 0:
+              depth = 0
+              in_str = False
+              esc = False
+              for i in range(start, len(text)):
+                  c = text[i]
+                  if in_str:
+                      if esc:
+                          esc = False
+                      elif c == '\\':
+                          esc = True
+                      elif c == '"':
+                          in_str = False
                       continue
-                  elif c == '"':
-                      # Is this the end of the string, or an unescaped quote inside?
-                      # Look ahead to see what follows
-                      j = i + 1
-                      while j < n and json_str[j] in ' \t\n\r':
-                          j += 1
-                      next_char = json_str[j] if j < n else ''
-                      
-                      # If next meaningful char is JSON structural, this ends the string
-                      if next_char in ':,}]' or next_char == '':
-                          in_string = False
-                          result.append(c)
-                      else:
-                          # This quote is likely data inside the string - escape it
-                          result.append('\\"')
-                  elif c == '\n':
-                      # Literal newline inside string - escape it
-                      result.append('\\n')
-                  elif c == '\r':
-                      # Literal carriage return inside string - escape it
-                      result.append('\\r')
-                  elif c == '\t':
-                      # Literal tab inside string - escape it
-                      result.append('\\t')
-                  elif ord(c) < 32:
-                      # Other control characters - escape as unicode
-                      result.append(f'\\u{ord(c):04x}')
-                  else:
-                      result.append(c)
-              else:
-                  # We're outside a string
                   if c == '"':
-                      # Start of string
-                      in_string = True
-                      result.append(c)
-                  else:
-                      # Keep structural characters (including newlines) as-is
-                      result.append(c)
-              
-              i += 1
-          
-          return ''.join(result)
-      
-      def safe_parse_json(json_str, name):
-          """Parse JSON with error recovery for common LLM issues."""
-          if not json_str or json_str.strip() == '':
-              print(f"ERROR: {name} is empty", file=sys.stderr)
-              sys.exit(1)
-          
-          # If it's already a dict (from parse_json: true), just return it
-          if isinstance(json_str, dict):
-              return json_str
-          
-          # First, clean control characters inside strings
-          cleaned = clean_json_control_chars(json_str)
-          
-          # Try direct parse with cleaned JSON
-          try:
-              return json.loads(cleaned)
-          except json.JSONDecodeError as e:
-              print(f"Direct parse of {name} failed after cleaning: {e}", file=sys.stderr)
-          
-          # Try to extract from markdown code blocks
-          import re
-          
-          # Method 1: Try regex with closing backticks (greedy, find largest block)
-          code_match = re.search(r'```(?:json)?\s*\n(.*)\n```', json_str, re.DOTALL)
-          if code_match:
-              try:
-                  extracted = code_match.group(1).strip()
-                  cleaned_extracted = clean_json_control_chars(extracted)
-                  return json.loads(cleaned_extracted)
-              except json.JSONDecodeError as e:
-                  print(f"Method 1 (regex) extracted but failed to parse: {e}", file=sys.stderr)
-                  # Show context around error position
-                  pos = e.pos if hasattr(e, 'pos') else 0
-                  print(f"  Error at position {pos}: ...{cleaned_extracted[max(0,pos-50):pos+50]}...", file=sys.stderr)
-          
-          # Method 2: Find ```json anywhere in content and extract everything after
-          # Handles case where LLM outputs explanation text before the JSON block
-          json_block_start = json_str.find('```json')
-          if json_block_start == -1:
-              json_block_start = json_str.find('```\n{')  # Also try ``` followed by {
-          if json_block_start >= 0:
-              # Find the line after ```json
-              after_marker = json_str[json_block_start:]
-              lines = after_marker.split('\n', 1)
-              if len(lines) > 1:
-                  content = lines[1]
-                  # Find closing ``` and remove everything after
-                  closing_pos = content.rfind('\n```')
-                  if closing_pos >= 0:
-                      content = content[:closing_pos]
-                  try:
-                      cleaned_content = clean_json_control_chars(content)
-                      return json.loads(cleaned_content)
-                  except json.JSONDecodeError as e:
-                      print(f"Method 2 (find ```json) extracted but failed to parse: {e}", file=sys.stderr)
-                      pos = e.pos if hasattr(e, 'pos') else 0
-                      print(f"  Error at position {pos}: ...{cleaned_content[max(0,pos-50):pos+50]}...", file=sys.stderr)
-          
-          # Method 3: Find first { and extract JSON object directly
-          first_brace = json_str.find('{')
-          if first_brace >= 0:
-              potential_json = json_str[first_brace:]
-              # Find matching closing brace
-              depth = 0
-              in_str = False
-              escape_next = False
-              for i, c in enumerate(potential_json):
-                  if escape_next:
-                      escape_next = False
-                      continue
-                  if c == '\\':
-                      escape_next = True
-                      continue
-                  if c == '"' and not escape_next:
-                      in_str = not in_str
-                  if not in_str:
-                      if c == '{': depth += 1
-                      elif c == '}': depth -= 1
+                      in_str = True
+                  elif c == '{':
+                      depth += 1
+                  elif c == '}':
+                      depth -= 1
                       if depth == 0:
-                          try:
-                              json_content = potential_json[:i+1]
-                              cleaned_json = clean_json_control_chars(json_content)
-                              return json.loads(cleaned_json)
-                          except json.JSONDecodeError as e:
-                              print(f"Method 3 (find braces) extracted but failed to parse: {e}", file=sys.stderr)
-                              pos = e.pos if hasattr(e, 'pos') else 0
-                              print(f"  Error at position {pos}: ...{cleaned_json[max(0,pos-50):pos+50]}...", file=sys.stderr)
+                          out.append(("brace-balanced object", text[start:i + 1]))
                           break
-          
-          # Try to find JSON object/array boundaries
-          cleaned = cleaned.strip()
-          if cleaned.startswith('{'):
-              # Find matching closing brace
-              depth = 0
-              in_str = False
-              for i, c in enumerate(cleaned):
-                  if c == '"' and (i == 0 or cleaned[i-1] != '\\'):
-                      in_str = not in_str
-                  if not in_str:
-                      if c == '{': depth += 1
-                      elif c == '}': depth -= 1
-                      if depth == 0:
-                          try:
-                              return json.loads(cleaned[:i+1])
-                          except json.JSONDecodeError:
-                              break
-          
-          print(f"ERROR: Could not parse {name} as JSON", file=sys.stderr)
-          print(f"Content preview: {json_str[:500]}", file=sys.stderr)
+          seen = set()
+          uniq = []
+          for name, cand in out:
+              key = cand.strip()
+              if key and key not in seen:
+                  seen.add(key)
+                  uniq.append((name, cand))
+          return uniq
+
+
+      def repair_json_text(text, known_keys=()):
+          """Tolerant, single-pass repair of the two malformations models emit.
+
+          1. A lone backslash in the data (a shell line-continuation quoted
+             verbatim) is escaped rather than assumed to open an escape sequence.
+          2. An unescaped quote INSIDE a string value is escaped rather than
+             ending the string.
+
+          (2) is decided by JSON grammar state, not by position alone. The v1.9.0
+          heuristic asked only "is the next meaningful character one of :,}]" --
+          which is structurally unable to handle a section prompt quoting an
+          embedded JSON snippet, because in `{"tracker_project": ...` the quote
+          after the inner key IS followed by ':'. Tracking whether the current
+          string is a KEY or a VALUE settles that case: a value string can never
+          be closed by ':'.
+
+          `known_keys` selects the stricter, schema-aware policy: a value string
+          may only be closed by ',' when a known schema key follows it, and may
+          only be closed by '}' or ']' when the run of closers is itself followed
+          by a legitimate continuation. That resolves the residual ambiguity an
+          embedded snippet leaves behind -- both the inner `"converge",` sequence
+          and the inner `"./target-repo"}` sequence, where grammar state alone
+          still permits an early close.
+          """
+          if not text:
+              return text
+
+          out = []
+          i = 0
+          n = len(text)
+          stack = []          # '{' or '[' -- innermost container
+          expect_key = False  # inside an object, the next string is a key
+          in_string = False
+          is_key = False
+
+          def next_meaningful(pos):
+              j = pos
+              while j < n and text[j] in ' \t\n\r':
+                  j += 1
+              return j, (text[j] if j < n else '')
+
+          while i < n:
+              c = text[i]
+
+              if not in_string:
+                  if c == '"':
+                      in_string = True
+                      is_key = bool(stack) and stack[-1] == '{' and expect_key
+                      out.append(c)
+                  elif c == '{':
+                      stack.append('{')
+                      expect_key = True
+                      out.append(c)
+                  elif c == '[':
+                      stack.append('[')
+                      expect_key = False
+                      out.append(c)
+                  elif c in '}]':
+                      if stack:
+                          stack.pop()
+                      expect_key = bool(stack) and stack[-1] == '{'
+                      out.append(c)
+                  elif c == ':':
+                      expect_key = False
+                      out.append(c)
+                  elif c == ',':
+                      expect_key = bool(stack) and stack[-1] == '{'
+                      out.append(c)
+                  else:
+                      out.append(c)
+                  i += 1
+                  continue
+
+              # --- inside a string ---
+              if c == '\\' and i + 1 < n:
+                  nxt = text[i + 1]
+                  valid = nxt in VALID_ESCAPES or (
+                      nxt == 'u' and re.match(r'[0-9a-fA-F]{4}', text[i + 2:i + 6] or '')
+                  )
+                  if valid:
+                      out.append(c)
+                      out.append(nxt)
+                      i += 2
+                  else:
+                      out.append('\\\\')
+                      i += 1
+                  continue
+              if c == '\\':
+                  out.append('\\\\')
+                  i += 1
+                  continue
+
+              if c == '"':
+                  j, nc = next_meaningful(i + 1)
+                  if is_key:
+                      closes = (nc == ':')
+                  elif nc == '':
+                      closes = True
+                  else:
+                      container = stack[-1] if stack else ''
+                      if container == '{':
+                          closes = nc in ',}'
+                      elif container == '[':
+                          closes = nc in ',]'
+                      else:
+                          closes = False
+                      if closes and known_keys:
+                          # Schema-aware policy: a value string may only close
+                          # where a legitimate outline continuation follows.
+                          if nc == ',' and container == '{':
+                              m = re.match(r'\s*"([^"\\]{1,64})"\s*:', text[j + 1:])
+                              closes = bool(m) and m.group(1) in known_keys
+                          elif nc in '}]':
+                              k = j
+                              while k < n and text[k] in '}] \t\r\n':
+                                  k += 1
+                              tail = text[k] if k < n else ''
+                              closes = tail in ('', ',')
+                  if closes:
+                      in_string = False
+                      out.append(c)
+                  else:
+                      out.append('\\"')
+                  i += 1
+                  continue
+
+              if c == '\n':
+                  out.append('\\n')
+              elif c == '\r':
+                  out.append('\\r')
+              elif c == '\t':
+                  out.append('\\t')
+              elif ord(c) < 32:
+                  out.append('\\u%04x' % ord(c))
+              else:
+                  out.append(c)
+              i += 1
+
+          return ''.join(out)
+
+
+      def _as_int(value):
+          if isinstance(value, bool):
+              return None
+          if isinstance(value, int):
+              return value
+          if isinstance(value, str) and re.fullmatch(r'-?\d+', value.strip()):
+              return int(value.strip())
+          return None
+
+
+      def validate_outline_meta(obj):
+          """Strict schema check for outline_meta -- mirrors what
+          validate-assembled-outline demands, so a shortfall surfaces here with a
+          usable message instead of two steps later."""
+          if not isinstance(obj, dict):
+              return ["outline_meta is not a JSON object"]
+          return ["missing required field '%s'" % k
+                  for k in ("name", "document_type", "model") if k not in obj]
+
+
+      def validate_flat_sections(obj):
+          """Strict schema check for flat_sections -- exactly the contract
+          build_nested_sections() below depends on."""
+          if not isinstance(obj, dict):
+              return ["flat_sections is not a JSON object"]
+          errs = []
+          sections = obj.get("sections")
+          if not isinstance(sections, list):
+              return ["missing 'sections' array"]
+          if not sections:
+              return ["'sections' array is empty"]
+          for idx, s in enumerate(sections):
+              if not isinstance(s, dict):
+                  errs.append("sections[%d] is not an object" % idx)
+                  continue
+              heading = s.get("heading")
+              if not isinstance(heading, str) or not heading.strip():
+                  errs.append("sections[%d] missing a non-empty string 'heading'" % idx)
+              if not isinstance(s.get("prompt"), str):
+                  errs.append("sections[%d] missing a string 'prompt'" % idx)
+              if _as_int(s.get("level", 1)) is None:
+                  errs.append("sections[%d] 'level' is not an integer" % idx)
+              if not isinstance(s.get("sources", []), list):
+                  errs.append("sections[%d] 'sources' is not an array" % idx)
+              parent = s.get("parent_index")
+              if parent is not None and _as_int(parent) is None:
+                  errs.append("sections[%d] 'parent_index' is neither null nor an integer" % idx)
+          return errs
+
+
+      def _snippet(text, pos, width=180):
+          lo = max(0, pos - width)
+          hi = min(len(text), pos + width)
+          return "...%s..." % text[lo:hi].replace('\n', '\\n')
+
+
+      def load_json_payload(path, name, validator, known_keys):
+          """Strict first, tolerant second, schema-validated always, loud on failure."""
+          try:
+              with open(path, 'r', encoding='utf-8') as fh:
+                  text = fh.read()
+          except OSError as exc:
+              print("ERROR: %s could not be read from %s: %s" % (name, path, exc), file=sys.stderr)
+              sys.exit(1)
+
+          if not text.strip():
+              print("ERROR: %s is empty (payload file: %s)" % (name, path), file=sys.stderr)
+              sys.exit(1)
+
+          attempts = []
+          for cand_name, cand in candidate_texts(text):
+              policies = (
+                  ("strict (no repair)", cand),
+                  ("tolerant/grammar-state", repair_json_text(cand)),
+                  ("tolerant/schema-aware", repair_json_text(cand, known_keys)),
+              )
+              for policy_name, payload in policies:
+                  try:
+                      obj = json.loads(payload)
+                  except json.JSONDecodeError as exc:
+                      attempts.append((cand_name, policy_name, str(exc),
+                                       _snippet(payload, getattr(exc, 'pos', 0))))
+                      continue
+                  errs = validator(obj)
+                  if not errs:
+                      if (cand_name, policy_name) != ("raw payload", "strict (no repair)"):
+                          print("NOTE: %s parsed via %s / %s" % (name, cand_name, policy_name),
+                                file=sys.stderr)
+                      return obj
+                  attempts.append((cand_name, policy_name,
+                                   "schema violation: " + "; ".join(errs[:5]), ""))
+
+          print("ERROR: %s could not be parsed as a valid outline payload." % name, file=sys.stderr)
+          print("       Byte-exact payload preserved at: %s" % path, file=sys.stderr)
+          print("       %d parse/validate attempts, each shown with its offending snippet:"
+                % len(attempts), file=sys.stderr)
+          for cand_name, policy_name, why, snip in attempts:
+              print("  - [%s / %s] %s" % (cand_name, policy_name, why), file=sys.stderr)
+              if snip:
+                  print("      offending snippet: %s" % snip, file=sys.stderr)
           sys.exit(1)
-      
-      # Parse inputs
-      meta = safe_parse_json(meta_json, "outline_meta")
-      flat = safe_parse_json(flat_json, "flat_sections")
-      
-      # Validate flat sections
-      if "sections" not in flat or not isinstance(flat["sections"], list):
-          print("ERROR: flat_sections missing 'sections' array", file=sys.stderr)
-          sys.exit(1)
-      
+      # === END json-payload-loader ===
+
+      meta = load_json_payload(META_RAW, "outline_meta", validate_outline_meta, META_KEYS)
+      flat = load_json_payload(FLAT_RAW, "flat_sections", validate_flat_sections, FLAT_KEYS)
+
       sections = flat["sections"]
-      if len(sections) == 0:
-          print("ERROR: No sections found in flat_sections", file=sys.stderr)
-          sys.exit(1)
-      
-      print(f"Assembling {len(sections)} sections into nested structure...", file=sys.stderr)
-      
-      # Build nested structure from flat list
+      print("Assembling %d sections into nested structure..." % len(sections), file=sys.stderr)
+
       def build_nested_sections(flat_sections):
           """Convert flat section list with parent_index to nested structure."""
-          # Create section objects with empty children arrays
           section_objects = []
           for s in flat_sections:
+              level = _as_int(s.get("level", 1))
               section_objects.append({
                   "heading": s.get("heading", ""),
-                  "level": s.get("level", 1),
+                  "level": 1 if level is None else level,
                   "prompt": s.get("prompt", ""),
                   "sources": s.get("sources", []),
-                  "sections": []  # Will be populated with children
+                  "sections": [],
               })
-          
-          # Build tree by linking children to parents
+
           root_sections = []
           for i, s in enumerate(flat_sections):
-              parent_idx = s.get("parent_index")
+              parent_idx = _as_int(s.get("parent_index")) if s.get("parent_index") is not None else None
               if parent_idx is None:
-                  # Top-level section
                   root_sections.append(section_objects[i])
+              elif 0 <= parent_idx < len(section_objects):
+                  section_objects[parent_idx]["sections"].append(section_objects[i])
               else:
-                  # Child section - add to parent's sections array
-                  try:
-                      parent_idx = int(parent_idx)
-                      if 0 <= parent_idx < len(section_objects):
-                          section_objects[parent_idx]["sections"].append(section_objects[i])
-                      else:
-                          # Invalid parent, add to root
-                          print(f"Warning: Section {i} has invalid parent_index {parent_idx}, adding to root", file=sys.stderr)
-                          root_sections.append(section_objects[i])
-                  except (ValueError, TypeError):
-                      # Invalid parent, add to root
-                      root_sections.append(section_objects[i])
-          
+                  print("Warning: Section %d has invalid parent_index %r, adding to root"
+                        % (i, s.get("parent_index")), file=sys.stderr)
+                  root_sections.append(section_objects[i])
+
           return root_sections
-      
+
       nested_sections = build_nested_sections(sections)
-      
-      # Get document title
+
       doc_title = flat.get("document_title", "# Document")
+      if not isinstance(doc_title, str) or not doc_title.strip():
+          doc_title = "# Document"
       if not doc_title.startswith("#"):
           doc_title = "# " + doc_title
-      
-      # Assemble final structure
+
       complete_outline = {
           "_meta": meta,
           "document": {
               "title": doc_title,
-              "output": target_path,
-              "sections": nested_sections
-          }
+              "output": TARGET_PATH,
+              "sections": nested_sections,
+          },
       }
-      
-      # Validate the assembled structure
-      def count_sections(sections):
-          count = len(sections)
-          for s in sections:
+
+      def count_sections(items):
+          count = len(items)
+          for s in items:
               count += count_sections(s.get("sections", []))
           return count
-      
+
       total_sections = count_sections(nested_sections)
-      print(f"Assembled outline with {total_sections} total sections ({len(nested_sections)} top-level)", file=sys.stderr)
-      
-      # Output the complete JSON
+      print("Assembled outline with %d total sections (%d top-level)"
+            % (total_sections, len(nested_sections)), file=sys.stderr)
+
       print(json.dumps(complete_outline, indent=2, ensure_ascii=False))
       ASSEMBLE_EOF
     output: "complete_outline"

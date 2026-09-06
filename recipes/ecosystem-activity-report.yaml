@@ -18,7 +18,7 @@ dependencies:
 
 name: "ecosystem-activity-report"
 description: "Analyze activity across the Amplifier ecosystem by discovering repos from MODULES.md"
-version: "1.16.0"
+version: "1.17.0"
 author: "Amplifier"
 tags: ["amplifier", "ecosystem", "github", "activity", "modules", "discovery"]
 
@@ -32,6 +32,31 @@ tags: ["amplifier", "ecosystem", "github", "activity", "modules", "discovery"]
 # 3. Reads MODULES.md to discover all ecosystem repos
 # 4. Filters repos based on criteria (org, name pattern)
 # 5. Calls the generic multi-repo recipe from @recipes bundle
+#
+# v1.17.0: save-analyses-to-file no longer uses a model as a file-copy primitive
+#         (work item recipes-zfl)
+#         - The step inlined the entire collected analysis array into a prompt
+#           and asked foundation:file-ops (claude-haiku) to transcribe it back
+#           out verbatim. Cost, latency and fidelity all scaled with the number
+#           of repos analysed, and the 120s budget is what actually blew -- on a
+#           ONE-repo run, 5.6 KB of analysis:
+#             "Step 'save-analyses-to-file': agent 'foundation:file-ops' timed
+#              out after 120s"
+#         - It is now a bash step. The payload is deliberately NOT interpolated
+#           into the command either: a bash step is exec'd as `bash -c <command>`
+#           and would hit MAX_ARG_STRLEN (128 KB on Linux) at real ecosystem
+#           scale, trading a model-shaped scaling cliff for an exec-shaped one.
+#           repo-activity-analysis has already written every analysis to
+#           analyses/{repo}-analysis.json, and steps 9c/9d already treat those
+#           files as authoritative; this step concatenates the same files. Its
+#           command size is constant and its cost is one bash step, whatever N is.
+#         - Unparseable analysis files are named and skipped rather than fatal;
+#           an empty analyses/ yields [] plus a warning.
+#         - Unit-tested by tests/test_ecosystem_activity_save_analyses.py.
+#         - NOT re-fixed here: the second half of recipes-zfl (the CLI process
+#           staying alive for 25+ minutes after a step failure) is an engine/CLI
+#           concern, already addressed by bundle-recipes #92 and the provider
+#           close bounds.
 #
 # v1.16.0: Portability - declare a schema_version 2 dependency manifest
 #         (contract recipe-dependency-manifest.v1, block at top of file)
@@ -861,25 +886,66 @@ steps:
     on_error: "continue"
 
   # ==========================================================================
-  # Step 9b: Save analyses to file (handles large JSON safely)
+  # Step 9b: Persist the collected analyses (deterministic, no model)
   # ==========================================================================
-  # AGENT STEP - Write repo_analyses to file (avoids bash JSON escaping issues)
-  # v1.7.0: Agents handle JSON natively; bash template substitution breaks on large JSON
-  # Model: haiku - trivial task (write JSON to file), no reasoning needed
+  # BASH STEP - concatenate the per-repo analyses already on disk
+  #
+  # Until v1.17.0 this was an agent step: the entire collected analysis array
+  # was inlined into a prompt and foundation:file-ops was asked to transcribe it
+  # back out verbatim -- a model used as a file-copy primitive. Cost, latency
+  # and fidelity all scaled with the number of repos analysed, and the 120s
+  # budget is what actually blew, on a ONE-repo run. (work item recipes-zfl)
+  #
+  # The payload is deliberately NOT interpolated into this command either. A
+  # bash step is exec'd as `bash -c <command>`, so a command carrying the array
+  # would hit MAX_ARG_STRLEN (128 KB on Linux) and be refused with E2BIG at real
+  # ecosystem scale -- that would only trade a model-shaped scaling cliff for an
+  # exec-shaped one. repo-activity-analysis has already written every analysis
+  # to analyses/{repo}-analysis.json, and step 9c (reduce-analyses) and step 9d
+  # (validate-analysis-completeness) both already treat those files as the
+  # authoritative record. This step reads the same files, so its command size is
+  # constant and its cost is one bash step, whatever N is.
   - id: "save-analyses-to-file"
-    agent: "foundation:file-ops"
-    provider: "anthropic"
-    model: "claude-haiku-*"
-    prompt: |
-      Write the following JSON array to file: {{working_dir}}/collected-analyses.json
-      
-      Content to write:
-      {{repo_analyses}}
-      
-      Just write the file. Return {"saved": true, "path": "{{working_dir}}/collected-analyses.json"} when done.
+    type: "bash"
+    command: |
+      set -euo pipefail
+
+      cd "{{working_dir}}"
+      out="collected-analyses.json"
+
+      # Same filter reduce-analyses uses: main per-repo analyses only, never the
+      # chunk / commit / PR intermediates repo-activity-analysis v3.0.0+ leaves
+      # beside them.
+      files=$(ls -1 analyses/*-analysis.json 2>/dev/null \
+        | grep -v -E '(-chunk-|-commit-|-pr-|-all-chunks|-deep-dives)' || true)
+
+      count=0
+      printf '[' > "$out"
+      if [ -n "$files" ]; then
+        while IFS= read -r f; do
+          [ -n "$f" ] || continue
+          [ -f "$f" ] || continue
+          if ! jq empty "$f" 2>/dev/null; then
+            echo "WARNING: skipping unparseable analysis file: $f" >&2
+            continue
+          fi
+          if [ "$count" -gt 0 ]; then printf ',' >> "$out"; fi
+          jq -c '.' "$f" >> "$out"
+          count=$((count + 1))
+        done <<< "$files"
+      fi
+      printf ']\n' >> "$out"
+
+      if [ "$count" -eq 0 ]; then
+        echo "WARNING: no per-repo analyses found under $(pwd)/analyses" >&2
+      fi
+
+      bytes=$(wc -c < "$out" | tr -d ' ')
+      echo "Saved $count repo analyses ($bytes bytes) to $(pwd)/$out" >&2
+      printf '{"saved": true, "path": "%s/%s", "count": %s}\n' "$(pwd)" "$out" "$count"
     output: "analyses_saved"
     parse_json: true
-    timeout: 120
+    timeout: 60
 
   # ==========================================================================
   # Step 9c: Reduce analyses (process from file)
