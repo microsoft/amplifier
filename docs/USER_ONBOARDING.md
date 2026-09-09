@@ -92,7 +92,7 @@ Which bundle? [1] foundation [2] dev [3] full: 1
 Ready! Try: amplifier run "Hello world"
 ```
 
-**Note:** Azure OpenAI has additional setup (endpoint, deployment name, auth method). See examples in [amplifier/README.md](../amplifier/README.md#quick-start).
+**Note:** Azure OpenAI has additional setup (endpoint, deployment name, auth method). See examples in [README.md](../README.md#quick-start).
 
 **That's it!** You're configured and ready to use Amplifier.
 
@@ -634,10 +634,10 @@ When no scope specified, commands prompt interactively.
 ### Essential Reading
 
 - **[Bundle Guide](https://github.com/microsoft/amplifier-foundation/blob/main/docs/BUNDLE_GUIDE.md)** - Creating and using bundles
-- [SCENARIO_TOOLS_GUIDE.md](SCENARIO_TOOLS_GUIDE.md) - Building sophisticated CLI tools
+- [Module Catalog](MODULES.md) - Available components and module development
 - **[Agent Authoring](https://github.com/microsoft/amplifier-foundation/blob/main/docs/AGENT_AUTHORING.md)** - Create custom agents
-- [TOOLKIT_GUIDE.md](TOOLKIT_GUIDE.md) - Toolkit utilities for building tools
-- [context/KERNEL_PHILOSOPHY.md](context/KERNEL_PHILOSOPHY.md) - Core design principles
+- [Developer Guide](DEVELOPER.md) - Building modules and extending Amplifier
+- [Kernel Philosophy](https://github.com/microsoft/amplifier-core/blob/main/docs/KERNEL_PHILOSOPHY.md) - Core design principles
 
 ---
 
@@ -655,4 +655,4 @@ amplifier run "Explain the kernel design in @docs/AMPLIFIER_AS_LINUX_KERNEL.md"
 
 The file content loads automatically while your @mention stays as a reference marker.
 
-**Learn more**: See [MENTION_PROCESSING.md](MENTION_PROCESSING.md) for complete guide.
+**Learn more**: See [User Guide](USER_GUIDE.md) for the complete reference.
