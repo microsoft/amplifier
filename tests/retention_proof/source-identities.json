@@ -1,0 +1,32 @@
+{
+  "context_old": {
+    "repository": "https://github.com/microsoft/amplifier-module-context-simple",
+    "commit": "2d1bdc4d9c1803491fe39820c8d503dd764d32de",
+    "file": "amplifier_module_context_simple/__init__.py",
+    "sha256": "173195f9519453ab502923c7f80f4594659015ebb7ee903d68510f520e2e753c"
+  },
+  "context_new": {
+    "repository": "https://github.com/microsoft/amplifier-module-context-simple",
+    "commit": "95de3a4d1580f506fbf6669f24520837faa7a7f9",
+    "file": "amplifier_module_context_simple/__init__.py",
+    "sha256": "8aff71db91c30dcbd3c5b1a3e612b503baa2a39800cc1b731c4a214dbff7a47a"
+  },
+  "loop_old": {
+    "repository": "https://github.com/microsoft/amplifier-module-loop-streaming",
+    "commit": "2feefe4ba0c4cb50fc0c6b33648a8ef6a2908820",
+    "file": "amplifier_module_loop_streaming/__init__.py",
+    "sha256": "9b5099c17683754ef8cf4e254a549275be714c10e189463352466707c6fddc3a"
+  },
+  "loop_new": {
+    "repository": "https://github.com/microsoft/amplifier-module-loop-streaming",
+    "commit": "fca01bbe17510fcc496a4496bfdb04f3f3393740",
+    "file": "amplifier_module_loop_streaming/__init__.py",
+    "sha256": "637d5dc05250a69a661f06ee6fe966d4945ab946e101f065cb6d7740d248f3b5"
+  },
+  "fixture": {
+    "repository": "https://github.com/microsoft/amplifier",
+    "commit": "8510f9a99465466800e986bf149c0be332f87a1a",
+    "file": "tests/retention_proof/fixture/amplifier_module_hooks_retention_proof/__init__.py",
+    "sha256": "0050910b93d6f0ed565648c020724b90e4acfa0d82833437ba91c0c170545100"
+  }
+}

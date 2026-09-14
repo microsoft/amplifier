@@ -1,0 +1,860 @@
+[
+  {
+    "arm": "candidate",
+    "provider": "openai",
+    "model": "gpt-5.6-terra",
+    "exit": 0,
+    "response": "{\"policy_code\":\"cobalt-5731\",\"original_code\":\"amber-6428\"}",
+    "resume_exit": 0,
+    "resume_response": "{\"policy_code\":\"cobalt-5731\",\"original_code\":\"violet-8392\"}",
+    "sources": {
+      "fixture_sha256": "0050910b93d6f0ed565648c020724b90e4acfa0d82833437ba91c0c170545100",
+      "context": {
+        "sha256": "8aff71db91c30dcbd3c5b1a3e612b503baa2a39800cc1b731c4a214dbff7a47a"
+      },
+      "orchestrator": {
+        "sha256": "637d5dc05250a69a661f06ee6fe966d4945ab946e101f065cb6d7740d248f3b5"
+      },
+      "core_version": "1.6.1",
+      "capability": true,
+      "forced_input_budget": 12000
+    },
+    "raw_requests": [
+      {
+        "request": 1,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 2,
+        "raw_request_sha256": "9df88b41fd4dd2bd9039103e9ece1cac6ca9fcf1576ce45110c5151f935a3783",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": false
+      },
+      {
+        "request": 2,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 5,
+        "raw_request_sha256": "3a716b3a992f55202a50bab0d5c4abb0bfa518aa771827d07e2cbcbfa08b5dcb",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      },
+      {
+        "request": 3,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 8,
+        "raw_request_sha256": "780be89ed9d9a27d52afa6394536c6e4d92f22391f8740a5bbff0daf336403ca",
+        "exact_previous_message_prefix": true,
+        "previous_prefix_ignoring_cache_markers": true,
+        "system_unchanged": true
+      },
+      {
+        "request": 4,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 6,
+        "raw_request_sha256": "7eaee28746ab1d087ad278688f0bff9a9730f1e6d4258628af6a24ce26d1f159",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      },
+      {
+        "request": 5,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 9,
+        "raw_request_sha256": "c425a2d67c0e090c6518c983ff93b2abec50b590c700a3395cb55923867522ef",
+        "exact_previous_message_prefix": true,
+        "previous_prefix_ignoring_cache_markers": true,
+        "system_unchanged": true
+      },
+      {
+        "request": 6,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 7,
+        "raw_request_sha256": "5af140b3e0f4771948ab2ab463835b77ef7bf4123786c7f0ff698d6dd5ee3a1e",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      },
+      {
+        "request": 7,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 10,
+        "raw_request_sha256": "cd901a5e71ca13e94f9267f38203c39503c325ef464af7d55d55dd18fe60d55d",
+        "exact_previous_message_prefix": true,
+        "previous_prefix_ignoring_cache_markers": true,
+        "system_unchanged": true
+      },
+      {
+        "request": 8,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": true,
+        "message_count": 9,
+        "raw_request_sha256": "d5e3580406aad84cb10cf23ecad49d077f5c69b5f8b76842affa45ac822f68d3",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      }
+    ],
+    "tool_steps": 6,
+    "completion_statuses": [
+      "success",
+      "success"
+    ],
+    "provider_reported_cache_read_tokens": [
+      5001,
+      4100,
+      5152,
+      4100,
+      5178,
+      4100,
+      5204,
+      4100
+    ],
+    "compactions": 4,
+    "max_compaction_level": 7,
+    "canonical_contains_policy": true,
+    "canonical_contains_original": true,
+    "canonical_contains_correction": true,
+    "capture_sha256": "b089ac18de7b02966d564aff53be68bc560a36e37fda767584443804ed768aa0",
+    "verification": {
+      "initial_successful_steps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "resumed_tool_calls": 0,
+      "forced_pressure_requests": [
+        2,
+        4,
+        6
+      ],
+      "compactions_by_turn": [
+        3,
+        1
+      ],
+      "final_responses_match_raw": true
+    }
+  },
+  {
+    "arm": "candidate",
+    "provider": "anthropic",
+    "model": "claude-sonnet-5",
+    "exit": 0,
+    "response": "{\"policy_code\": \"cobalt-5731\", \"original_code\": \"amber-6428\"}",
+    "resume_exit": 0,
+    "resume_response": "{\"policy_code\": \"cobalt-5731\", \"original_code\": \"violet-8392\"}",
+    "sources": {
+      "fixture_sha256": "0050910b93d6f0ed565648c020724b90e4acfa0d82833437ba91c0c170545100",
+      "context": {
+        "sha256": "8aff71db91c30dcbd3c5b1a3e612b503baa2a39800cc1b731c4a214dbff7a47a"
+      },
+      "orchestrator": {
+        "sha256": "637d5dc05250a69a661f06ee6fe966d4945ab946e101f065cb6d7740d248f3b5"
+      },
+      "core_version": "1.6.1",
+      "capability": true,
+      "forced_input_budget": 12000
+    },
+    "raw_requests": [
+      {
+        "request": 1,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 2,
+        "raw_request_sha256": "b58fe96b381b53d5bb86c876a32429a4a91bad52fa30674e02da8db4eaa0d190",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": false
+      },
+      {
+        "request": 2,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 5,
+        "raw_request_sha256": "343f82337e81ee83f1fc9162acc610b11bd591b464431e5fc741e2a8d8232e16",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      },
+      {
+        "request": 3,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 7,
+        "raw_request_sha256": "35cdc3a296b984745940ebb9fc161c1a3dd493ad0d5ede4503002b84ea3a5c08",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": true,
+        "system_unchanged": true
+      },
+      {
+        "request": 4,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 6,
+        "raw_request_sha256": "1cae665018953d0032e5ea2dbd50e6341a4ce53c1fe75c7027c68ba0e5bd3afa",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      },
+      {
+        "request": 5,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 8,
+        "raw_request_sha256": "9d15e9aa033565f5a860f8b312e6d55392758589e38a801d9060de3b6a2d143b",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": true,
+        "system_unchanged": true
+      },
+      {
+        "request": 6,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 7,
+        "raw_request_sha256": "bf37b3035439ca07a6e8624e2fbbbd256e92021f19aafe6ef7b0f5c19d3796d0",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      },
+      {
+        "request": 7,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 9,
+        "raw_request_sha256": "e2d6b5664e020d48ccc58cfcce3f92597ac7aa93356a9ebc7ac02d60b866101a",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": true,
+        "system_unchanged": true
+      },
+      {
+        "request": 8,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": true,
+        "message_count": 11,
+        "raw_request_sha256": "0421ffa7d66f270d531f1a0c318eb2e321ee658c58bb19e43d0d84c8bdf8fbb7",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      }
+    ],
+    "tool_steps": 6,
+    "completion_statuses": [
+      "success",
+      "success"
+    ],
+    "provider_reported_cache_read_tokens": [
+      6999,
+      6999,
+      8296,
+      7099,
+      7099,
+      7099,
+      7427,
+      7427
+    ],
+    "compactions": 4,
+    "max_compaction_level": 7,
+    "canonical_contains_policy": true,
+    "canonical_contains_original": true,
+    "canonical_contains_correction": true,
+    "capture_sha256": "e8808f398eff238600c221383dd7d5d3336cc3a0e9046894f4134e8a614babb3",
+    "verification": {
+      "initial_successful_steps": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "resumed_tool_calls": 0,
+      "forced_pressure_requests": [
+        2,
+        4,
+        6
+      ],
+      "compactions_by_turn": [
+        3,
+        1
+      ],
+      "final_responses_match_raw": true
+    }
+  },
+  {
+    "arm": "baseline",
+    "provider": "openai",
+    "model": "gpt-5.6-terra",
+    "exit": 0,
+    "response": "Step six completed.\n\n- Policy code: cobalt-5731  \n- Any other requested code: UNKNOWN",
+    "resume_exit": 0,
+    "resume_response": "{\"policy_code\":\"cobalt-5731\",\"original_code\":\"violet-8392\"}",
+    "sources": {
+      "fixture_sha256": "0050910b93d6f0ed565648c020724b90e4acfa0d82833437ba91c0c170545100",
+      "context": {
+        "sha256": "173195f9519453ab502923c7f80f4594659015ebb7ee903d68510f520e2e753c"
+      },
+      "orchestrator": {
+        "sha256": "9b5099c17683754ef8cf4e254a549275be714c10e189463352466707c6fddc3a"
+      },
+      "core_version": "1.6.1",
+      "capability": false,
+      "forced_input_budget": 12000
+    },
+    "raw_requests": [
+      {
+        "request": 1,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 2,
+        "raw_request_sha256": "a53e8d4533ed8af3a7580e6ab46198e1ad2d4e2f8d2c1103c5db541b200d2e78",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": false
+      },
+      {
+        "request": 2,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": false,
+        "correction_in_user_messages": false,
+        "message_count": 5,
+        "raw_request_sha256": "5f7f0b4daa5dbc9b4f6b4a8699bb8be6ee644df505c21d37246daea6379b8afb",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      },
+      {
+        "request": 3,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": false,
+        "correction_in_user_messages": false,
+        "message_count": 8,
+        "raw_request_sha256": "823c9678f5b7922332ebdb300288f8c1cb1697cf7fb67f087acd2028a60e6f35",
+        "exact_previous_message_prefix": true,
+        "previous_prefix_ignoring_cache_markers": true,
+        "system_unchanged": true
+      },
+      {
+        "request": 4,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": false,
+        "correction_in_user_messages": false,
+        "message_count": 6,
+        "raw_request_sha256": "0ccb6ce14244cb5bdcf629b5ee699cccaa38a34f164951fa9b81142836f65619",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      },
+      {
+        "request": 5,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": false,
+        "correction_in_user_messages": false,
+        "message_count": 9,
+        "raw_request_sha256": "1f63fa663d08191a823d1839b0c94ae1de9c09c7709b13b2a83b4b2c3501ab8d",
+        "exact_previous_message_prefix": true,
+        "previous_prefix_ignoring_cache_markers": true,
+        "system_unchanged": true
+      },
+      {
+        "request": 6,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": false,
+        "correction_in_user_messages": false,
+        "message_count": 7,
+        "raw_request_sha256": "3d7f45650487cb652ed09fececabd4eb79d1c8cd81595daff15974a56b1e45ee",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      },
+      {
+        "request": 7,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": false,
+        "correction_in_user_messages": false,
+        "message_count": 10,
+        "raw_request_sha256": "9d8cbcd0fa301f08bc1c775b9d775c54d07ed7e67f2cbb749eb288398c748336",
+        "exact_previous_message_prefix": true,
+        "previous_prefix_ignoring_cache_markers": true,
+        "system_unchanged": true
+      },
+      {
+        "request": 8,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": false,
+        "correction_in_user_messages": true,
+        "message_count": 8,
+        "raw_request_sha256": "9ab98deead395a196bd4ea13e64934448f3f6f1926d467c67b58995c1c86f72a",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      }
+    ],
+    "tool_steps": 6,
+    "completion_statuses": [
+      "success",
+      "success"
+    ],
+    "provider_reported_cache_read_tokens": [
+      4991,
+      4100,
+      5574,
+      4100,
+      5248,
+      4100,
+      5274,
+      4100
+    ],
+    "compactions": 4,
+    "max_compaction_level": 8,
+    "canonical_contains_policy": true,
+    "canonical_contains_original": true,
+    "canonical_contains_correction": true,
+    "capture_sha256": "88e3b72d41300a91a7ed6eb2a6b5474dabcc17c44f11c3627baace1fc1554e97"
+  },
+  {
+    "arm": "baseline",
+    "provider": "anthropic",
+    "model": "claude-sonnet-5",
+    "exit": 0,
+    "response": "Step 2 complete. Continuing.",
+    "resume_exit": 0,
+    "resume_response": "",
+    "sources": {
+      "fixture_sha256": "0050910b93d6f0ed565648c020724b90e4acfa0d82833437ba91c0c170545100",
+      "context": {
+        "sha256": "173195f9519453ab502923c7f80f4594659015ebb7ee903d68510f520e2e753c"
+      },
+      "orchestrator": {
+        "sha256": "9b5099c17683754ef8cf4e254a549275be714c10e189463352466707c6fddc3a"
+      },
+      "core_version": "1.6.1",
+      "capability": false,
+      "forced_input_budget": 12000
+    },
+    "raw_requests": [
+      {
+        "request": 1,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 2,
+        "raw_request_sha256": "1ecbd5367085032a1f16a620e68c779054390cec08c59d5783996ec3bee7cb98",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": false
+      },
+      {
+        "request": 2,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": false,
+        "correction_in_user_messages": false,
+        "message_count": 5,
+        "raw_request_sha256": "79621ba27fd1de5dd3889589e5905055894b22120df87de4689f4847bf6f4da3",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      },
+      {
+        "request": 3,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": false,
+        "correction_in_user_messages": false,
+        "message_count": 7,
+        "raw_request_sha256": "c3944e1c4cf11c321332c36614b91e98b976f0146207a60b4ed77eacc58cca6f",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": true,
+        "system_unchanged": true
+      },
+      {
+        "request": 4,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": false,
+        "correction_in_user_messages": true,
+        "message_count": 6,
+        "raw_request_sha256": "d54b977065cf81c3a8654e196cd7b2b34fb2f21ec5714f158e7af0ba3b6a697b",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      }
+    ],
+    "tool_steps": 2,
+    "completion_statuses": [
+      "success",
+      "incomplete"
+    ],
+    "provider_reported_cache_read_tokens": [
+      6999,
+      8238,
+      9134,
+      8238
+    ],
+    "compactions": 2,
+    "max_compaction_level": 7,
+    "canonical_contains_policy": true,
+    "canonical_contains_original": true,
+    "canonical_contains_correction": true,
+    "capture_sha256": "595beba1cc0f12c12b1724fb55d5ee2b07ee0c482614e5fef145050fc7043e01"
+  },
+  {
+    "arm": "new-context",
+    "provider": "openai",
+    "model": "gpt-5.6-terra",
+    "exit": 0,
+    "response": "{\"policy_code\":\"UNKNOWN\",\"original_code\":\"amber-6428\"}",
+    "resume_exit": 0,
+    "resume_response": "{\"policy_code\":\"cobalt-5731\",\"original_code\":\"violet-8392\"}",
+    "sources": {
+      "fixture_sha256": "0050910b93d6f0ed565648c020724b90e4acfa0d82833437ba91c0c170545100",
+      "context": {
+        "sha256": "8aff71db91c30dcbd3c5b1a3e612b503baa2a39800cc1b731c4a214dbff7a47a"
+      },
+      "orchestrator": {
+        "sha256": "9b5099c17683754ef8cf4e254a549275be714c10e189463352466707c6fddc3a"
+      },
+      "core_version": "1.6.1",
+      "capability": true,
+      "forced_input_budget": 12000
+    },
+    "raw_requests": [
+      {
+        "request": 1,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 2,
+        "raw_request_sha256": "3f5987702574045ebc9590ba4e609e6cab992132869711b83023554525b7d4af",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": false
+      },
+      {
+        "request": 2,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 6,
+        "raw_request_sha256": "ad3146a5402c1fa8ff1227126d7785450865a93ad983634a214de3da8b34f798",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      },
+      {
+        "request": 3,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 9,
+        "raw_request_sha256": "9afc7f10dddfe72d704c492717fdd93794aad28350675929770ceefc33635ac6",
+        "exact_previous_message_prefix": true,
+        "previous_prefix_ignoring_cache_markers": true,
+        "system_unchanged": true
+      },
+      {
+        "request": 4,
+        "policy_in_user_messages": false,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 7,
+        "raw_request_sha256": "9405462249d65ea7c7a598a2afee0a50f8f03c228316314bfa1f80e6c570e6da",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      },
+      {
+        "request": 5,
+        "policy_in_user_messages": false,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 10,
+        "raw_request_sha256": "bc280fe23608f08dbddde04497e090052d8d35f2d71fd7d1c3570eb867613fa2",
+        "exact_previous_message_prefix": true,
+        "previous_prefix_ignoring_cache_markers": true,
+        "system_unchanged": true
+      },
+      {
+        "request": 6,
+        "policy_in_user_messages": false,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 8,
+        "raw_request_sha256": "6578691967cd7a08ba05f4abe7c4cc7229549c57e5d8bdef200536e9fef4cb02",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      },
+      {
+        "request": 7,
+        "policy_in_user_messages": false,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 11,
+        "raw_request_sha256": "c87b0a0d1c96617ac4a3a4188757972c42e8c4676fc872df958d870b077b870e",
+        "exact_previous_message_prefix": true,
+        "previous_prefix_ignoring_cache_markers": true,
+        "system_unchanged": true
+      },
+      {
+        "request": 8,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": true,
+        "message_count": 9,
+        "raw_request_sha256": "6efb93fdab0e51ad9d41d3f4137fe0f0810a4860b2d91f2d9966dfcb0d3bb1b1",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      }
+    ],
+    "tool_steps": 6,
+    "completion_statuses": [
+      "success",
+      "success"
+    ],
+    "provider_reported_cache_read_tokens": [
+      4100,
+      4100,
+      5546,
+      4100,
+      5220,
+      4100,
+      5246,
+      4100
+    ],
+    "compactions": 4,
+    "max_compaction_level": 7,
+    "canonical_contains_policy": true,
+    "canonical_contains_original": true,
+    "canonical_contains_correction": true,
+    "capture_sha256": "3c3979716ee7602fe7e86e820725415f21c894d996d1277105c4c416809b330c"
+  },
+  {
+    "arm": "new-loop",
+    "provider": "openai",
+    "model": "gpt-5.6-terra",
+    "exit": 0,
+    "response": "policy_code: cobalt-5731  \nother requested code: UNKNOWN",
+    "resume_exit": 0,
+    "resume_response": "Step six completed. Requested codes: UNKNOWN.",
+    "sources": {
+      "fixture_sha256": "0050910b93d6f0ed565648c020724b90e4acfa0d82833437ba91c0c170545100",
+      "context": {
+        "sha256": "173195f9519453ab502923c7f80f4594659015ebb7ee903d68510f520e2e753c"
+      },
+      "orchestrator": {
+        "sha256": "637d5dc05250a69a661f06ee6fe966d4945ab946e101f065cb6d7740d248f3b5"
+      },
+      "core_version": "1.6.1",
+      "capability": false,
+      "forced_input_budget": 12000
+    },
+    "raw_requests": [
+      {
+        "request": 1,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": true,
+        "correction_in_user_messages": false,
+        "message_count": 2,
+        "raw_request_sha256": "af1d8ae86c4150a1e9ef2dcd3b2e144d399e2d579297f23cf4db5cd5cbd79f50",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": false
+      },
+      {
+        "request": 2,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": false,
+        "correction_in_user_messages": false,
+        "message_count": 5,
+        "raw_request_sha256": "9edc03ec76ff2695cbd7cea95c69a67e4296f492fb84bfda69766759d1059d43",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      },
+      {
+        "request": 3,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": false,
+        "correction_in_user_messages": false,
+        "message_count": 8,
+        "raw_request_sha256": "1344abed9e0f49dbb95ada38674c416a16882bbce4560c94d1c437c72ca6405b",
+        "exact_previous_message_prefix": true,
+        "previous_prefix_ignoring_cache_markers": true,
+        "system_unchanged": true
+      },
+      {
+        "request": 4,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": false,
+        "correction_in_user_messages": false,
+        "message_count": 6,
+        "raw_request_sha256": "16d8ddfc93757ea235f765a056e612abb4cdc925c17bf9e79ad2d8ba874812c9",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      },
+      {
+        "request": 5,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": false,
+        "correction_in_user_messages": false,
+        "message_count": 9,
+        "raw_request_sha256": "787f9ae526540429113ec7ec29450030e0d124cfb4a9a41b091a546d51a0f44e",
+        "exact_previous_message_prefix": true,
+        "previous_prefix_ignoring_cache_markers": true,
+        "system_unchanged": true
+      },
+      {
+        "request": 6,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": false,
+        "correction_in_user_messages": false,
+        "message_count": 7,
+        "raw_request_sha256": "13febc51289124914573899db04a73ca6de5f63a91d8d5a7db809edf1a08ab9b",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      },
+      {
+        "request": 7,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": false,
+        "correction_in_user_messages": false,
+        "message_count": 10,
+        "raw_request_sha256": "f9ae7f96c1949b926cd4404b602307ca34b08ba6f90e890fd596347511a9c8a8",
+        "exact_previous_message_prefix": true,
+        "previous_prefix_ignoring_cache_markers": true,
+        "system_unchanged": true
+      },
+      {
+        "request": 8,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": false,
+        "correction_in_user_messages": true,
+        "message_count": 8,
+        "raw_request_sha256": "e66ce404510b418f5d79340ceb62dc44e0e19acea3152b2b4a8f1ba22834bc23",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      },
+      {
+        "request": 9,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": false,
+        "correction_in_user_messages": false,
+        "message_count": 12,
+        "raw_request_sha256": "85f26a0c94c285a74ec6f10f24d0f2f13bf177b20eecd6db5a7eb6d071773ce8",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      },
+      {
+        "request": 10,
+        "policy_in_user_messages": true,
+        "original_in_user_messages": false,
+        "correction_in_user_messages": false,
+        "message_count": 15,
+        "raw_request_sha256": "64f1b626c6b9ed3d7e9144e460dc87386bfa5e063225f45ea4a882cb56f9c4ef",
+        "exact_previous_message_prefix": true,
+        "previous_prefix_ignoring_cache_markers": true,
+        "system_unchanged": true
+      },
+      {
+        "request": 11,
+        "policy_in_user_messages": false,
+        "original_in_user_messages": false,
+        "correction_in_user_messages": false,
+        "message_count": 13,
+        "raw_request_sha256": "8a412553b7b845651dc98dc61f45f08f8593784d36a2b9782ee93f8f8c3f2b40",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      },
+      {
+        "request": 12,
+        "policy_in_user_messages": false,
+        "original_in_user_messages": false,
+        "correction_in_user_messages": false,
+        "message_count": 16,
+        "raw_request_sha256": "f6d62e315dbfb461a7a5a847e5613f0c2b837a868911bad20294fc676dd77e35",
+        "exact_previous_message_prefix": true,
+        "previous_prefix_ignoring_cache_markers": true,
+        "system_unchanged": true
+      },
+      {
+        "request": 13,
+        "policy_in_user_messages": false,
+        "original_in_user_messages": false,
+        "correction_in_user_messages": false,
+        "message_count": 14,
+        "raw_request_sha256": "fcc8b2377c6c8b0711600798ffd2d6f964a2ae33aac6bcd1c69ffb07e27f1dbf",
+        "exact_previous_message_prefix": false,
+        "previous_prefix_ignoring_cache_markers": false,
+        "system_unchanged": true
+      },
+      {
+        "request": 14,
+        "policy_in_user_messages": false,
+        "original_in_user_messages": false,
+        "correction_in_user_messages": false,
+        "message_count": 17,
+        "raw_request_sha256": "47b7a8ee6f47cf845ecace1aed13007c9fa97a176e32874a1a3819147ed9aff0",
+        "exact_previous_message_prefix": true,
+        "previous_prefix_ignoring_cache_markers": true,
+        "system_unchanged": true
+      }
+    ],
+    "tool_steps": 12,
+    "completion_statuses": [
+      "success",
+      "success"
+    ],
+    "provider_reported_cache_read_tokens": [
+      4100,
+      4100,
+      5574,
+      4100,
+      5248,
+      4100,
+      5274,
+      4100,
+      4100,
+      5483,
+      4100,
+      5157,
+      4100,
+      5183
+    ],
+    "compactions": 7,
+    "max_compaction_level": 8,
+    "canonical_contains_policy": true,
+    "canonical_contains_original": true,
+    "canonical_contains_correction": true,
+    "capture_sha256": "f7b6698f93818fd27993b30ab0c5336e53400b32bcefd8b4ab1b0e97b4ed5620"
+  }
+]
