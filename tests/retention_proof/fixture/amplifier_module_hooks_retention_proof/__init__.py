@@ -13,6 +13,8 @@ from types import SimpleNamespace
 
 from amplifier_core import HookResult, ToolResult
 
+__amplifier_module_type__ = "hook"
+
 
 async def mount(coordinator, config=None):
     config = config or {}
