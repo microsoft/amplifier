@@ -1,0 +1,27 @@
+name: reminder-regression
+description: >
+  Amplifier from upstream + foundation@main. Two AMPLIFIER_HOMEs inside:
+  arm P (today's default: ephemeral_injection_mode=persist) and arm T
+  (loop-streaming checkout with default flipped to tail via sources.modules).
+base:
+  image: ubuntu:24.04
+  config:
+    limits.memory: 8GiB
+    limits.cpu: "4"
+
+passthrough:
+  allow_external: true
+  services:
+    - name: anthropic
+      key_env: ANTHROPIC_API_KEY
+
+provision:
+  setup_cmds:
+    - apt-get update && apt-get install -y git curl python3 jq
+    - curl -LsSf https://astral.sh/uv/install.sh | sh
+    - uv tool install -vv git+https://github.com/microsoft/amplifier
+    - amplifier --version
+
+readiness:
+  - name: amplifier-installed
+    command: amplifier --version

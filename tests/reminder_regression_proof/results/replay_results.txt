@@ -1,0 +1,28 @@
+[AS-IS (persist mode, today)] session 3d90a954: replayed 4741/7903 canonical msgs; budget window 200,000
+compaction stats: level=8 before=12329030 after=175017 removed=4673 stubbed=0
+roles in request view: {'system': 1, 'user': 19, 'assistant': 22, 'tool': 28}
+reminder user msgs: 7 intact (332,921 chars) + 0 stubbed
+real user msgs    : 12 intact + 0 stubbed
+last REAL human message in view: 'Ok, continue.'
+
+[STRIP reminders (pre-08-31 tail mode)] session 3d90a954: replayed 4741/7903 canonical msgs; budget window 200,000
+compaction stats: level=7 before=8349352 after=98799 removed=4333 stubbed=10
+roles in request view: {'system': 1, 'user': 24, 'assistant': 25, 'tool': 33}
+reminder user msgs: 1 intact (859 chars) + 0 stubbed
+real user msgs    : 13 intact + 10 stubbed
+last REAL human message in view: 'Ok, continue.'
+
+[AS-IS (persist mode, today)] session 8dddffa7: replayed 3864/6440 canonical msgs; budget window 200,000
+compaction stats: level=8 before=6318266 after=129139 removed=3762 stubbed=0
+roles in request view: {'system': 1, 'user': 50, 'assistant': 19, 'tool': 34}
+reminder user msgs: 6 intact (277,160 chars) + 0 stubbed
+real user msgs    : 44 intact + 0 stubbed
+last REAL human message in view: 'go for it'
+
+[STRIP reminders (pre-08-31 tail mode)] session 8dddffa7: replayed 3864/6440 canonical msgs; budget window 200,000
+compaction stats: level=7 before=3904863 after=99064 removed=3373 stubbed=46
+roles in request view: {'system': 1, 'user': 93, 'assistant': 39, 'tool': 75}
+reminder user msgs: 1 intact (860 chars) + 0 stubbed
+real user msgs    : 46 intact + 46 stubbed
+last REAL human message in view: 'go for it'
+

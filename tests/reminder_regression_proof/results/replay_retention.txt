@@ -1,0 +1,6 @@
+[AS-IS persist + RETENTION compactor] session 3d90a954: replayed 4771/7953 canonical msgs; budget window 200,000
+compaction stats: level=8 before=12405141 after=145029 removed=4701 stubbed=0
+roles in request view: {'system': 1, 'user': 16, 'assistant': 23, 'tool': 31}
+reminder user msgs: 3 intact (165,882 chars) + 0 stubbed
+real user msgs    : 13 intact + 0 stubbed
+last REAL human message in view: 'Ok, continue.'
