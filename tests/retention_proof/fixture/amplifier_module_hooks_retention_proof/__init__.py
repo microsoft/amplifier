@@ -43,7 +43,7 @@ async def mount(coordinator, config=None):
         state['request'] += 1
         context = coordinator.get('context')
         if state['request'] == 1:
-            sources = {}
+            sources = {'fixture_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
             for name, module in [('context', context), ('orchestrator', coordinator.get('orchestrator'))]:
                 path = Path(inspect.getfile(type(module)))
                 sources[name] = {'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
