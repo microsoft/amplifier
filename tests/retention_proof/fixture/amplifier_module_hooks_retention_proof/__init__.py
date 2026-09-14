@@ -57,6 +57,7 @@ async def mount(coordinator, config=None):
         if config.get('pressure', True) and state['request'] in (2, 4, 6):
             for i in range(45):
                 await context.add_message({'role': 'assistant', 'content': f'Synthetic progress {state["request"]}.{i}. ' + 'Routine inspection completed. ' * 95})
+            await context.add_message({'role': 'assistant', 'content': f'Synthetic work checkpoint: step {state["step"]} completed. Continue the requested sequence until step six, then report the requested codes.'})
             record('pressure', {'request': state['request'], 'estimated_before': context._estimate_tokens(await context.get_messages())})
         record('request', {'number': state['request'], 'active_fact': fact})
         if not fact:
