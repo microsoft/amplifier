@@ -52,18 +52,19 @@ amplifier run "Explain async/await in Python"
 amplifier
 ```
 
-### Step 4: Add bundles (optional)
+### Step 4: Add a capability behavior (optional)
 
 ```bash
-# Add additional capability bundles
-amplifier bundle add git+https://github.com/microsoft/amplifier-bundle-recipes@main
-amplifier bundle add git+https://github.com/microsoft/amplifier-bundle-design-intelligence@main
+# Add a focused capability to the existing host
+amplifier bundle add 'git+https://github.com/microsoft/amplifier-bundle-recipes@main#subdirectory=behaviors/recipes.yaml' --app
 
-# Use a bundle
-amplifier bundle use recipes
+# Select a complete root separately when needed
+amplifier bundle use foundation
 ```
 
-Bundles ship focused agents you can invoke by name. Use `/agents` in chat to see available agents like `recipes:recipe-author` or `design-intelligence:component-designer`.
+Behaviors ship focused capabilities that existing hosts compose. Complete roots
+remain selectable separately. Use `/agents` in chat to see available agents
+like `recipes:recipe-author` or `design-intelligence:component-designer`.
 
 **First time? Quick setup wizard:**
 
@@ -242,7 +243,7 @@ amplifier run "Why does this code throw a TypeError: [paste code]"
 Bundles are composable configuration packages that define tools, providers, agents, and behaviors:
 
 ```bash
-# See current bundle (foundation is the default)
+# See current bundle (anchors is the default)
 amplifier bundle current
 
 # List available bundles
@@ -251,17 +252,17 @@ amplifier bundle list
 # Use a specific bundle for one command
 amplifier run --bundle recipes "Your prompt"
 
-# Set as default
+# Set a selected root as default
 amplifier bundle use foundation
 ```
 
-**The `foundation` bundle** is the default and includes:
+**The `foundation` bundle** remains a selectable complete root and includes:
 
 - **Tools**: filesystem, bash, web, search, task delegation
 - **Agents**: 14 specialized agents (zen-architect, bug-hunter, git-ops, web-research, explorer, etc.)
 - **Behaviors**: logging, redaction, streaming UI, todo tracking
 
-Most users never need to change bundles—foundation provides everything for development work.
+Most users can keep the default Anchors root and add focused behaviors as needed.
 
 ### Working with Agents
 
@@ -399,7 +400,7 @@ Agents are specialized AI personas for focused tasks.
 **Core Libraries**:
 
 - **[amplifier-core](https://github.com/microsoft/amplifier-core)** - Ultra-thin kernel (~2,600 lines) providing module protocols, session lifecycle, and hooks
-- **[amplifier-foundation](https://github.com/microsoft/amplifier-foundation)** - Bundle composition library + the default `foundation` bundle
+- **[amplifier-foundation](https://github.com/microsoft/amplifier-foundation)** - Bundle composition library + the `foundation` bundle
 
 **Reference Implementation**:
 

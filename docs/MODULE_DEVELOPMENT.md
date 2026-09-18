@@ -233,7 +233,7 @@ bundle:
   version: 1.0.0
 
 includes:
-  - bundle: foundation
+  - bundle: git+https://github.com/microsoft/amplifier-foundation@main#subdirectory=bundles/anchors/bundle.md
 
 tools:
   - module: tool-bash
@@ -242,6 +242,8 @@ tools:
 providers:
   - module: provider-mock
 ---
+
+@anchors:context/system.md
 EOF
 
 amplifier run --bundle test-bundle.md "test your module"

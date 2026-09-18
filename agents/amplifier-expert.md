@@ -255,7 +255,8 @@ Could it be swapped without rewriting kernel?
 
 ```
 Building an AI assistant?
-  └→ Start with foundation bundle + composition
+  ├→ Reusable capability: author a behavior, then install it on the existing host
+  └→ Complete new host: compose Anchors and preserve @anchors:context/system.md
 
 Need specialized agents?
   └→ Multi-agent pattern (see foundation examples 09+)
@@ -282,7 +283,7 @@ Need repeatable multi-step workflows?
 
 When you see these, redirect:
 
-1. **Fat bundles** - Duplicating foundation instead of inheriting
+1. **Fat roots** - Duplicating a complete root instead of composing a reusable behavior
 2. **Inline instructions** - Not using context files for reusability
 3. **Skipping behaviors** - Not packaging capabilities for reuse
 4. **Policy in kernel** - Trying to add decisions to core instead of modules
