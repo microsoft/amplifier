@@ -23,12 +23,21 @@ BEHAVIOR_URI = (
 
 def test_readme() -> None:
     readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    capability_start = readme.index(
+        "### Step 4: Add a capability behavior (optional)"
+    )
+    capability_end = readme.index(
+        "\n**First time? Quick setup wizard:**", capability_start
+    )
+    quickstart_capability = readme[capability_start:capability_end]
 
     assert BEHAVIOR_URI in readme
     assert "--app" in readme
     assert "anchors is the default" in readme
     assert "foundation is the default" not in readme
     assert "`foundation` bundle** remains a selectable complete root" in readme
+    assert "`recipes:recipe-author`" in quickstart_capability
+    assert "`design-intelligence:component-designer`" not in quickstart_capability
 
 
 def test_module_development_example() -> None:

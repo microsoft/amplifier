@@ -64,7 +64,7 @@ amplifier bundle use foundation
 
 Behaviors ship focused capabilities that existing hosts compose. Complete roots
 remain selectable separately. Use `/agents` in chat to see available agents
-like `recipes:recipe-author` or `design-intelligence:component-designer`.
+like `recipes:recipe-author`.
 
 **First time? Quick setup wizard:**
 
