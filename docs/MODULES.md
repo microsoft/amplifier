@@ -289,6 +289,7 @@ Applications built by the community using Amplifier.
 | **amplifier-playground** | Interactive environment for building, configuring, and testing Amplifier AI agent sessions | [@samueljklee](https://github.com/samueljklee) | [amplifier-playground](https://github.com/samueljklee/amplifier-playground) |
 | **amplifier-lakehouse** | Amplifier on top of your data (daemon and webapp) | [@payneio](https://github.com/payneio) | [amplifier-lakehouse](https://github.com/payneio/lakehouse) |
 | **app-session-analyzer** | Analyze Amplifier session logs and generate interesting metrics about your usage! | [@DavidKoleczek](https://github.com/DavidKoleczek) | [amplifier-app-session-analyzer](https://github.com/DavidKoleczek/amplifier-app-session-analyzer) |
+| **ms-repo-creation** | Automates the automatable parts of creating an Amplifier open-source repo under the `microsoft` GitHub org — guided prompts for the two browser-only governance steps, then automated `gh`-driven repo setup | [@dluc-msft](https://github.com/dluc-msft) | [ms-repo-creation](https://github.com/dluc-msft/ms-repo-creation) |
 
 **Want to showcase your application?** Submit a PR to add your Amplifier-powered application to this list!
 
