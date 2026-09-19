@@ -9,5 +9,5 @@ agents:
 
 context:
   include:
-    - amplifier:context/ecosystem-overview.md
+    - amplifier:context/amplifier-awareness.md
     # recipes-usage.md demoted to soft reference (load on demand) - see amplifier-expert.md
