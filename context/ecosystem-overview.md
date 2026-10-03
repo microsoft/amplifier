@@ -33,19 +33,7 @@ The primary library for building applications:
 - Shared utilities
 
 ### Modules
-Swappable capabilities that plug into the kernel (exactly 5 types):
-
-| Type | Purpose | Examples |
-|------|---------|----------|
-| **Provider** | LLM backends | anthropic, openai, azure, ollama |
-| **Tool** | Agent capabilities (LLM-decided) | filesystem, bash, web, search, task |
-| **Orchestrator** | **The main engine** driving sessions | loop-basic, loop-streaming, loop-events |
-| **Context** | Memory management | context-simple, context-persistent |
-| **Hook** | Lifecycle observers (code-decided) | logging, redaction, approval |
-
-**Orchestrator: The Main Engine** - The orchestrator controls the entire execution loop (LLM → tool calls → response). Swapping orchestrators can radically change agent behavior. It's THE control surface, not just "strategy."
-
-**Tool vs Hook** - Tools are LLM-decided (model chooses to call them). Hooks are code-decided (fire on lifecycle events). Both can use models internally, but the triggering mechanism differs.
+Swappable capabilities that plug into the kernel (exactly 5 types). For module type vocabulary and contracts, see the Foundation Awareness Index.
 
 ### Bundles
 Composable configuration packages combining:
@@ -136,37 +124,6 @@ The kernel provides capabilities; modules decide behavior.
 - Hooks observe without blocking
 - Tracing IDs enable correlation
 
-## Getting Started Paths
+## Getting Started
 
-### For Users
-1. Start with `amplifier:docs/USER_ONBOARDING.md` (quick start and commands)
-2. Choose a bundle from foundation
-3. Run `amplifier run` with your chosen configuration
-
-### For App Developers
-1. Study `foundation:examples/` for working patterns
-2. Read `foundation:docs/BUNDLE_GUIDE.md` for bundle composition
-3. Build your app using bundle primitives
-
-### For Module Developers
-1. Understand kernel contracts via `core:docs/`
-2. Follow module protocols
-3. Test modules in isolation before integration
-
-### For Contributors
-1. Read `amplifier:docs/REPOSITORY_RULES.md` for governance
-2. Understand the dependency hierarchy
-3. Contribute to the appropriate repository
-
-## Deep Dives (Delegate to Specialists)
-
-For detailed information, delegate to the appropriate expert agent:
-
-| Topic | Delegate To | Has Access To |
-|-------|-------------|---------------|
-| Ecosystem modules, repos, governance | `amplifier:amplifier-expert` | MODULES.md, REPOSITORY_RULES.md, USER_ONBOARDING.md |
-| Bundle authoring, patterns, examples | `foundation:foundation-expert` | BUNDLE_GUIDE.md, examples/, PATTERNS.md |
-| Kernel internals, module protocols | `core:core-expert` | kernel contracts, HOOKS_API.md, specs/ |
-| Recipe authoring, validation | `recipes:recipe-author` | RECIPE_SCHEMA.md, example recipes |
-
-These agents have the heavy documentation @mentioned directly and can provide authoritative answers.
+For getting started guides and deep-dive delegation, use `load_skill(skill_name='ecosystem-getting-started')`.
