@@ -20,6 +20,7 @@ User-facing applications that compose libraries and modules.
 
 | Component | Description | Repository |
 |-----------|-------------|------------|
+| **amplifier-client-macos** | Amplifier for Mac: native menu-bar status, notifications, quick chat, and Tempo, an optional desktop companion for an existing Unified host (public preview in preparation) | [amplifier-client-macos](https://github.com/microsoft/amplifier-client-macos) |
 | **amplifier** | Main Amplifier project and entry point - installs amplifier-app-cli via `uv tool install` | [amplifier](https://github.com/microsoft/amplifier) |
 | **amplifier-distro** | Curated distribution of Amplifier experiences | [amplifier-distro](https://github.com/microsoft/amplifier-distro) |
 | **amplifier-app-actions** | AI-powered GitHub Actions for automated issue triage and PR review | [amplifier-app-actions](https://github.com/microsoft/amplifier-app-actions) |
