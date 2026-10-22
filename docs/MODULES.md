@@ -72,7 +72,7 @@ Foundational libraries used by **applications** (not used directly by runtime mo
 | **amplifier-lib** | Python library for Amplifier | [amplifier-lib](https://github.com/microsoft/amplifier-lib) |
 | **amplifier-module-resolution** | Module resolution library | [amplifier-module-resolution](https://github.com/microsoft/amplifier-module-resolution) |
 
-**Architectural Boundary**: Libraries are consumed by applications (like amplifier-app-cli). Runtime modules only depend on amplifier-core and never use these libraries directly.
+**Architectural Boundary**: These libraries are consumed by applications (like amplifier-app-cli). Runtime modules use amplifier-core for runtime contracts and must not depend on these application libraries. The independent optional decision data contracts below are a separate category.
 
 ---
 
