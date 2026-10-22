@@ -76,6 +76,18 @@ Foundational libraries used by **applications** (not used directly by runtime mo
 
 ---
 
+## Optional decision contracts
+
+Experimental, optional data contracts shared by decision providers and their
+consumers. These are independent of the application libraries above; ordinary
+model use remains the default unless a consumer configures a decision backend.
+
+| Component | Description | Repository |
+|-----------|-------------|------------|
+| **amplifier-lib-decisions** | Experimental typed predicate, choice and ordinal score contracts; no Core, Foundation, browser or provider SDK dependency | [amplifier-lib-decisions](https://github.com/microsoft/amplifier-lib-decisions) |
+
+---
+
 ## Bundles
 
 Composable configuration packages that combine providers, behaviors, agents, and context into reusable units.
@@ -89,6 +101,7 @@ Composable configuration packages that combine providers, behaviors, agents, and
 | **attractor** | Attractor pipeline orchestration | [amplifier-bundle-attractor](https://github.com/microsoft/amplifier-bundle-attractor) |
 | **browser-tester** | Browser automation and testing with 3 specialized agents (operator, researcher, visual documenter) using agent-browser CLI | [amplifier-bundle-browser-tester](https://github.com/microsoft/amplifier-bundle-browser-tester) |
 | **computer-use** | Computer Use bundle for the Amplifier project | [amplifier-bundle-computer-use](https://github.com/microsoft/amplifier-bundle-computer-use) |
+| **ui-use** | Experimental browser/computer controller and behavior with ordinary selection by default, optional decision models, and separately configured executors | [amplifier-bundle-ui-use](https://github.com/microsoft/amplifier-bundle-ui-use) |
 | **containers** | Container-based execution environments | [amplifier-bundle-containers](https://github.com/microsoft/amplifier-bundle-containers) |
 | **converge** | Vision-first, contract-driven development — direction lands in ratified contracts first, work is derived from the contract-vs-reality gap: reconciliation ledger, candidate-guard hook, owner-gated wave recipes | [amplifier-bundle-converge](https://github.com/microsoft/amplifier-bundle-converge) |
 | **context-intelligence** | Context Intelligence bundle for the Amplifier project | [amplifier-bundle-context-intelligence](https://github.com/microsoft/amplifier-bundle-context-intelligence) |
@@ -189,6 +202,8 @@ Connect to AI model providers.
 | **provider-github-copilot** | GitHub Copilot models via the Copilot SDK | [amplifier-module-provider-github-copilot](https://github.com/microsoft/amplifier-module-provider-github-copilot) |
 | **provider-litellm** | LiteLLM integration for unified access to 100+ LLM providers | [amplifier-module-provider-litellm](https://github.com/microsoft/amplifier-module-provider-litellm) |
 | **provider-mock** | Mock provider for testing without API calls | [amplifier-module-provider-mock](https://github.com/microsoft/amplifier-module-provider-mock) |
+| **provider-jev** | Experimental optional TypeSafe Jev decision provider using a saved account; no chat models | [amplifier-module-provider-jev](https://github.com/microsoft/amplifier-module-provider-jev) |
+| **provider-local-decisions** | Experimental optional client for separately operated Lightning/d3-mini decision services; inference dependencies and weights are not installed by default | [amplifier-module-provider-local-decisions](https://github.com/microsoft/amplifier-module-provider-local-decisions) |
 
 ### Tools
 
