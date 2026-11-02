@@ -46,6 +46,15 @@ User-facing applications that compose libraries and modules.
 | **amplifier-app-wiki-weaver** | Wiki Weaver LLM-WIKI bundle for the Amplifier project | [amplifier-app-wiki-weaver](https://github.com/microsoft/amplifier-app-wiki-weaver) |
 | **amplifier-context-intelligence** | Context Intelligence services for the Amplifier project | [amplifier-context-intelligence](https://github.com/microsoft/amplifier-context-intelligence) |
 | **amplifier-workspace** | Workspace tool for the Amplifier project | [amplifier-workspace](https://github.com/microsoft/amplifier-workspace) |
+| **amplifier-constellation-runtime** | Standalone native Rust ACP agent engine with model providers, tools, and durable sessions | [amplifier-constellation-runtime](https://github.com/microsoft/amplifier-constellation-runtime) |
+| **amplifier-constellation-instance** | Independent installed agents with setup, profiles, authorized context, and management UI/API | [amplifier-constellation-instance](https://github.com/microsoft/amplifier-constellation-instance) |
+| **amplifier-constellation-observatory** | Fleet management and observation across machines with ACP and optional management adapters | [amplifier-constellation-observatory](https://github.com/microsoft/amplifier-constellation-observatory) |
+| **amplifier-constellation-conversations** | Browser conversations for people and ACP agents with threads, permissions, and source context | [amplifier-constellation-conversations](https://github.com/microsoft/amplifier-constellation-conversations) |
+| **amplifier-persona-workshop** | Communication and working-style profile authoring with portable AGENTS.md, SOUL.md, and native exports | [amplifier-persona-workshop](https://github.com/microsoft/amplifier-persona-workshop) |
+| **amplifier-acp-slack** | Slack conversation and presentation adapter for ACP-compatible agents | [amplifier-acp-slack](https://github.com/microsoft/amplifier-acp-slack) |
+| **amplifier-acp-teams** | Teams conversation adapter for ACP-compatible agents; live tenant validation pending | [amplifier-acp-teams](https://github.com/microsoft/amplifier-acp-teams) |
+| **amplifier-acp-lab** | Repeatable collaborative-agent experiments with participation observations and separate artifact evaluations | [amplifier-acp-lab](https://github.com/microsoft/amplifier-acp-lab) |
+| **amplifier-acp-minecraft** | Independent ACP agents as Minecraft players with scoped game tools and bounded collaboration | [amplifier-acp-minecraft](https://github.com/microsoft/amplifier-acp-minecraft) |
 
 **Note**: When you install `amplifier`, you get the amplifier-app-cli as the executable application. `amplifierd` is a separate daemon that exposes Amplifier capabilities over HTTP, and `amplifier-chat` and `amplifier-voice` are plugins that extend it with web-based chat and voice interfaces.
 
@@ -59,6 +68,7 @@ These are the canonical documentation and learning sites for the Amplifier ecosy
 |-----------|-------------|------------|
 | **amplifier-app-learn** | Interactive learning curriculum for Amplifier — six narrative levels, hands-on approach guides, validated architecture diagrams, and a chat assistant with live DOT rendering. React 19 + Vite SPA. | [amplifier-app-learn](https://github.com/michaeljabbour/amplifier-app-learn) |
 | **amplifier-docs** | Documentation for the Amplifier project | [amplifier-docs](https://github.com/microsoft/amplifier-docs) |
+| **amplifier-constellation** | Starting point, vision, component map, and shared contracts for independent persistent agents | [amplifier-constellation](https://github.com/microsoft/amplifier-constellation) |
 
 ---
 
