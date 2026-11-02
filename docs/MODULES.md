@@ -54,6 +54,7 @@ User-facing applications that compose libraries and modules.
 | **amplifier-acp-slack** | Slack conversation and presentation adapter for ACP-compatible agents | [amplifier-acp-slack](https://github.com/microsoft/amplifier-acp-slack) |
 | **amplifier-acp-teams** | Teams conversation adapter for ACP-compatible agents; live tenant validation pending | [amplifier-acp-teams](https://github.com/microsoft/amplifier-acp-teams) |
 | **amplifier-acp-lab** | Repeatable collaborative-agent experiments with participation observations and separate artifact evaluations | [amplifier-acp-lab](https://github.com/microsoft/amplifier-acp-lab) |
+| **amplifier-acp-minecraft** | Independent ACP agents as Minecraft players with scoped game tools and bounded collaboration | [amplifier-acp-minecraft](https://github.com/microsoft/amplifier-acp-minecraft) |
 
 **Note**: When you install `amplifier`, you get the amplifier-app-cli as the executable application. `amplifierd` is a separate daemon that exposes Amplifier capabilities over HTTP, and `amplifier-chat` and `amplifier-voice` are plugins that extend it with web-based chat and voice interfaces.
 
